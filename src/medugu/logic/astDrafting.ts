@@ -7,13 +7,12 @@
 import type {
   ASTGovernanceState,
   ASTCascadeState,
-  ASTInterpretation,
-  ASTMethod,
   ASTResult,
   ASTStandard,
   Accession,
   Isolate,
 } from "../domain/types";
+import type { ASTInterpretation, ASTMethod } from "../domain/enums";
 import { newId } from "../domain/ids";
 import { getOrganism } from "../config/organisms";
 import {
