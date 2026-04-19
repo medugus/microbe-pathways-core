@@ -21,6 +21,7 @@ import {
 import { newId } from "../domain/ids";
 import { loadState, saveState, SCHEMA_VERSION } from "./persistence";
 import { hydrateFromCloud, pushAccession } from "./cloudSync";
+import { recordAuditAsync, setAuditContext } from "./cloudAudit";
 
 type Listener = () => void;
 
@@ -162,8 +163,9 @@ export const accessionStore = {
    * Postgres for the current tenant; if the tenant is empty, cloudSync seeds
    * it with the demo benchmark accessions and we re-read.
    */
-  async hydrateFromTenant(tenantId: string) {
+  async hydrateFromTenant(tenantId: string, actorLabel?: string | null) {
     activeTenantId = tenantId;
+    setAuditContext({ tenantId, actorLabel: actorLabel ?? null });
     const { accessions } = await hydrateFromCloud(tenantId);
     const map: Record<string, Accession> = {};
     const order: string[] = [];
@@ -183,6 +185,7 @@ export const accessionStore = {
   /** Detach from the current tenant (called on sign-out). */
   detachTenant() {
     activeTenantId = null;
+    setAuditContext({ tenantId: null });
     for (const t of pushTimers.values()) clearTimeout(t);
     pushTimers.clear();
     state = emptyState();
