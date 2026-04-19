@@ -1,10 +1,13 @@
 // Live report preview — clinician-facing structured projection.
-// Pure; reads accession state and returns a typed document. Rendering is in UI.
-// No copy-paste workflow: every value is governed by accession state.
+// Pure; reads accession state + runs stewardship/IPC engines and obeys
+// suppression visibility rules. Suppressed/restricted rows carry a reason.
 
 import type { Accession } from "../domain/types";
 import { resolveSpecimen } from "./specimenResolver";
 import { getAntibiotic } from "../config/antibiotics";
+import { evaluateStewardship, type StewardshipDecision } from "./stewardshipEngine";
+import { evaluateIPC } from "./ipcEngine";
+import { evaluateAccession } from "./astEngine";
 
 export type CommentSource = "clinical" | "stewardship" | "ipc";
 
@@ -12,6 +15,8 @@ export interface ReportComment {
   source: CommentSource;
   code: string;
   text: string;
+  /** When true, content is governed/structured rather than free-text. */
+  governed?: boolean;
 }
 
 export interface ReportASTRow {
@@ -22,6 +27,12 @@ export interface ReportASTRow {
   rawUnit?: string;
   interpretation?: string;
   governance: string;
+  /** Whether to render to clinician (false = listed as suppressed with reason). */
+  visibleToClinician: boolean;
+  suppressionReason?: string;
+  releaseClass?: string;
+  aware?: string;
+  phenotypeFlags?: string[];
 }
 
 export interface ReportIsolate {
@@ -29,6 +40,7 @@ export interface ReportIsolate {
   organismDisplay: string;
   significance?: string;
   growth?: string;
+  phenotypeFlags: string[];
   ast: ReportASTRow[];
 }
 
@@ -41,6 +53,7 @@ export interface ReportPreviewDoc {
   microscopySummary: string;
   isolates: ReportIsolate[];
   comments: ReportComment[];
+  ipc: { ruleCode: string; message: string; actions: string[]; timing: string }[];
   versions: {
     rule: string;
     breakpoint: string;
@@ -53,35 +66,61 @@ export interface ReportPreviewDoc {
 export function buildReportPreview(accession: Accession): ReportPreviewDoc {
   const r = resolveSpecimen(accession.specimen.familyCode, accession.specimen.subtypeCode);
   const profile = r.ok ? r.profile : null;
+  const stewardship = evaluateStewardship(accession);
+  const ipcReport = evaluateIPC(accession);
+  const astByIsolate = evaluateAccession(accession);
 
-  const isolates: ReportIsolate[] = accession.isolates.map((i) => ({
-    isolateNo: i.isolateNo,
-    organismDisplay: i.organismDisplay,
-    significance: i.significance,
-    growth:
-      i.colonyCountCfuPerMl !== undefined
-        ? `${i.colonyCountCfuPerMl.toExponential(0)} CFU/mL`
-        : i.growthQuantifierCode,
-    ast: accession.ast
-      .filter((a) => a.isolateId === i.id)
-      .map<ReportASTRow>((a) => ({
-        antibioticCode: a.antibioticCode,
-        antibioticDisplay: getAntibiotic(a.antibioticCode)?.display ?? a.antibioticCode,
-        method: a.method,
-        rawValue: a.rawValue,
-        rawUnit: a.rawUnit,
-        interpretation: a.finalInterpretation,
-        governance: a.governance,
-      })),
-  }));
+  const phenotypesByIsolate: Record<string, string[]> = {};
+  for (const o of astByIsolate) phenotypesByIsolate[o.isolateId] = o.phenotypeFlags;
 
-  // Structured comment placeholders by source.
+  const isolates: ReportIsolate[] = accession.isolates.map((i) => {
+    const rowOutputs = astByIsolate.find((o) => o.isolateId === i.id);
+    return {
+      isolateNo: i.isolateNo,
+      organismDisplay: i.organismDisplay,
+      significance: i.significance,
+      growth:
+        i.colonyCountCfuPerMl !== undefined
+          ? `${i.colonyCountCfuPerMl.toExponential(0)} CFU/mL`
+          : i.growthQuantifierCode,
+      phenotypeFlags: phenotypesByIsolate[i.id] ?? [],
+      ast: accession.ast
+        .filter((a) => a.isolateId === i.id)
+        .map<ReportASTRow>((a) => {
+          const dec: StewardshipDecision | undefined = stewardship.byAst[a.id];
+          const enginePatch = rowOutputs?.rowPatches[a.id];
+          const interp = a.finalInterpretation ?? enginePatch?.interpretedSIR ?? a.interpretedSIR ?? a.rawInterpretation;
+          return {
+            antibioticCode: a.antibioticCode,
+            antibioticDisplay: getAntibiotic(a.antibioticCode)?.display ?? a.antibioticCode,
+            method: a.method,
+            rawValue: a.rawValue,
+            rawUnit: a.rawUnit,
+            interpretation: interp,
+            governance: a.governance,
+            visibleToClinician: dec?.visibleToClinician ?? true,
+            suppressionReason: dec?.suppressionReason,
+            releaseClass: dec?.releaseClass,
+            aware: dec?.aware,
+            phenotypeFlags: enginePatch?.phenotypeFlags ?? a.phenotypeFlags,
+          };
+        }),
+    };
+  });
+
   const comments: ReportComment[] = [];
   for (const c of accession.interpretiveComments) {
     const source: CommentSource =
       c.scope === "ast" ? "stewardship" : c.scope === "isolate" ? "clinical" : "clinical";
     comments.push({ source, code: c.code, text: c.text });
   }
+  for (const note of stewardship.notes) {
+    comments.push({ source: "stewardship", code: note.flag, text: note.message, governed: true });
+  }
+  for (const sig of ipcReport.signals) {
+    comments.push({ source: "ipc", code: sig.ruleCode, text: sig.message, governed: true });
+  }
+  // Persisted notes in state too, for amendments etc.
   for (const s of accession.stewardship) {
     comments.push({ source: "stewardship", code: s.flag, text: s.message });
   }
@@ -114,6 +153,12 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
     microscopySummary,
     isolates,
     comments,
+    ipc: ipcReport.decisions.map((d) => ({
+      ruleCode: d.ruleCode,
+      message: d.message,
+      actions: d.actions,
+      timing: d.timing,
+    })),
     versions: {
       rule: accession.ruleVersion,
       breakpoint: accession.breakpointVersion,

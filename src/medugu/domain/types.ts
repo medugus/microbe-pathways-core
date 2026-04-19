@@ -134,6 +134,34 @@ export type ASTStandard = "CLSI" | "EUCAST";
 export type ASTGovernanceState = "draft" | "interpreted" | "approved" | "released";
 export type ASTCascadeState = "primary" | "cascade_pending" | "cascaded" | "suppressed";
 
+/** Phenotype flags inferred by the AST expert-rule engine. */
+export type PhenotypeFlag =
+  | "MRSA"
+  | "MSSA"
+  | "ESBL"
+  | "AmpC_suspected"
+  | "CRE"
+  | "carbapenemase_suspected"
+  | "VRE"
+  | "VSE"
+  | "inducible_clindamycin_R"
+  | "intrinsic_R"
+  | "unusual_antibiogram";
+
+export interface ExpertRuleFiring {
+  ruleCode: string;
+  ruleVersion?: string;
+  message: string;
+  firedAt: string;
+  /** Optional override audit attached when consultant overrides the rule. */
+  override?: {
+    actor: string;
+    at: string;
+    reason: string;
+    newInterpretation?: ASTInterpretation;
+  };
+}
+
 export interface ASTResult {
   id: string;
   isolateId: string;
@@ -148,12 +176,32 @@ export interface ASTResult {
   micMgL?: number;
   zoneMm?: number;
   rawInterpretation?: ASTInterpretation;
+  /** Interpretation after expert rules; may differ from raw. */
+  interpretedSIR?: ASTInterpretation;
   finalInterpretation?: ASTInterpretation;
-  /** Phase-2 placeholders — full engines populate in later phases. */
   governance: ASTGovernanceState;
   cascade: ASTCascadeState;
+  /** Active cascade decision: shown / hidden_until_promoted / suppressed_by_phenotype. */
+  cascadeDecision?: "shown" | "hidden_until_promoted" | "suppressed_by_phenotype";
+  /** Phenotype flags fired against the parent isolate (mirrored on AST rows for filter ease). */
+  phenotypeFlags?: PhenotypeFlag[];
+  /** @deprecated use phenotypeFlags. */
   phenotypeCode?: string;
+  /** Expert rules that fired against this row, with override audit. */
+  expertRulesFired?: ExpertRuleFiring[];
+  /** @deprecated use expertRulesFired[].ruleCode */
   ruleAppliedCode?: string;
+  /** Stewardship hint computed against this row (note ref or inline). */
+  stewardshipNoteRef?: string;
+  stewardshipNote?: string;
+  /** Consultant override audit at the row level (in addition to per-rule). */
+  consultantOverride?: {
+    actor: string;
+    at: string;
+    reason: string;
+    fromInterpretation?: ASTInterpretation;
+    toInterpretation?: ASTInterpretation;
+  };
   comment?: string;
 }
 
@@ -219,12 +267,20 @@ export interface ValidationIssue {
 
 // ---------- Release / Report ----------
 
+export interface ConsultantApproval {
+  approvedBy: string;
+  approvedAt: string;
+  reason?: string;
+}
+
 export interface ReleaseRecord {
   state: ReleaseState;
   releasedAt?: string;
   releasedBy?: string;
   amendmentReason?: string;
   reportVersion: number;
+  /** Required when resolver.gating.consultantReleaseRequired is true. */
+  consultantApproval?: ConsultantApproval;
 }
 
 /**

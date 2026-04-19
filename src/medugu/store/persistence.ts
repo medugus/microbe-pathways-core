@@ -5,7 +5,7 @@ import type { MeduguState } from "../domain/types";
 export const STORAGE_KEY = "medugu.v3.state";
 // Bumped to 3 for Phase 2 workflow core (AST governance/cascade/standard,
 // isolate significance + colony count, release package shape stable).
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export function loadState(): MeduguState | null {
   if (typeof window === "undefined") return null;

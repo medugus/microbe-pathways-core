@@ -75,6 +75,15 @@ export function ReportSection() {
                       <span className="ml-2 text-xs text-muted-foreground">growth: {iso.growth}</span>
                     )}
                   </div>
+                  {iso.phenotypeFlags.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {iso.phenotypeFlags.map((f) => (
+                        <span key={f} className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {iso.ast.length > 0 && (
                     <table className="mt-2 w-full text-xs">
                       <thead className="text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -82,18 +91,33 @@ export function ReportSection() {
                           <th className="py-1 text-left">Antibiotic</th>
                           <th className="py-1 text-left">Result</th>
                           <th className="py-1 text-left">Raw</th>
-                          <th className="py-1 text-left">Governance</th>
+                          <th className="py-1 text-left">Class</th>
+                          <th className="py-1 text-left">Status</th>
                         </tr>
                       </thead>
                       <tbody>
                         {iso.ast.map((r) => (
-                          <tr key={r.antibioticCode} className="border-t border-border">
+                          <tr key={r.antibioticCode} className={`border-t border-border ${r.visibleToClinician ? "" : "opacity-60"}`}>
                             <td className="py-1 text-foreground">{r.antibioticDisplay}</td>
-                            <td className="py-1 font-mono">{r.interpretation ?? "—"}</td>
+                            <td className="py-1 font-mono">{r.visibleToClinician ? (r.interpretation ?? "—") : "·"}</td>
                             <td className="py-1 text-muted-foreground">
                               {r.rawValue ?? "—"} {r.rawUnit ?? ""}
                             </td>
-                            <td className="py-1 text-muted-foreground">{r.governance}</td>
+                            <td className="py-1 text-[10px] text-muted-foreground">
+                              {r.releaseClass ?? "—"}{r.aware ? ` · ${r.aware}` : ""}
+                            </td>
+                            <td className="py-1 text-[10px]">
+                              {r.visibleToClinician ? (
+                                <span className="text-foreground">released</span>
+                              ) : (
+                                <span className="text-destructive" title={r.suppressionReason}>
+                                  suppressed
+                                </span>
+                              )}
+                              {r.suppressionReason && !r.visibleToClinician && (
+                                <div className="text-muted-foreground">{r.suppressionReason}</div>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -105,6 +129,25 @@ export function ReportSection() {
           )}
         </section>
 
+        {doc.ipc.length > 0 && (
+          <section className="mt-3">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">IPC actions</div>
+            <ul className="mt-1 space-y-1">
+              {doc.ipc.map((i, idx) => (
+                <li key={idx} className="text-sm">
+                  <code className="mr-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    {i.ruleCode} · {i.timing}
+                  </code>
+                  <span className="text-foreground">{i.message}</span>
+                  <div className="mt-0.5 text-[10px] text-muted-foreground">
+                    {i.actions.join(" · ")}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {doc.comments.length > 0 && (
           <section className="mt-3">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Interpretive comments</div>
@@ -114,6 +157,9 @@ export function ReportSection() {
                   <span className="mr-1 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
                     {COMMENT_LABEL[c.source]}
                   </span>
+                  {c.governed && (
+                    <span className="mr-1 rounded bg-primary/10 px-1 py-0.5 text-[10px] text-primary">governed</span>
+                  )}
                   {c.text}
                 </li>
               ))}

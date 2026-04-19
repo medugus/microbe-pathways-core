@@ -1,8 +1,9 @@
 // Validation engine — pure. Returns blocking issues + warnings + releaseAllowed.
 //
-// Phase-2 scope: completeness checks across patient, specimen/resolver,
-// microscopy, isolates, AST and phone-out placeholders for critical specimens.
-// Full clinical/expert-rule validation lands in Phase 3.
+// Phase-2 contract corrections:
+// - Required phone-out for critical-comm pathways is a BLOCKER, not a warning.
+// - Consultant-required release is a BLOCKER until ReleaseRecord.consultantApproval is set.
+// - Specimen resolver invalidity remains a blocker.
 
 import type { Accession, ValidationIssue } from "../domain/types";
 import { resolveSpecimen } from "./specimenResolver";
@@ -16,8 +17,10 @@ export interface ValidationReport {
   releaseAllowed: boolean;
   /** True when this specimen requires consultant sign-off before release. */
   consultantReleaseRequired: boolean;
-  /** True when phone-out is expected but not yet recorded. */
-  phoneOutPending: boolean;
+  /** True when phone-out is required and not yet documented. */
+  phoneOutRequiredPending: boolean;
+  /** True when consultant approval is required and not yet recorded. */
+  consultantApprovalPending: boolean;
 }
 
 function block(code: string, section: string, message: string): ValidationIssue {
@@ -33,19 +36,16 @@ function info(code: string, section: string, message: string): ValidationIssue {
 export function runValidation(accession: Accession): ValidationReport {
   const issues: ValidationIssue[] = [];
 
-  // Patient
   if (!accession.patient.mrn) issues.push(block("PT_MRN_MISSING", "patient", "MRN is required."));
   if (!accession.patient.familyName)
     issues.push(block("PT_NAME_MISSING", "patient", "Patient name is required."));
 
-  // Specimen + resolver
   const r = resolveSpecimen(accession.specimen.familyCode, accession.specimen.subtypeCode);
   if (!r.ok) {
     issues.push(block("SP_UNRESOLVED", "specimen", `Specimen could not be resolved (${r.reason}).`));
   }
   const profile = r.ok ? r.profile : null;
 
-  // Microscopy required by resolver
   if (profile && profile.microscopy.required.length > 0 && accession.microscopy.length === 0) {
     issues.push(
       warn(
@@ -56,56 +56,60 @@ export function runValidation(accession: Accession): ValidationReport {
     );
   }
 
-  // Isolates: diagnostic specimens should have at least one isolate row
-  // (which may be an explicit "no growth" finding) before release.
   if (profile && profile.gating.pathway === "diagnostic" && accession.isolates.length === 0) {
     issues.push(
       warn("ISO_NONE", "isolate", "No isolate recorded — record an explicit no-growth finding if appropriate."),
     );
   }
 
-  // AST completeness — if any AST rows exist, every row must have a final interpretation
-  // and must be approved-or-better governance to release.
   for (const a of accession.ast) {
     if (!a.finalInterpretation) {
       issues.push(
-        block(
-          "AST_INCOMPLETE",
-          "ast",
-          `AST row ${a.antibioticCode} has no final S/I/R interpretation.`,
-        ),
+        block("AST_INCOMPLETE", "ast", `AST row ${a.antibioticCode} has no final S/I/R interpretation.`),
       );
     } else if (a.governance === "draft") {
       issues.push(
-        warn(
-          "AST_NOT_APPROVED",
-          "ast",
-          `AST row ${a.antibioticCode} still in draft governance — approve before release.`,
-        ),
+        warn("AST_NOT_APPROVED", "ast", `AST row ${a.antibioticCode} still in draft governance — approve before release.`),
       );
     }
   }
 
-  // Phone-out placeholder logic for critical pathways
-  let phoneOutPending = false;
+  // ---- Phone-out: now a BLOCKER for critical-pathway specimens with significant findings.
+  let phoneOutRequiredPending = false;
   if (profile?.gating.criticalCommunicationRequired) {
-    const hasPhoneOut = accession.phoneOuts.some((p) => p.acknowledged);
+    const hasAck = accession.phoneOuts.some((p) => p.acknowledged);
     const hasSignificantIsolate = accession.isolates.some((i) => i.significance === "significant");
-    if (hasSignificantIsolate && !hasPhoneOut) {
-      phoneOutPending = true;
+    // Blood culture: any growth at all triggers required phone-out (positivity itself is critical).
+    const bloodAnyGrowth =
+      accession.specimen.familyCode === "BLOOD" &&
+      accession.isolates.some((i) => i.organismCode !== "NOGRO");
+    const phoneOutRequired = hasSignificantIsolate || bloodAnyGrowth;
+    if (phoneOutRequired && !hasAck) {
+      phoneOutRequiredPending = true;
       issues.push(
-        warn(
-          "PHONE_OUT_PENDING",
+        block(
+          "PHONE_OUT_REQUIRED",
           "release",
-          "Critical specimen with significant isolate — phone-out to clinician not yet acknowledged.",
+          "Critical-communication specimen with reportable result — acknowledged phone-out required before release.",
         ),
       );
-    } else if (!hasPhoneOut) {
+    } else if (!hasAck) {
       issues.push(
-        info(
-          "PHONE_OUT_HINT",
+        info("PHONE_OUT_HINT", "release", "Critical-pathway specimen — phone-out workflow available."),
+      );
+    }
+  }
+
+  // ---- Consultant-required release: now a BLOCKER until consultantApproval is recorded.
+  let consultantApprovalPending = false;
+  if (profile?.gating.consultantReleaseRequired) {
+    if (!accession.release.consultantApproval) {
+      consultantApprovalPending = true;
+      issues.push(
+        block(
+          "CONSULTANT_APPROVAL_REQUIRED",
           "release",
-          "Critical-pathway specimen — phone-out workflow available.",
+          "Consultant approval required for this specimen type — record sign-off before release.",
         ),
       );
     }
@@ -122,6 +126,7 @@ export function runValidation(accession: Accession): ValidationReport {
     info: infos,
     releaseAllowed: blockers.length === 0,
     consultantReleaseRequired: !!profile?.gating.consultantReleaseRequired,
-    phoneOutPending,
+    phoneOutRequiredPending,
+    consultantApprovalPending,
   };
 }

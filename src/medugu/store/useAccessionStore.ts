@@ -31,4 +31,7 @@ export const meduguActions = {
   setWorkflowStage: accessionStore.setWorkflowStage,
   recordPhoneOut: accessionStore.recordPhoneOut,
   finaliseRelease: accessionStore.finaliseRelease,
+  recordConsultantApproval: accessionStore.recordConsultantApproval,
+  applyExpertRules: accessionStore.applyExpertRules,
+  recordConsultantOverride: accessionStore.recordConsultantOverride,
 };

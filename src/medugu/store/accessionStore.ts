@@ -288,4 +288,88 @@ export const accessionStore = {
       ),
     );
   },
+
+  recordConsultantApproval(
+    accessionId: string,
+    approval: { approvedBy: string; reason?: string },
+    actor = "local",
+  ) {
+    mutate(accessionId, (a) =>
+      appendAudit(
+        {
+          ...a,
+          release: {
+            ...a.release,
+            consultantApproval: {
+              approvedBy: approval.approvedBy,
+              approvedAt: new Date().toISOString(),
+              reason: approval.reason,
+            },
+          },
+        },
+        {
+          actor,
+          action: "release.consultantApproved",
+          section: "release",
+          field: "release.consultantApproval",
+          newValue: { approvedBy: approval.approvedBy, reason: approval.reason },
+        },
+      ),
+    );
+  },
+
+  applyExpertRules(
+    accessionId: string,
+    rowPatches: Record<string, Partial<import("../domain/types").ASTResult>>,
+    actor = "local",
+  ) {
+    mutate(accessionId, (a) => {
+      const next = a.ast.map((r) => (rowPatches[r.id] ? { ...r, ...rowPatches[r.id] } : r));
+      return appendAudit(
+        { ...a, ast: next },
+        {
+          actor,
+          action: "ast.expertRulesApplied",
+          section: "ast",
+          field: "ast",
+          newValue: { affected: Object.keys(rowPatches).length },
+        },
+      );
+    });
+  },
+
+  recordConsultantOverride(
+    accessionId: string,
+    astId: string,
+    override: { actor: string; reason: string; toInterpretation?: import("../domain/enums").ASTInterpretation },
+    actor = "local",
+  ) {
+    mutate(accessionId, (a) => {
+      const before = a.ast.find((x) => x.id === astId);
+      if (!before) return a;
+      const after = {
+        ...before,
+        finalInterpretation: override.toInterpretation ?? before.finalInterpretation,
+        consultantOverride: {
+          actor: override.actor,
+          at: new Date().toISOString(),
+          reason: override.reason,
+          fromInterpretation: before.finalInterpretation,
+          toInterpretation: override.toInterpretation,
+        },
+      };
+      return appendAudit(
+        { ...a, ast: a.ast.map((x) => (x.id === astId ? after : x)) },
+        {
+          actor,
+          action: "ast.consultantOverride",
+          section: "ast",
+          field: `ast[${before.antibioticCode}]`,
+          oldValue: before.finalInterpretation,
+          newValue: after.finalInterpretation,
+          reason: override.reason,
+        },
+      );
+    });
+  },
 };

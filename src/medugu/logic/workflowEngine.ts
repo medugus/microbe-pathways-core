@@ -1,26 +1,21 @@
 // Workflow state machine — framework-agnostic.
-//
-// Phase-2 states extend the contract WorkflowStage but are normalised here
-// so transitions are explicit and audit-friendly.
+// Phase-2 correction: Validation → Released requires releaseAllowed === true,
+// and consultant-required pathways must have consultantApproval before release.
 
 import type { Accession, AuditEvent } from "../domain/types";
 import { WorkflowStage } from "../domain/enums";
 import { newId } from "../domain/ids";
+import { runValidation } from "./validationEngine";
 
-/**
- * Phase-2 ordered workflow track. Maps to contract WorkflowStage but keeps
- * the ordered "draft → in_review → validated → release_ready → released"
- * spine the PRD requires for Phase 2 governance.
- */
 export const WORKFLOW_TRACK: WorkflowStage[] = [
-  WorkflowStage.Registered,        // draft
+  WorkflowStage.Registered,
   WorkflowStage.SpecimenReceived,
   WorkflowStage.Microscopy,
   WorkflowStage.Culture,
   WorkflowStage.Isolate,
   WorkflowStage.AST,
-  WorkflowStage.Validation,        // in_review
-  WorkflowStage.Released,          // release_ready → released after release action
+  WorkflowStage.Validation,
+  WorkflowStage.Released,
 ];
 
 const FORWARD: Record<string, WorkflowStage[]> = {
@@ -47,6 +42,10 @@ export function canTransition(from: WorkflowStage, to: WorkflowStage): boolean {
   return (FORWARD[from] ?? []).includes(to);
 }
 
+/**
+ * Completeness-aware transition. Rejects forbidden transitions AND blocks
+ * Validation → Released unless validation passes (releaseAllowed === true).
+ */
 export function transition(
   accession: Accession,
   to: WorkflowStage,
@@ -55,8 +54,39 @@ export function transition(
 ): TransitionResult {
   const from = accession.workflowStatus;
   if (!canTransition(from, to)) {
-    return { ok: false, reason: `Transition ${from} → ${to} not allowed` };
+    const audit: AuditEvent = {
+      id: newId("aud"),
+      at: new Date().toISOString(),
+      actor,
+      action: "workflow.transition.blocked",
+      section: "workflow",
+      field: "workflowStatus",
+      oldValue: from,
+      newValue: to,
+      reason: `Transition ${from} → ${to} not allowed by state map.`,
+    };
+    return { ok: false, reason: audit.reason, audit };
   }
+
+  // Gate Validation → Released on full validation result.
+  if (from === WorkflowStage.Validation && to === WorkflowStage.Released) {
+    const v = runValidation(accession);
+    if (!v.releaseAllowed) {
+      const audit: AuditEvent = {
+        id: newId("aud"),
+        at: new Date().toISOString(),
+        actor,
+        action: "workflow.transition.blocked",
+        section: "workflow",
+        field: "workflowStatus",
+        oldValue: from,
+        newValue: to,
+        reason: `Release blocked by ${v.blockers.length} blocker(s): ${v.blockers.map((b) => b.code).join(", ")}.`,
+      };
+      return { ok: false, reason: audit.reason, audit };
+    }
+  }
+
   const audit: AuditEvent = {
     id: newId("aud"),
     at: new Date().toISOString(),

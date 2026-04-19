@@ -65,6 +65,22 @@ export function ASTSection() {
     rows: accession.ast.filter((a) => a.isolateId === iso.id),
   }));
 
+  function applyExpertRules() {
+    if (!accession) return;
+    // Build patches by evaluating all isolates and merging row patches.
+    // Using dynamic require would defeat tree-shaking; import inline.
+    import("../../logic/astEngine").then(({ evaluateAccession }) => {
+      const outputs = evaluateAccession(accession);
+      const merged: Record<string, Partial<typeof accession.ast[number]>> = {};
+      for (const o of outputs) {
+        for (const [rid, p] of Object.entries(o.rowPatches)) {
+          merged[rid] = { ...(merged[rid] ?? {}), ...p };
+        }
+      }
+      meduguActions.applyExpertRules(accession.id, merged);
+    });
+  }
+
   return (
     <div className="space-y-5">
       {/* Entry surface */}
@@ -130,7 +146,7 @@ export function ASTSection() {
             className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
           />
         </label>
-        <div className="md:col-span-6">
+        <div className="md:col-span-6 flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={onAdd}
@@ -138,6 +154,16 @@ export function ASTSection() {
           >
             Add AST row
           </button>
+          <button
+            type="button"
+            onClick={applyExpertRules}
+            className="rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+          >
+            Apply expert rules
+          </button>
+          <span className="text-[11px] text-muted-foreground">
+            Runs MRSA / ESBL / CRE / VRE / ICR / intrinsic / AmpC / unusual-antibiogram inference and writes phenotype + cascade decisions.
+          </span>
         </div>
       </div>
 
@@ -219,11 +245,26 @@ export function ASTSection() {
                       </td>
                       <td className="px-3 py-2">
                         <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                          {r.cascade}
+                          {r.cascadeDecision ?? r.cascade}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-muted-foreground">
-                        {r.phenotypeCode ?? <span className="italic text-muted-foreground/70">pending</span>}
+                      <td className="px-3 py-2">
+                        {r.phenotypeFlags && r.phenotypeFlags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {r.phenotypeFlags.map((f) => (
+                              <span key={f} className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">
+                                {f}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="italic text-muted-foreground/70 text-[10px]">none</span>
+                        )}
+                        {r.expertRulesFired && r.expertRulesFired.length > 0 && (
+                          <div className="mt-0.5 text-[10px] text-muted-foreground">
+                            {r.expertRulesFired.map((e) => e.ruleCode).join(", ")}
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <button
@@ -244,7 +285,7 @@ export function ASTSection() {
       ))}
 
       <p className="text-[11px] text-muted-foreground">
-        Phase 2: governance / cascade / phenotype columns are placeholders — full expert-rule engine arrives in Phase 3.
+        Phase 3: phenotype + cascade decisions written by the AST expert engine. Use consultant override on the row to deviate, with reason audited.
       </p>
     </div>
   );

@@ -35,6 +35,7 @@ export const ORGANISMS: OrganismDef[] = [
   { code: "CALB",  display: "Candida albicans",                gram: "yeast", group: "candida" },
   { code: "CAUR",  display: "Candida auris",                   gram: "yeast", group: "candida", alert: true },
   { code: "MTUB",  display: "Mycobacterium tuberculosis complex", gram: "afb", alert: true },
+  { code: "CDIF",  display: "Clostridioides difficile",          gram: "anaerobe", alert: true },
   { code: "MIXED", display: "Mixed growth (no significant pathogen)", gram: "other" },
   { code: "NOGRO", display: "No growth",                       gram: "other" },
   { code: "NORML", display: "Normal flora",                    gram: "other" },
