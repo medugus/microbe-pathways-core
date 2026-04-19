@@ -84,21 +84,25 @@ export const sealRelease = createServerFn({ method: "POST" })
       buildVersion: accession.buildVersion,
     };
 
-    const { error: insErr } = await supabase.from("release_packages").insert({
-      tenant_id: row.tenant_id,
-      accession_id: row.id,
-      version: nextVersion,
-      built_at: builtAt,
-      built_by: userId,
-      body: pkg.body as never,
-      rule_version: { value: pkg.ruleVersion } as never,
-      breakpoint_version: pkg.breakpointVersion,
-      export_version: pkg.exportVersion,
-      build_version: pkg.buildVersion,
-      body_sha256: sealHash,
-    } as never);
-    if (insErr) {
-      return { ok: false, reason: `Seal insert failed: ${insErr.message}` };
+    const { data: insertedPkg, error: insErr } = await supabase
+      .from("release_packages")
+      .insert({
+        tenant_id: row.tenant_id,
+        accession_id: row.id,
+        version: nextVersion,
+        built_at: builtAt,
+        built_by: userId,
+        body: pkg.body as never,
+        rule_version: { value: pkg.ruleVersion } as never,
+        breakpoint_version: pkg.breakpointVersion,
+        export_version: pkg.exportVersion,
+        build_version: pkg.buildVersion,
+        body_sha256: sealHash,
+      } as never)
+      .select("id, version, body, rule_version, breakpoint_version, export_version, build_version, built_at")
+      .maybeSingle();
+    if (insErr || !insertedPkg) {
+      return { ok: false, reason: `Seal insert failed: ${insErr?.message ?? "no row returned"}` };
     }
 
     const releasedAccession: Accession = {
@@ -131,12 +135,24 @@ export const sealRelease = createServerFn({ method: "POST" })
       .eq("version", row.version);
     if (updErr) return { ok: false, reason: `Update failed: ${updErr.message}` };
 
+    // Auto-dispatch to every enabled receiver. Failures are reported
+    // per-receiver and do NOT roll back the seal.
+    const autoDispatch = await autoDispatchRelease(
+      supabase,
+      userId,
+      row.tenant_id as string,
+      releasedAccession,
+      row.id as string,
+      insertedPkg as never,
+    );
+
     return {
       ok: true,
       sealHash,
       reportVersion: nextVersion,
       builtAt,
       accessionJson: JSON.stringify(releasedAccession),
+      autoDispatch,
     };
   });
 
