@@ -329,6 +329,50 @@ export function ReleaseSection() {
         )}
       </section>
 
+      {/* Auto-dispatch summary — shown after the most recent seal/amend
+          attempt this session. Persistent history lives in the Release
+          history panel below. */}
+      {autoDispatch !== null && (
+        <section className="rounded-md border border-border bg-background p-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Auto-dispatch on release
+          </h4>
+          {autoDispatch.length === 0 ? (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              No enabled receivers configured for this tenant — nothing to
+              dispatch. Configure receivers in /admin/receivers.
+            </p>
+          ) : (
+            <ul className="mt-2 space-y-1.5">
+              {autoDispatch.map((d) => (
+                <li
+                  key={d.receiverId}
+                  className="flex flex-wrap items-center gap-2 text-[11px]"
+                >
+                  <span
+                    className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+                      d.ok
+                        ? "bg-primary/15 text-primary"
+                        : "bg-destructive/15 text-destructive"
+                    }`}
+                  >
+                    {d.ok ? "OK" : "FAIL"}
+                  </span>
+                  <span className="font-medium text-foreground">{d.receiverName}</span>
+                  <span className="text-muted-foreground">[{d.format}]</span>
+                  {d.httpStatus !== undefined && (
+                    <span className="text-muted-foreground">HTTP {d.httpStatus}</span>
+                  )}
+                  {!d.ok && d.reason && (
+                    <span className="text-destructive">— {d.reason}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
       {accession.releasePackage && (
         <section>
           <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
