@@ -9,6 +9,7 @@ export { ValidationSection } from "./ValidationSection";
 export { ReleaseSection } from "./ReleaseSection";
 export { ReportSection } from "./ReportSection";
 export { ExportSection } from "./ExportSection";
+export { BenchmarkSection } from "./BenchmarkSection";
 
 export const SECTION_ORDER = [
   { key: "patient", label: "Patient" },
@@ -22,6 +23,7 @@ export const SECTION_ORDER = [
   { key: "release", label: "Release" },
   { key: "report", label: "Report" },
   { key: "export", label: "Export" },
+  { key: "benchmark", label: "Benchmark" },
 ] as const;
 
 export type SectionKey = (typeof SECTION_ORDER)[number]["key"];
