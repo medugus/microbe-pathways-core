@@ -193,12 +193,12 @@ async function maybePushReleasePackage(
     version: pkg.version,
     built_at: pkg.builtAt,
     built_by: userId ?? null,
-    body: pkg.body as unknown,
-    rule_version: { value: pkg.ruleVersion } as unknown,
+    body: pkg.body as unknown as never,
+    rule_version: { value: pkg.ruleVersion } as unknown as never,
     breakpoint_version: pkg.breakpointVersion,
     export_version: pkg.exportVersion,
     build_version: pkg.buildVersion,
     body_sha256: hash,
-  });
+  } as never);
   if (error && error.code !== "23505") throw error;
 }
