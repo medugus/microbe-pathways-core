@@ -105,9 +105,43 @@ export function ReleaseSection() {
     }
   }
 
-  return (
-    <div className="space-y-5">
-      {/* Workflow */}
+  async function amend() {
+    if (!accession) return;
+    setAmendError(null);
+    if (amendmentReason.trim().length < 4) {
+      setAmendError("Amendment reason is required (min 4 characters).");
+      return;
+    }
+    setAmending(true);
+    try {
+      const { data: row, error: lookupErr } = await supabase
+        .from("accessions")
+        .select("id")
+        .eq("accession_code", accession.accessionNumber)
+        .maybeSingle();
+      if (lookupErr) throw new Error(lookupErr.message);
+      if (!row) throw new Error("Accession not found in cloud.");
+
+      const result = await amendRelease({
+        data: {
+          accessionRowId: row.id as string,
+          amendmentReason: amendmentReason.trim(),
+        },
+      });
+      if (!result.ok || !result.accessionJson) {
+        const codes = result.blockerCodes?.length ? ` (${result.blockerCodes.join(", ")})` : "";
+        setAmendError((result.reason ?? "Amendment blocked") + codes);
+        return;
+      }
+      const amended = JSON.parse(result.accessionJson) as Accession;
+      meduguActions.upsertAccession(amended);
+      setAmendmentReason("");
+    } catch (err) {
+      setAmendError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setAmending(false);
+    }
+  }
       <section className="rounded-md border border-border bg-background p-3">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Workflow
