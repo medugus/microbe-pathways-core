@@ -291,11 +291,21 @@ export const amendRelease = createServerFn({ method: "POST" })
       } as never,
     } as never);
 
+    const autoDispatch = await autoDispatchRelease(
+      supabase,
+      userId,
+      row.tenant_id as string,
+      amendedAccession,
+      row.id as string,
+      insertedPkg as never,
+    );
+
     return {
       ok: true,
       sealHash,
       reportVersion: nextVersion,
       builtAt,
       accessionJson: JSON.stringify(amendedAccession),
+      autoDispatch,
     };
   });
