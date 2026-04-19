@@ -325,8 +325,8 @@ export function ReleaseSection() {
       )}
 
       {released && (
-        <section className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+        <section className="rounded-md border border-border bg-muted/30 p-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Amend released report
           </h4>
           <p className="mt-1 text-[11px] text-muted-foreground">
@@ -353,7 +353,7 @@ export function ReleaseSection() {
               type="button"
               onClick={amend}
               disabled={amending || amendmentReason.trim().length < 4}
-              className="rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+              className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
             >
               {amending ? "Amending on server…" : "Issue amendment"}
             </button>
