@@ -4,7 +4,7 @@
 // SHA-256 seal, and writes both the immutable release_packages row and the
 // updated accession in one trip. The browser cannot bypass releaseAllowed.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useActiveAccession, meduguActions } from "../../store/useAccessionStore";
 import { runValidation } from "../../logic/validationEngine";
 import { transition, nextSuggested } from "../../logic/workflowEngine";
@@ -13,6 +13,7 @@ import { newId } from "../../domain/ids";
 import { sealRelease, amendRelease } from "../../store/release.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Accession } from "../../domain/types";
+import { ReleaseHistoryPanel } from "./ReleaseHistoryPanel";
 
 export function ReleaseSection() {
   const accession = useActiveAccession();
@@ -23,6 +24,31 @@ export function ReleaseSection() {
   const [amendmentReason, setAmendmentReason] = useState("");
   const [amending, setAmending] = useState(false);
   const [amendError, setAmendError] = useState<string | null>(null);
+  const [accessionRowId, setAccessionRowId] = useState<string | null>(null);
+  const [historyKey, setHistoryKey] = useState(0);
+
+  // Resolve the postgres row id once per accession so the history panel can
+  // query release_packages by FK without re-issuing the lookup on every render.
+  const accessionCode = accession?.accessionNumber ?? null;
+  useEffect(() => {
+    let cancelled = false;
+    if (!accessionCode) {
+      setAccessionRowId(null);
+      return;
+    }
+    void supabase
+      .from("accessions")
+      .select("id")
+      .eq("accession_code", accessionCode)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setAccessionRowId((data?.id as string | null) ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessionCode]);
 
   if (!accession) {
     return (
@@ -98,6 +124,7 @@ export function ReleaseSection() {
       // Replace the local copy with the server-issued sealed accession.
       const sealed = JSON.parse(result.accessionJson) as Accession;
       meduguActions.upsertAccession(sealed);
+      setHistoryKey((k) => k + 1);
     } catch (err) {
       setSealError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -136,6 +163,7 @@ export function ReleaseSection() {
       const amended = JSON.parse(result.accessionJson) as Accession;
       meduguActions.upsertAccession(amended);
       setAmendmentReason("");
+      setHistoryKey((k) => k + 1);
     } catch (err) {
       setAmendError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -362,6 +390,13 @@ export function ReleaseSection() {
             )}
           </div>
         </section>
+      )}
+
+      {accessionRowId && (
+        <ReleaseHistoryPanel
+          key={`${accessionRowId}-${historyKey}`}
+          accessionRowId={accessionRowId}
+        />
       )}
     </div>
   );
