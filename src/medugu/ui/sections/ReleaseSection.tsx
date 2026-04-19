@@ -10,7 +10,7 @@ import { runValidation } from "../../logic/validationEngine";
 import { transition, nextSuggested } from "../../logic/workflowEngine";
 import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
-import { sealRelease } from "../../store/release.functions";
+import { sealRelease, amendRelease } from "../../store/release.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Accession } from "../../domain/types";
 
@@ -20,6 +20,9 @@ export function ReleaseSection() {
   const [consultantReason, setConsultantReason] = useState("");
   const [sealing, setSealing] = useState(false);
   const [sealError, setSealError] = useState<string | null>(null);
+  const [amendmentReason, setAmendmentReason] = useState("");
+  const [amending, setAmending] = useState(false);
+  const [amendError, setAmendError] = useState<string | null>(null);
 
   if (!accession) {
     return (
@@ -31,7 +34,10 @@ export function ReleaseSection() {
 
   const v = runValidation(accession);
   const suggestedNext = nextSuggested(accession.workflowStatus);
-  const released = accession.release.state === ReleaseState.Released;
+  const released =
+    accession.release.state === ReleaseState.Released ||
+    accession.release.state === ReleaseState.Amended;
+  const amended = accession.release.state === ReleaseState.Amended;
 
   function advance(to: WorkflowStage) {
     if (!accession) return;
@@ -96,6 +102,44 @@ export function ReleaseSection() {
       setSealError(err instanceof Error ? err.message : String(err));
     } finally {
       setSealing(false);
+    }
+  }
+
+  async function amend() {
+    if (!accession) return;
+    setAmendError(null);
+    if (amendmentReason.trim().length < 4) {
+      setAmendError("Amendment reason is required (min 4 characters).");
+      return;
+    }
+    setAmending(true);
+    try {
+      const { data: row, error: lookupErr } = await supabase
+        .from("accessions")
+        .select("id")
+        .eq("accession_code", accession.accessionNumber)
+        .maybeSingle();
+      if (lookupErr) throw new Error(lookupErr.message);
+      if (!row) throw new Error("Accession not found in cloud.");
+
+      const result = await amendRelease({
+        data: {
+          accessionRowId: row.id as string,
+          amendmentReason: amendmentReason.trim(),
+        },
+      });
+      if (!result.ok || !result.accessionJson) {
+        const codes = result.blockerCodes?.length ? ` (${result.blockerCodes.join(", ")})` : "";
+        setAmendError((result.reason ?? "Amendment blocked") + codes);
+        return;
+      }
+      const amended = JSON.parse(result.accessionJson) as Accession;
+      meduguActions.upsertAccession(amended);
+      setAmendmentReason("");
+    } catch (err) {
+      setAmendError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setAmending(false);
     }
   }
 
@@ -228,13 +272,15 @@ export function ReleaseSection() {
             onClick={release}
             className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
-            {released
-              ? "Released"
-              : sealing
-                ? "Sealing on server…"
-                : v.releaseAllowed
-                  ? "Release report"
-                  : "Release blocked"}
+            {amended
+              ? `Amended · v${accession.release.reportVersion}`
+              : released
+                ? "Released"
+                : sealing
+                  ? "Sealing on server…"
+                  : v.releaseAllowed
+                    ? "Release report"
+                    : "Release blocked"}
           </button>
         </div>
         {sealError && (
@@ -275,6 +321,46 @@ export function ReleaseSection() {
             Snapshot is immutable; the SHA-256 seal is server-issued and stored
             in the append-only release_packages table.
           </p>
+        </section>
+      )}
+
+      {released && (
+        <section className="rounded-md border border-border bg-muted/30 p-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Amend released report
+          </h4>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Amendments do not overwrite history. A new immutable release
+            package will be sealed at v{(accession.release.reportVersion ?? 1) + 1}{" "}
+            (HL7 result-status equivalent: corrected). Validation is re-run
+            on the server.
+          </p>
+          {accession.release.amendmentReason && (
+            <p className="mt-2 text-[11px] text-foreground">
+              <span className="text-muted-foreground">Last reason:</span>{" "}
+              <span className="italic">{accession.release.amendmentReason}</span>
+            </p>
+          )}
+          <textarea
+            value={amendmentReason}
+            onChange={(e) => setAmendmentReason(e.target.value)}
+            placeholder="Reason for amendment (required, min 4 chars)"
+            rows={2}
+            className="mt-2 w-full rounded border border-border bg-background px-2 py-1 text-xs"
+          />
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={amend}
+              disabled={amending || amendmentReason.trim().length < 4}
+              className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+            >
+              {amending ? "Amending on server…" : "Issue amendment"}
+            </button>
+            {amendError && (
+              <span className="text-[11px] text-destructive">{amendError}</span>
+            )}
+          </div>
         </section>
       )}
     </div>
