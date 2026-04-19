@@ -10,7 +10,7 @@ import { runValidation } from "../../logic/validationEngine";
 import { transition, nextSuggested } from "../../logic/workflowEngine";
 import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
-import { sealRelease } from "../../store/release.functions";
+import { sealRelease, amendRelease } from "../../store/release.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Accession } from "../../domain/types";
 
@@ -20,6 +20,9 @@ export function ReleaseSection() {
   const [consultantReason, setConsultantReason] = useState("");
   const [sealing, setSealing] = useState(false);
   const [sealError, setSealError] = useState<string | null>(null);
+  const [amendmentReason, setAmendmentReason] = useState("");
+  const [amending, setAmending] = useState(false);
+  const [amendError, setAmendError] = useState<string | null>(null);
 
   if (!accession) {
     return (
@@ -31,7 +34,10 @@ export function ReleaseSection() {
 
   const v = runValidation(accession);
   const suggestedNext = nextSuggested(accession.workflowStatus);
-  const released = accession.release.state === ReleaseState.Released;
+  const released =
+    accession.release.state === ReleaseState.Released ||
+    accession.release.state === ReleaseState.Amended;
+  const amended = accession.release.state === ReleaseState.Amended;
 
   function advance(to: WorkflowStage) {
     if (!accession) return;
