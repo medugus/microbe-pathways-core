@@ -1,20 +1,25 @@
 // ReleaseSection — finalisation surface.
-// Phone-out is now a blocker for critical-comm pathways; consultant approval
-// is now a blocker for consultant-controlled specimens (e.g. CSF). Both must
-// be documented before the Release button enables.
+// Release sealing now runs on the server: the client calls sealRelease(),
+// the server re-validates against the persisted accession, computes the
+// SHA-256 seal, and writes both the immutable release_packages row and the
+// updated accession in one trip. The browser cannot bypass releaseAllowed.
 
 import { useState } from "react";
 import { useActiveAccession, meduguActions } from "../../store/useAccessionStore";
 import { runValidation } from "../../logic/validationEngine";
-import { attemptRelease } from "../../logic/releaseEngine";
 import { transition, nextSuggested } from "../../logic/workflowEngine";
 import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
+import { sealRelease } from "../../store/release.functions";
+import { supabase } from "@/integrations/supabase/client";
+import type { Accession } from "../../domain/types";
 
 export function ReleaseSection() {
   const accession = useActiveAccession();
   const [consultantName, setConsultantName] = useState("");
   const [consultantReason, setConsultantReason] = useState("");
+  const [sealing, setSealing] = useState(false);
+  const [sealError, setSealError] = useState<string | null>(null);
 
   if (!accession) {
     return (
