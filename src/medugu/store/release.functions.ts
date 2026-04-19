@@ -1,12 +1,12 @@
-// Server-authoritative release sealing.
+// Server-authoritative release sealing + amendment.
 //
-// The browser cannot bypass `releaseAllowed === false`: this server function
-// re-runs validation on the persisted accession before it freezes the package.
-// It computes a SHA-256 seal over the canonical body, inserts an immutable
-// release_packages row, and updates the accessions row to "released".
-//
-// Returns the frozen ReleasePackage + sealHash so the client can refresh its
-// cached copy without trusting any browser-side computation.
+// Two server functions:
+//   - sealRelease: first release. Re-runs validation, inserts immutable
+//     release_packages row v1+, sets release_state=released.
+//   - amendRelease: post-release correction. Requires amendmentReason,
+//     re-runs validation, inserts a NEW release_packages row at version+1
+//     (the previous row is immutable and remains as the historical record),
+//     sets release_state=amended. Audit row written by DB trigger.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -24,8 +24,6 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-// Server functions must return JSON-serializable shapes. We return the
-// updated accession as plain JSON (the client casts it back to Accession).
 export interface ReleaseSealResult {
   ok: boolean;
   reason?: string;
@@ -45,7 +43,6 @@ export const sealRelease = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ReleaseSealResult> => {
     const { supabase, userId } = context;
 
-    // 1. Load the accession (RLS scopes to caller's tenant).
     const { data: row, error: loadErr } = await supabase
       .from("accessions")
       .select("id, tenant_id, version, release_state, data")
@@ -53,13 +50,12 @@ export const sealRelease = createServerFn({ method: "POST" })
       .maybeSingle();
     if (loadErr) throw new Error(`Load failed: ${loadErr.message}`);
     if (!row) return { ok: false, reason: "Accession not found or not visible." };
-    if (row.release_state === ReleaseState.Released) {
+    if (row.release_state === ReleaseState.Released || row.release_state === ReleaseState.Amended) {
       return { ok: false, reason: "Already released — use amendment flow." };
     }
 
     const accession = row.data as unknown as Accession;
 
-    // 2. Server-authoritative validation. Client cannot bypass this.
     const v = runValidation(accession);
     if (!v.releaseAllowed) {
       return {
@@ -69,7 +65,6 @@ export const sealRelease = createServerFn({ method: "POST" })
       };
     }
 
-    // 3. Build the frozen body (deep clone via JSON.stringify roundtrip below).
     const preview = buildReportPreview(accession);
     const nextVersion = (accession.release.reportVersion ?? 0) + 1;
     const builtAt = new Date().toISOString();
@@ -86,7 +81,6 @@ export const sealRelease = createServerFn({ method: "POST" })
       buildVersion: accession.buildVersion,
     };
 
-    // 4. Append-only insert into release_packages. Trigger writes audit.
     const { error: insErr } = await supabase.from("release_packages").insert({
       tenant_id: row.tenant_id,
       accession_id: row.id,
@@ -101,11 +95,9 @@ export const sealRelease = createServerFn({ method: "POST" })
       body_sha256: sealHash,
     } as never);
     if (insErr) {
-      // 23505 = duplicate version — treat as race; refuse rather than overwrite.
       return { ok: false, reason: `Seal insert failed: ${insErr.message}` };
     }
 
-    // 5. Update the accession to released, embedding the sealed package.
     const releasedAccession: Accession = {
       ...accession,
       releasePackage: pkg,
@@ -142,5 +134,145 @@ export const sealRelease = createServerFn({ method: "POST" })
       reportVersion: nextVersion,
       builtAt,
       accessionJson: JSON.stringify(releasedAccession),
+    };
+  });
+
+/**
+ * amendRelease — post-release correction.
+ *
+ * Pre-conditions: accession.release.state ∈ {released, amended} and validation
+ * still passes against the (possibly edited) accession body. Requires a
+ * non-empty amendmentReason for non-repudiation.
+ *
+ * Effect: inserts a NEW release_packages row at v+1 (the prior row stays
+ * immutable as the historical version), bumps report_version on the
+ * accession, sets release_state=amended, and writes a release.amended
+ * audit row directly (so the DB trigger's release.frozen + this explicit
+ * release.amended together form the amendment trail).
+ */
+export const amendRelease = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { accessionRowId: string; amendmentReason: string }) =>
+    z
+      .object({
+        accessionRowId: z.string().uuid(),
+        amendmentReason: z.string().min(4).max(500),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }): Promise<ReleaseSealResult> => {
+    const { supabase, userId } = context;
+
+    const { data: row, error: loadErr } = await supabase
+      .from("accessions")
+      .select("id, tenant_id, version, release_state, data, report_version")
+      .eq("id", data.accessionRowId)
+      .maybeSingle();
+    if (loadErr) throw new Error(`Load failed: ${loadErr.message}`);
+    if (!row) return { ok: false, reason: "Accession not found or not visible." };
+    if (
+      row.release_state !== ReleaseState.Released &&
+      row.release_state !== ReleaseState.Amended
+    ) {
+      return { ok: false, reason: "Cannot amend — accession has not been released." };
+    }
+
+    const accession = row.data as unknown as Accession;
+
+    // Re-run validation: an amendment must still pass the same gates.
+    const v = runValidation(accession);
+    if (!v.releaseAllowed) {
+      return {
+        ok: false,
+        reason: `Amendment blocked by ${v.blockers.length} blocker(s).`,
+        blockerCodes: v.blockers.map((b) => b.code),
+      };
+    }
+
+    const preview = buildReportPreview(accession);
+    const nextVersion = (row.report_version ?? accession.release.reportVersion ?? 1) + 1;
+    const builtAt = new Date().toISOString();
+    const canonicalBody = JSON.stringify(preview);
+    const sealHash = await sha256Hex(canonicalBody);
+
+    const pkg: ReleasePackage = {
+      builtAt,
+      version: nextVersion,
+      body: JSON.parse(canonicalBody),
+      ruleVersion: accession.ruleVersion,
+      breakpointVersion: accession.breakpointVersion,
+      exportVersion: accession.exportVersion,
+      buildVersion: accession.buildVersion,
+    };
+
+    const { error: insErr } = await supabase.from("release_packages").insert({
+      tenant_id: row.tenant_id,
+      accession_id: row.id,
+      version: nextVersion,
+      built_at: builtAt,
+      built_by: userId,
+      body: pkg.body as never,
+      rule_version: { value: pkg.ruleVersion } as never,
+      breakpoint_version: pkg.breakpointVersion,
+      export_version: pkg.exportVersion,
+      build_version: pkg.buildVersion,
+      body_sha256: sealHash,
+    } as never);
+    if (insErr) {
+      return { ok: false, reason: `Amendment insert failed: ${insErr.message}` };
+    }
+
+    const amendedAccession: Accession = {
+      ...accession,
+      releasePackage: pkg,
+      release: {
+        ...accession.release,
+        state: ReleaseState.Amended,
+        releasedAt: builtAt,
+        releasedBy: userId,
+        reportVersion: nextVersion,
+        sealHash,
+        amendmentReason: data.amendmentReason,
+      },
+      releasedAt: builtAt,
+      releasingActor: userId,
+      updatedAt: builtAt,
+    };
+
+    const { error: updErr } = await supabase
+      .from("accessions")
+      .update({
+        stage: amendedAccession.workflowStatus,
+        release_state: ReleaseState.Amended,
+        report_version: nextVersion,
+        data: amendedAccession as never,
+        version: row.version + 1,
+        updated_by: userId,
+      } as never)
+      .eq("id", row.id)
+      .eq("version", row.version);
+    if (updErr) return { ok: false, reason: `Update failed: ${updErr.message}` };
+
+    // Explicit amendment audit (in addition to the release.frozen trigger row).
+    await supabase.from("audit_event").insert({
+      tenant_id: row.tenant_id,
+      actor_user_id: userId,
+      action: "release.amended",
+      entity: "release_package",
+      entity_id: `${row.id}:${nextVersion}`,
+      reason: data.amendmentReason,
+      new_value: {
+        version: nextVersion,
+        body_sha256: sealHash,
+        supersedes_version: nextVersion - 1,
+      } as never,
+    } as never);
+
+    return {
+      ok: true,
+      sealHash,
+      reportVersion: nextVersion,
+      builtAt,
+      accessionJson: JSON.stringify(amendedAccession),
     };
   });
