@@ -103,28 +103,56 @@ export type MicroscopyFinding = Microscopy;
 
 // ---------- Isolate ----------
 
+export type IsolateSignificance =
+  | "significant"
+  | "probable_contaminant"
+  | "mixed_growth"
+  | "normal_flora"
+  | "indeterminate";
+
 export interface Isolate {
   id: string;
   isolateNo: number;
   organismCode: string;
   organismDisplay: string;
+  /** Coded growth quantifier (e.g. SCANTY, MODERATE, HEAVY, >1e5_CFU_ML). */
   growthQuantifierCode?: string;
+  /** Numeric colony count when measured; UI-only display formatted via helpers. */
+  colonyCountCfuPerMl?: number;
+  significance?: IsolateSignificance;
   purityFlag?: boolean;
+  /** True when this isolate participates in a mixed-growth context. */
+  mixedGrowth?: boolean;
   identifiedAt?: string;
   identificationMethodCode?: string;
+  notes?: string;
 }
 
 // ---------- AST ----------
+
+export type ASTStandard = "CLSI" | "EUCAST";
+export type ASTGovernanceState = "draft" | "interpreted" | "approved" | "released";
+export type ASTCascadeState = "primary" | "cascade_pending" | "cascaded" | "suppressed";
 
 export interface ASTResult {
   id: string;
   isolateId: string;
   antibioticCode: string;
   method: ASTMethod;
+  /** Standard in force for this row — CLSI primary, EUCAST secondary by config. */
+  standard: ASTStandard;
+  /** Raw measurement value (MIC mg/L or zone mm depending on method). */
+  rawValue?: number;
+  rawUnit?: "mg/L" | "mm";
+  /** Convenience mirrors of rawValue for legacy readers. */
   micMgL?: number;
   zoneMm?: number;
   rawInterpretation?: ASTInterpretation;
   finalInterpretation?: ASTInterpretation;
+  /** Phase-2 placeholders — full engines populate in later phases. */
+  governance: ASTGovernanceState;
+  cascade: ASTCascadeState;
+  phenotypeCode?: string;
   ruleAppliedCode?: string;
   comment?: string;
 }
