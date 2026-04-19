@@ -137,7 +137,7 @@ export const accessionStore = {
       },
       accessionOrder: exists ? state.accessionOrder : [...state.accessionOrder, a.id],
     };
-    emit();
+    emit([a.id]);
   },
   removeAccession(id: string) {
     const next = { ...state.accessions };
@@ -151,7 +151,41 @@ export const accessionStore = {
     emit();
   },
   resetToSeed() {
-    state = freshState();
+    // Re-seed locally; cloudSync will push each one back to Postgres.
+    state = freshSeedState();
+    emit(state.accessionOrder);
+  },
+
+  /**
+   * Cloud hydration entrypoint. Called once per signed-in session by the
+   * <CloudHydrationGate>. Replaces local state with what RLS returns from
+   * Postgres for the current tenant; if the tenant is empty, cloudSync seeds
+   * it with the demo benchmark accessions and we re-read.
+   */
+  async hydrateFromTenant(tenantId: string) {
+    activeTenantId = tenantId;
+    const { accessions } = await hydrateFromCloud(tenantId);
+    const map: Record<string, Accession> = {};
+    const order: string[] = [];
+    for (const a of accessions) {
+      map[a.id] = a;
+      order.push(a.id);
+    }
+    state = {
+      ...state,
+      accessions: map,
+      accessionOrder: order,
+      activeAccessionId: order[0] ?? null,
+    };
+    emit();
+  },
+
+  /** Detach from the current tenant (called on sign-out). */
+  detachTenant() {
+    activeTenantId = null;
+    for (const t of pushTimers.values()) clearTimeout(t);
+    pushTimers.clear();
+    state = emptyState();
     emit();
   },
 
