@@ -61,6 +61,12 @@ export function SessionBar() {
         >
           Audit
         </Link>
+        <Link
+          to="/ipc"
+          className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          IPC
+        </Link>
         {hasRole("admin") && (
           <>
             <Link
