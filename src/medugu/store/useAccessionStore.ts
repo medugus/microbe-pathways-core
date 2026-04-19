@@ -22,6 +22,8 @@ export const meduguActions = {
   upsertAccession: accessionStore.upsertAccession,
   removeAccession: accessionStore.removeAccession,
   resetToSeed: accessionStore.resetToSeed,
+  hydrateFromTenant: accessionStore.hydrateFromTenant,
+  detachTenant: accessionStore.detachTenant,
   addIsolate: accessionStore.addIsolate,
   updateIsolate: accessionStore.updateIsolate,
   removeIsolate: accessionStore.removeIsolate,

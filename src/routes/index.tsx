@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/medugu/ui/AppShell";
 import { RequireAuth } from "@/auth/RequireAuth";
 import { SessionBar } from "@/auth/SessionBar";
+import { CloudHydrationGate } from "@/medugu/store/CloudHydrationGate";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,10 +21,12 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <RequireAuth>
-      <div className="min-h-screen bg-background">
-        <SessionBar />
-        <AppShell />
-      </div>
+      <CloudHydrationGate>
+        <div className="min-h-screen bg-background">
+          <SessionBar />
+          <AppShell />
+        </div>
+      </CloudHydrationGate>
     </RequireAuth>
   );
 }
