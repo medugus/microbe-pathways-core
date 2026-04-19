@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/medugu/ui/AppShell";
+import { RequireAuth } from "@/auth/RequireAuth";
+import { SessionBar } from "@/auth/SessionBar";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,5 +18,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  return <AppShell />;
+  return (
+    <RequireAuth>
+      <div className="min-h-screen bg-background">
+        <SessionBar />
+        <AppShell />
+      </div>
+    </RequireAuth>
+  );
 }
