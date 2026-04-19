@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 export function SessionBar() {
-  const { profile, roles, user, signOut } = useAuth();
+  const { profile, roles, user, signOut, hasRole } = useAuth();
   const [tenantName, setTenantName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,6 +61,14 @@ export function SessionBar() {
         >
           Audit
         </Link>
+        {hasRole("admin") && (
+          <Link
+            to="/admin/users"
+            className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            Users
+          </Link>
+        )}
         <Button
           size="sm"
           variant="ghost"
