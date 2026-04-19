@@ -21,6 +21,7 @@ export function IPCSection() {
   const accession = useActiveAccession();
   const [decisions, setDecisions] = useState<IPCDecision[] | null>(null);
   const [cohortSize, setCohortSize] = useState<number | null>(null);
+  const [persisted, setPersisted] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +55,7 @@ export function IPCSection() {
         }
         setDecisions(result.decisions ?? []);
         setCohortSize(result.cohortSize ?? 0);
+        setPersisted(result.persisted ?? 0);
       } catch (err) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : String(err));
@@ -107,13 +109,17 @@ export function IPCSection() {
       <header className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
           Triggered by organism + phenotype + ward + rolling window. Cross-accession
-          dedup performed server-side per MRN.
+          dedup performed server-side per MRN. Fresh signals are persisted to the
+          tenant-wide IPC dashboard.
         </p>
-        {cohortSize !== null && (
-          <span className="text-[10px] text-muted-foreground">
-            cohort: {cohortSize} prior case(s)
-          </span>
-        )}
+        <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground">
+          {cohortSize !== null && <span>cohort: {cohortSize} prior case(s)</span>}
+          {persisted !== null && persisted > 0 && (
+            <span className="text-primary">
+              {persisted} new episode(s) → dashboard
+            </span>
+          )}
+        </div>
       </header>
       <ul className="space-y-2">
         {decisions.map((d, idx) => (

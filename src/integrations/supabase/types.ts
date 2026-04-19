@@ -197,6 +197,93 @@ export type Database = {
           },
         ]
       }
+      ipc_signals: {
+        Row: {
+          accession_id: string
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          actions: Json
+          id: string
+          isolate_id: string
+          message: string
+          mrn: string | null
+          notify: Json
+          organism_code: string | null
+          phenotypes: Json
+          raised_at: string
+          raised_by: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          rule_code: string
+          status: string
+          tenant_id: string
+          timing: string
+          ward: string | null
+        }
+        Insert: {
+          accession_id: string
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          actions?: Json
+          id?: string
+          isolate_id: string
+          message: string
+          mrn?: string | null
+          notify?: Json
+          organism_code?: string | null
+          phenotypes?: Json
+          raised_at?: string
+          raised_by?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          rule_code: string
+          status?: string
+          tenant_id: string
+          timing: string
+          ward?: string | null
+        }
+        Update: {
+          accession_id?: string
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          actions?: Json
+          id?: string
+          isolate_id?: string
+          message?: string
+          mrn?: string | null
+          notify?: Json
+          organism_code?: string | null
+          phenotypes?: Json
+          raised_at?: string
+          raised_by?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          rule_code?: string
+          status?: string
+          tenant_id?: string
+          timing?: string
+          ward?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ipc_signals_accession_id_fkey"
+            columns: ["accession_id"]
+            isOneToOne: false
+            referencedRelation: "accessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ipc_signals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

@@ -94,6 +94,8 @@ export interface IPCServerResult {
   decisions?: IPCDecision[];
   /** Number of prior accessions for the same MRN considered for dedup. */
   cohortSize?: number;
+  /** Number of fresh signals written into ipc_signals on this scan. */
+  persisted?: number;
 }
 
 export const evaluateIPCServer = createServerFn({ method: "POST" })
@@ -137,9 +139,63 @@ export const evaluateIPCServer = createServerFn({ method: "POST" })
 
     const report = evaluateIPC(targetAccession, cohortMap);
 
+    // Persist fresh signals (isNewEpisode === true) into the tenant-wide
+    // ipc_signals table so the IPC team has a durable open-episode dashboard.
+    // Dedupe is handled both by the engine (rolling window per MRN) and by the
+    // table's UNIQUE (accession_id, isolate_id, rule_code) constraint, so the
+    // same scan can re-run safely without producing duplicate rows.
+    let persisted = 0;
+    const fresh = report.decisions.filter((d) => d.isNewEpisode);
+    if (fresh.length > 0) {
+      // Need tenant_id for the insert — load it via the row id (RLS-safe).
+      const { data: tenantRow } = await supabase
+        .from("accessions")
+        .select("tenant_id")
+        .eq("id", data.accessionRowId)
+        .maybeSingle();
+      const tenantId = tenantRow?.tenant_id as string | undefined;
+      if (tenantId) {
+        const ward = targetAccession.patient.ward ?? null;
+        const mrnVal = targetAccession.patient.mrn ?? null;
+        const rows = fresh.map((d) => ({
+          tenant_id: tenantId,
+          accession_id: data.accessionRowId,
+          isolate_id: d.isolateId,
+          rule_code: d.ruleCode,
+          organism_code: d.organismCode ?? null,
+          phenotypes: d.phenotypes as unknown as object,
+          message: d.message,
+          timing: d.timing,
+          actions: d.actions as unknown as object,
+          notify: d.notify as unknown as object,
+          mrn: mrnVal,
+          ward,
+          raised_by: context.userId,
+        }));
+        const { error: insErr, count } = await (supabase.from("ipc_signals") as any)
+          .upsert(rows, {
+            onConflict: "accession_id,isolate_id,rule_code",
+            ignoreDuplicates: true,
+            count: "exact",
+          });
+        if (insErr) {
+          // Don't fail the whole scan — surface in reason but still return decisions.
+          return {
+            ok: true,
+            decisions: report.decisions,
+            cohortSize: cohort.length,
+            persisted: 0,
+            reason: `Persist warning: ${insErr.message}`,
+          };
+        }
+        persisted = count ?? 0;
+      }
+    }
+
     return {
       ok: true,
       decisions: report.decisions,
       cohortSize: cohort.length,
+      persisted,
     };
   });

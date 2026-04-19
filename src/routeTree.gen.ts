@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as IpcRouteImport } from './routes/ipc'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -24,6 +25,11 @@ const SignupRoute = SignupRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IpcRoute = IpcRouteImport.update({
+  id: '/ipc',
+  path: '/ipc',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuditRoute = AuditRouteImport.update({
@@ -50,6 +56,7 @@ const AdminReceiversRoute = AdminReceiversRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/audit': typeof AuditRoute
+  '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/admin/receivers': typeof AdminReceiversRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/audit': typeof AuditRoute
+  '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/admin/receivers': typeof AdminReceiversRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/audit': typeof AuditRoute
+  '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/admin/receivers': typeof AdminReceiversRoute
@@ -77,6 +86,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/audit'
+    | '/ipc'
     | '/login'
     | '/signup'
     | '/admin/receivers'
@@ -85,6 +95,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/audit'
+    | '/ipc'
     | '/login'
     | '/signup'
     | '/admin/receivers'
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/audit'
+    | '/ipc'
     | '/login'
     | '/signup'
     | '/admin/receivers'
@@ -102,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuditRoute: typeof AuditRoute
+  IpcRoute: typeof IpcRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   AdminReceiversRoute: typeof AdminReceiversRoute
@@ -122,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ipc': {
+      id: '/ipc'
+      path: '/ipc'
+      fullPath: '/ipc'
+      preLoaderRoute: typeof IpcRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/audit': {
@@ -158,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuditRoute: AuditRoute,
+  IpcRoute: IpcRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   AdminReceiversRoute: AdminReceiversRoute,
