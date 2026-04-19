@@ -1,5 +1,7 @@
 // ASTSection — entry editor linked to active isolates.
-// Engine logic stays in logic/astDrafting.ts; UI is a thin shell.
+// Engine logic stays in logic/astDrafting.ts; expert-rule application is
+// performed server-side via applyExpertRulesServer so the browser cannot
+// fabricate phenotype flags.
 
 import { useState } from "react";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
@@ -7,7 +9,9 @@ import { ANTIBIOTICS, getAntibiotic } from "../../config/antibiotics";
 import { PRIMARY_STANDARD, SECONDARY_STANDARD } from "../../config/breakpoints";
 import { buildASTResult } from "../../logic/astDrafting";
 import { ASTMethod } from "../../domain/enums";
-import type { ASTGovernanceState, ASTStandard } from "../../domain/types";
+import type { Accession, ASTGovernanceState, ASTStandard } from "../../domain/types";
+import { applyExpertRulesServer } from "../../store/engines.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 const METHOD_OPTIONS: { code: ASTMethod; label: string }[] = [
   { code: ASTMethod.DiskDiffusion, label: "Disk diffusion (mm)" },
@@ -26,6 +30,9 @@ export function ASTSection() {
   const [method, setMethod] = useState<ASTMethod>(ASTMethod.DiskDiffusion);
   const [standard, setStandard] = useState<ASTStandard>(PRIMARY_STANDARD);
   const [rawValue, setRawValue] = useState<string>("");
+  const [applying, setApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [appliedSummary, setAppliedSummary] = useState<string | null>(null);
 
   if (!accession) {
     return (
@@ -65,20 +72,35 @@ export function ASTSection() {
     rows: accession.ast.filter((a) => a.isolateId === iso.id),
   }));
 
-  function applyExpertRules() {
+  async function applyExpertRules() {
     if (!accession) return;
-    // Build patches by evaluating all isolates and merging row patches.
-    // Using dynamic require would defeat tree-shaking; import inline.
-    import("../../logic/astEngine").then(({ evaluateAccession }) => {
-      const outputs = evaluateAccession(accession);
-      const merged: Record<string, Partial<typeof accession.ast[number]>> = {};
-      for (const o of outputs) {
-        for (const [rid, p] of Object.entries(o.rowPatches)) {
-          merged[rid] = { ...(merged[rid] ?? {}), ...p };
-        }
+    setApplyError(null);
+    setAppliedSummary(null);
+    setApplying(true);
+    try {
+      const { data: row, error } = await supabase
+        .from("accessions")
+        .select("id")
+        .eq("accession_code", accession.accessionNumber)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row) throw new Error("Accession not yet synced — try again in a moment.");
+
+      const result = await applyExpertRulesServer({
+        data: { accessionRowId: row.id as string },
+      });
+      if (!result.ok || !result.accessionJson) {
+        setApplyError(result.reason ?? "Server rejected expert-rule run.");
+        return;
       }
-      meduguActions.applyExpertRules(accession.id, merged);
-    });
+      const next = JSON.parse(result.accessionJson) as Accession;
+      meduguActions.upsertAccession(next);
+      setAppliedSummary(`Applied — ${result.patched ?? 0} row(s) patched on server.`);
+    } catch (err) {
+      setApplyError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setApplying(false);
+    }
   }
 
   return (
@@ -157,14 +179,25 @@ export function ASTSection() {
           <button
             type="button"
             onClick={applyExpertRules}
-            className="rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+            disabled={applying}
+            className="rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
           >
-            Apply expert rules
+            {applying ? "Applying on server…" : "Apply expert rules"}
           </button>
           <span className="text-[11px] text-muted-foreground">
-            Runs MRSA / ESBL / CRE / VRE / ICR / intrinsic / AmpC / unusual-antibiogram inference and writes phenotype + cascade decisions.
+            Server re-runs MRSA / ESBL / CRE / VRE / ICR / intrinsic / AmpC inference and writes phenotype + cascade decisions.
           </span>
         </div>
+        {applyError && (
+          <p className="md:col-span-6 text-[11px] text-destructive">
+            Server rejected: {applyError}
+          </p>
+        )}
+        {appliedSummary && (
+          <p className="md:col-span-6 text-[11px] text-muted-foreground">
+            {appliedSummary}
+          </p>
+        )}
       </div>
 
       {/* Per-isolate AST tables */}

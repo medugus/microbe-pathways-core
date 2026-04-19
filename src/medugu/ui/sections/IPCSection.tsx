@@ -1,8 +1,14 @@
 // IPCSection — visualises IPC engine output per isolate.
-// Logic in logic/ipcEngine.ts; this is a thin presentation shell.
+// The IPC scan now runs on the server and queries every accession in the
+// tenant for cross-accession rolling-window dedup (the browser store only
+// ever held the cases this device had hydrated, which produced wrong
+// dedup results in any multi-device session).
 
-import { useActiveAccession, useMeduguState } from "../../store/useAccessionStore";
-import { evaluateIPC } from "../../logic/ipcEngine";
+import { useEffect, useState } from "react";
+import { useActiveAccession } from "../../store/useAccessionStore";
+import { evaluateIPCServer } from "../../store/engines.functions";
+import { supabase } from "@/integrations/supabase/client";
+import type { IPCDecision } from "../../logic/ipcEngine";
 
 const TIMING_TONE: Record<string, string> = {
   immediate: "bg-destructive/20 text-destructive",
@@ -13,7 +19,54 @@ const TIMING_TONE: Record<string, string> = {
 
 export function IPCSection() {
   const accession = useActiveAccession();
-  const all = useMeduguState();
+  const [decisions, setDecisions] = useState<IPCDecision[] | null>(null);
+  const [cohortSize, setCohortSize] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Re-run server scan whenever the active accession or its isolate set changes.
+  const accessionId = accession?.id ?? null;
+  const isolateSig = accession?.isolates.map((i) => `${i.id}:${i.organismCode}`).join(",") ?? "";
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      if (!accession) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const { data: row, error: lookupErr } = await supabase
+          .from("accessions")
+          .select("id")
+          .eq("accession_code", accession.accessionNumber)
+          .maybeSingle();
+        if (lookupErr) throw new Error(lookupErr.message);
+        if (!row) throw new Error("Accession not yet synced.");
+        const result = await evaluateIPCServer({
+          data: { accessionRowId: row.id as string },
+        });
+        if (cancelled) return;
+        if (!result.ok) {
+          setError(result.reason ?? "Server rejected IPC scan.");
+          setDecisions([]);
+          setCohortSize(null);
+          return;
+        }
+        setDecisions(result.decisions ?? []);
+        setCohortSize(result.cohortSize ?? 0);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessionId, isolateSig, accession]);
+
   if (!accession) {
     return (
       <div className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -21,25 +74,49 @@ export function IPCSection() {
       </div>
     );
   }
-  const report = evaluateIPC(accession, all.accessions);
 
-  if (report.decisions.length === 0) {
+  if (loading && decisions === null) {
+    return <p className="text-sm text-muted-foreground">Running IPC scan on server…</p>;
+  }
+
+  if (error) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No IPC signals — no alert organism, phenotype, or ward trigger matched.
+      <p className="text-sm text-destructive">
+        IPC scan failed: {error}
       </p>
+    );
+  }
+
+  if (!decisions || decisions.length === 0) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">
+          No IPC signals — no alert organism, phenotype, or ward trigger matched.
+        </p>
+        {cohortSize !== null && (
+          <p className="text-[10px] text-muted-foreground">
+            Server scanned {cohortSize} prior accession(s) for this MRN across the tenant.
+          </p>
+        )}
+      </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <header>
+      <header className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          Triggered by organism + phenotype + ward + rolling window. Episode dedup applied per MRN.
+          Triggered by organism + phenotype + ward + rolling window. Cross-accession
+          dedup performed server-side per MRN.
         </p>
+        {cohortSize !== null && (
+          <span className="text-[10px] text-muted-foreground">
+            cohort: {cohortSize} prior case(s)
+          </span>
+        )}
       </header>
       <ul className="space-y-2">
-        {report.decisions.map((d, idx) => (
+        {decisions.map((d, idx) => (
           <li
             key={`${d.isolateId}-${d.ruleCode}-${idx}`}
             className="rounded-md border border-border bg-card p-3"
