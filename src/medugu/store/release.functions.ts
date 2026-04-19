@@ -15,6 +15,7 @@ import type { Accession, ReleasePackage } from "../domain/types";
 import { ReleaseState } from "../domain/enums";
 import { runValidation } from "../logic/validationEngine";
 import { buildReportPreview } from "../logic/reportPreview";
+import { autoDispatchRelease, type AutoDispatchResult } from "./export.functions";
 
 async function sha256Hex(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input);
@@ -33,6 +34,8 @@ export interface ReleaseSealResult {
   builtAt?: string;
   /** Serialized Accession — client treats as `Accession`. */
   accessionJson?: string;
+  /** Per-receiver auto-dispatch outcome (one entry per enabled receiver). */
+  autoDispatch?: AutoDispatchResult[];
 }
 
 export const sealRelease = createServerFn({ method: "POST" })
