@@ -224,13 +224,24 @@ export function ReleaseSection() {
           </div>
           <button
             type="button"
-            disabled={!v.releaseAllowed || released}
+            disabled={!v.releaseAllowed || released || sealing}
             onClick={release}
             className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
-            {released ? "Released" : v.releaseAllowed ? "Release report" : "Release blocked"}
+            {released
+              ? "Released"
+              : sealing
+                ? "Sealing on server…"
+                : v.releaseAllowed
+                  ? "Release report"
+                  : "Release blocked"}
           </button>
         </div>
+        {sealError && (
+          <p className="mt-2 text-[11px] text-destructive">
+            Server rejected release: {sealError}
+          </p>
+        )}
         {!v.releaseAllowed && !released && (
           <ul className="mt-2 space-y-1 text-[11px] text-destructive">
             {v.blockers.map((b) => (
@@ -254,13 +265,15 @@ export function ReleaseSection() {
     breakpointVersion: accession.releasePackage.breakpointVersion,
     exportVersion: accession.releasePackage.exportVersion,
     buildVersion: accession.releasePackage.buildVersion,
+    sealHash: accession.release.sealHash,
   },
   null,
   2,
 )}
           </pre>
           <p className="mt-1 text-[10px] text-muted-foreground">
-            Snapshot is immutable; subsequent live edits do not affect this package.
+            Snapshot is immutable; the SHA-256 seal is server-issued and stored
+            in the append-only release_packages table.
           </p>
         </section>
       )}
