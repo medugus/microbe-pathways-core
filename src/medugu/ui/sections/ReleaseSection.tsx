@@ -391,6 +391,13 @@ export function ReleaseSection() {
           </div>
         </section>
       )}
+
+      {accessionRowId && (
+        <ReleaseHistoryPanel
+          key={`${accessionRowId}-${historyKey}`}
+          accessionRowId={accessionRowId}
+        />
+      )}
     </div>
   );
 }
