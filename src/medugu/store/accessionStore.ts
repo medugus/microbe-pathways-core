@@ -106,7 +106,22 @@ function mutate(id: string, fn: (a: Accession) => Accession) {
   emit([id]);
 }
 
-function appendAudit(a: Accession, ev: Omit<AuditEvent, "id" | "at">): Accession {
+function appendAudit(
+  a: Accession,
+  ev: Omit<AuditEvent, "id" | "at">,
+  cloud?: { entity: Parameters<typeof recordAuditAsync>[0]["entity"]; entityId?: string | null },
+): Accession {
+  // Fire-and-forget durable audit write (RLS-scoped to current tenant).
+  recordAuditAsync({
+    action: ev.action,
+    entity: cloud?.entity ?? "accession",
+    entityId: cloud?.entityId ?? a.id,
+    field: ev.field ?? null,
+    oldValue: ev.oldValue,
+    newValue: ev.newValue,
+    reason: ev.reason ?? null,
+    actorLabel: ev.actor ?? null,
+  });
   return {
     ...a,
     audit: [
