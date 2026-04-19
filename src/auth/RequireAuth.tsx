@@ -13,13 +13,17 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const location = useRouterState({ select: (s) => s.location });
 
   useEffect(() => {
-    if (!loading && !session) {
-      void navigate({
-        to: "/login",
-        search: { redirect: location.href },
-      });
-    }
-  }, [loading, session, navigate, location.href]);
+    if (loading) return;
+    if (session) return;
+    // Don't push a redirect back to /login or /signup — would loop.
+    const target = location.pathname;
+    if (target.startsWith("/login") || target.startsWith("/signup")) return;
+    void navigate({
+      to: "/login",
+      search: { redirect: target },
+      replace: true,
+    });
+  }, [loading, session, navigate, location.pathname]);
 
   if (loading || !session) {
     return (
