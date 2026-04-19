@@ -19,9 +19,24 @@ interface PackageRow {
   export_version: string;
 }
 
+interface DeliveryRow {
+  id: string;
+  release_package_id: string;
+  receiver_id: string;
+  format: string;
+  http_status: number | null;
+  error_message: string | null;
+  dispatched_at: string;
+}
+
+interface DeliveryEntry extends DeliveryRow {
+  receiverName: string;
+}
+
 interface HistoryEntry extends PackageRow {
   builtByName: string | null;
   amendmentReason: string | null;
+  deliveries: DeliveryEntry[];
 }
 
 interface Props {
@@ -97,10 +112,46 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
           }
         }
 
+        // 4. Pull export_deliveries for these release packages and join the
+        // receiver name so each row can show the dispatch outcome inline.
+        const pkgIds = packages.map((p) => p.id);
+        const deliveriesByPkg = new Map<string, DeliveryEntry[]>();
+        if (pkgIds.length > 0) {
+          const { data: dels } = await supabase
+            .from("export_deliveries")
+            .select(
+              "id, release_package_id, receiver_id, format, http_status, error_message, dispatched_at",
+            )
+            .in("release_package_id", pkgIds)
+            .order("dispatched_at", { ascending: false });
+          const delRows = (dels ?? []) as DeliveryRow[];
+          const receiverIds = Array.from(new Set(delRows.map((d) => d.receiver_id)));
+          const receiverNameById = new Map<string, string>();
+          if (receiverIds.length > 0) {
+            const { data: rcvs } = await supabase
+              .from("receivers")
+              .select("id, name")
+              .in("id", receiverIds);
+            for (const r of rcvs ?? []) {
+              receiverNameById.set(r.id as string, (r.name as string) ?? "—");
+            }
+          }
+          for (const d of delRows) {
+            const enriched: DeliveryEntry = {
+              ...d,
+              receiverName: receiverNameById.get(d.receiver_id) ?? "(unknown receiver)",
+            };
+            const list = deliveriesByPkg.get(d.release_package_id) ?? [];
+            list.push(enriched);
+            deliveriesByPkg.set(d.release_package_id, list);
+          }
+        }
+
         const merged: HistoryEntry[] = packages.map((p) => ({
           ...p,
           builtByName: p.built_by ? (nameById.get(p.built_by) ?? null) : null,
           amendmentReason: reasonByVersion.get(p.version) ?? null,
+          deliveries: deliveriesByPkg.get(p.id) ?? [],
         }));
 
         if (!cancelled) setEntries(merged);
@@ -170,6 +221,45 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                   <span className="text-muted-foreground">Reason: </span>
                   <span className="italic">{e.amendmentReason}</span>
                 </p>
+              )}
+              {e.deliveries.length > 0 && (
+                <div className="mt-2 border-t border-border pt-2">
+                  <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Dispatches ({e.deliveries.length})
+                  </div>
+                  <ul className="space-y-1">
+                    {e.deliveries.map((d) => {
+                      const ok = d.http_status !== null && d.http_status >= 200 && d.http_status < 300;
+                      return (
+                        <li
+                          key={d.id}
+                          className="flex flex-wrap items-center gap-2 text-[10px]"
+                        >
+                          <span
+                            className={`rounded px-1.5 py-0.5 font-mono font-semibold ${
+                              ok
+                                ? "bg-primary/15 text-primary"
+                                : "bg-destructive/15 text-destructive"
+                            }`}
+                          >
+                            {ok ? "OK" : "FAIL"}
+                          </span>
+                          <span className="font-medium text-foreground">{d.receiverName}</span>
+                          <span className="text-muted-foreground">[{d.format}]</span>
+                          <span className="text-muted-foreground">
+                            HTTP {d.http_status ?? "—"}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {new Date(d.dispatched_at).toLocaleString()}
+                          </span>
+                          {!ok && d.error_message && (
+                            <span className="text-destructive">— {d.error_message}</span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               )}
             </li>
           ))}

@@ -11,6 +11,7 @@ import { transition, nextSuggested } from "../../logic/workflowEngine";
 import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
 import { sealRelease, amendRelease } from "../../store/release.functions";
+import type { AutoDispatchResult } from "../../store/export.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Accession } from "../../domain/types";
 import { ReleaseHistoryPanel } from "./ReleaseHistoryPanel";
@@ -26,6 +27,7 @@ export function ReleaseSection() {
   const [amendError, setAmendError] = useState<string | null>(null);
   const [accessionRowId, setAccessionRowId] = useState<string | null>(null);
   const [historyKey, setHistoryKey] = useState(0);
+  const [autoDispatch, setAutoDispatch] = useState<AutoDispatchResult[] | null>(null);
 
   // Resolve the postgres row id once per accession so the history panel can
   // query release_packages by FK without re-issuing the lookup on every render.
@@ -124,6 +126,7 @@ export function ReleaseSection() {
       // Replace the local copy with the server-issued sealed accession.
       const sealed = JSON.parse(result.accessionJson) as Accession;
       meduguActions.upsertAccession(sealed);
+      setAutoDispatch(result.autoDispatch ?? []);
       setHistoryKey((k) => k + 1);
     } catch (err) {
       setSealError(err instanceof Error ? err.message : String(err));
@@ -163,6 +166,7 @@ export function ReleaseSection() {
       const amended = JSON.parse(result.accessionJson) as Accession;
       meduguActions.upsertAccession(amended);
       setAmendmentReason("");
+      setAutoDispatch(result.autoDispatch ?? []);
       setHistoryKey((k) => k + 1);
     } catch (err) {
       setAmendError(err instanceof Error ? err.message : String(err));
@@ -324,6 +328,50 @@ export function ReleaseSection() {
           </ul>
         )}
       </section>
+
+      {/* Auto-dispatch summary — shown after the most recent seal/amend
+          attempt this session. Persistent history lives in the Release
+          history panel below. */}
+      {autoDispatch !== null && (
+        <section className="rounded-md border border-border bg-background p-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Auto-dispatch on release
+          </h4>
+          {autoDispatch.length === 0 ? (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              No enabled receivers configured for this tenant — nothing to
+              dispatch. Configure receivers in /admin/receivers.
+            </p>
+          ) : (
+            <ul className="mt-2 space-y-1.5">
+              {autoDispatch.map((d) => (
+                <li
+                  key={d.receiverId}
+                  className="flex flex-wrap items-center gap-2 text-[11px]"
+                >
+                  <span
+                    className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+                      d.ok
+                        ? "bg-primary/15 text-primary"
+                        : "bg-destructive/15 text-destructive"
+                    }`}
+                  >
+                    {d.ok ? "OK" : "FAIL"}
+                  </span>
+                  <span className="font-medium text-foreground">{d.receiverName}</span>
+                  <span className="text-muted-foreground">[{d.format}]</span>
+                  {d.httpStatus !== undefined && (
+                    <span className="text-muted-foreground">HTTP {d.httpStatus}</span>
+                  )}
+                  {!d.ok && d.reason && (
+                    <span className="text-destructive">— {d.reason}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {accession.releasePackage && (
         <section>
