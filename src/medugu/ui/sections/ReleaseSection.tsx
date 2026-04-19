@@ -11,6 +11,7 @@ import { transition, nextSuggested } from "../../logic/workflowEngine";
 import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
 import { sealRelease, amendRelease } from "../../store/release.functions";
+import type { AutoDispatchResult } from "../../store/export.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Accession } from "../../domain/types";
 import { ReleaseHistoryPanel } from "./ReleaseHistoryPanel";
@@ -26,6 +27,7 @@ export function ReleaseSection() {
   const [amendError, setAmendError] = useState<string | null>(null);
   const [accessionRowId, setAccessionRowId] = useState<string | null>(null);
   const [historyKey, setHistoryKey] = useState(0);
+  const [autoDispatch, setAutoDispatch] = useState<AutoDispatchResult[] | null>(null);
 
   // Resolve the postgres row id once per accession so the history panel can
   // query release_packages by FK without re-issuing the lookup on every render.
