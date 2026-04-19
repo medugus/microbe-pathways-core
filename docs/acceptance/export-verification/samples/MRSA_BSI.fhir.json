@@ -1,0 +1,107 @@
+{
+  "_comment": "Illustrative sample. Regenerate from the running app: open MB25-EF34GH, record phone-out, release, then Export section → FHIR R4 Bundle (JSON) → Download.",
+  "resourceType": "Bundle",
+  "type": "collection",
+  "meta": {
+    "lastUpdated": "2026-04-19T10:15:00Z",
+    "tag": [
+      { "system": "https://medugu.local/version/rule", "code": "RULE_VERSION" },
+      { "system": "https://medugu.local/version/breakpoint", "code": "BREAKPOINT_VERSION" },
+      { "system": "https://medugu.local/version/export", "code": "EXPORT_VERSION" },
+      { "system": "https://medugu.local/version/build", "code": "BUILD_VERSION" }
+    ]
+  },
+  "entry": [
+    {
+      "fullUrl": "Patient/MB25-EF34GH-PT",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "MB25-EF34GH-PT",
+        "identifier": [{ "system": "urn:mrn", "value": "MRN-EF34GH" }],
+        "name": [{ "family": "Example", "given": ["Patient"] }],
+        "gender": "female",
+        "birthDate": "1962-04-11"
+      }
+    },
+    {
+      "fullUrl": "Specimen/MB25-EF34GH-SP",
+      "resource": {
+        "resourceType": "Specimen",
+        "id": "MB25-EF34GH-SP",
+        "type": { "text": "Blood culture — central line" },
+        "collection": { "collectedDateTime": "2026-04-18T22:40:00Z" },
+        "subject": { "reference": "Patient/MB25-EF34GH-PT" }
+      }
+    },
+    {
+      "fullUrl": "Observation/MB25-EF34GH-ISO-1",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "MB25-EF34GH-ISO-1",
+        "status": "final",
+        "code": { "text": "Organism identification" },
+        "valueCodeableConcept": { "text": "Staphylococcus aureus" },
+        "interpretation": [{ "text": "significant" }],
+        "component": [
+          { "code": { "text": "phenotype" }, "valueString": "MRSA" },
+          { "code": { "text": "phenotype" }, "valueString": "inducible_clindamycin_R" }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/MB25-EF34GH-AST-VAN",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "MB25-EF34GH-AST-VAN",
+        "status": "final",
+        "code": { "text": "VAN — Vancomycin" },
+        "valueCodeableConcept": { "text": "S" },
+        "method": { "text": "MIC" },
+        "referenceRange": [{ "text": "EUCAST 2025" }],
+        "note": [{ "text": "expertRulesFired: []" }]
+      }
+    },
+    {
+      "fullUrl": "Observation/MB25-EF34GH-AST-AMP",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "MB25-EF34GH-AST-AMP",
+        "status": "final",
+        "code": { "text": "AMP — Ampicillin" },
+        "dataAbsentReason": { "text": "masked" },
+        "note": [{ "text": "WITHHELD — Suppressed under MRSA rule (β-lactam class)" }]
+      }
+    },
+    {
+      "fullUrl": "Observation/MB25-EF34GH-AST-CRO",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "MB25-EF34GH-AST-CRO",
+        "status": "final",
+        "code": { "text": "CRO — Ceftriaxone" },
+        "dataAbsentReason": { "text": "masked" },
+        "note": [{ "text": "WITHHELD — Suppressed under MRSA rule (β-lactam class)" }]
+      }
+    },
+    {
+      "fullUrl": "DiagnosticReport/MB25-EF34GH",
+      "resource": {
+        "resourceType": "DiagnosticReport",
+        "id": "MB25-EF34GH",
+        "status": "final",
+        "code": { "text": "Microbiology culture — blood" },
+        "subject": { "reference": "Patient/MB25-EF34GH-PT" },
+        "specimen": [{ "reference": "Specimen/MB25-EF34GH-SP" }],
+        "effectiveDateTime": "2026-04-19T09:45:00Z",
+        "issued": "2026-04-19T10:15:00Z",
+        "result": [
+          { "reference": "Observation/MB25-EF34GH-ISO-1" },
+          { "reference": "Observation/MB25-EF34GH-AST-VAN" },
+          { "reference": "Observation/MB25-EF34GH-AST-AMP" },
+          { "reference": "Observation/MB25-EF34GH-AST-CRO" }
+        ],
+        "conclusion": "MRSA bacteraemia. Phone-out documented to clinical team. Vancomycin susceptible; β-lactam results suppressed per MRSA rule. IPC: contact precautions per MRSA_ALERT."
+      }
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "$schema": "https://medugu.local/schemas/scenario-matrix.v1.json",
+  "generatedAt": "2026-04-19",
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "MRSA_BSI",
+      "title": "MRSA bloodstream infection",
+      "accessionId": "MB25-EF34GH",
+      "expected": {
+        "rules": ["STA_MRSA"],
+        "phenotypes": ["MRSA"],
+        "blockers": ["PHONE_OUT_REQUIRED"],
+        "warnings": [],
+        "visibility": { "mustSuppress": ["AMP", "CRO"], "mustShow": ["VAN"] },
+        "export": { "availableAfterRelease": true },
+        "workflowPath": ["Accession", "Specimen", "Microscopy", "Isolate", "AST", "Validation", "Released"]
+      },
+      "metricsToCapture": ["clicks", "screenTransitions", "timeOnTaskMs", "ruleExplanationVisible", "blockersVisible", "exportAvailable"],
+      "result": { "status": "pending", "observedAt": null, "notes": "" }
+    },
+    {
+      "id": "ESBL_UTI",
+      "title": "ESBL urinary tract infection",
+      "accessionId": "MB25-AB12CD",
+      "expected": {
+        "rules": ["ENB_ESBL"],
+        "phenotypes": ["ESBL"],
+        "blockers": [],
+        "warnings": [],
+        "visibility": { "mustSuppress": ["CRO", "CAZ"], "mustShow": ["NIT", "FOS"] },
+        "export": { "availableAfterRelease": true },
+        "workflowPath": ["Accession", "Specimen", "Isolate", "AST", "Validation", "Released"]
+      },
+      "metricsToCapture": ["clicks", "screenTransitions", "timeOnTaskMs", "ruleExplanationVisible", "blockersVisible", "exportAvailable"],
+      "result": { "status": "pending", "observedAt": null, "notes": "" }
+    },
+    {
+      "id": "CRE_STERILE_SITE",
+      "title": "CRE sterile-site infection",
+      "accessionId": "MB25-CRE001",
+      "expected": {
+        "rules": ["ENB_CRE"],
+        "phenotypes": ["CRE", "carbapenemase_suspected"],
+        "blockers": ["PHONE_OUT_REQUIRED"],
+        "warnings": [],
+        "visibility": { "mustSuppress": [], "mustShow": ["MEM"] },
+        "export": { "availableAfterRelease": true },
+        "workflowPath": ["Accession", "Specimen", "Isolate", "AST", "Validation", "Released"]
+      },
+      "metricsToCapture": ["clicks", "screenTransitions", "timeOnTaskMs", "ruleExplanationVisible", "blockersVisible", "exportAvailable"],
+      "result": { "status": "pending", "observedAt": null, "notes": "" }
+    },
+    {
+      "id": "SPUTUM_BARTLETT_REJECT",
+      "title": "Sputum quality rejection (Bartlett)",
+      "accessionId": "MB25-NP78QR",
+      "expected": {
+        "rules": [],
+        "phenotypes": [],
+        "blockers": [],
+        "warnings": ["MIC_REQUIRED_MISSING"],
+        "visibility": { "mustSuppress": [], "mustShow": [] },
+        "export": { "availableAfterRelease": true },
+        "workflowPath": ["Accession", "Specimen", "Microscopy", "Released"]
+      },
+      "metricsToCapture": ["clicks", "screenTransitions", "timeOnTaskMs", "ruleExplanationVisible", "blockersVisible", "exportAvailable"],
+      "result": { "status": "pending", "observedAt": null, "notes": "" }
+    },
+    {
+      "id": "CSF_CONSULTANT_RELEASE",
+      "title": "CSF meningitis with consultant-controlled release",
+      "accessionId": "MB25-JK56LM",
+      "expected": {
+        "rules": [],
+        "phenotypes": [],
+        "blockers": ["CONSULTANT_APPROVAL_REQUIRED"],
+        "warnings": [],
+        "visibility": { "mustSuppress": ["NIT"], "mustShow": ["CRO"] },
+        "export": { "availableAfterRelease": true },
+        "workflowPath": ["Accession", "Specimen", "Microscopy", "Isolate", "AST", "Validation", "Released"]
+      },
+      "metricsToCapture": ["clicks", "screenTransitions", "timeOnTaskMs", "ruleExplanationVisible", "blockersVisible", "exportAvailable"],
+      "result": { "status": "pending", "observedAt": null, "notes": "" }
+    },
+    {
+      "id": "SCREEN_CLEARANCE",
+      "title": "Admission screening positivity & clearance",
+      "accessionId": "MB25-ST90UV",
+      "expected": {
+        "rules": [],
+        "phenotypes": [],
+        "blockers": [],
+        "warnings": [],
+        "visibility": { "mustSuppress": ["VAN", "MEM"], "mustShow": [] },
+        "export": { "availableAfterRelease": true },
+        "workflowPath": ["Accession", "Specimen", "Isolate", "Released"]
+      },
+      "metricsToCapture": ["clicks", "screenTransitions", "timeOnTaskMs", "ruleExplanationVisible", "blockersVisible", "exportAvailable"],
+      "result": { "status": "pending", "observedAt": null, "notes": "" }
+    }
+  ]
+}
