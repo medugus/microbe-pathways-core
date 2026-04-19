@@ -124,6 +124,7 @@ export function ReleaseSection() {
       // Replace the local copy with the server-issued sealed accession.
       const sealed = JSON.parse(result.accessionJson) as Accession;
       meduguActions.upsertAccession(sealed);
+      setHistoryKey((k) => k + 1);
     } catch (err) {
       setSealError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -162,6 +163,7 @@ export function ReleaseSection() {
       const amended = JSON.parse(result.accessionJson) as Accession;
       meduguActions.upsertAccession(amended);
       setAmendmentReason("");
+      setHistoryKey((k) => k + 1);
     } catch (err) {
       setAmendError(err instanceof Error ? err.message : String(err));
     } finally {
