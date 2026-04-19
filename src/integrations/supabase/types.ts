@@ -126,6 +126,77 @@ export type Database = {
           },
         ]
       }
+      export_deliveries: {
+        Row: {
+          accession_id: string
+          dispatched_at: string
+          dispatched_by: string | null
+          error_message: string | null
+          format: string
+          http_status: number | null
+          id: string
+          receiver_id: string
+          release_package_id: string
+          response_body: string | null
+          tenant_id: string
+        }
+        Insert: {
+          accession_id: string
+          dispatched_at?: string
+          dispatched_by?: string | null
+          error_message?: string | null
+          format: string
+          http_status?: number | null
+          id?: string
+          receiver_id: string
+          release_package_id: string
+          response_body?: string | null
+          tenant_id: string
+        }
+        Update: {
+          accession_id?: string
+          dispatched_at?: string
+          dispatched_by?: string | null
+          error_message?: string | null
+          format?: string
+          http_status?: number | null
+          id?: string
+          receiver_id?: string
+          release_package_id?: string
+          response_body?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_deliveries_accession_id_fkey"
+            columns: ["accession_id"]
+            isOneToOne: false
+            referencedRelation: "accessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_deliveries_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "receivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_deliveries_release_package_id_fkey"
+            columns: ["release_package_id"]
+            isOneToOne: false
+            referencedRelation: "release_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_deliveries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -154,6 +225,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receivers: {
+        Row: {
+          bearer_token: string | null
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          endpoint_url: string
+          format: string
+          id: string
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          bearer_token?: string | null
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          endpoint_url: string
+          format: string
+          id?: string
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          bearer_token?: string | null
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          endpoint_url?: string
+          format?: string
+          id?: string
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivers_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

@@ -1,7 +1,11 @@
 // ExportSection — surfaces governed FHIR / HL7 / normalised-JSON exports.
-// Client-side only; no network. Reads frozen ReleasePackage when present.
+// Local copy/download remain client-side. The "Dispatch to receiver" panel
+// hands off to the server, which loads the immutable release_packages row,
+// regenerates the payload server-side, POSTs it to the configured receiver
+// (with bearer token never exposed to the browser), and records the
+// delivery + audit row.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useActiveAccession } from "../../store/useAccessionStore";
 import {
   buildExport,
@@ -9,6 +13,26 @@ import {
   type ExportFormat,
 } from "../../logic/exportEngine";
 import { copyText, downloadText } from "../../utils/exportHelpers";
+import { dispatchExport } from "../../store/export.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { ReleaseState } from "../../domain/enums";
+
+interface ReceiverOpt {
+  id: string;
+  name: string;
+  format: ExportFormat;
+  enabled: boolean;
+  endpoint_url: string;
+}
+
+interface DeliveryRow {
+  id: string;
+  receiver_id: string;
+  format: string;
+  http_status: number | null;
+  error_message: string | null;
+  dispatched_at: string;
+}
 
 const FORMATS: { code: ExportFormat; label: string; hint: string }[] = [
   { code: "fhir", label: "FHIR R4 Bundle (JSON)", hint: "DiagnosticReport + Patient + Specimen + Observations" },
@@ -20,12 +44,80 @@ export function ExportSection() {
   const accession = useActiveAccession();
   const [active, setActive] = useState<ExportFormat>("fhir");
   const [copied, setCopied] = useState<string | null>(null);
+  const [receivers, setReceivers] = useState<ReceiverOpt[]>([]);
+  const [deliveries, setDeliveries] = useState<DeliveryRow[]>([]);
+  const [selectedReceiver, setSelectedReceiver] = useState<string>("");
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatchMsg, setDispatchMsg] = useState<string | null>(null);
+  const [dispatchOk, setDispatchOk] = useState<boolean | null>(null);
 
   const gate = useMemo(() => (accession ? evaluateExportGate(accession) : null), [accession]);
   const payload = useMemo(
     () => (accession && gate?.available ? buildExport(accession, active) : null),
     [accession, active, gate?.available],
   );
+
+  const isReleased =
+    accession?.release.state === ReleaseState.Released ||
+    accession?.release.state === ReleaseState.Amended;
+
+  // Load tenant receivers + this accession's prior deliveries.
+  useEffect(() => {
+    if (!accession) return;
+    void (async () => {
+      const [{ data: rcvs }, { data: row }] = await Promise.all([
+        supabase
+          .from("receivers")
+          .select("id, name, format, enabled, endpoint_url")
+          .order("name"),
+        supabase
+          .from("accessions")
+          .select("id")
+          .eq("accession_code", accession.accessionNumber)
+          .maybeSingle(),
+      ]);
+      setReceivers((rcvs ?? []) as ReceiverOpt[]);
+      if (row?.id) {
+        const { data: dlv } = await supabase
+          .from("export_deliveries")
+          .select("id, receiver_id, format, http_status, error_message, dispatched_at")
+          .eq("accession_id", row.id as string)
+          .order("dispatched_at", { ascending: false })
+          .limit(10);
+        setDeliveries((dlv ?? []) as DeliveryRow[]);
+      }
+    })();
+  }, [accession?.accessionNumber, dispatchMsg]);
+
+  async function dispatch() {
+    if (!accession || !selectedReceiver) return;
+    setDispatching(true);
+    setDispatchMsg(null);
+    setDispatchOk(null);
+    try {
+      const { data: row, error: lookupErr } = await supabase
+        .from("accessions")
+        .select("id")
+        .eq("accession_code", accession.accessionNumber)
+        .maybeSingle();
+      if (lookupErr) throw new Error(lookupErr.message);
+      if (!row) throw new Error("Accession not found in cloud.");
+      const result = await dispatchExport({
+        data: { accessionRowId: row.id as string, receiverId: selectedReceiver },
+      });
+      setDispatchOk(result.ok);
+      setDispatchMsg(
+        result.ok
+          ? `Delivered (HTTP ${result.httpStatus ?? "n/a"}).`
+          : `${result.reason ?? "Dispatch failed"} (HTTP ${result.httpStatus ?? "n/a"}).`,
+      );
+    } catch (e) {
+      setDispatchOk(false);
+      setDispatchMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDispatching(false);
+    }
+  }
 
   if (!accession) {
     return (
@@ -128,8 +220,93 @@ export function ExportSection() {
       )}
 
       <p className="text-[10px] text-muted-foreground">
-        All payloads are produced client-side. No data is transmitted to any server at the time of export.
+        Local copy/download is client-side. Server dispatch (below) regenerates
+        the payload from the immutable release package and records the delivery.
       </p>
+
+      {isReleased && (
+        <section className="rounded-md border border-border bg-card p-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Dispatch to receiver
+          </h4>
+          {receivers.length === 0 ? (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              No receivers configured. An admin can add one in /admin/receivers.
+            </p>
+          ) : (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <select
+                value={selectedReceiver}
+                onChange={(e) => setSelectedReceiver(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+              >
+                <option value="">Select receiver…</option>
+                {receivers.map((r) => (
+                  <option key={r.id} value={r.id} disabled={!r.enabled}>
+                    {r.name} · {r.format.toUpperCase()}
+                    {!r.enabled ? " (disabled)" : ""}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={dispatch}
+                disabled={!selectedReceiver || dispatching}
+                className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+              >
+                {dispatching ? "Dispatching on server…" : "Dispatch"}
+              </button>
+              {dispatchMsg && (
+                <span
+                  className={`text-[11px] ${
+                    dispatchOk ? "text-foreground" : "text-destructive"
+                  }`}
+                >
+                  {dispatchMsg}
+                </span>
+              )}
+            </div>
+          )}
+
+          {deliveries.length > 0 && (
+            <div className="mt-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Recent deliveries
+              </div>
+              <ul className="mt-1 space-y-1">
+                {deliveries.map((d) => {
+                  const ok =
+                    d.http_status !== null &&
+                    d.http_status >= 200 &&
+                    d.http_status < 300;
+                  const rcvName =
+                    receivers.find((r) => r.id === d.receiver_id)?.name ?? d.receiver_id;
+                  return (
+                    <li
+                      key={d.id}
+                      className="flex items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1 text-[11px]"
+                    >
+                      <span className="truncate">
+                        <span className="font-mono">{d.format.toUpperCase()}</span> →{" "}
+                        {rcvName}
+                      </span>
+                      <span
+                        className={`font-mono ${ok ? "text-foreground" : "text-destructive"}`}
+                      >
+                        {d.http_status ?? "ERR"}
+                        {d.error_message ? ` · ${d.error_message.slice(0, 40)}` : ""}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {new Date(d.dispatched_at).toLocaleString()}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

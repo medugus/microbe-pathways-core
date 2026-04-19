@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminReceiversRouteImport } from './routes/admin.receivers'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -40,12 +41,18 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminReceiversRoute = AdminReceiversRouteImport.update({
+  id: '/admin/receivers',
+  path: '/admin/receivers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/audit': typeof AuditRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/audit': typeof AuditRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,34 @@ export interface FileRoutesById {
   '/audit': typeof AuditRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/audit' | '/login' | '/signup' | '/admin/users'
+  fullPaths:
+    | '/'
+    | '/audit'
+    | '/login'
+    | '/signup'
+    | '/admin/receivers'
+    | '/admin/users'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/audit' | '/login' | '/signup' | '/admin/users'
-  id: '__root__' | '/' | '/audit' | '/login' | '/signup' | '/admin/users'
+  to:
+    | '/'
+    | '/audit'
+    | '/login'
+    | '/signup'
+    | '/admin/receivers'
+    | '/admin/users'
+  id:
+    | '__root__'
+    | '/'
+    | '/audit'
+    | '/login'
+    | '/signup'
+    | '/admin/receivers'
+    | '/admin/users'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +104,7 @@ export interface RootRouteChildren {
   AuditRoute: typeof AuditRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  AdminReceiversRoute: typeof AdminReceiversRoute
   AdminUsersRoute: typeof AdminUsersRoute
 }
 
@@ -116,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/receivers': {
+      id: '/admin/receivers'
+      path: '/admin/receivers'
+      fullPath: '/admin/receivers'
+      preLoaderRoute: typeof AdminReceiversRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -124,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuditRoute: AuditRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  AdminReceiversRoute: AdminReceiversRoute,
   AdminUsersRoute: AdminUsersRoute,
 }
 export const routeTree = rootRouteImport
