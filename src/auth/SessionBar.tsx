@@ -4,6 +4,7 @@
 // This is purely UI — no business logic. The AppShell beneath remains untouched.
 
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -53,14 +54,22 @@ export function SessionBar() {
           </>
         )}
       </div>
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={() => void signOut()}
-        className="h-7 px-2 text-xs"
-      >
-        Sign out
-      </Button>
+      <div className="flex items-center gap-1">
+        <Link
+          to="/audit"
+          className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          Audit
+        </Link>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => void signOut()}
+          className="h-7 px-2 text-xs"
+        >
+          Sign out
+        </Button>
+      </div>
     </div>
   );
 }

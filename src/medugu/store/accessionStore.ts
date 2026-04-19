@@ -21,6 +21,7 @@ import {
 import { newId } from "../domain/ids";
 import { loadState, saveState, SCHEMA_VERSION } from "./persistence";
 import { hydrateFromCloud, pushAccession } from "./cloudSync";
+import { recordAuditAsync, setAuditContext } from "./cloudAudit";
 
 type Listener = () => void;
 
@@ -105,7 +106,22 @@ function mutate(id: string, fn: (a: Accession) => Accession) {
   emit([id]);
 }
 
-function appendAudit(a: Accession, ev: Omit<AuditEvent, "id" | "at">): Accession {
+function appendAudit(
+  a: Accession,
+  ev: Omit<AuditEvent, "id" | "at">,
+  cloud?: { entity: Parameters<typeof recordAuditAsync>[0]["entity"]; entityId?: string | null },
+): Accession {
+  // Fire-and-forget durable audit write (RLS-scoped to current tenant).
+  recordAuditAsync({
+    action: ev.action,
+    entity: cloud?.entity ?? "accession",
+    entityId: cloud?.entityId ?? a.id,
+    field: ev.field ?? null,
+    oldValue: ev.oldValue,
+    newValue: ev.newValue,
+    reason: ev.reason ?? null,
+    actorLabel: ev.actor ?? null,
+  });
   return {
     ...a,
     audit: [
@@ -162,8 +178,9 @@ export const accessionStore = {
    * Postgres for the current tenant; if the tenant is empty, cloudSync seeds
    * it with the demo benchmark accessions and we re-read.
    */
-  async hydrateFromTenant(tenantId: string) {
+  async hydrateFromTenant(tenantId: string, actorLabel?: string | null) {
     activeTenantId = tenantId;
+    setAuditContext({ tenantId, actorLabel: actorLabel ?? null });
     const { accessions } = await hydrateFromCloud(tenantId);
     const map: Record<string, Accession> = {};
     const order: string[] = [];
@@ -183,6 +200,7 @@ export const accessionStore = {
   /** Detach from the current tenant (called on sign-out). */
   detachTenant() {
     activeTenantId = null;
+    setAuditContext({ tenantId: null });
     for (const t of pushTimers.values()) clearTimeout(t);
     pushTimers.clear();
     state = emptyState();
@@ -202,6 +220,7 @@ export const accessionStore = {
           field: `isolates[${iso.isolateNo}]`,
           newValue: { organismCode: iso.organismCode, significance: iso.significance },
         },
+        { entity: "isolate", entityId: iso.id },
       ),
     );
   },
@@ -221,6 +240,7 @@ export const accessionStore = {
           oldValue: before,
           newValue: after,
         },
+        { entity: "isolate", entityId: isolateId },
       );
     });
   },
@@ -242,6 +262,7 @@ export const accessionStore = {
           field: `isolates[${before.isolateNo}]`,
           oldValue: before,
         },
+        { entity: "isolate", entityId: isolateId },
       );
     });
   },
@@ -264,6 +285,7 @@ export const accessionStore = {
             interpretation: row.finalInterpretation,
           },
         },
+        { entity: "ast", entityId: row.id },
       ),
     );
   },
@@ -283,6 +305,7 @@ export const accessionStore = {
           oldValue: before,
           newValue: after,
         },
+        { entity: "ast", entityId: astId },
       );
     });
   },
@@ -300,6 +323,7 @@ export const accessionStore = {
           field: `ast[${before.antibioticCode}]`,
           oldValue: before,
         },
+        { entity: "ast", entityId: astId },
       );
     });
   },
@@ -311,6 +335,16 @@ export const accessionStore = {
       stage: to,
       audit: [...a.audit, audit],
     }));
+    recordAuditAsync({
+      action: audit.action,
+      entity: "workflow",
+      entityId: accessionId,
+      field: audit.field ?? "workflowStatus",
+      oldValue: audit.oldValue,
+      newValue: audit.newValue,
+      reason: audit.reason ?? null,
+      actorLabel: audit.actor ?? null,
+    });
   },
 
   recordPhoneOut(accessionId: string, evt: PhoneOutEvent, actor = "local") {
@@ -324,6 +358,7 @@ export const accessionStore = {
           field: "phoneOuts",
           newValue: { recipient: evt.recipient, reasonCode: evt.reasonCode, acknowledged: evt.acknowledged },
         },
+        { entity: "release_package", entityId: accessionId },
       ),
     );
   },
@@ -357,6 +392,7 @@ export const accessionStore = {
           oldValue: a.release.state,
           newValue: nextState,
         },
+        { entity: "release_package", entityId: accessionId },
       ),
     );
   },
@@ -386,6 +422,7 @@ export const accessionStore = {
           field: "release.consultantApproval",
           newValue: { approvedBy: approval.approvedBy, reason: approval.reason },
         },
+        { entity: "release_package", entityId: accessionId },
       ),
     );
   },
@@ -406,6 +443,7 @@ export const accessionStore = {
           field: "ast",
           newValue: { affected: Object.keys(rowPatches).length },
         },
+        { entity: "ast", entityId: accessionId },
       );
     });
   },
@@ -441,6 +479,7 @@ export const accessionStore = {
           newValue: after.finalInterpretation,
           reason: override.reason,
         },
+        { entity: "ast", entityId: astId },
       );
     });
   },

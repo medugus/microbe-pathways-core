@@ -8,7 +8,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { meduguActions } from "@/medugu/store/useAccessionStore";
 
 export function CloudHydrationGate({ children }: { children: ReactNode }) {
-  const { tenantId, user } = useAuth();
+  const { tenantId, user, profile } = useAuth();
   const [hydratedTenantId, setHydratedTenantId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,8 +21,9 @@ export function CloudHydrationGate({ children }: { children: ReactNode }) {
     if (hydratedTenantId === tenantId) return;
     let cancelled = false;
     setError(null);
+    const actorLabel = profile?.display_name ?? user?.email ?? null;
     meduguActions
-      .hydrateFromTenant(tenantId)
+      .hydrateFromTenant(tenantId, actorLabel)
       .then(() => {
         if (!cancelled) setHydratedTenantId(tenantId);
       })
@@ -33,7 +34,7 @@ export function CloudHydrationGate({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [tenantId, hydratedTenantId, user?.id]);
+  }, [tenantId, hydratedTenantId, user?.id, profile?.display_name]);
 
   if (error) {
     return (
