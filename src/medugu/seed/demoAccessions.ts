@@ -3,28 +3,49 @@
 
 import type { Accession } from "../domain/types";
 import { Priority, ReleaseState, Sex, WorkflowStage } from "../domain/enums";
+import {
+  BUILD_VERSION,
+  BREAKPOINT_VERSION,
+  EXPORT_VERSION,
+  RULE_VERSION,
+} from "../domain/versions";
 
 const now = new Date().toISOString();
 
 function emptyTail() {
   return {
+    specimenAssessments: [],
     microscopy: [],
     isolates: [],
     ast: [],
+    interpretiveComments: [],
+    phoneOuts: [],
     stewardship: [],
     ipc: [],
     validation: [],
     audit: [],
+    ruleVersion: RULE_VERSION.version,
+    breakpointVersion: BREAKPOINT_VERSION,
+    exportVersion: EXPORT_VERSION,
+    buildVersion: BUILD_VERSION,
+  };
+}
+
+function base(id: string, status: WorkflowStage) {
+  return {
+    id,
+    accessionNumber: id,
+    createdAt: now,
+    updatedAt: now,
+    workflowStatus: status,
+    stage: status,
   };
 }
 
 export const DEMO_ACCESSIONS: Accession[] = [
   {
-    id: "MB25-AB12CD",
-    createdAt: now,
-    updatedAt: now,
+    ...base("MB25-AB12CD", WorkflowStage.SpecimenReceived),
     priority: Priority.Routine,
-    stage: WorkflowStage.SpecimenReceived,
     patient: {
       mrn: "AMCE-000123",
       givenName: "Amaka",
@@ -47,11 +68,8 @@ export const DEMO_ACCESSIONS: Accession[] = [
     release: { state: ReleaseState.Draft, reportVersion: 0 },
   },
   {
-    id: "MB25-EF34GH",
-    createdAt: now,
-    updatedAt: now,
+    ...base("MB25-EF34GH", WorkflowStage.Culture),
     priority: Priority.Urgent,
-    stage: WorkflowStage.Culture,
     patient: {
       mrn: "AMCE-000456",
       givenName: "Tunde",
@@ -73,11 +91,8 @@ export const DEMO_ACCESSIONS: Accession[] = [
     release: { state: ReleaseState.Draft, reportVersion: 0 },
   },
   {
-    id: "MB25-JK56LM",
-    createdAt: now,
-    updatedAt: now,
+    ...base("MB25-JK56LM", WorkflowStage.AST),
     priority: Priority.Stat,
-    stage: WorkflowStage.AST,
     patient: {
       mrn: "AMCE-000789",
       givenName: "Ngozi",
