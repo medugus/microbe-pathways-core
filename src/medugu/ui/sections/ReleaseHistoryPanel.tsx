@@ -112,10 +112,46 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
           }
         }
 
+        // 4. Pull export_deliveries for these release packages and join the
+        // receiver name so each row can show the dispatch outcome inline.
+        const pkgIds = packages.map((p) => p.id);
+        const deliveriesByPkg = new Map<string, DeliveryEntry[]>();
+        if (pkgIds.length > 0) {
+          const { data: dels } = await supabase
+            .from("export_deliveries")
+            .select(
+              "id, release_package_id, receiver_id, format, http_status, error_message, dispatched_at",
+            )
+            .in("release_package_id", pkgIds)
+            .order("dispatched_at", { ascending: false });
+          const delRows = (dels ?? []) as DeliveryRow[];
+          const receiverIds = Array.from(new Set(delRows.map((d) => d.receiver_id)));
+          const receiverNameById = new Map<string, string>();
+          if (receiverIds.length > 0) {
+            const { data: rcvs } = await supabase
+              .from("receivers")
+              .select("id, name")
+              .in("id", receiverIds);
+            for (const r of rcvs ?? []) {
+              receiverNameById.set(r.id as string, (r.name as string) ?? "—");
+            }
+          }
+          for (const d of delRows) {
+            const enriched: DeliveryEntry = {
+              ...d,
+              receiverName: receiverNameById.get(d.receiver_id) ?? "(unknown receiver)",
+            };
+            const list = deliveriesByPkg.get(d.release_package_id) ?? [];
+            list.push(enriched);
+            deliveriesByPkg.set(d.release_package_id, list);
+          }
+        }
+
         const merged: HistoryEntry[] = packages.map((p) => ({
           ...p,
           builtByName: p.built_by ? (nameById.get(p.built_by) ?? null) : null,
           amendmentReason: reasonByVersion.get(p.version) ?? null,
+          deliveries: deliveriesByPkg.get(p.id) ?? [],
         }));
 
         if (!cancelled) setEntries(merged);
