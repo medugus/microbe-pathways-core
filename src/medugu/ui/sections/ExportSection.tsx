@@ -44,12 +44,80 @@ export function ExportSection() {
   const accession = useActiveAccession();
   const [active, setActive] = useState<ExportFormat>("fhir");
   const [copied, setCopied] = useState<string | null>(null);
+  const [receivers, setReceivers] = useState<ReceiverOpt[]>([]);
+  const [deliveries, setDeliveries] = useState<DeliveryRow[]>([]);
+  const [selectedReceiver, setSelectedReceiver] = useState<string>("");
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatchMsg, setDispatchMsg] = useState<string | null>(null);
+  const [dispatchOk, setDispatchOk] = useState<boolean | null>(null);
 
   const gate = useMemo(() => (accession ? evaluateExportGate(accession) : null), [accession]);
   const payload = useMemo(
     () => (accession && gate?.available ? buildExport(accession, active) : null),
     [accession, active, gate?.available],
   );
+
+  const isReleased =
+    accession?.release.state === ReleaseState.Released ||
+    accession?.release.state === ReleaseState.Amended;
+
+  // Load tenant receivers + this accession's prior deliveries.
+  useEffect(() => {
+    if (!accession) return;
+    void (async () => {
+      const [{ data: rcvs }, { data: row }] = await Promise.all([
+        supabase
+          .from("receivers")
+          .select("id, name, format, enabled, endpoint_url")
+          .order("name"),
+        supabase
+          .from("accessions")
+          .select("id")
+          .eq("accession_code", accession.accessionNumber)
+          .maybeSingle(),
+      ]);
+      setReceivers((rcvs ?? []) as ReceiverOpt[]);
+      if (row?.id) {
+        const { data: dlv } = await supabase
+          .from("export_deliveries")
+          .select("id, receiver_id, format, http_status, error_message, dispatched_at")
+          .eq("accession_id", row.id as string)
+          .order("dispatched_at", { ascending: false })
+          .limit(10);
+        setDeliveries((dlv ?? []) as DeliveryRow[]);
+      }
+    })();
+  }, [accession?.accessionNumber, dispatchMsg]);
+
+  async function dispatch() {
+    if (!accession || !selectedReceiver) return;
+    setDispatching(true);
+    setDispatchMsg(null);
+    setDispatchOk(null);
+    try {
+      const { data: row, error: lookupErr } = await supabase
+        .from("accessions")
+        .select("id")
+        .eq("accession_code", accession.accessionNumber)
+        .maybeSingle();
+      if (lookupErr) throw new Error(lookupErr.message);
+      if (!row) throw new Error("Accession not found in cloud.");
+      const result = await dispatchExport({
+        data: { accessionRowId: row.id as string, receiverId: selectedReceiver },
+      });
+      setDispatchOk(result.ok);
+      setDispatchMsg(
+        result.ok
+          ? `Delivered (HTTP ${result.httpStatus ?? "n/a"}).`
+          : `${result.reason ?? "Dispatch failed"} (HTTP ${result.httpStatus ?? "n/a"}).`,
+      );
+    } catch (e) {
+      setDispatchOk(false);
+      setDispatchMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDispatching(false);
+    }
+  }
 
   if (!accession) {
     return (
