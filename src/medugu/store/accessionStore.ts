@@ -1,16 +1,23 @@
 // Framework-agnostic central store. Tiny pub/sub, no external deps.
 // React binding lives in useAccessionStore.ts.
+//
+// This is the single source of truth for: calculations, live report preview,
+// validation, release state, and exports. Logic modules read/write through
+// this store; UI components only render its projections.
 
 import type { Accession, MeduguState } from "../domain/types";
 import { DEMO_ACCESSIONS } from "../seed/demoAccessions";
+import {
+  BUILD_VERSION,
+  BREAKPOINT_VERSION,
+  EXPORT_VERSION,
+  RULE_VERSION,
+} from "../domain/versions";
 import { loadState, saveState, SCHEMA_VERSION } from "./persistence";
 
 type Listener = () => void;
 
-function buildInitialState(): MeduguState {
-  const persisted = loadState();
-  if (persisted) return persisted;
-
+function freshState(): MeduguState {
   const accessions: Record<string, Accession> = {};
   const order: string[] = [];
   for (const a of DEMO_ACCESSIONS) {
@@ -22,7 +29,17 @@ function buildInitialState(): MeduguState {
     accessions,
     accessionOrder: order,
     activeAccessionId: order[0] ?? null,
+    ruleVersion: RULE_VERSION,
+    breakpointVersion: BREAKPOINT_VERSION,
+    exportVersion: EXPORT_VERSION,
+    buildVersion: BUILD_VERSION,
   };
+}
+
+function buildInitialState(): MeduguState {
+  const persisted = loadState();
+  if (persisted) return persisted;
+  return freshState();
 }
 
 let state: MeduguState = buildInitialState();
@@ -49,7 +66,10 @@ export const accessionStore = {
     const exists = !!state.accessions[a.id];
     state = {
       ...state,
-      accessions: { ...state.accessions, [a.id]: { ...a, updatedAt: new Date().toISOString() } },
+      accessions: {
+        ...state.accessions,
+        [a.id]: { ...a, updatedAt: new Date().toISOString() },
+      },
       accessionOrder: exists ? state.accessionOrder : [...state.accessionOrder, a.id],
     };
     emit();
@@ -66,20 +86,7 @@ export const accessionStore = {
     emit();
   },
   resetToSeed() {
-    state = (() => {
-      const accessions: Record<string, Accession> = {};
-      const order: string[] = [];
-      for (const a of DEMO_ACCESSIONS) {
-        accessions[a.id] = a;
-        order.push(a.id);
-      }
-      return {
-        schemaVersion: SCHEMA_VERSION,
-        accessions,
-        accessionOrder: order,
-        activeAccessionId: order[0] ?? null,
-      };
-    })();
+    state = freshState();
     emit();
   },
 };

@@ -3,7 +3,9 @@
 import type { MeduguState } from "../domain/types";
 
 export const STORAGE_KEY = "medugu.v3.state";
-export const SCHEMA_VERSION = 1;
+// Bumped to 2 for the Phase 1 contract-alignment schema (new entities,
+// version pins, accessionNumber/workflowStatus fields).
+export const SCHEMA_VERSION = 2;
 
 export function loadState(): MeduguState | null {
   if (typeof window === "undefined") return null;

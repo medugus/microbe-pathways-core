@@ -1,5 +1,10 @@
 // Domain types — single source of truth for the accession model.
 // Framework-agnostic. No React imports anywhere in this file.
+//
+// Contract-aligned entity names (Phase 1):
+//   Patient, Accession, Specimen, SpecimenAssessment, Microscopy, Isolate,
+//   ASTResult, InterpretiveComment, PhoneOutEvent, IPCSignal, ReleasePackage,
+//   AuditEvent, RuleVersion.
 
 import type {
   ASTInterpretation,
@@ -13,14 +18,28 @@ import type {
   WorkflowStage,
 } from "./enums";
 
+// ---------- Versioning ----------
+
+export interface RuleVersion {
+  /** Semver-like identifier of the validation/expert-rule pack in force. */
+  ruleSetId: string;
+  version: string;
+  effectiveFrom: string; // ISO date
+}
+
 // ---------- Identity & audit ----------
 
 export interface AuditEvent {
   id: string;
-  at: string;          // ISO timestamp
-  actor: string;       // user code (single-user phase: "local")
-  action: string;      // e.g. "accession.created", "ast.entered"
+  at: string;            // ISO timestamp
+  actor: string;         // user code (single-user phase: "local")
+  action: string;        // e.g. "ast.entered"
   section?: string;
+  /** Field-level diff for state-changing actions. */
+  field?: string;
+  oldValue?: unknown;
+  newValue?: unknown;
+  reason?: string;
   details?: Record<string, unknown>;
 }
 
@@ -31,7 +50,7 @@ export interface Patient {
   givenName: string;
   familyName: string;
   sex: Sex;
-  dob?: string;            // ISO date
+  dob?: string;
   ward?: string;
   attendingClinician?: string;
   encounterId?: string;
@@ -39,37 +58,57 @@ export interface Patient {
 
 // ---------- Specimen (coded, not free-text) ----------
 
-export interface CodedSpecimen {
-  familyCode: string;      // FK -> config/specimenFamilies
-  subtypeCode: string;     // FK -> config/specimenFamilies (subtype)
+export interface Specimen {
+  familyCode: string;
+  subtypeCode: string;
   bodySiteCode?: string;
   collectionMethodCode?: string;
-  collectedAt?: string;    // ISO
-  receivedAt?: string;     // ISO
+  collectedAt?: string;
+  receivedAt?: string;
   containerCode?: string;
   volumeMl?: number;
-  freeTextLabel?: string;  // display only; never drives logic
+  /** Display only; never drives logic. */
+  freeTextLabel?: string;
+}
+
+/** Backwards-compat alias for older imports. */
+export type CodedSpecimen = Specimen;
+
+/**
+ * SpecimenAssessment — pre-analytical acceptability check
+ * (leak, clot, mislabel, insufficient volume, transport delay, etc.).
+ */
+export interface SpecimenAssessment {
+  id: string;
+  assessedAt: string;
+  assessedBy: string;
+  acceptable: boolean;
+  rejectionReasonCode?: string;
+  conditionFlags: string[]; // coded: leaked, clotted, mislabelled, delayed, insufficient
+  notes?: string;
 }
 
 // ---------- Microscopy ----------
 
-export interface MicroscopyFinding {
+export interface Microscopy {
   id: string;
-  stainCode: string;       // gram, ZN, India ink, KOH, calcofluor, etc.
+  stainCode: string;
   result: GramResult | string;
   cellsPerHpf?: number;
-  organismsSeen?: string;  // morphology description code
+  organismsSeen?: string;
   notes?: string;
 }
+/** Backwards-compat alias. */
+export type MicroscopyFinding = Microscopy;
 
 // ---------- Isolate ----------
 
 export interface Isolate {
   id: string;
-  isolateNo: number;            // 1..n per accession
-  organismCode: string;         // FK -> config/organisms
-  organismDisplay: string;      // cached label
-  growthQuantifierCode?: string;// e.g. light/moderate/heavy/cfu/ml bucket
+  isolateNo: number;
+  organismCode: string;
+  organismDisplay: string;
+  growthQuantifierCode?: string;
   purityFlag?: boolean;
   identifiedAt?: string;
   identificationMethodCode?: string;
@@ -80,14 +119,40 @@ export interface Isolate {
 export interface ASTResult {
   id: string;
   isolateId: string;
-  antibioticCode: string;       // FK -> config/antibiotics
+  antibioticCode: string;
   method: ASTMethod;
   micMgL?: number;
   zoneMm?: number;
-  rawInterpretation?: ASTInterpretation; // instrument-derived
-  finalInterpretation?: ASTInterpretation; // post-rules
-  ruleAppliedCode?: string;     // FK -> breakpoints/expert rule
+  rawInterpretation?: ASTInterpretation;
+  finalInterpretation?: ASTInterpretation;
+  ruleAppliedCode?: string;
   comment?: string;
+}
+
+// ---------- Interpretive comments ----------
+
+export interface InterpretiveComment {
+  id: string;
+  scope: "accession" | "isolate" | "ast";
+  targetId?: string;       // isolateId or astResultId when applicable
+  code: string;            // FK -> config/interpretiveComments
+  text: string;            // resolved/rendered text
+  authoredAt: string;
+  authoredBy: string;
+}
+
+// ---------- Phone-out / critical communication ----------
+
+export interface PhoneOutEvent {
+  id: string;
+  at: string;
+  calledBy: string;
+  recipient: string;        // clinician name/role
+  recipientContact?: string;
+  reasonCode: string;       // critical_value, alert_organism, etc.
+  message: string;
+  acknowledged: boolean;
+  acknowledgedAt?: string;
 }
 
 // ---------- Stewardship ----------
@@ -107,7 +172,7 @@ export interface IPCSignal {
   id: string;
   flag: IPCFlag;
   organismCode?: string;
-  ruleCode: string;             // FK -> config/ipcRules
+  ruleCode: string;
   message: string;
   raisedAt: string;
   acknowledgedBy?: string;
@@ -134,33 +199,58 @@ export interface ReleaseRecord {
   reportVersion: number;
 }
 
-export interface ReportSnapshot {
+/**
+ * ReleasePackage — the immutable bundle produced at release time.
+ * Snapshots the rendered report plus the versions in force.
+ */
+export interface ReleasePackage {
   builtAt: string;
   version: number;
-  body: unknown;                // structured report doc; rendered by ReportSection
+  body: unknown;                    // structured report doc
+  ruleVersion: string;
+  breakpointVersion: string;
+  exportVersion: string;
+  buildVersion: string;
 }
 
 // ---------- Accession (root aggregate) ----------
 
 export interface Accession {
-  id: string;                   // accession no, e.g. MB25-XXXXXX
+  /** Accession number, e.g. MB25-XXXXXX. */
+  id: string;
+  accessionNumber: string;          // mirrors id; explicit per contract
   createdAt: string;
   updatedAt: string;
-  priority: Priority;
+  releasedAt?: string;
+  releasingActor?: string;
+
+  workflowStatus: WorkflowStage;    // contract field name
+  /** @deprecated use workflowStatus. Kept for migration. */
   stage: WorkflowStage;
 
-  patient: Patient;
-  specimen: CodedSpecimen;
+  priority: Priority;
 
-  microscopy: MicroscopyFinding[];
+  // Version pins captured on the accession at creation/release time.
+  ruleVersion: string;
+  breakpointVersion: string;
+  exportVersion: string;
+  buildVersion: string;
+
+  patient: Patient;
+  specimen: Specimen;
+  specimenAssessments: SpecimenAssessment[];
+
+  microscopy: Microscopy[];
   isolates: Isolate[];
   ast: ASTResult[];
+  interpretiveComments: InterpretiveComment[];
+  phoneOuts: PhoneOutEvent[];
   stewardship: StewardshipNote[];
   ipc: IPCSignal[];
 
   validation: ValidationIssue[];
   release: ReleaseRecord;
-  report?: ReportSnapshot;
+  releasePackage?: ReleasePackage;
 
   audit: AuditEvent[];
 }
@@ -170,6 +260,10 @@ export interface Accession {
 export interface MeduguState {
   schemaVersion: number;
   accessions: Record<string, Accession>;
-  accessionOrder: string[];     // insertion order for list view
+  accessionOrder: string[];
   activeAccessionId: string | null;
+  ruleVersion: RuleVersion;
+  breakpointVersion: string;
+  exportVersion: string;
+  buildVersion: string;
 }
