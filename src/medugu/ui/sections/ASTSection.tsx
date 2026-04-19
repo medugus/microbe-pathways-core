@@ -65,6 +65,22 @@ export function ASTSection() {
     rows: accession.ast.filter((a) => a.isolateId === iso.id),
   }));
 
+  function applyExpertRules() {
+    if (!accession) return;
+    // Build patches by evaluating all isolates and merging row patches.
+    // Using dynamic require would defeat tree-shaking; import inline.
+    import("../../logic/astEngine").then(({ evaluateAccession }) => {
+      const outputs = evaluateAccession(accession);
+      const merged: Record<string, Partial<typeof accession.ast[number]>> = {};
+      for (const o of outputs) {
+        for (const [rid, p] of Object.entries(o.rowPatches)) {
+          merged[rid] = { ...(merged[rid] ?? {}), ...p };
+        }
+      }
+      meduguActions.applyExpertRules(accession.id, merged);
+    });
+  }
+
   return (
     <div className="space-y-5">
       {/* Entry surface */}
