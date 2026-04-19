@@ -19,9 +19,24 @@ interface PackageRow {
   export_version: string;
 }
 
+interface DeliveryRow {
+  id: string;
+  release_package_id: string;
+  receiver_id: string;
+  format: string;
+  http_status: number | null;
+  error_message: string | null;
+  dispatched_at: string;
+}
+
+interface DeliveryEntry extends DeliveryRow {
+  receiverName: string;
+}
+
 interface HistoryEntry extends PackageRow {
   builtByName: string | null;
   amendmentReason: string | null;
+  deliveries: DeliveryEntry[];
 }
 
 interface Props {
