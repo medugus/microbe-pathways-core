@@ -68,11 +68,35 @@ export function ReleaseSection() {
     setConsultantReason("");
   }
 
-  function release() {
+  async function release() {
     if (!accession) return;
-    const result = attemptRelease(accession);
-    if (!result.ok || !result.package || !result.nextReleaseState) return;
-    meduguActions.finaliseRelease(accession.id, result.package, result.nextReleaseState);
+    setSealError(null);
+    setSealing(true);
+    try {
+      // Find the postgres row id for this accession (cloudSync uses
+      // accession_code as the natural key per tenant).
+      const { data: row, error: lookupErr } = await supabase
+        .from("accessions")
+        .select("id")
+        .eq("accession_code", accession.accessionNumber)
+        .maybeSingle();
+      if (lookupErr) throw new Error(lookupErr.message);
+      if (!row) throw new Error("Accession not found in cloud — try again in a moment.");
+
+      const result = await sealRelease({ data: { accessionRowId: row.id as string } });
+      if (!result.ok || !result.accessionJson) {
+        const codes = result.blockerCodes?.length ? ` (${result.blockerCodes.join(", ")})` : "";
+        setSealError((result.reason ?? "Release blocked") + codes);
+        return;
+      }
+      // Replace the local copy with the server-issued sealed accession.
+      const sealed = JSON.parse(result.accessionJson) as Accession;
+      meduguActions.upsertAccession(sealed);
+    } catch (err) {
+      setSealError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSealing(false);
+    }
   }
 
   return (
