@@ -18,6 +18,7 @@ import {
   ReleaseSection,
   ReportSection,
   ExportSection,
+  BenchmarkSection,
   SECTION_ORDER,
 } from "./sections";
 import { useActiveAccession, useMeduguState } from "../store/useAccessionStore";
@@ -34,6 +35,7 @@ const SECTION_COMPONENTS = {
   release: ReleaseSection,
   report: ReportSection,
   export: ExportSection,
+  benchmark: BenchmarkSection,
 } as const;
 
 export function AppShell() {
