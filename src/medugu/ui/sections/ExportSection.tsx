@@ -220,8 +220,93 @@ export function ExportSection() {
       )}
 
       <p className="text-[10px] text-muted-foreground">
-        All payloads are produced client-side. No data is transmitted to any server at the time of export.
+        Local copy/download is client-side. Server dispatch (below) regenerates
+        the payload from the immutable release package and records the delivery.
       </p>
+
+      {isReleased && (
+        <section className="rounded-md border border-border bg-card p-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Dispatch to receiver
+          </h4>
+          {receivers.length === 0 ? (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              No receivers configured. An admin can add one in /admin/receivers.
+            </p>
+          ) : (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <select
+                value={selectedReceiver}
+                onChange={(e) => setSelectedReceiver(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+              >
+                <option value="">Select receiver…</option>
+                {receivers.map((r) => (
+                  <option key={r.id} value={r.id} disabled={!r.enabled}>
+                    {r.name} · {r.format.toUpperCase()}
+                    {!r.enabled ? " (disabled)" : ""}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={dispatch}
+                disabled={!selectedReceiver || dispatching}
+                className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+              >
+                {dispatching ? "Dispatching on server…" : "Dispatch"}
+              </button>
+              {dispatchMsg && (
+                <span
+                  className={`text-[11px] ${
+                    dispatchOk ? "text-foreground" : "text-destructive"
+                  }`}
+                >
+                  {dispatchMsg}
+                </span>
+              )}
+            </div>
+          )}
+
+          {deliveries.length > 0 && (
+            <div className="mt-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Recent deliveries
+              </div>
+              <ul className="mt-1 space-y-1">
+                {deliveries.map((d) => {
+                  const ok =
+                    d.http_status !== null &&
+                    d.http_status >= 200 &&
+                    d.http_status < 300;
+                  const rcvName =
+                    receivers.find((r) => r.id === d.receiver_id)?.name ?? d.receiver_id;
+                  return (
+                    <li
+                      key={d.id}
+                      className="flex items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1 text-[11px]"
+                    >
+                      <span className="truncate">
+                        <span className="font-mono">{d.format.toUpperCase()}</span> →{" "}
+                        {rcvName}
+                      </span>
+                      <span
+                        className={`font-mono ${ok ? "text-foreground" : "text-destructive"}`}
+                      >
+                        {d.http_status ?? "ERR"}
+                        {d.error_message ? ` · ${d.error_message.slice(0, 40)}` : ""}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {new Date(d.dispatched_at).toLocaleString()}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
