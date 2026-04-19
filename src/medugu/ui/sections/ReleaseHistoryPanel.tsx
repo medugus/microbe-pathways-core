@@ -222,6 +222,45 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                   <span className="italic">{e.amendmentReason}</span>
                 </p>
               )}
+              {e.deliveries.length > 0 && (
+                <div className="mt-2 border-t border-border pt-2">
+                  <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Dispatches ({e.deliveries.length})
+                  </div>
+                  <ul className="space-y-1">
+                    {e.deliveries.map((d) => {
+                      const ok = d.http_status !== null && d.http_status >= 200 && d.http_status < 300;
+                      return (
+                        <li
+                          key={d.id}
+                          className="flex flex-wrap items-center gap-2 text-[10px]"
+                        >
+                          <span
+                            className={`rounded px-1.5 py-0.5 font-mono font-semibold ${
+                              ok
+                                ? "bg-primary/15 text-primary"
+                                : "bg-destructive/15 text-destructive"
+                            }`}
+                          >
+                            {ok ? "OK" : "FAIL"}
+                          </span>
+                          <span className="font-medium text-foreground">{d.receiverName}</span>
+                          <span className="text-muted-foreground">[{d.format}]</span>
+                          <span className="text-muted-foreground">
+                            HTTP {d.http_status ?? "—"}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {new Date(d.dispatched_at).toLocaleString()}
+                          </span>
+                          {!ok && d.error_message && (
+                            <span className="text-destructive">— {d.error_message}</span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
             </li>
           ))}
         </ol>
