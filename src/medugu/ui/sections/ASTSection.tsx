@@ -179,14 +179,25 @@ export function ASTSection() {
           <button
             type="button"
             onClick={applyExpertRules}
-            className="rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+            disabled={applying}
+            className="rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
           >
-            Apply expert rules
+            {applying ? "Applying on server…" : "Apply expert rules"}
           </button>
           <span className="text-[11px] text-muted-foreground">
-            Runs MRSA / ESBL / CRE / VRE / ICR / intrinsic / AmpC / unusual-antibiogram inference and writes phenotype + cascade decisions.
+            Server re-runs MRSA / ESBL / CRE / VRE / ICR / intrinsic / AmpC inference and writes phenotype + cascade decisions.
           </span>
         </div>
+        {applyError && (
+          <p className="md:col-span-6 text-[11px] text-destructive">
+            Server rejected: {applyError}
+          </p>
+        )}
+        {appliedSummary && (
+          <p className="md:col-span-6 text-[11px] text-muted-foreground">
+            {appliedSummary}
+          </p>
+        )}
       </div>
 
       {/* Per-isolate AST tables */}
