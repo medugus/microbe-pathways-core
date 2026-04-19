@@ -62,12 +62,20 @@ export function SessionBar() {
           Audit
         </Link>
         {hasRole("admin") && (
-          <Link
-            to="/admin/users"
-            className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            Users
-          </Link>
+          <>
+            <Link
+              to="/admin/users"
+              className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Users
+            </Link>
+            <Link
+              to="/admin/receivers"
+              className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Receivers
+            </Link>
+          </>
         )}
         <Button
           size="sm"

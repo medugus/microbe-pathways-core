@@ -1,7 +1,11 @@
 // ExportSection — surfaces governed FHIR / HL7 / normalised-JSON exports.
-// Client-side only; no network. Reads frozen ReleasePackage when present.
+// Local copy/download remain client-side. The "Dispatch to receiver" panel
+// hands off to the server, which loads the immutable release_packages row,
+// regenerates the payload server-side, POSTs it to the configured receiver
+// (with bearer token never exposed to the browser), and records the
+// delivery + audit row.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useActiveAccession } from "../../store/useAccessionStore";
 import {
   buildExport,
@@ -9,6 +13,26 @@ import {
   type ExportFormat,
 } from "../../logic/exportEngine";
 import { copyText, downloadText } from "../../utils/exportHelpers";
+import { dispatchExport } from "../../store/export.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { ReleaseState } from "../../domain/enums";
+
+interface ReceiverOpt {
+  id: string;
+  name: string;
+  format: ExportFormat;
+  enabled: boolean;
+  endpoint_url: string;
+}
+
+interface DeliveryRow {
+  id: string;
+  receiver_id: string;
+  format: string;
+  http_status: number | null;
+  error_message: string | null;
+  dispatched_at: string;
+}
 
 const FORMATS: { code: ExportFormat; label: string; hint: string }[] = [
   { code: "fhir", label: "FHIR R4 Bundle (JSON)", hint: "DiagnosticReport + Patient + Specimen + Observations" },
