@@ -142,6 +142,10 @@ export function ReleaseSection() {
       setAmending(false);
     }
   }
+
+  return (
+    <div className="space-y-5">
+      {/* Workflow */}
       <section className="rounded-md border border-border bg-background p-3">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Workflow
