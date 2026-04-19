@@ -1,0 +1,15 @@
+; Illustrative sample. Regenerate from the running app: open MB25-AB12CD, release, then Export section → HL7 v2.5 ORU^R01 → Download.
+; Segment terminator is CR (\r). Field separator |. Encoding chars ^~\&.
+MSH|^~\&|MEDUGU|MEDUGU_SITE|RECEIVER_APP|RECEIVER_FAC|20260419101500||ORU^R01|MB25-AB12CD|P|2.5
+PID|1||MRN-AB12CD^^^MEDUGU^MR||Example^Patient||19710822|F
+PV1|1|O|OUTPATIENT^^^MEDUGU_SITE
+OBR|1|MB25-AB12CD|MB25-AB12CD|MSU^Mid-stream urine^MEDUGU|||20260418T140000||||||||||||||||||F
+OBX|1|CWE|ORG^Organism^MEDUGU|1|ECOLI^Escherichia coli^MEDUGU|||A^Significant^HL70078|||F
+OBX|2|CWE|PHENO^Phenotype^MEDUGU|1|ESBL^ESBL phenotype^MEDUGU|||A^Abnormal^HL70078|||F
+OBX|3|CWE|NIT^Nitrofurantoin^MEDUGU|1|S^Susceptible^HL70078|||N|||F
+OBX|4|CWE|FOS^Fosfomycin^MEDUGU|1|S^Susceptible^HL70078|||N|||F
+OBX|5|CWE|TMP^Trimethoprim-sulfamethoxazole^MEDUGU|1|R^Resistant^HL70078|||A|||F
+NTE|1|L|Result withheld — CRO (Ceftriaxone): Suppressed under ESBL rule (3GC cascade)
+NTE|2|L|Result withheld — CAZ (Ceftazidime): Suppressed under ESBL rule (3GC cascade)
+NTE|3|L|Stewardship: uncomplicated UTI — oral agents preferred (NIT, FOS). AWaRe: Access-tier first-line.
+NTE|4|L|IPC: no isolation required for community-acquired ESBL UTI; standard precautions.

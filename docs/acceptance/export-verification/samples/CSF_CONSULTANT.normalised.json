@@ -1,0 +1,117 @@
+{
+  "_comment": "Illustrative sample. Regenerate from the running app: open MB25-JK56LM, record consultant approval, release, then Export section → Normalised JSON → Download.",
+  "meta": {
+    "schemaVersion": 5,
+    "exportedAt": "2026-04-19T10:30:00Z",
+    "fromReleasePackage": true,
+    "versions": {
+      "rule": "RULE_VERSION",
+      "breakpoint": "BREAKPOINT_VERSION",
+      "export": "EXPORT_VERSION",
+      "build": "BUILD_VERSION"
+    }
+  },
+  "patient": {
+    "mrn": "MRN-JK56LM",
+    "name": "Example Patient",
+    "dob": "1995-02-03",
+    "sex": "male",
+    "ward": "NEURO-ICU",
+    "encounterId": "ENC-JK56LM"
+  },
+  "accession": {
+    "id": "MB25-JK56LM",
+    "site": "Central Lab",
+    "receivedAt": "2026-04-18T19:00:00Z",
+    "workflowStage": "Released",
+    "priority": "STAT",
+    "requester": "Dr Example"
+  },
+  "specimen": {
+    "family": "CSF",
+    "subtype": "lumbar_puncture",
+    "collectedAt": "2026-04-18T18:30:00Z",
+    "source": "lumbar puncture",
+    "resolvedProfileId": "csf.lumbar_puncture.v1"
+  },
+  "isolates": [
+    {
+      "id": "ISO-JK56LM-1",
+      "organismCode": "SPNEUMO",
+      "significance": "significant",
+      "colonyCount": null,
+      "phenotypeFlags": []
+    }
+  ],
+  "ast": [
+    {
+      "isolateId": "ISO-JK56LM-1",
+      "antibioticCode": "CRO",
+      "method": "MIC",
+      "rawValue": "0.5",
+      "draftSIR": "S",
+      "interpretedSIR": "S",
+      "finalSIR": "S",
+      "governance": "approved",
+      "cascadeDecision": "reportable",
+      "expertRulesFired": [],
+      "visibleToClinician": true
+    },
+    {
+      "isolateId": "ISO-JK56LM-1",
+      "antibioticCode": "NIT",
+      "method": "DISK",
+      "rawValue": "20",
+      "draftSIR": "S",
+      "interpretedSIR": "S",
+      "finalSIR": "S",
+      "governance": "approved",
+      "cascadeDecision": "suppressed_by_phenotype",
+      "expertRulesFired": ["MENINGITIS_CSF_PENETRATION"],
+      "visibleToClinician": false,
+      "suppressionReason": "Poor CSF penetration — meningitis syndrome rule"
+    }
+  ],
+  "stewardship": [
+    {
+      "astId": "AST-JK56LM-CRO",
+      "releaseClass": "first_line_preferred",
+      "aware": "Watch",
+      "advisory": "Empiric meningitis cover; continue per ID consult",
+      "approvalRequired": false,
+      "visibleToClinician": true
+    },
+    {
+      "astId": "AST-JK56LM-NIT",
+      "releaseClass": "cascade_suppressed",
+      "aware": "Access",
+      "advisory": "Not appropriate for CSF — withheld",
+      "approvalRequired": false,
+      "visibleToClinician": false,
+      "suppressionReason": "Poor CSF penetration — meningitis syndrome rule"
+    }
+  ],
+  "ipc": [],
+  "validation": {
+    "releaseAllowed": true,
+    "blockers": [],
+    "warnings": []
+  },
+  "release": {
+    "signedAt": "2026-04-19T10:25:00Z",
+    "signedBy": "user-placeholder",
+    "consultantApproval": {
+      "actor": "consultant-placeholder",
+      "at": "2026-04-19T10:20:00Z",
+      "reason": "CSF — release approved after review"
+    },
+    "phoneOuts": [],
+    "packageHash": "sha256-placeholder",
+    "versions": {
+      "rule": "RULE_VERSION",
+      "breakpoint": "BREAKPOINT_VERSION",
+      "export": "EXPORT_VERSION",
+      "build": "BUILD_VERSION"
+    }
+  }
+}
