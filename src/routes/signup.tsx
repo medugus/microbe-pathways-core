@@ -154,7 +154,7 @@ function SignupPage() {
             </p>
           )}
           {info && (
-            <p className="text-sm text-emerald-600 dark:text-emerald-400">{info}</p>
+            <p className="text-sm text-primary">{info}</p>
           )}
 
           <Button type="submit" className="w-full" disabled={busy}>
