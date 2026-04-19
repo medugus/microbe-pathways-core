@@ -3,6 +3,7 @@
 // so the operator never loses case context while moving between sections.
 
 import type { Accession } from "../domain/types";
+import { resolveSpecimen } from "../logic/specimenResolver";
 
 interface Props {
   accession: Accession;
@@ -57,7 +58,19 @@ export function ContextBar({ accession }: Props) {
       />
       <Cell
         label="Specimen"
-        value={`${accession.specimen.familyCode} / ${accession.specimen.subtypeCode}`}
+        value={(() => {
+          const r = resolveSpecimen(accession.specimen.familyCode, accession.specimen.subtypeCode);
+          if (!r.ok) return `${accession.specimen.familyCode} / ${accession.specimen.subtypeCode}`;
+          const syn = r.profile.syndrome ? ` · ${r.profile.syndrome}` : "";
+          return `${r.profile.displayName}${syn}`;
+        })()}
+        tone={(() => {
+          const r = resolveSpecimen(accession.specimen.familyCode, accession.specimen.subtypeCode);
+          if (!r.ok) return "alert";
+          if (r.profile.acceptance.mode === "rejectable") return "alert";
+          if (r.profile.acceptance.mode === "qualified") return "warn";
+          return "ok";
+        })()}
       />
       <Cell label="Isolates" value={isolateSummary} />
       <Cell
