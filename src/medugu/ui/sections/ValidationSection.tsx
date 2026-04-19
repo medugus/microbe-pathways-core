@@ -34,13 +34,19 @@ export function ValidationSection() {
           {v.warnings.length} warning(s)
         </span>
         {v.consultantReleaseRequired && (
-          <span className="rounded bg-destructive/15 px-2 py-1 text-destructive">
-            consultant release required
+          <span
+            className={`rounded px-2 py-1 ${
+              v.consultantApprovalPending
+                ? "bg-destructive/15 text-destructive"
+                : "bg-secondary text-secondary-foreground"
+            }`}
+          >
+            consultant {v.consultantApprovalPending ? "approval pending" : "approved"}
           </span>
         )}
-        {v.phoneOutPending && (
+        {v.phoneOutRequiredPending && (
           <span className="rounded bg-destructive/15 px-2 py-1 text-destructive">
-            phone-out pending
+            phone-out required (blocking)
           </span>
         )}
       </div>

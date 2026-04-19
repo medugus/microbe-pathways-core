@@ -1,8 +1,9 @@
 // ReleaseSection — finalisation surface.
-// Shows blockers + warnings + phone-out status, exposes workflow transitions
-// and the release action. Frozen ReleasePackage snapshot is preserved on the
-// accession after release; later edits never mutate it.
+// Phone-out is now a blocker for critical-comm pathways; consultant approval
+// is now a blocker for consultant-controlled specimens (e.g. CSF). Both must
+// be documented before the Release button enables.
 
+import { useState } from "react";
 import { useActiveAccession, meduguActions } from "../../store/useAccessionStore";
 import { runValidation } from "../../logic/validationEngine";
 import { attemptRelease } from "../../logic/releaseEngine";
@@ -12,6 +13,9 @@ import { newId } from "../../domain/ids";
 
 export function ReleaseSection() {
   const accession = useActiveAccession();
+  const [consultantName, setConsultantName] = useState("");
+  const [consultantReason, setConsultantReason] = useState("");
+
   if (!accession) {
     return (
       <div className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -27,8 +31,11 @@ export function ReleaseSection() {
   function advance(to: WorkflowStage) {
     if (!accession) return;
     const r = transition(accession, to);
-    if (r.ok && r.audit) {
-      meduguActions.setWorkflowStage(accession.id, to, r.audit);
+    if (r.audit) {
+      // Persist audit even when blocked, but only change stage on success.
+      if (r.ok) {
+        meduguActions.setWorkflowStage(accession.id, to, r.audit);
+      }
     }
   }
 
@@ -44,6 +51,16 @@ export function ReleaseSection() {
       acknowledged: true,
       acknowledgedAt: new Date().toISOString(),
     });
+  }
+
+  function approveConsultant() {
+    if (!accession || !consultantName.trim()) return;
+    meduguActions.recordConsultantApproval(accession.id, {
+      approvedBy: consultantName.trim(),
+      reason: consultantReason.trim() || undefined,
+    });
+    setConsultantName("");
+    setConsultantReason("");
   }
 
   function release() {
@@ -93,16 +110,7 @@ export function ReleaseSection() {
             {v.blockers.length}
           </div>
           <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-            {v.blockers.slice(0, 4).map((b) => (
-              <li key={b.id}>· {b.message}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="rounded-md border border-border bg-card p-3">
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Warnings</div>
-          <div className="mt-1 text-2xl font-semibold text-foreground">{v.warnings.length}</div>
-          <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-            {v.warnings.slice(0, 4).map((b) => (
+            {v.blockers.slice(0, 6).map((b) => (
               <li key={b.id}>· {b.message}</li>
             ))}
           </ul>
@@ -112,14 +120,61 @@ export function ReleaseSection() {
           <div className="mt-1 text-sm text-foreground">
             {accession.phoneOuts.length === 0 ? "none recorded" : `${accession.phoneOuts.length} event(s)`}
           </div>
-          {v.phoneOutPending && (
-            <button
-              type="button"
-              onClick={recordPhoneOut}
-              className="mt-2 rounded bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive/20"
-            >
-              record acknowledged phone-out
-            </button>
+          {v.phoneOutRequiredPending && (
+            <>
+              <p className="mt-1 text-[11px] text-destructive">
+                Required for this pathway — release blocked until acknowledged.
+              </p>
+              <button
+                type="button"
+                onClick={recordPhoneOut}
+                className="mt-2 rounded bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive/20"
+              >
+                record acknowledged phone-out
+              </button>
+            </>
+          )}
+        </div>
+        <div className="rounded-md border border-border bg-card p-3">
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Consultant</div>
+          {v.consultantReleaseRequired ? (
+            accession.release.consultantApproval ? (
+              <div className="mt-1 text-xs text-foreground">
+                Approved by{" "}
+                <span className="font-medium">{accession.release.consultantApproval.approvedBy}</span>
+                <div className="text-[10px] text-muted-foreground">
+                  {new Date(accession.release.consultantApproval.approvedAt).toLocaleString()}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-1 space-y-1.5">
+                <p className="text-[11px] text-destructive">
+                  Required for {accession.specimen.subtypeCode}.
+                </p>
+                <input
+                  value={consultantName}
+                  onChange={(e) => setConsultantName(e.target.value)}
+                  placeholder="Consultant name"
+                  className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
+                />
+                <input
+                  value={consultantReason}
+                  onChange={(e) => setConsultantReason(e.target.value)}
+                  placeholder="Reason / note (optional)"
+                  className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={approveConsultant}
+                  disabled={!consultantName.trim()}
+                  className="rounded bg-primary px-2 py-1 text-xs text-primary-foreground disabled:opacity-50"
+                >
+                  Record consultant approval
+                </button>
+              </div>
+            )
+          ) : (
+            <div className="mt-1 text-xs text-muted-foreground">Not required.</div>
           )}
         </div>
       </section>
@@ -147,14 +202,15 @@ export function ReleaseSection() {
             {released ? "Released" : v.releaseAllowed ? "Release report" : "Release blocked"}
           </button>
         </div>
-        {v.consultantReleaseRequired && !released && (
-          <p className="mt-2 text-xs text-destructive">
-            Consultant sign-off required for this specimen type.
-          </p>
+        {!v.releaseAllowed && !released && (
+          <ul className="mt-2 space-y-1 text-[11px] text-destructive">
+            {v.blockers.map((b) => (
+              <li key={b.id}>· {b.message}</li>
+            ))}
+          </ul>
         )}
       </section>
 
-      {/* Frozen package */}
       {accession.releasePackage && (
         <section>
           <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
