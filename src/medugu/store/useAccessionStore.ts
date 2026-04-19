@@ -1,0 +1,25 @@
+// React binding for accessionStore. Only file in store/ that touches React.
+
+import { useSyncExternalStore } from "react";
+import { accessionStore } from "./accessionStore";
+import type { Accession, MeduguState } from "../domain/types";
+
+export function useMeduguState(): MeduguState {
+  return useSyncExternalStore(
+    accessionStore.subscribe,
+    accessionStore.getState,
+    accessionStore.getState,
+  );
+}
+
+export function useActiveAccession(): Accession | null {
+  const s = useMeduguState();
+  return s.activeAccessionId ? (s.accessions[s.activeAccessionId] ?? null) : null;
+}
+
+export const meduguActions = {
+  setActive: accessionStore.setActive,
+  upsertAccession: accessionStore.upsertAccession,
+  removeAccession: accessionStore.removeAccession,
+  resetToSeed: accessionStore.resetToSeed,
+};
