@@ -17,6 +17,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { installServerFnAuth } from "./installServerFnAuth";
 
 export type AppRole =
   | "lab_tech"
@@ -69,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    installServerFnAuth();
     // 1) Subscribe FIRST (Supabase guidance) — never miss an event.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
