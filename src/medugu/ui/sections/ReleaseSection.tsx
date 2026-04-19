@@ -1,20 +1,25 @@
 // ReleaseSection — finalisation surface.
-// Phone-out is now a blocker for critical-comm pathways; consultant approval
-// is now a blocker for consultant-controlled specimens (e.g. CSF). Both must
-// be documented before the Release button enables.
+// Release sealing now runs on the server: the client calls sealRelease(),
+// the server re-validates against the persisted accession, computes the
+// SHA-256 seal, and writes both the immutable release_packages row and the
+// updated accession in one trip. The browser cannot bypass releaseAllowed.
 
 import { useState } from "react";
 import { useActiveAccession, meduguActions } from "../../store/useAccessionStore";
 import { runValidation } from "../../logic/validationEngine";
-import { attemptRelease } from "../../logic/releaseEngine";
 import { transition, nextSuggested } from "../../logic/workflowEngine";
 import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
+import { sealRelease } from "../../store/release.functions";
+import { supabase } from "@/integrations/supabase/client";
+import type { Accession } from "../../domain/types";
 
 export function ReleaseSection() {
   const accession = useActiveAccession();
   const [consultantName, setConsultantName] = useState("");
   const [consultantReason, setConsultantReason] = useState("");
+  const [sealing, setSealing] = useState(false);
+  const [sealError, setSealError] = useState<string | null>(null);
 
   if (!accession) {
     return (
@@ -63,11 +68,35 @@ export function ReleaseSection() {
     setConsultantReason("");
   }
 
-  function release() {
+  async function release() {
     if (!accession) return;
-    const result = attemptRelease(accession);
-    if (!result.ok || !result.package || !result.nextReleaseState) return;
-    meduguActions.finaliseRelease(accession.id, result.package, result.nextReleaseState);
+    setSealError(null);
+    setSealing(true);
+    try {
+      // Find the postgres row id for this accession (cloudSync uses
+      // accession_code as the natural key per tenant).
+      const { data: row, error: lookupErr } = await supabase
+        .from("accessions")
+        .select("id")
+        .eq("accession_code", accession.accessionNumber)
+        .maybeSingle();
+      if (lookupErr) throw new Error(lookupErr.message);
+      if (!row) throw new Error("Accession not found in cloud — try again in a moment.");
+
+      const result = await sealRelease({ data: { accessionRowId: row.id as string } });
+      if (!result.ok || !result.accessionJson) {
+        const codes = result.blockerCodes?.length ? ` (${result.blockerCodes.join(", ")})` : "";
+        setSealError((result.reason ?? "Release blocked") + codes);
+        return;
+      }
+      // Replace the local copy with the server-issued sealed accession.
+      const sealed = JSON.parse(result.accessionJson) as Accession;
+      meduguActions.upsertAccession(sealed);
+    } catch (err) {
+      setSealError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSealing(false);
+    }
   }
 
   return (
@@ -195,13 +224,24 @@ export function ReleaseSection() {
           </div>
           <button
             type="button"
-            disabled={!v.releaseAllowed || released}
+            disabled={!v.releaseAllowed || released || sealing}
             onClick={release}
             className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
-            {released ? "Released" : v.releaseAllowed ? "Release report" : "Release blocked"}
+            {released
+              ? "Released"
+              : sealing
+                ? "Sealing on server…"
+                : v.releaseAllowed
+                  ? "Release report"
+                  : "Release blocked"}
           </button>
         </div>
+        {sealError && (
+          <p className="mt-2 text-[11px] text-destructive">
+            Server rejected release: {sealError}
+          </p>
+        )}
         {!v.releaseAllowed && !released && (
           <ul className="mt-2 space-y-1 text-[11px] text-destructive">
             {v.blockers.map((b) => (
@@ -225,13 +265,15 @@ export function ReleaseSection() {
     breakpointVersion: accession.releasePackage.breakpointVersion,
     exportVersion: accession.releasePackage.exportVersion,
     buildVersion: accession.releasePackage.buildVersion,
+    sealHash: accession.release.sealHash,
   },
   null,
   2,
 )}
           </pre>
           <p className="mt-1 text-[10px] text-muted-foreground">
-            Snapshot is immutable; subsequent live edits do not affect this package.
+            Snapshot is immutable; the SHA-256 seal is server-issued and stored
+            in the append-only release_packages table.
           </p>
         </section>
       )}

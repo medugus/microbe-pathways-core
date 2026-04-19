@@ -281,6 +281,8 @@ export interface ReleaseRecord {
   reportVersion: number;
   /** Required when resolver.gating.consultantReleaseRequired is true. */
   consultantApproval?: ConsultantApproval;
+  /** SHA-256 of the canonical release body — server-issued seal. */
+  sealHash?: string;
 }
 
 /**
