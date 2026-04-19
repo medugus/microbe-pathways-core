@@ -12,6 +12,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Accession, ReleasePackage } from "../domain/types";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _UsedRP = ReleasePackage;
 import { ReleaseState } from "../domain/enums";
 import { runValidation } from "../logic/validationEngine";
 import { buildReportPreview } from "../logic/reportPreview";
@@ -24,14 +26,17 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
+// Server functions must return JSON-serializable shapes. We return the
+// updated accession as plain JSON (the client casts it back to Accession).
 export interface ReleaseSealResult {
   ok: boolean;
   reason?: string;
   blockerCodes?: string[];
-  package?: ReleasePackage;
   sealHash?: string;
   reportVersion?: number;
-  accession?: Accession;
+  builtAt?: string;
+  /** Serialized Accession — client treats as `Accession`. */
+  accessionJson?: string;
 }
 
 export const sealRelease = createServerFn({ method: "POST" })
@@ -54,7 +59,7 @@ export const sealRelease = createServerFn({ method: "POST" })
       return { ok: false, reason: "Already released — use amendment flow." };
     }
 
-    const accession = row.data as Accession;
+    const accession = row.data as unknown as Accession;
 
     // 2. Server-authoritative validation. Client cannot bypass this.
     const v = runValidation(accession);
@@ -135,9 +140,9 @@ export const sealRelease = createServerFn({ method: "POST" })
 
     return {
       ok: true,
-      package: pkg,
       sealHash,
       reportVersion: nextVersion,
-      accession: releasedAccession,
+      builtAt,
+      accessionJson: JSON.stringify(releasedAccession),
     };
   });
