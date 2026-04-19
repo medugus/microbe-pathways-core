@@ -12,8 +12,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Accession, ReleasePackage } from "../domain/types";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type _UsedRP = ReleasePackage;
 import { ReleaseState } from "../domain/enums";
 import { runValidation } from "../logic/validationEngine";
 import { buildReportPreview } from "../logic/reportPreview";
