@@ -1,5 +1,5 @@
 // Seeded demo accessions — used when no persisted state exists.
-// Coded fields use placeholder dictionary codes that real config modules will define.
+// Phase-2 scenarios cover the workflow patterns the workflow core must demonstrate.
 
 import type { Accession } from "../domain/types";
 import { Priority, ReleaseState, Sex, WorkflowStage } from "../domain/enums";
@@ -43,6 +43,7 @@ function base(id: string, status: WorkflowStage) {
 }
 
 export const DEMO_ACCESSIONS: Accession[] = [
+  // Urine MSU — quantitative interpretation scaffold
   {
     ...base("MB25-AB12CD", WorkflowStage.SpecimenReceived),
     priority: Priority.Routine,
@@ -67,6 +68,7 @@ export const DEMO_ACCESSIONS: Accession[] = [
     ...emptyTail(),
     release: { state: ReleaseState.Draft, reportVersion: 0 },
   },
+  // Blood culture — critical communication placeholder pathway
   {
     ...base("MB25-EF34GH", WorkflowStage.Culture),
     priority: Priority.Urgent,
@@ -81,15 +83,16 @@ export const DEMO_ACCESSIONS: Accession[] = [
     },
     specimen: {
       familyCode: "BLOOD",
-      subtypeCode: "BLOOD_CULTURE_AEROBIC",
+      subtypeCode: "BC_CENTRAL_LINE",
       collectedAt: now,
       receivedAt: now,
       containerCode: "BC_BOTTLE_AEROBIC",
-      freeTextLabel: "Blood culture, aerobic",
+      freeTextLabel: "Blood culture, central line",
     },
     ...emptyTail(),
     release: { state: ReleaseState.Draft, reportVersion: 0 },
   },
+  // CSF — consultant-required release behaviour
   {
     ...base("MB25-JK56LM", WorkflowStage.AST),
     priority: Priority.Stat,
@@ -103,8 +106,8 @@ export const DEMO_ACCESSIONS: Accession[] = [
       attendingClinician: "Dr. Sani",
     },
     specimen: {
-      familyCode: "CSF",
-      subtypeCode: "CSF_LUMBAR",
+      familyCode: "STERILE_FLUID",
+      subtypeCode: "SF_CSF",
       collectedAt: now,
       receivedAt: now,
       containerCode: "STERILE_UNIVERSAL",
@@ -113,5 +116,54 @@ export const DEMO_ACCESSIONS: Accession[] = [
     },
     ...emptyTail(),
     release: { state: ReleaseState.PendingValidation, reportVersion: 0 },
+  },
+  // Sputum — Bartlett quality pathway
+  {
+    ...base("MB25-NP78QR", WorkflowStage.Microscopy),
+    priority: Priority.Routine,
+    patient: {
+      mrn: "AMCE-001011",
+      givenName: "Chika",
+      familyName: "Nwosu",
+      sex: Sex.Male,
+      dob: "1955-06-04",
+      ward: "Respiratory Ward",
+      attendingClinician: "Dr. Okonkwo",
+    },
+    specimen: {
+      familyCode: "LRT",
+      subtypeCode: "LRT_SPUTUM",
+      collectedAt: now,
+      receivedAt: now,
+      containerCode: "STERILE_UNIVERSAL",
+      volumeMl: 5,
+      freeTextLabel: "Sputum",
+    },
+    ...emptyTail(),
+    release: { state: ReleaseState.Draft, reportVersion: 0 },
+  },
+  // Colonisation screen — clearance tracking placeholder
+  {
+    ...base("MB25-ST90UV", WorkflowStage.Culture),
+    priority: Priority.Routine,
+    patient: {
+      mrn: "AMCE-001213",
+      givenName: "Funmi",
+      familyName: "Adebayo",
+      sex: Sex.Female,
+      dob: "1979-11-17",
+      ward: "Surgical HDU",
+      attendingClinician: "Dr. Ibrahim",
+    },
+    specimen: {
+      familyCode: "COLONISATION",
+      subtypeCode: "COL_CPE_RECTAL",
+      collectedAt: now,
+      receivedAt: now,
+      containerCode: "SWAB_TRANSPORT",
+      freeTextLabel: "CPE rectal screen",
+    },
+    ...emptyTail(),
+    release: { state: ReleaseState.Draft, reportVersion: 0 },
   },
 ];

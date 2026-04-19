@@ -22,4 +22,13 @@ export const meduguActions = {
   upsertAccession: accessionStore.upsertAccession,
   removeAccession: accessionStore.removeAccession,
   resetToSeed: accessionStore.resetToSeed,
+  addIsolate: accessionStore.addIsolate,
+  updateIsolate: accessionStore.updateIsolate,
+  removeIsolate: accessionStore.removeIsolate,
+  addAST: accessionStore.addAST,
+  updateAST: accessionStore.updateAST,
+  removeAST: accessionStore.removeAST,
+  setWorkflowStage: accessionStore.setWorkflowStage,
+  recordPhoneOut: accessionStore.recordPhoneOut,
+  finaliseRelease: accessionStore.finaliseRelease,
 };

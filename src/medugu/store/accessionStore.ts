@@ -1,11 +1,16 @@
 // Framework-agnostic central store. Tiny pub/sub, no external deps.
 // React binding lives in useAccessionStore.ts.
-//
-// This is the single source of truth for: calculations, live report preview,
-// validation, release state, and exports. Logic modules read/write through
-// this store; UI components only render its projections.
 
-import type { Accession, MeduguState } from "../domain/types";
+import type {
+  Accession,
+  ASTResult,
+  AuditEvent,
+  Isolate,
+  MeduguState,
+  PhoneOutEvent,
+  ReleasePackage,
+} from "../domain/types";
+import type { WorkflowStage, ReleaseState } from "../domain/enums";
 import { DEMO_ACCESSIONS } from "../seed/demoAccessions";
 import {
   BUILD_VERSION,
@@ -13,6 +18,7 @@ import {
   EXPORT_VERSION,
   RULE_VERSION,
 } from "../domain/versions";
+import { newId } from "../domain/ids";
 import { loadState, saveState, SCHEMA_VERSION } from "./persistence";
 
 type Listener = () => void;
@@ -48,6 +54,27 @@ const listeners = new Set<Listener>();
 function emit() {
   saveState(state);
   for (const l of listeners) l();
+}
+
+function mutate(id: string, fn: (a: Accession) => Accession) {
+  const current = state.accessions[id];
+  if (!current) return;
+  const next = { ...fn(current), updatedAt: new Date().toISOString() };
+  state = {
+    ...state,
+    accessions: { ...state.accessions, [id]: next },
+  };
+  emit();
+}
+
+function appendAudit(a: Accession, ev: Omit<AuditEvent, "id" | "at">): Accession {
+  return {
+    ...a,
+    audit: [
+      ...a.audit,
+      { id: newId("aud"), at: new Date().toISOString(), ...ev },
+    ],
+  };
 }
 
 export const accessionStore = {
@@ -88,5 +115,177 @@ export const accessionStore = {
   resetToSeed() {
     state = freshState();
     emit();
+  },
+
+  // ---------- Phase 2 mutations ----------
+
+  addIsolate(accessionId: string, iso: Isolate, actor = "local") {
+    mutate(accessionId, (a) =>
+      appendAudit(
+        { ...a, isolates: [...a.isolates, iso] },
+        {
+          actor,
+          action: "isolate.added",
+          section: "isolate",
+          field: `isolates[${iso.isolateNo}]`,
+          newValue: { organismCode: iso.organismCode, significance: iso.significance },
+        },
+      ),
+    );
+  },
+
+  updateIsolate(accessionId: string, isolateId: string, patch: Partial<Isolate>, actor = "local") {
+    mutate(accessionId, (a) => {
+      const before = a.isolates.find((i) => i.id === isolateId);
+      if (!before) return a;
+      const after: Isolate = { ...before, ...patch };
+      return appendAudit(
+        { ...a, isolates: a.isolates.map((i) => (i.id === isolateId ? after : i)) },
+        {
+          actor,
+          action: "isolate.updated",
+          section: "isolate",
+          field: `isolates[${before.isolateNo}]`,
+          oldValue: before,
+          newValue: after,
+        },
+      );
+    });
+  },
+
+  removeIsolate(accessionId: string, isolateId: string, actor = "local") {
+    mutate(accessionId, (a) => {
+      const before = a.isolates.find((i) => i.id === isolateId);
+      if (!before) return a;
+      return appendAudit(
+        {
+          ...a,
+          isolates: a.isolates.filter((i) => i.id !== isolateId),
+          ast: a.ast.filter((x) => x.isolateId !== isolateId),
+        },
+        {
+          actor,
+          action: "isolate.removed",
+          section: "isolate",
+          field: `isolates[${before.isolateNo}]`,
+          oldValue: before,
+        },
+      );
+    });
+  },
+
+  addAST(accessionId: string, row: ASTResult, actor = "local") {
+    mutate(accessionId, (a) =>
+      appendAudit(
+        { ...a, ast: [...a.ast, row] },
+        {
+          actor,
+          action: "ast.added",
+          section: "ast",
+          field: `ast[${row.antibioticCode}]`,
+          newValue: {
+            isolateId: row.isolateId,
+            antibioticCode: row.antibioticCode,
+            method: row.method,
+            standard: row.standard,
+            rawValue: row.rawValue,
+            interpretation: row.finalInterpretation,
+          },
+        },
+      ),
+    );
+  },
+
+  updateAST(accessionId: string, astId: string, patch: Partial<ASTResult>, actor = "local") {
+    mutate(accessionId, (a) => {
+      const before = a.ast.find((x) => x.id === astId);
+      if (!before) return a;
+      const after: ASTResult = { ...before, ...patch };
+      return appendAudit(
+        { ...a, ast: a.ast.map((x) => (x.id === astId ? after : x)) },
+        {
+          actor,
+          action: "ast.updated",
+          section: "ast",
+          field: `ast[${before.antibioticCode}]`,
+          oldValue: before,
+          newValue: after,
+        },
+      );
+    });
+  },
+
+  removeAST(accessionId: string, astId: string, actor = "local") {
+    mutate(accessionId, (a) => {
+      const before = a.ast.find((x) => x.id === astId);
+      if (!before) return a;
+      return appendAudit(
+        { ...a, ast: a.ast.filter((x) => x.id !== astId) },
+        {
+          actor,
+          action: "ast.removed",
+          section: "ast",
+          field: `ast[${before.antibioticCode}]`,
+          oldValue: before,
+        },
+      );
+    });
+  },
+
+  setWorkflowStage(accessionId: string, to: WorkflowStage, audit: AuditEvent) {
+    mutate(accessionId, (a) => ({
+      ...a,
+      workflowStatus: to,
+      stage: to,
+      audit: [...a.audit, audit],
+    }));
+  },
+
+  recordPhoneOut(accessionId: string, evt: PhoneOutEvent, actor = "local") {
+    mutate(accessionId, (a) =>
+      appendAudit(
+        { ...a, phoneOuts: [...a.phoneOuts, evt] },
+        {
+          actor,
+          action: "phoneOut.recorded",
+          section: "release",
+          field: "phoneOuts",
+          newValue: { recipient: evt.recipient, reasonCode: evt.reasonCode, acknowledged: evt.acknowledged },
+        },
+      ),
+    );
+  },
+
+  finaliseRelease(
+    accessionId: string,
+    pkg: ReleasePackage,
+    nextState: ReleaseState,
+    actor = "local",
+  ) {
+    mutate(accessionId, (a) =>
+      appendAudit(
+        {
+          ...a,
+          releasePackage: pkg,
+          release: {
+            ...a.release,
+            state: nextState,
+            releasedAt: new Date().toISOString(),
+            releasedBy: actor,
+            reportVersion: pkg.version,
+          },
+          releasedAt: new Date().toISOString(),
+          releasingActor: actor,
+        },
+        {
+          actor,
+          action: "release.finalised",
+          section: "release",
+          field: "release.state",
+          oldValue: a.release.state,
+          newValue: nextState,
+        },
+      ),
+    );
   },
 };
