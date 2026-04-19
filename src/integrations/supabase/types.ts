@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      accessions: {
+        Row: {
+          accession_code: string
+          created_at: string
+          created_by: string | null
+          data: Json
+          id: string
+          mrn: string | null
+          patient_name: string | null
+          release_state: string
+          report_version: number
+          stage: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          accession_code: string
+          created_at?: string
+          created_by?: string | null
+          data: Json
+          id?: string
+          mrn?: string | null
+          patient_name?: string | null
+          release_state: string
+          report_version?: number
+          stage: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          accession_code?: string
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          mrn?: string | null
+          patient_name?: string | null
+          release_state?: string
+          report_version?: number
+          stage?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_event: {
         Row: {
           action: string
@@ -95,6 +154,66 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      release_packages: {
+        Row: {
+          accession_id: string
+          body: Json
+          body_sha256: string
+          breakpoint_version: string
+          build_version: string
+          built_at: string
+          built_by: string | null
+          export_version: string
+          id: string
+          rule_version: Json
+          tenant_id: string
+          version: number
+        }
+        Insert: {
+          accession_id: string
+          body: Json
+          body_sha256: string
+          breakpoint_version: string
+          build_version: string
+          built_at?: string
+          built_by?: string | null
+          export_version: string
+          id?: string
+          rule_version: Json
+          tenant_id: string
+          version: number
+        }
+        Update: {
+          accession_id?: string
+          body?: Json
+          body_sha256?: string
+          breakpoint_version?: string
+          build_version?: string
+          built_at?: string
+          built_by?: string | null
+          export_version?: string
+          id?: string
+          rule_version?: Json
+          tenant_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "release_packages_accession_id_fkey"
+            columns: ["accession_id"]
+            isOneToOne: false
+            referencedRelation: "accessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "release_packages_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

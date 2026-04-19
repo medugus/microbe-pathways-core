@@ -27,7 +27,13 @@ function LoginPage() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const redirectTo = search.redirect ?? "/";
+  // Never honour a redirect back to /login or /signup — that creates an
+  // infinite redirect chain when the guard kicks in before the session loads.
+  const rawRedirect = search.redirect ?? "/";
+  const redirectTo =
+    rawRedirect.startsWith("/login") || rawRedirect.startsWith("/signup")
+      ? "/"
+      : rawRedirect;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
