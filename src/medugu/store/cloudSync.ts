@@ -88,12 +88,12 @@ async function seedTenantWithDemo(tenantId: string): Promise<void> {
     stage: a.workflowStatus,
     release_state: a.release.state,
     report_version: a.release.reportVersion ?? 0,
-    data: a as unknown,
+    data: a as unknown as never,
     version: 1,
     created_by: userId ?? null,
     updated_by: userId ?? null,
   }));
-  const { error } = await supabase.from("accessions").insert(rows);
+  const { error } = await supabase.from("accessions").insert(rows as never);
   if (error && error.code !== "23505") {
     // 23505 = unique_violation — another session seeded first; safe to ignore.
     throw error;
@@ -125,10 +125,10 @@ export async function pushAccession(tenantId: string, a: Accession): Promise<voi
         stage: a.workflowStatus,
         release_state: a.release.state,
         report_version: a.release.reportVersion ?? 0,
-        data: a as unknown,
+        data: a as unknown as never,
         version: (existing.version as number) + 1,
         updated_by: userId ?? null,
-      })
+      } as never)
       .eq("id", existing.id as string)
       .eq("version", existing.version as number);
     if (error) throw error;
@@ -154,11 +154,11 @@ export async function pushAccession(tenantId: string, a: Accession): Promise<voi
       stage: a.workflowStatus,
       release_state: a.release.state,
       report_version: a.release.reportVersion ?? 0,
-      data: a as unknown,
+      data: a as unknown as never,
       version: 1,
       created_by: userId ?? null,
       updated_by: userId ?? null,
-    })
+    } as never)
     .select("id")
     .single();
   if (error) throw error;
