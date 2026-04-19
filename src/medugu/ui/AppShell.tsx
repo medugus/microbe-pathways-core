@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import { CaseManager } from "./CaseManager";
 import { SectionTabs } from "./SectionTabs";
 import {
@@ -17,7 +17,7 @@ import {
 } from "./sections";
 import { useActiveAccession } from "../store/useAccessionStore";
 
-const SECTION_COMPONENTS: Record<SectionKey, () => JSX.Element> = {
+const SECTION_COMPONENTS: Record<SectionKey, ComponentType> = {
   patient: PatientSection,
   specimen: SpecimenSection,
   microscopy: MicroscopySection,
