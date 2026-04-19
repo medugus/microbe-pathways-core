@@ -224,21 +224,25 @@ export const amendRelease = createServerFn({ method: "POST" })
       buildVersion: accession.buildVersion,
     };
 
-    const { error: insErr } = await supabase.from("release_packages").insert({
-      tenant_id: row.tenant_id,
-      accession_id: row.id,
-      version: nextVersion,
-      built_at: builtAt,
-      built_by: userId,
-      body: pkg.body as never,
-      rule_version: { value: pkg.ruleVersion } as never,
-      breakpoint_version: pkg.breakpointVersion,
-      export_version: pkg.exportVersion,
-      build_version: pkg.buildVersion,
-      body_sha256: sealHash,
-    } as never);
-    if (insErr) {
-      return { ok: false, reason: `Amendment insert failed: ${insErr.message}` };
+    const { data: insertedPkg, error: insErr } = await supabase
+      .from("release_packages")
+      .insert({
+        tenant_id: row.tenant_id,
+        accession_id: row.id,
+        version: nextVersion,
+        built_at: builtAt,
+        built_by: userId,
+        body: pkg.body as never,
+        rule_version: { value: pkg.ruleVersion } as never,
+        breakpoint_version: pkg.breakpointVersion,
+        export_version: pkg.exportVersion,
+        build_version: pkg.buildVersion,
+        body_sha256: sealHash,
+      } as never)
+      .select("id, version, body, rule_version, breakpoint_version, export_version, build_version, built_at")
+      .maybeSingle();
+    if (insErr || !insertedPkg) {
+      return { ok: false, reason: `Amendment insert failed: ${insErr?.message ?? "no row returned"}` };
     }
 
     const amendedAccession: Accession = {
