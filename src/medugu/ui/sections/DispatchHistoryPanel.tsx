@@ -272,9 +272,10 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
       </div>
 
       <p className="mt-2 text-[10px] text-muted-foreground">
-        Mock transport. Payloads are regenerated server-side from the frozen
-        ReleasePackage and never POSTed externally. Audit log records every
-        request, retry, send and failure.
+        Mock dispatch only — no external receiver transport in this build.
+        Payloads are regenerated server-side from the frozen ReleasePackage and
+        never POSTed externally. Audit log records every request, retry, send
+        and failure.
       </p>
     </section>
   );
