@@ -8,6 +8,9 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { AllRolesPopover } from "./AllRolesPopover";
+import { useDemoRoleView } from "./demoRoleView";
+import { ROLE_CATALOG } from "./rolesCatalog";
 
 export function SessionBar() {
   const { profile, roles, user, signOut, hasRole } = useAuth();
