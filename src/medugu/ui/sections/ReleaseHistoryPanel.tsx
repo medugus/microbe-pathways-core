@@ -59,6 +59,17 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
+// Any release_packages row built strictly before this instant was sealed with
+// the pre-canonical JSON serializer (Postgres JSONB key order). We do NOT
+// re-seal those rows — their stored body_sha256 stays the historical record
+// of what was released. We only show a badge so a "mismatch" verification
+// result is interpreted as "legacy seal format", not "body altered".
+const CANONICAL_SEAL_EPOCH = "2026-04-19T00:00:00.000Z";
+
+function isLegacySeal(builtAt: string): boolean {
+  return new Date(builtAt).getTime() < new Date(CANONICAL_SEAL_EPOCH).getTime();
+}
+
 export function ReleaseHistoryPanel({ accessionRowId }: Props) {
   const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -255,6 +266,14 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                       amended
                     </span>
                   )}
+                  {isLegacySeal(e.built_at) && (
+                    <span
+                      title="Sealed before the canonical-stringify fix. Verification may report mismatch because Postgres JSONB does not preserve key order. The stored hash is the historical record and is not re-sealed."
+                      className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+                    >
+                      Pre-canonical seal
+                    </span>
+                  )}
                   <span className="text-[10px] text-muted-foreground">
                     {new Date(e.built_at).toLocaleString()}
                   </span>
@@ -284,7 +303,9 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                 )}
                 {verify[e.id]?.status === "mismatch" && (
                   <span className="rounded bg-destructive/15 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-destructive">
-                    ✗ Mismatch — body has been altered
+                    {isLegacySeal(e.built_at)
+                      ? "✗ Mismatch (legacy seal — expected for pre-canonical rows)"
+                      : "✗ Mismatch — body has been altered"}
                   </span>
                 )}
                 {verify[e.id]?.status === "error" && (
