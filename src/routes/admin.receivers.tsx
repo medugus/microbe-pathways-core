@@ -202,42 +202,63 @@ function ReceiversAdminPage() {
           <p className="text-xs text-muted-foreground">No receivers yet.</p>
         ) : (
           <ul className="space-y-2">
-            {rows.map((r) => (
-              <li
-                key={r.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-card p-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{r.name}</span>
-                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
-                      {r.format}
-                    </span>
-                    {!r.enabled && (
-                      <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">
-                        disabled
+            {rows.map((r) => {
+              const autoOn = receiverPrefs.isAutoDispatchEnabled(r.tenant_id, r.id);
+              return (
+                <li
+                  key={r.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-card p-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{r.name}</span>
+                      <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
+                        {r.format}
                       </span>
+                      {!r.enabled && (
+                        <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">
+                          disabled
+                        </span>
+                      )}
+                      {!autoOn && r.enabled && (
+                        <span
+                          className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                          title="Auto-dispatch on release is disabled for this receiver. Manual dispatch from the Export section still works."
+                        >
+                          auto-dispatch off
+                        </span>
+                      )}
+                    </div>
+                    <div className="truncate font-mono text-[11px] text-muted-foreground">
+                      {r.endpoint_url}
+                    </div>
+                    {r.bearer_token && (
+                      <div className="text-[10px] text-muted-foreground">
+                        bearer token configured
+                      </div>
                     )}
                   </div>
-                  <div className="truncate font-mono text-[11px] text-muted-foreground">
-                    {r.endpoint_url}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        receiverPrefs.setAutoDispatchEnabled(r.tenant_id, r.id, !autoOn)
+                      }
+                      title="Browser-phase preference: stored locally per device."
+                    >
+                      Auto-dispatch: {autoOn ? "On" : "Off"}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => toggle(r)}>
+                      {r.enabled ? "Disable" : "Enable"}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => remove(r)}>
+                      Delete
+                    </Button>
                   </div>
-                  {r.bearer_token && (
-                    <div className="text-[10px] text-muted-foreground">
-                      bearer token configured
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => toggle(r)}>
-                    {r.enabled ? "Disable" : "Enable"}
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => remove(r)}>
-                    Delete
-                  </Button>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
