@@ -15,7 +15,10 @@ import { ROLE_CATALOG } from "./rolesCatalog";
 export function SessionBar() {
   const { profile, roles, user, signOut, hasRole } = useAuth();
   const [tenantName, setTenantName] = useState<string | null>(null);
-
+  const { activeView } = useDemoRoleView();
+  const activeViewEntry = activeView
+    ? ROLE_CATALOG.find((r) => r.code === activeView)
+    : null;
   useEffect(() => {
     if (!profile?.tenant_id) {
       setTenantName(null);
