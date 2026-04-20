@@ -53,9 +53,17 @@ export function IsolateSection() {
       <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-background p-3 md:grid-cols-6">
         <label className="md:col-span-2 text-xs">
           <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Organism</span>
-          <select
+           <select
             value={organismCode}
-            onChange={(e) => setOrganismCode(e.target.value)}
+            onChange={(e) => {
+              const code = e.target.value;
+              setOrganismCode(code);
+              // Clear "No growth" selection when switching to a real organism
+              const nonGrowthOrganisms = ["NOGRO", "MIXED", "NORML"];
+              if (!nonGrowthOrganisms.includes(code) && growthCode === "NO_GROWTH") {
+                setGrowthCode("");
+              }
+            }}
             className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
           >
             {ORGANISMS.map((o) => (
