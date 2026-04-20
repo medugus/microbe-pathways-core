@@ -303,7 +303,9 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                 )}
                 {verify[e.id]?.status === "mismatch" && (
                   <span className="rounded bg-destructive/15 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-destructive">
-                    ✗ Mismatch — body has been altered
+                    {isLegacySeal(e.built_at)
+                      ? "✗ Mismatch (legacy seal — expected for pre-canonical rows)"
+                      : "✗ Mismatch — body has been altered"}
                   </span>
                 )}
                 {verify[e.id]?.status === "error" && (
