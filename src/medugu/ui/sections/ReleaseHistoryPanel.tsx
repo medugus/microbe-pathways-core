@@ -47,9 +47,9 @@ interface Props {
 type VerifyState =
   | { status: "idle" }
   | { status: "verifying" }
-  | { status: "ok"; recomputed: string }
-  | { status: "mismatch"; recomputed: string }
-  | { status: "error"; message: string };
+  | { status: "ok"; stored: string; recomputed: string; verifiedAt: string }
+  | { status: "mismatch"; stored: string; recomputed: string; verifiedAt: string }
+  | { status: "error"; message: string; verifiedAt: string };
 
 async function sha256Hex(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input);
@@ -68,28 +68,37 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
   async function verifySeal(pkgId: string, expectedSha: string) {
     setVerify((m) => ({ ...m, [pkgId]: { status: "verifying" } }));
     try {
+      // Always re-fetch the FROZEN body from release_packages (never reads
+      // live accession state) and re-fetch body_sha256 in the same row so
+      // we are comparing what the server has right now, not a stale prop.
       const { data, error: fetchErr } = await supabase
         .from("release_packages")
-        .select("body")
+        .select("body, body_sha256")
         .eq("id", pkgId)
         .maybeSingle();
       if (fetchErr) throw new Error(fetchErr.message);
       if (!data) throw new Error("Release package not visible.");
+      const stored = (data.body_sha256 as string) ?? expectedSha;
       // Canonical form must match how sealRelease/amendRelease produced it:
       // recursive sorted-key JSON with no whitespace (canonicalStringify),
       // because Postgres JSONB does not preserve key order on round-trip.
       const recomputed = await sha256Hex(canonicalStringify(data.body));
+      const verifiedAt = new Date().toISOString();
       setVerify((m) => ({
         ...m,
         [pkgId]:
-          recomputed === expectedSha
-            ? { status: "ok", recomputed }
-            : { status: "mismatch", recomputed },
+          recomputed === stored
+            ? { status: "ok", stored, recomputed, verifiedAt }
+            : { status: "mismatch", stored, recomputed, verifiedAt },
       }));
     } catch (err) {
       setVerify((m) => ({
         ...m,
-        [pkgId]: { status: "error", message: err instanceof Error ? err.message : String(err) },
+        [pkgId]: {
+          status: "error",
+          message: err instanceof Error ? err.message : String(err),
+          verifiedAt: new Date().toISOString(),
+        },
       }));
     }
   }
@@ -262,7 +271,11 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                   disabled={verify[e.id]?.status === "verifying"}
                   className="rounded border border-border bg-muted px-1.5 py-0.5 font-sans text-[10px] font-medium text-foreground hover:bg-muted/70 disabled:opacity-50"
                 >
-                  {verify[e.id]?.status === "verifying" ? "Verifying…" : "Verify seal"}
+                  {verify[e.id]?.status === "verifying"
+                    ? "Verifying…"
+                    : verify[e.id]?.status === "ok" || verify[e.id]?.status === "mismatch"
+                      ? "Re-verify"
+                      : "Verify seal"}
                 </button>
                 {verify[e.id]?.status === "ok" && (
                   <span className="rounded bg-primary/15 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-primary">
@@ -280,6 +293,24 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                   </span>
                 )}
               </div>
+              {(verify[e.id]?.status === "ok" || verify[e.id]?.status === "mismatch") && (
+                <div className="mt-1 space-y-0.5 break-all font-mono text-[10px] text-muted-foreground">
+                  <div>
+                    <span className="text-foreground">stored:    </span>
+                    {(verify[e.id] as { stored: string }).stored}
+                  </div>
+                  <div>
+                    <span className="text-foreground">recomputed:</span>{" "}
+                    {(verify[e.id] as { recomputed: string }).recomputed}
+                  </div>
+                  <div className="font-sans">
+                    verified at{" "}
+                    {new Date(
+                      (verify[e.id] as { verifiedAt: string }).verifiedAt,
+                    ).toLocaleString()}
+                  </div>
+                </div>
+              )}
               <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
                 <span>build {e.build_version}</span>
                 <span>· breakpoint {e.breakpoint_version}</span>
