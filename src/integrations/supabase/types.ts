@@ -126,6 +126,92 @@ export type Database = {
           },
         ]
       }
+      dispatch_history: {
+        Row: {
+          accession_id: string
+          attempt_no: number
+          completed_at: string | null
+          error_message: string | null
+          format: string
+          id: string
+          parent_dispatch_id: string | null
+          payload_bytes: number | null
+          receiver_name: string
+          release_package_id: string
+          release_version: number
+          requested_at: string
+          requested_by: string | null
+          simulated_failure: boolean
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          accession_id: string
+          attempt_no?: number
+          completed_at?: string | null
+          error_message?: string | null
+          format: string
+          id?: string
+          parent_dispatch_id?: string | null
+          payload_bytes?: number | null
+          receiver_name?: string
+          release_package_id: string
+          release_version: number
+          requested_at?: string
+          requested_by?: string | null
+          simulated_failure?: boolean
+          status: string
+          tenant_id: string
+        }
+        Update: {
+          accession_id?: string
+          attempt_no?: number
+          completed_at?: string | null
+          error_message?: string | null
+          format?: string
+          id?: string
+          parent_dispatch_id?: string | null
+          payload_bytes?: number | null
+          receiver_name?: string
+          release_package_id?: string
+          release_version?: number
+          requested_at?: string
+          requested_by?: string | null
+          simulated_failure?: boolean
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_history_accession_id_fkey"
+            columns: ["accession_id"]
+            isOneToOne: false
+            referencedRelation: "accessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_history_parent_dispatch_id_fkey"
+            columns: ["parent_dispatch_id"]
+            isOneToOne: false
+            referencedRelation: "dispatch_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_history_release_package_id_fkey"
+            columns: ["release_package_id"]
+            isOneToOne: false
+            referencedRelation: "release_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_history_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_deliveries: {
         Row: {
           accession_id: string
