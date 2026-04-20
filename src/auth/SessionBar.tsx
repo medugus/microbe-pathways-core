@@ -112,6 +112,7 @@ export function SessionBar() {
             </Link>
           </>
         )}
+        <AllRolesPopover />
         <Button
           size="sm"
           variant="ghost"
