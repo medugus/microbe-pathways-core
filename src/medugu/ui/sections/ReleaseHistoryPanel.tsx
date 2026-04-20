@@ -43,10 +43,54 @@ interface Props {
   accessionRowId: string;
 }
 
+type VerifyState =
+  | { status: "idle" }
+  | { status: "verifying" }
+  | { status: "ok"; recomputed: string }
+  | { status: "mismatch"; recomputed: string }
+  | { status: "error"; message: string };
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export function ReleaseHistoryPanel({ accessionRowId }: Props) {
   const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [verify, setVerify] = useState<Record<string, VerifyState>>({});
+
+  async function verifySeal(pkgId: string, expectedSha: string) {
+    setVerify((m) => ({ ...m, [pkgId]: { status: "verifying" } }));
+    try {
+      const { data, error: fetchErr } = await supabase
+        .from("release_packages")
+        .select("body")
+        .eq("id", pkgId)
+        .maybeSingle();
+      if (fetchErr) throw new Error(fetchErr.message);
+      if (!data) throw new Error("Release package not visible.");
+      // Canonical form must match how sealRelease/amendRelease produced it:
+      // JSON.stringify(preview) with no spacing.
+      const recomputed = await sha256Hex(JSON.stringify(data.body));
+      setVerify((m) => ({
+        ...m,
+        [pkgId]:
+          recomputed === expectedSha
+            ? { status: "ok", recomputed }
+            : { status: "mismatch", recomputed },
+      }));
+    } catch (err) {
+      setVerify((m) => ({
+        ...m,
+        [pkgId]: { status: "error", message: err instanceof Error ? err.message : String(err) },
+      }));
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -208,8 +252,31 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                   by {e.builtByName ?? "—"}
                 </span>
               </div>
-              <div className="mt-1.5 break-all font-mono text-[10px] text-muted-foreground">
-                seal: {e.body_sha256}
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 break-all font-mono text-[10px] text-muted-foreground">
+                <span>seal: {e.body_sha256}</span>
+                <button
+                  type="button"
+                  onClick={() => verifySeal(e.id, e.body_sha256)}
+                  disabled={verify[e.id]?.status === "verifying"}
+                  className="rounded border border-border bg-muted px-1.5 py-0.5 font-sans text-[10px] font-medium text-foreground hover:bg-muted/70 disabled:opacity-50"
+                >
+                  {verify[e.id]?.status === "verifying" ? "Verifying…" : "Verify seal"}
+                </button>
+                {verify[e.id]?.status === "ok" && (
+                  <span className="rounded bg-primary/15 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-primary">
+                    ✓ Seal valid
+                  </span>
+                )}
+                {verify[e.id]?.status === "mismatch" && (
+                  <span className="rounded bg-destructive/15 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-destructive">
+                    ✗ Mismatch — body has been altered
+                  </span>
+                )}
+                {verify[e.id]?.status === "error" && (
+                  <span className="rounded bg-destructive/15 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-destructive">
+                    Error: {(verify[e.id] as { message: string }).message}
+                  </span>
+                )}
               </div>
               <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
                 <span>build {e.build_version}</span>
