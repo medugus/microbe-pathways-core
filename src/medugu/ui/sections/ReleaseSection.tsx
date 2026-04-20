@@ -15,6 +15,7 @@ import type { AutoDispatchResult } from "../../store/export.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Accession } from "../../domain/types";
 import { ReleaseHistoryPanel } from "./ReleaseHistoryPanel";
+import { DispatchHistoryPanel } from "./DispatchHistoryPanel";
 
 export function ReleaseSection() {
   const accession = useActiveAccession();
@@ -443,6 +444,13 @@ export function ReleaseSection() {
       {accessionRowId && (
         <ReleaseHistoryPanel
           key={`${accessionRowId}-${historyKey}`}
+          accessionRowId={accessionRowId}
+        />
+      )}
+
+      {accessionRowId && (
+        <DispatchHistoryPanel
+          key={`dispatch-${accessionRowId}-${historyKey}`}
           accessionRowId={accessionRowId}
         />
       )}
