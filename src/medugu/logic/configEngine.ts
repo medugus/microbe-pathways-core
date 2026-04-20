@@ -197,9 +197,11 @@ export function updateDraftSection<K extends ConfigSection>(
   section: K,
   next: ConfigSetPayload[K],
 ): ConfigState {
+  // Deep-clone the incoming section so external references can't mutate draft.
+  const cloned = JSON.parse(JSON.stringify(next)) as ConfigSetPayload[K];
   return {
     ...state,
-    draft: { ...state.draft, [section]: clonePayload({ [section]: next } as never)[section] },
+    draft: { ...state.draft, [section]: cloned },
   };
 }
 
