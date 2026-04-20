@@ -81,6 +81,12 @@ export function SessionBar() {
             >
               Receivers
             </Link>
+            <Link
+              to="/admin/config"
+              className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Config
+            </Link>
           </>
         )}
         <Button
