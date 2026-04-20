@@ -61,6 +61,59 @@ function IPCDashboardPage() {
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<"open" | "all">("open");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [drawerDetail, setDrawerDetail] = useState<IPCEpisodeDetail | null>(null);
+  const [drawerOpening, setDrawerOpening] = useState(false);
+  const navigate = useNavigate();
+
+  async function openDrawer(row: SignalRow) {
+    // Best-effort enrichment: fetch the linked accession.data so the drawer
+    // can show specimen / organism display / expert-rule fingerprints. RLS
+    // already scopes us to the tenant.
+    setDrawerOpening(true);
+    let linked: Accession | null = null;
+    try {
+      const { data } = await supabase
+        .from("accessions")
+        .select("data")
+        .eq("id", row.accession_id)
+        .maybeSingle();
+      if (data?.data) linked = data.data as unknown as Accession;
+    } catch {
+      // non-fatal — drawer still renders signal-only fields
+    }
+    const persisted: PersistedSignalLike = {
+      id: row.id,
+      accession_id: row.accession_id,
+      isolate_id: row.isolate_id,
+      rule_code: row.rule_code,
+      organism_code: row.organism_code,
+      phenotypes: row.phenotypes,
+      message: row.message,
+      timing: row.timing,
+      actions: row.actions,
+      notify: row.notify,
+      mrn: row.mrn,
+      ward: row.ward,
+      raised_at: row.raised_at,
+    };
+    setDrawerDetail(detailFromPersistedSignal(persisted, linked));
+    setDrawerOpening(false);
+  }
+
+  async function openLinkedAccession() {
+    if (!drawerDetail?.accessionRowId) return;
+    // Resolve domain id (accession_code) — store keys cases by accession_code,
+    // not by Postgres row id.
+    const { data } = await supabase
+      .from("accessions")
+      .select("accession_code")
+      .eq("id", drawerDetail.accessionRowId)
+      .maybeSingle();
+    const code = (data?.accession_code as string | undefined) ?? drawerDetail.accessionDisplayId;
+    if (code) meduguActions.setActive(code);
+    setDrawerDetail(null);
+    void navigate({ to: "/" });
+  }
 
   async function load() {
     setLoading(true);
