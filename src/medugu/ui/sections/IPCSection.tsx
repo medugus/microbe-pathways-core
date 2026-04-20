@@ -9,6 +9,8 @@ import { useActiveAccession } from "../../store/useAccessionStore";
 import { evaluateIPCServer } from "../../store/engines.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { IPCDecision } from "../../logic/ipcEngine";
+import { detailFromDecision, type IPCEpisodeDetail } from "../../logic/ipcEpisodeDetail";
+import { IPCEpisodeDrawer } from "./IPCEpisodeDrawer";
 
 const TIMING_TONE: Record<string, string> = {
   immediate: "bg-destructive/20 text-destructive",
@@ -24,6 +26,7 @@ export function IPCSection() {
   const [persisted, setPersisted] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drawerDetail, setDrawerDetail] = useState<IPCEpisodeDetail | null>(null);
 
   // Re-run server scan whenever the active accession or its isolate set changes.
   const accessionId = accession?.id ?? null;
@@ -125,7 +128,16 @@ export function IPCSection() {
         {decisions.map((d, idx) => (
           <li
             key={`${d.isolateId}-${d.ruleCode}-${idx}`}
-            className="rounded-md border border-border bg-card p-3"
+            className="cursor-pointer rounded-md border border-border bg-card p-3 transition hover:border-primary/40 hover:bg-muted/30"
+            onClick={() => setDrawerDetail(detailFromDecision(accession, d))}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setDrawerDetail(detailFromDecision(accession, d));
+              }
+            }}
           >
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -144,6 +156,7 @@ export function IPCSection() {
                   phenotype: {d.phenotypes.join(", ")}
                 </span>
               )}
+              <span className="ml-auto text-[10px] text-muted-foreground">click for detail →</span>
             </div>
             <p className="mt-1.5 text-sm text-foreground">{d.message}</p>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
@@ -164,6 +177,12 @@ export function IPCSection() {
           </li>
         ))}
       </ul>
+      <IPCEpisodeDrawer
+        open={drawerDetail !== null}
+        onOpenChange={(o) => { if (!o) setDrawerDetail(null); }}
+        detail={drawerDetail}
+        // No "Open accession" button — we are already on this accession.
+      />
     </div>
   );
 }
