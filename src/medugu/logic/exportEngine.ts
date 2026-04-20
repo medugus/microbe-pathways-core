@@ -510,12 +510,18 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
       phenotypeFlags: a.phenotypeFlags,
     })),
   );
+  const isAmendment = accession.release.state === ReleaseState.Amended;
   return {
     schema: "medugu.normalised/1",
     exportedAt: new Date().toISOString(),
     versions: doc.versions,
     releaseState: accession.release.state,
     reportVersion: doc.reportVersion,
+    correction: {
+      isCorrection: isAmendment,
+      supersedesVersion: isAmendment ? Math.max(1, doc.reportVersion - 1) : undefined,
+      reason: isAmendment ? accession.release.amendmentReason : undefined,
+    },
     patient: accession.patient,
     accession: {
       id: accession.id,
@@ -541,6 +547,7 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
       reportVersion: accession.release.reportVersion,
       releasedAt: accession.releasedAt,
       releasedBy: accession.releasingActor,
+      amendmentReason: accession.release.amendmentReason,
       consultantApproval: accession.release.consultantApproval,
       fromReleasePackage: !!accession.releasePackage,
     },
