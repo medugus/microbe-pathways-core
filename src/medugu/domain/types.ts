@@ -374,6 +374,9 @@ export interface Accession {
   release: ReleaseRecord;
   releasePackage?: ReleasePackage;
 
+  /** AMS restricted-drug approval requests (browser-phase only). */
+  amsApprovals?: AMSApprovalRequest[];
+
   audit: AuditEvent[];
 }
 
