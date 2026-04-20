@@ -16,6 +16,7 @@ import { copyText, downloadText } from "../../utils/exportHelpers";
 import { dispatchExport } from "../../store/export.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { ReleaseState } from "../../domain/enums";
+import { soundEngine } from "../../logic/soundEngine";
 
 interface ReceiverOpt {
   id: string;
@@ -111,9 +112,21 @@ export function ExportSection() {
           ? `Delivered (HTTP ${result.httpStatus ?? "n/a"}).`
           : `${result.reason ?? "Dispatch failed"} (HTTP ${result.httpStatus ?? "n/a"}).`,
       );
+      if (!result.ok) {
+        soundEngine.emit({
+          cls: "urgent",
+          key: `dispatch-fail:export:${row.id}:${Date.now()}`,
+          label: "Dispatch failed",
+        });
+      }
     } catch (e) {
       setDispatchOk(false);
       setDispatchMsg(e instanceof Error ? e.message : String(e));
+      soundEngine.emit({
+        cls: "urgent",
+        key: `dispatch-fail:export-exc:${Date.now()}`,
+        label: "Dispatch exception",
+      });
     } finally {
       setDispatching(false);
     }
