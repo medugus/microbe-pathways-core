@@ -21,6 +21,9 @@ export interface IPCDecision {
   isNewEpisode: boolean;
   /** Clearance progress for screen pathways: e.g. 1/3. */
   clearanceProgress?: { negativeCount: number; required: number };
+  /** Prior accessions (same MRN, within rolling window) that contributed
+   * to dedup / repeat-episode detection. Empty for first occurrences. */
+  priorAccessionIds?: string[];
 }
 
 export interface IPCReport {
