@@ -33,7 +33,12 @@ export interface IPCEpisodeDetail {
   timing: EscalationTiming | string;
   episodeStatus: "new" | "repeat";
   clearanceProgress?: { negativeCount: number; required: number };
+  /** Raw prior accession ids (domain ids, e.g. MB25-…). Kept for back-compat. */
   priorAccessionIds: string[];
+  /** Resolved prior cases — populated when an accession lookup is supplied. */
+  priorCases: Array<{ id: string; accessionDisplayId?: string; patientLabel?: string; ward?: string }>;
+  /** Human-readable basis for the rolling window, e.g. "MRSA_ALERT · 90d window · same MRN". */
+  windowBasis?: string;
   raisedAt?: string;
   source: "live_decision" | "persisted_signal";
 }
@@ -55,13 +60,32 @@ function expertRulesFor(accession: Accession, isolate: Isolate | undefined): str
   return Array.from(codes);
 }
 
-/** Build a detail view-model from a live engine decision + the active accession. */
+/** Build a detail view-model from a live engine decision + the active accession.
+ *  When `priorLookup` is supplied, prior accession ids are resolved into
+ *  `{id, accessionDisplayId, patientLabel, ward}` chips for the drawer. The
+ *  lookup is intentionally generic so the same builder can later be fed by a
+ *  server query without changing the contract. */
 export function detailFromDecision(
   accession: Accession,
   decision: IPCDecision,
   accessionRowId?: string,
+  priorLookup?: (id: string) => Accession | undefined,
+  windowDays?: number,
 ): IPCEpisodeDetail {
   const iso = accession.isolates.find((i) => i.id === decision.isolateId);
+  const priorIds = decision.priorAccessionIds ?? [];
+  const priorCases = priorIds.map((id) => {
+    const a = priorLookup?.(id);
+    return {
+      id,
+      accessionDisplayId: a?.accessionNumber,
+      patientLabel: a ? patientLabel(a) : undefined,
+      ward: a?.patient.ward,
+    };
+  });
+  const windowBasis = windowDays
+    ? `${decision.ruleCode} · ${windowDays}d rolling window · same MRN`
+    : `${decision.ruleCode} · same MRN (local cohort)`;
   return {
     key: `${accession.id}:${decision.isolateId}:${decision.ruleCode}`,
     accessionRowId,
@@ -82,7 +106,9 @@ export function detailFromDecision(
     timing: decision.timing,
     episodeStatus: decision.isNewEpisode ? "new" : "repeat",
     clearanceProgress: decision.clearanceProgress,
-    priorAccessionIds: decision.priorAccessionIds ?? [],
+    priorAccessionIds: priorIds,
+    priorCases,
+    windowBasis,
     source: "live_decision",
   };
 }
@@ -136,6 +162,7 @@ export function detailFromPersistedSignal(
     // later cases, not by mutating this row.
     episodeStatus: "new",
     priorAccessionIds: [],
+    priorCases: [],
     raisedAt: row.raised_at,
     source: "persisted_signal",
   };
