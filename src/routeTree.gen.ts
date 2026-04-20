@@ -13,6 +13,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IpcRouteImport } from './routes/ipc'
 import { Route as AuditRouteImport } from './routes/audit'
+import { Route as AmsRouteImport } from './routes/ams'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminReceiversRouteImport } from './routes/admin.receivers'
@@ -37,6 +38,11 @@ const AuditRoute = AuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AmsRoute = AmsRouteImport.update({
+  id: '/ams',
+  path: '/ams',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -55,6 +61,7 @@ const AdminReceiversRoute = AdminReceiversRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ams': typeof AmsRoute
   '/audit': typeof AuditRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ams': typeof AmsRoute
   '/audit': typeof AuditRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ams': typeof AmsRoute
   '/audit': typeof AuditRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ams'
     | '/audit'
     | '/ipc'
     | '/login'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ams'
     | '/audit'
     | '/ipc'
     | '/login'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/ams'
     | '/audit'
     | '/ipc'
     | '/login'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AmsRoute: typeof AmsRoute
   AuditRoute: typeof AuditRoute
   IpcRoute: typeof IpcRoute
   LoginRoute: typeof LoginRoute
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ams': {
+      id: '/ams'
+      path: '/ams'
+      fullPath: '/ams'
+      preLoaderRoute: typeof AmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -177,6 +197,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AmsRoute: AmsRoute,
   AuditRoute: AuditRoute,
   IpcRoute: IpcRoute,
   LoginRoute: LoginRoute,
@@ -187,3 +208,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
