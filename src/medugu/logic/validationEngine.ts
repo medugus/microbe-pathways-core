@@ -132,7 +132,32 @@ export function runValidation(accession: Accession): ValidationReport {
     }
   }
 
-  // ---- Consultant-required release: now a BLOCKER until consultantApproval is recorded.
+  // ---- DEF-001: sterile-site specimen + ANY IPC critical alert
+  // (CRE/MRSA/VRE/CAURIS/CRAB/CRPA) ⇒ acknowledged phone-out required before
+  // release, regardless of whether the resolver flagged
+  // criticalCommunicationRequired. This catches pleural/ascitic/synovial/SPA/
+  // image-guided sterile-site cultures that grow an alert organism — those
+  // were silently exportable before this branch existed.
+  if (
+    !phoneOutRequiredPending &&
+    isSterileSiteSubtype(accession.specimen.familyCode, accession.specimen.subtypeCode)
+  ) {
+    const ipc = evaluateIPC(accession);
+    const hasCriticalIPC = ipc.decisions.some((d) => IPC_CRITICAL_RULE_CODES.has(d.ruleCode));
+    if (hasCriticalIPC) {
+      const hasAck = accession.phoneOuts.some((p) => p.acknowledged);
+      if (!hasAck) {
+        phoneOutRequiredPending = true;
+        issues.push(
+          block(
+            "PHONE_OUT_REQUIRED",
+            "release",
+            "Sterile-site specimen with IPC critical alert — acknowledged phone-out required before release.",
+          ),
+        );
+      }
+    }
+  }
   let consultantApprovalPending = false;
   if (profile?.gating.consultantReleaseRequired) {
     if (!accession.release.consultantApproval) {
