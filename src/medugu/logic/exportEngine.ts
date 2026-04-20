@@ -440,6 +440,16 @@ export interface NormalisedExport {
   versions: ReportPreviewDoc["versions"];
   releaseState: string;
   reportVersion: number;
+  /**
+   * Correction block (HL7 OBR-25=C / FHIR DiagnosticReport.status=amended).
+   * Present and `isCorrection: true` when this export represents an amendment;
+   * receivers should treat it as a correction superseding `supersedesVersion`.
+   */
+  correction: {
+    isCorrection: boolean;
+    supersedesVersion?: number;
+    reason?: string;
+  };
   patient: Accession["patient"];
   accession: {
     id: string;
@@ -474,6 +484,7 @@ export interface NormalisedExport {
     reportVersion: number;
     releasedAt?: string;
     releasedBy?: string;
+    amendmentReason?: string;
     consultantApproval?: { approvedBy: string; approvedAt: string; reason?: string };
     fromReleasePackage: boolean;
   };
