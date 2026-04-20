@@ -59,6 +59,17 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
+// Any release_packages row built strictly before this instant was sealed with
+// the pre-canonical JSON serializer (Postgres JSONB key order). We do NOT
+// re-seal those rows — their stored body_sha256 stays the historical record
+// of what was released. We only show a badge so a "mismatch" verification
+// result is interpreted as "legacy seal format", not "body altered".
+const CANONICAL_SEAL_EPOCH = "2026-04-19T00:00:00.000Z";
+
+function isLegacySeal(builtAt: string): boolean {
+  return new Date(builtAt).getTime() < new Date(CANONICAL_SEAL_EPOCH).getTime();
+}
+
 export function ReleaseHistoryPanel({ accessionRowId }: Props) {
   const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
