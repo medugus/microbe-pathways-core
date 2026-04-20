@@ -23,6 +23,7 @@ import {
   SECTION_ORDER,
 } from "./sections";
 import { useActiveAccession, useMeduguState } from "../store/useAccessionStore";
+import { useConfigState } from "../store/configStore";
 
 const SECTION_COMPONENTS = {
   patient: PatientSection,
@@ -43,6 +44,7 @@ const SECTION_COMPONENTS = {
 export function AppShell() {
   const accession = useActiveAccession();
   const state = useMeduguState();
+  const config = useConfigState();
 
   return (
     <div className="grid h-screen grid-cols-[280px_1fr] bg-background text-foreground">
@@ -113,7 +115,8 @@ export function AppShell() {
 
         <footer className="border-t border-border bg-card px-4 py-1.5 text-[10px] text-muted-foreground">
           build {state.buildVersion} · rules {state.ruleVersion.version} · breakpoints{" "}
-          {state.breakpointVersion} · export {state.exportVersion}
+          {state.breakpointVersion} · export {state.exportVersion} ·{" "}
+          <span className="text-foreground/80">config v{config.active.meta.version}</span>
         </footer>
       </main>
     </div>
