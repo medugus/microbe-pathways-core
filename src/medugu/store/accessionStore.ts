@@ -3,6 +3,7 @@
 
 import type {
   Accession,
+  AMSApprovalRequest,
   ASTResult,
   AuditEvent,
   Isolate,
