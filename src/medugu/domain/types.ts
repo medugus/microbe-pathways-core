@@ -299,6 +299,42 @@ export interface ReleasePackage {
   buildVersion: string;
 }
 
+// ---------- AMS restricted-drug approval (Stage 6, browser-phase) ----------
+
+export type AMSApprovalStatus =
+  | "not_requested"
+  | "pending"
+  | "approved"
+  | "denied"
+  | "expired";
+
+export interface AMSApprovalEvent {
+  at: string;
+  actor: string;       // placeholder identity in browser-phase
+  note?: string;
+}
+
+/**
+ * One AMS approval request, scoped to a single AST row.
+ * Browser-phase: actor is a free-text placeholder. There is no real
+ * notification transport and no production SLA engine; the dueBy field
+ * is informational only.
+ */
+export interface AMSApprovalRequest {
+  id: string;
+  astId: string;
+  isolateId: string;
+  antibioticCode: string;
+  status: AMSApprovalStatus;
+  /** ISO; computed from policy.slaHours at request time. */
+  dueBy?: string;
+  requested?: AMSApprovalEvent;
+  decided?: AMSApprovalEvent;       // approve or deny
+  expired?: AMSApprovalEvent;
+  /** True when SLA has elapsed without a decision (UI hint, not enforcement). */
+  escalated?: boolean;
+}
+
 // ---------- Accession (root aggregate) ----------
 
 export interface Accession {
