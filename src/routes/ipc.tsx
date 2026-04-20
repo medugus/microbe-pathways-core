@@ -4,11 +4,19 @@
 // an audit_event row via the audit_ipc_signal trigger.
 
 import { useEffect, useState } from "react";
-import { createFileRoute, redirect, Link } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { SessionBar } from "@/auth/SessionBar";
+import { IPCEpisodeDrawer } from "@/medugu/ui/sections/IPCEpisodeDrawer";
+import {
+  detailFromPersistedSignal,
+  type IPCEpisodeDetail,
+  type PersistedSignalLike,
+} from "@/medugu/logic/ipcEpisodeDetail";
+import { meduguActions } from "@/medugu/store/useAccessionStore";
+import type { Accession } from "@/medugu/domain/types";
 
 interface SignalRow {
   id: string;
