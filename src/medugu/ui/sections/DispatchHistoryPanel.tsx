@@ -101,6 +101,13 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
           ? `Simulated dispatch sent (attempt #${result.row?.attempt_no}).`
           : `Simulated dispatch failed: ${result.row?.error_message ?? result.reason ?? "unknown"}`,
       );
+      if (!result.ok) {
+        soundEngine.emit({
+          cls: "urgent",
+          key: `dispatch-fail:sim:${result.row?.id ?? Date.now()}`,
+          label: `Dispatch failed (${format})`,
+        });
+      }
       await reload();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
