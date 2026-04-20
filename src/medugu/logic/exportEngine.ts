@@ -197,22 +197,47 @@ export function buildFhirBundle(accession: Accession): unknown {
     }
   }
 
+  const isAmendment = accession.release.state === ReleaseState.Amended;
+  const amendmentReason = accession.release.amendmentReason;
+  const amendmentExtensions = isAmendment
+    ? [
+        {
+          url: "urn:medugu:amendment-reason",
+          valueString: amendmentReason ?? "(no reason recorded)",
+        },
+        {
+          url: "urn:medugu:supersedes-version",
+          valueInteger: Math.max(1, doc.reportVersion - 1),
+        },
+      ]
+    : [];
+
   resources.push({
     resourceType: "DiagnosticReport",
     id: reportId,
-    status: accession.release.state === ReleaseState.Amended ? "amended" : "final",
+    meta: isAmendment
+      ? { tag: [{ system: "urn:medugu:report-tag", code: "amended", display: "Amended report" }] }
+      : undefined,
+    status: isAmendment ? "amended" : "final",
     category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/v2-0074", code: "MB" }] }],
-    code: { text: `Microbiology report v${doc.reportVersion}` },
+    code: { text: `Microbiology report v${doc.reportVersion}${isAmendment ? " (amended)" : ""}` },
     subject: { reference: `Patient/${patientId}` },
     specimen: [{ reference: `Specimen/${specimenId}` }],
     issued: accession.releasedAt ?? new Date().toISOString(),
     result: observationRefs,
-    conclusion: doc.comments.map((c) => `[${c.source}] ${c.text}`).join("\n") || undefined,
+    conclusion:
+      [
+        isAmendment ? `[amendment] ${amendmentReason ?? "Amended without recorded reason."}` : null,
+        ...doc.comments.map((c) => `[${c.source}] ${c.text}`),
+      ]
+        .filter(Boolean)
+        .join("\n") || undefined,
     extension: [
       { url: "urn:medugu:rule-version", valueString: doc.versions.rule },
       { url: "urn:medugu:breakpoint-version", valueString: doc.versions.breakpoint },
       { url: "urn:medugu:export-version", valueString: doc.versions.export },
       { url: "urn:medugu:build-version", valueString: doc.versions.build },
+      ...amendmentExtensions,
     ],
   });
 
