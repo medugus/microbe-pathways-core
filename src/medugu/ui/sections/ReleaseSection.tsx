@@ -11,6 +11,7 @@ import { transition, nextSuggested } from "../../logic/workflowEngine";
 import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
 import { sealRelease, amendRelease } from "../../store/release.functions";
+import { configStore } from "../../store/configStore";
 import type { AutoDispatchResult } from "../../store/export.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Accession } from "../../domain/types";
@@ -118,7 +119,12 @@ export function ReleaseSection() {
       if (lookupErr) throw new Error(lookupErr.message);
       if (!row) throw new Error("Accession not found in cloud — try again in a moment.");
 
-      const result = await sealRelease({ data: { accessionRowId: row.id as string } });
+      const result = await sealRelease({
+        data: {
+          accessionRowId: row.id as string,
+          configVersion: configStore.getActiveVersion(),
+        },
+      });
       if (!result.ok || !result.accessionJson) {
         const codes = result.blockerCodes?.length ? ` (${result.blockerCodes.join(", ")})` : "";
         setSealError((result.reason ?? "Release blocked") + codes);
@@ -157,6 +163,7 @@ export function ReleaseSection() {
         data: {
           accessionRowId: row.id as string,
           amendmentReason: amendmentReason.trim(),
+          configVersion: configStore.getActiveVersion(),
         },
       });
       if (!result.ok || !result.accessionJson) {

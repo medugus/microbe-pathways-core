@@ -41,8 +41,13 @@ export interface ReleaseSealResult {
 
 export const sealRelease = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { accessionRowId: string }) =>
-    z.object({ accessionRowId: z.string().uuid() }).parse(input),
+  .inputValidator((input: { accessionRowId: string; configVersion?: number }) =>
+    z
+      .object({
+        accessionRowId: z.string().uuid(),
+        configVersion: z.number().int().positive().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }): Promise<ReleaseSealResult> => {
     const { supabase, userId } = context;
@@ -75,11 +80,15 @@ export const sealRelease = createServerFn({ method: "POST" })
     const canonicalBody = canonicalStringify(preview);
     const sealHash = await sha256Hex(canonicalBody);
 
+    const pinnedRuleVersion = data.configVersion
+      ? `${accession.ruleVersion}+config-v${data.configVersion}`
+      : accession.ruleVersion;
+
     const pkg: ReleasePackage = {
       builtAt,
       version: nextVersion,
       body: JSON.parse(canonicalBody),
-      ruleVersion: accession.ruleVersion,
+      ruleVersion: pinnedRuleVersion,
       breakpointVersion: accession.breakpointVersion,
       exportVersion: accession.exportVersion,
       buildVersion: accession.buildVersion,
@@ -172,11 +181,12 @@ export const sealRelease = createServerFn({ method: "POST" })
  */
 export const amendRelease = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { accessionRowId: string; amendmentReason: string }) =>
+  .inputValidator((input: { accessionRowId: string; amendmentReason: string; configVersion?: number }) =>
     z
       .object({
         accessionRowId: z.string().uuid(),
         amendmentReason: z.string().min(4).max(500),
+        configVersion: z.number().int().positive().optional(),
       })
       .parse(input),
   )
@@ -215,11 +225,15 @@ export const amendRelease = createServerFn({ method: "POST" })
     const canonicalBody = canonicalStringify(preview);
     const sealHash = await sha256Hex(canonicalBody);
 
+    const pinnedRuleVersion = data.configVersion
+      ? `${accession.ruleVersion}+config-v${data.configVersion}`
+      : accession.ruleVersion;
+
     const pkg: ReleasePackage = {
       builtAt,
       version: nextVersion,
       body: JSON.parse(canonicalBody),
-      ruleVersion: accession.ruleVersion,
+      ruleVersion: pinnedRuleVersion,
       breakpointVersion: accession.breakpointVersion,
       exportVersion: accession.exportVersion,
       buildVersion: accession.buildVersion,
