@@ -158,6 +158,8 @@ export function runValidation(accession: Accession): ValidationReport {
       }
     }
   }
+
+  // ---- Consultant-required release: now a BLOCKER until consultantApproval is recorded.
   let consultantApprovalPending = false;
   if (profile?.gating.consultantReleaseRequired) {
     if (!accession.release.consultantApproval) {
