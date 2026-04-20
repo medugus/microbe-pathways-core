@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { useActiveAccession, meduguActions } from "../../store/useAccessionStore";
-import { runValidation } from "../../logic/validationEngine";
+import { useAuthoritativeValidation } from "../../store/useAuthoritativeValidation";
 import { transition, nextSuggested } from "../../logic/workflowEngine";
 import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
@@ -63,7 +63,8 @@ export function ReleaseSection() {
     );
   }
 
-  const v = runValidation(accession);
+  const validation = useAuthoritativeValidation(accession, accessionRowId);
+  const v = validation.report;
   const suggestedNext = nextSuggested(accession.workflowStatus);
   const released =
     accession.release.state === ReleaseState.Released ||
@@ -217,6 +218,9 @@ export function ReleaseSection() {
           )}
         </div>
       </section>
+
+      {/* Validation source badge */}
+      <ValidationSourceBadge validation={validation} />
 
       {/* Finalisation board */}
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
