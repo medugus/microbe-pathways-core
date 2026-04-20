@@ -59,6 +59,17 @@ export function SessionBar() {
             </span>
           </>
         )}
+        {activeViewEntry && (
+          <>
+            <span>·</span>
+            <span
+              className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300"
+              title="Demo role view active — UI preview only, does not change real authority."
+            >
+              demo view: {activeViewEntry.code}
+            </span>
+          </>
+        )}
       </div>
       <div className="flex items-center gap-1">
         <Link
