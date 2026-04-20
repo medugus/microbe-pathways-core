@@ -62,6 +62,10 @@ function ReceiversAdminPage() {
     void load();
   }, []);
 
+  // Re-render when auto-dispatch opt-out prefs change (browser-phase storage).
+  const [, setPrefsTick] = useState(0);
+  useEffect(() => receiverPrefs.subscribe(() => setPrefsTick((n) => n + 1)), []);
+
   async function create(e: React.FormEvent) {
     e.preventDefault();
     if (!profile?.tenant_id) return;
