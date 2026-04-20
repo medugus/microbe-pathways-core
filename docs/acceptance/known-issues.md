@@ -8,24 +8,24 @@ behaviour and not a defect against the browser-phase contract.
 
 ## Open defects
 
+_None at this revision._
+
+## Resolved / non-defects
+
 ### DEF-001 — Sterile-site IPC critical alert does not require phone-out
 
 - **Scenario:** 3 (`MB25-CRE001`).
-- **Symptom:** `runValidation` returns no blockers when an IPC `CRE_ALERT`
-  fires on a sterile-site specimen and no acknowledged phone-out exists.
-  `evaluateExportGate` therefore allows export immediately after release.
-- **Expected:** When any of `CRE_ALERT`, `MRSA_ALERT`, `VRE_ALERT`,
-  `CAURIS_ALERT`, `CRAB_ALERT`, `CRPA_ALERT` fires on a `sterile_site`
-  specimen subtype and there is no acknowledged phone-out, `runValidation`
-  emits `PHONE_OUT_REQUIRED` as a blocker until a phone-out is recorded.
-- **Status:** Re-opened. A previous patch addressing this was not present in
-  the current source tree at regression time.
-- **Owner:** validationEngine.
-- **Severity:** high (patient-safety relevant for sterile-site critical
-  alerts).
-- **Workaround:** record an acknowledged phone-out manually before release;
-  the existing `phoneOutRequired` path on `criticalCommunicationRequired`
-  still covers blood-culture and significant-isolate pathways.
+- **Status:** **closed (fixed in Sprint P5-S1 step 3, 2026-04-20).**
+- **Fix:** `runValidation` now emits `PHONE_OUT_REQUIRED` as a blocker when the
+  specimen subtype carries the `sterile_site` tag and `evaluateIPC` fires any of
+  `CRE_ALERT`, `MRSA_ALERT`, `VRE_ALERT`, `CAURIS_ALERT`, `CRAB_ALERT`, or
+  `CRPA_ALERT`, until an acknowledged phone-out is recorded. The same branch is
+  exposed as a server-authoritative check via `validateAccessionServer`
+  (gated by `PHASE5_SERVER_VALIDATION`).
+- **Regression guard:** `src/medugu/logic/__tests__/def001.regression.ts`
+  asserts `MB25-CRE001` emits `PHONE_OUT_REQUIRED` and that the blocker clears
+  after an acknowledged phone-out. Run in CI with
+  `bunx tsx src/medugu/logic/__tests__/def001.regression.ts`.
 
 ## Resolved / non-defects
 
