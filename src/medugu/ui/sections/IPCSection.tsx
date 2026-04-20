@@ -1,14 +1,19 @@
 // IPCSection — visualises IPC engine output per isolate.
-// The IPC scan now runs on the server and queries every accession in the
-// tenant for cross-accession rolling-window dedup (the browser store only
-// ever held the cases this device had hydrated, which produced wrong
-// dedup results in any multi-device session).
+//
+// Stage 5 (browser-phase only): the IPC scan runs the **pure** engine
+// (`evaluateIPC`) against the local in-browser accession dataset. Cross-
+// accession rolling-window dedup and prior-case linkage are computed across
+// every accession currently hydrated into the local store for this tenant.
+//
+// Scope boundary: NO backend / Postgres / cross-tenant queries are issued
+// from this stage. The engine contract (Accession + allAccessions map) is
+// intentionally kept generic so the same call site can later be backed by a
+// server query without changing the UI contract.
 
-import { useEffect, useState } from "react";
-import { useActiveAccession } from "../../store/useAccessionStore";
-import { evaluateIPCServer } from "../../store/engines.functions";
-import { supabase } from "@/integrations/supabase/client";
-import type { IPCDecision } from "../../logic/ipcEngine";
+import { useMemo, useState } from "react";
+import { useActiveAccession, useMeduguState } from "../../store/useAccessionStore";
+import { evaluateIPC, type IPCDecision } from "../../logic/ipcEngine";
+import { rulesFor } from "../../config/ipcRules";
 import { detailFromDecision, type IPCEpisodeDetail } from "../../logic/ipcEpisodeDetail";
 import { IPCEpisodeDrawer } from "./IPCEpisodeDrawer";
 
@@ -21,56 +26,33 @@ const TIMING_TONE: Record<string, string> = {
 
 export function IPCSection() {
   const accession = useActiveAccession();
-  const [decisions, setDecisions] = useState<IPCDecision[] | null>(null);
-  const [cohortSize, setCohortSize] = useState<number | null>(null);
-  const [persisted, setPersisted] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const state = useMeduguState();
   const [drawerDetail, setDrawerDetail] = useState<IPCEpisodeDetail | null>(null);
 
-  // Re-run server scan whenever the active accession or its isolate set changes.
-  const accessionId = accession?.id ?? null;
-  const isolateSig = accession?.isolates.map((i) => `${i.id}:${i.organismCode}`).join(",") ?? "";
+  // Cohort = every accession in the local store sharing this MRN (excluding
+  // the active one). Surfaced for transparency; the engine itself sees the
+  // full local dataset and applies its own dedup window per rule.
+  const cohortSize = useMemo(() => {
+    if (!accession) return 0;
+    return Object.values(state.accessions).filter(
+      (a) => a.id !== accession.id && a.patient.mrn === accession.patient.mrn,
+    ).length;
+  }, [accession, state.accessions]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      if (!accession) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const { data: row, error: lookupErr } = await supabase
-          .from("accessions")
-          .select("id")
-          .eq("accession_code", accession.accessionNumber)
-          .maybeSingle();
-        if (lookupErr) throw new Error(lookupErr.message);
-        if (!row) throw new Error("Accession not yet synced.");
-        const result = await evaluateIPCServer({
-          data: { accessionRowId: row.id as string },
-        });
-        if (cancelled) return;
-        if (!result.ok) {
-          setError(result.reason ?? "Server rejected IPC scan.");
-          setDecisions([]);
-          setCohortSize(null);
-          return;
-        }
-        setDecisions(result.decisions ?? []);
-        setCohortSize(result.cohortSize ?? 0);
-        setPersisted(result.persisted ?? 0);
-      } catch (err) {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : String(err));
-      } finally {
-        if (!cancelled) setLoading(false);
+  const { decisions, windowDaysByRule } = useMemo(() => {
+    if (!accession) return { decisions: [] as IPCDecision[], windowDaysByRule: {} as Record<string, number> };
+    const report = evaluateIPC(accession, state.accessions);
+    // Build a ruleCode → rollingWindowDays map from config so the drawer can
+    // explain *why* a prior case counted (e.g. "MRSA_ALERT · 90d window").
+    const map: Record<string, number> = {};
+    for (const iso of accession.isolates) {
+      const matched = rulesFor(iso.organismCode, [], accession.patient.ward);
+      for (const r of matched) {
+        if (r.rollingWindowDays) map[r.ruleCode] = r.rollingWindowDays;
       }
     }
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessionId, isolateSig, accession]);
+    return { decisions: report.decisions, windowDaysByRule: map };
+  }, [accession, state.accessions]);
 
   if (!accession) {
     return (
@@ -80,29 +62,35 @@ export function IPCSection() {
     );
   }
 
-  if (loading && decisions === null) {
-    return <p className="text-sm text-muted-foreground">Running IPC scan on server…</p>;
-  }
-
-  if (error) {
-    return (
-      <p className="text-sm text-destructive">
-        IPC scan failed: {error}
-      </p>
+  const openDetail = (d: IPCDecision) => {
+    setDrawerDetail(
+      detailFromDecision(
+        accession,
+        d,
+        undefined,
+        (id) => state.accessions[id],
+        windowDaysByRule[d.ruleCode],
+      ),
     );
-  }
+  };
 
-  if (!decisions || decisions.length === 0) {
+  const banner = (
+    <p className="rounded-md border border-dashed border-border bg-muted/30 px-2 py-1 text-[10px] text-muted-foreground">
+      Local cohort scan — evaluates only accessions currently loaded in this
+      browser. Server-backed cross-tenant rolling window not active in this stage.
+    </p>
+  );
+
+  if (decisions.length === 0) {
     return (
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
           No IPC signals — no alert organism, phenotype, or ward trigger matched.
         </p>
-        {cohortSize !== null && (
-          <p className="text-[10px] text-muted-foreground">
-            Server scanned {cohortSize} prior accession(s) for this MRN across the tenant.
-          </p>
-        )}
+        <p className="text-[10px] text-muted-foreground">
+          Local cohort: {cohortSize} prior accession(s) for this MRN in browser store.
+        </p>
+        {banner}
       </div>
     );
   }
@@ -112,30 +100,24 @@ export function IPCSection() {
       <header className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
           Triggered by organism + phenotype + ward + rolling window. Cross-accession
-          dedup performed server-side per MRN. Fresh signals are persisted to the
-          tenant-wide IPC dashboard.
+          dedup performed locally across the in-browser dataset.
         </p>
-        <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground">
-          {cohortSize !== null && <span>cohort: {cohortSize} prior case(s)</span>}
-          {persisted !== null && persisted > 0 && (
-            <span className="text-primary">
-              {persisted} new episode(s) → dashboard
-            </span>
-          )}
-        </div>
+        <span className="text-[10px] text-muted-foreground">
+          local cohort: {cohortSize} prior case(s)
+        </span>
       </header>
       <ul className="space-y-2">
         {decisions.map((d, idx) => (
           <li
             key={`${d.isolateId}-${d.ruleCode}-${idx}`}
             className="cursor-pointer rounded-md border border-border bg-card p-3 transition hover:border-primary/40 hover:bg-muted/30"
-            onClick={() => setDrawerDetail(detailFromDecision(accession, d))}
+            onClick={() => openDetail(d)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                setDrawerDetail(detailFromDecision(accession, d));
+                openDetail(d);
               }
             }}
           >
@@ -146,9 +128,18 @@ export function IPCSection() {
               <span className={`rounded px-1.5 py-0.5 text-[10px] ${TIMING_TONE[d.timing] ?? "bg-muted"}`}>
                 {d.timing.replaceAll("_", " ")}
               </span>
-              {!d.isNewEpisode && (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  deduped (existing episode)
+              <span
+                className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                  d.isNewEpisode
+                    ? "bg-primary/15 text-primary"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {d.isNewEpisode ? "new episode" : "repeat episode"}
+              </span>
+              {d.priorAccessionIds && d.priorAccessionIds.length > 0 && (
+                <span className="text-[10px] text-muted-foreground">
+                  · {d.priorAccessionIds.length} prior case(s)
                 </span>
               )}
               {d.phenotypes.length > 0 && (
@@ -177,6 +168,7 @@ export function IPCSection() {
           </li>
         ))}
       </ul>
+      {banner}
       <IPCEpisodeDrawer
         open={drawerDetail !== null}
         onOpenChange={(o) => { if (!o) setDrawerDetail(null); }}

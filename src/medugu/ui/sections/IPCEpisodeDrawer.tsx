@@ -157,18 +157,47 @@ export function IPCEpisodeDrawer({ open, onOpenChange, detail, onOpenAccession }
                   {new Date(detail.raisedAt).toLocaleString()}
                 </Field>
               )}
-              {detail.priorAccessionIds.length > 0 && (
+              {detail.windowBasis && (
+                <Field label="Window">
+                  <span className="text-[11px] text-muted-foreground">{detail.windowBasis}</span>
+                </Field>
+              )}
+              {(detail.priorCases.length > 0 || detail.priorAccessionIds.length > 0) && (
                 <Field label="Prior cases">
-                  <ul className="space-y-0.5">
-                    {detail.priorAccessionIds.map((id) => (
-                      <li key={id} className="font-mono text-[11px] text-muted-foreground">
-                        {id}
+                  <ul className="space-y-1">
+                    {(detail.priorCases.length > 0
+                      ? detail.priorCases
+                      : detail.priorAccessionIds.map((id) => ({
+                          id,
+                          accessionDisplayId: undefined as string | undefined,
+                          patientLabel: undefined as string | undefined,
+                          ward: undefined as string | undefined,
+                        }))
+                    ).map((p) => (
+                      <li
+                        key={p.id}
+                        className="flex flex-wrap items-center gap-1.5 rounded border border-border bg-muted/30 px-1.5 py-1"
+                      >
+                        <code className="text-[10px] text-foreground">
+                          {p.accessionDisplayId ?? p.id}
+                        </code>
+                        {p.patientLabel && (
+                          <span className="text-[10px] text-muted-foreground">
+                            · {p.patientLabel}
+                          </span>
+                        )}
+                        {p.ward && (
+                          <span className="rounded bg-background px-1 py-0.5 text-[10px] text-muted-foreground">
+                            {p.ward}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
                   <p className="mt-1 text-[10px] text-muted-foreground">
                     Repeat episode — these prior accessions for this MRN already
-                    carried the same rule + organism within the rolling window.
+                    carried the same rule + organism within the rolling window
+                    (local cohort only).
                   </p>
                 </Field>
               )}
