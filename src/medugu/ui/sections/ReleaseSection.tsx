@@ -12,6 +12,7 @@ import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
 import { sealRelease, amendRelease } from "../../store/release.functions";
 import { configStore } from "../../store/configStore";
+import { receiverPrefs } from "../../store/receiverPrefs";
 import type { AutoDispatchResult } from "../../store/export.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Accession } from "../../domain/types";
