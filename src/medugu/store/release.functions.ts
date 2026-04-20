@@ -316,6 +316,7 @@ export const amendRelease = createServerFn({ method: "POST" })
       amendedAccession,
       row.id as string,
       insertedPkg as never,
+      data.excludedReceiverIds ?? [],
     );
 
     return {
