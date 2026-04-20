@@ -271,7 +271,11 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                   disabled={verify[e.id]?.status === "verifying"}
                   className="rounded border border-border bg-muted px-1.5 py-0.5 font-sans text-[10px] font-medium text-foreground hover:bg-muted/70 disabled:opacity-50"
                 >
-                  {verify[e.id]?.status === "verifying" ? "Verifying…" : "Verify seal"}
+                  {verify[e.id]?.status === "verifying"
+                    ? "Verifying…"
+                    : verify[e.id]?.status === "ok" || verify[e.id]?.status === "mismatch"
+                      ? "Re-verify"
+                      : "Verify seal"}
                 </button>
                 {verify[e.id]?.status === "ok" && (
                   <span className="rounded bg-primary/15 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-primary">
@@ -289,6 +293,24 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                   </span>
                 )}
               </div>
+              {(verify[e.id]?.status === "ok" || verify[e.id]?.status === "mismatch") && (
+                <div className="mt-1 space-y-0.5 break-all font-mono text-[10px] text-muted-foreground">
+                  <div>
+                    <span className="text-foreground">stored:    </span>
+                    {(verify[e.id] as { stored: string }).stored}
+                  </div>
+                  <div>
+                    <span className="text-foreground">recomputed:</span>{" "}
+                    {(verify[e.id] as { recomputed: string }).recomputed}
+                  </div>
+                  <div className="font-sans">
+                    verified at{" "}
+                    {new Date(
+                      (verify[e.id] as { verifiedAt: string }).verifiedAt,
+                    ).toLocaleString()}
+                  </div>
+                </div>
+              )}
               <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
                 <span>build {e.build_version}</span>
                 <span>· breakpoint {e.breakpoint_version}</span>
