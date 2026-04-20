@@ -16,6 +16,65 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Accession } from "../domain/types";
 import { evaluateAccession } from "../logic/astEngine";
 import { evaluateIPC, type IPCDecision } from "../logic/ipcEngine";
+import { runValidation, type ValidationReport } from "../logic/validationEngine";
+
+// ---------- Phase-5 server-authoritative validation (feature-flagged) ----------
+//
+// Sprint P5-S1 step 3: port the sterile-site + IPC-critical branch of
+// runValidation to the server, behind PHASE5_SERVER_VALIDATION. The browser
+// engine still runs for instant UX preview, but when the flag is on, the
+// release/export path treats the server response as authoritative — closing
+// the DEF-001 contract gap on a multi-device session where the browser cohort
+// for the IPC engine would be incomplete.
+
+/** Feature-flag read per request (env may be hot-reloaded between deploys). */
+function isServerValidationEnabled(): boolean {
+  const v = (process.env.PHASE5_SERVER_VALIDATION ?? "").toLowerCase();
+  return v === "1" || v === "true";
+}
+
+export interface ServerValidationResult {
+  ok: boolean;
+  reason?: string;
+  /** True when the feature flag is enabled and the server engine ran. */
+  serverAuthoritative: boolean;
+  /** Full validation report (mirrors client shape). Present when ok=true and flag on. */
+  report?: ValidationReport;
+}
+
+export const validateAccessionServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { accessionRowId: string }) =>
+    z.object({ accessionRowId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }): Promise<ServerValidationResult> => {
+    const { supabase } = context;
+
+    if (!isServerValidationEnabled()) {
+      return {
+        ok: true,
+        serverAuthoritative: false,
+        reason: "PHASE5_SERVER_VALIDATION disabled — client engine remains authoritative.",
+      };
+    }
+
+    const { data: row, error: loadErr } = await supabase
+      .from("accessions")
+      .select("id, data")
+      .eq("id", data.accessionRowId)
+      .maybeSingle();
+    if (loadErr) throw new Error(`Load failed: ${loadErr.message}`);
+    if (!row) return { ok: false, serverAuthoritative: true, reason: "Accession not found or not visible." };
+
+    const accession = row.data as unknown as Accession;
+    // runValidation re-runs the same DEF-001 sterile-site + IPC-critical
+    // branch the client uses. On the server, evaluateIPC inside runValidation
+    // sees only the single accession passed to it (no cohort), which is
+    // sufficient for sterile-site critical-alert detection — cross-accession
+    // dedup is the job of evaluateIPCServer, not the validation gate.
+    const report = runValidation(accession);
+    return { ok: true, serverAuthoritative: true, report };
+  });
 
 // ---------- AST: server-authoritative expert rules ----------
 

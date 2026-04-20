@@ -9,6 +9,35 @@ import type { Accession, ValidationIssue } from "../domain/types";
 import { resolveSpecimen } from "./specimenResolver";
 import { newId } from "../domain/ids";
 import { pendingRestrictedRowCount } from "./amsEngine";
+import { evaluateIPC } from "./ipcEngine";
+import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
+
+/**
+ * IPC rule codes that constitute a critical alert. When any of these fires on a
+ * sterile-site specimen, an acknowledged phone-out is mandatory before release
+ * (DEF-001 contract).
+ */
+const IPC_CRITICAL_RULE_CODES: ReadonlySet<string> = new Set([
+  "MRSA_ALERT",
+  "VRE_ALERT",
+  "CRE_ALERT",
+  "CRAB_ALERT",
+  "CRPA_ALERT",
+  "CAURIS_ALERT",
+]);
+
+/**
+ * True when the specimen subtype carries the `sterile_site` tag in the coded
+ * family dictionary. Resolver-derived gating already covers CSF/pericardial via
+ * `criticalCommunicationRequired`; this check extends the contract to ALL
+ * sterile-site subtypes (pleural, ascitic, synovial, SPA, image-guided, etc.)
+ * but only when paired with an IPC critical alert (see DEF-001).
+ */
+function isSterileSiteSubtype(familyCode: string, subtypeCode: string): boolean {
+  const fam = SPECIMEN_FAMILIES.find((f) => f.code === familyCode);
+  const sub = fam?.subtypes.find((s) => s.code === subtypeCode);
+  return !!sub?.tags?.includes("sterile_site");
+}
 
 export interface ValidationReport {
   issues: ValidationIssue[];
@@ -100,6 +129,33 @@ export function runValidation(accession: Accession): ValidationReport {
       issues.push(
         info("PHONE_OUT_HINT", "release", "Critical-pathway specimen — phone-out workflow available."),
       );
+    }
+  }
+
+  // ---- DEF-001: sterile-site specimen + ANY IPC critical alert
+  // (CRE/MRSA/VRE/CAURIS/CRAB/CRPA) ⇒ acknowledged phone-out required before
+  // release, regardless of whether the resolver flagged
+  // criticalCommunicationRequired. This catches pleural/ascitic/synovial/SPA/
+  // image-guided sterile-site cultures that grow an alert organism — those
+  // were silently exportable before this branch existed.
+  if (
+    !phoneOutRequiredPending &&
+    isSterileSiteSubtype(accession.specimen.familyCode, accession.specimen.subtypeCode)
+  ) {
+    const ipc = evaluateIPC(accession);
+    const hasCriticalIPC = ipc.decisions.some((d) => IPC_CRITICAL_RULE_CODES.has(d.ruleCode));
+    if (hasCriticalIPC) {
+      const hasAck = accession.phoneOuts.some((p) => p.acknowledged);
+      if (!hasAck) {
+        phoneOutRequiredPending = true;
+        issues.push(
+          block(
+            "PHONE_OUT_REQUIRED",
+            "release",
+            "Sterile-site specimen with IPC critical alert — acknowledged phone-out required before release.",
+          ),
+        );
+      }
     }
   }
 
