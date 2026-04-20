@@ -10,9 +10,11 @@ import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { receiverPrefs } from "@/medugu/store/receiverPrefs";
 
 interface ReceiverRow {
   id: string;
+  tenant_id: string;
   name: string;
   endpoint_url: string;
   format: "fhir" | "hl7" | "json";
@@ -49,7 +51,7 @@ function ReceiversAdminPage() {
     setErr(null);
     const { data, error } = await supabase
       .from("receivers")
-      .select("id, name, endpoint_url, format, bearer_token, enabled, created_at")
+      .select("id, tenant_id, name, endpoint_url, format, bearer_token, enabled, created_at")
       .order("created_at", { ascending: false });
     if (error) setErr(error.message);
     setRows((data ?? []) as ReceiverRow[]);
@@ -59,6 +61,10 @@ function ReceiversAdminPage() {
   useEffect(() => {
     void load();
   }, []);
+
+  // Re-render when auto-dispatch opt-out prefs change (browser-phase storage).
+  const [, setPrefsTick] = useState(0);
+  useEffect(() => receiverPrefs.subscribe(() => setPrefsTick((n) => n + 1)), []);
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -196,42 +202,63 @@ function ReceiversAdminPage() {
           <p className="text-xs text-muted-foreground">No receivers yet.</p>
         ) : (
           <ul className="space-y-2">
-            {rows.map((r) => (
-              <li
-                key={r.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-card p-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{r.name}</span>
-                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
-                      {r.format}
-                    </span>
-                    {!r.enabled && (
-                      <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">
-                        disabled
+            {rows.map((r) => {
+              const autoOn = receiverPrefs.isAutoDispatchEnabled(r.tenant_id, r.id);
+              return (
+                <li
+                  key={r.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-card p-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{r.name}</span>
+                      <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
+                        {r.format}
                       </span>
+                      {!r.enabled && (
+                        <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">
+                          disabled
+                        </span>
+                      )}
+                      {!autoOn && r.enabled && (
+                        <span
+                          className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                          title="Auto-dispatch on release is disabled for this receiver. Manual dispatch from the Export section still works."
+                        >
+                          auto-dispatch off
+                        </span>
+                      )}
+                    </div>
+                    <div className="truncate font-mono text-[11px] text-muted-foreground">
+                      {r.endpoint_url}
+                    </div>
+                    {r.bearer_token && (
+                      <div className="text-[10px] text-muted-foreground">
+                        bearer token configured
+                      </div>
                     )}
                   </div>
-                  <div className="truncate font-mono text-[11px] text-muted-foreground">
-                    {r.endpoint_url}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        receiverPrefs.setAutoDispatchEnabled(r.tenant_id, r.id, !autoOn)
+                      }
+                      title="Browser-phase preference: stored locally per device."
+                    >
+                      Auto-dispatch: {autoOn ? "On" : "Off"}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => toggle(r)}>
+                      {r.enabled ? "Disable" : "Enable"}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => remove(r)}>
+                      Delete
+                    </Button>
                   </div>
-                  {r.bearer_token && (
-                    <div className="text-[10px] text-muted-foreground">
-                      bearer token configured
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => toggle(r)}>
-                    {r.enabled ? "Disable" : "Enable"}
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => remove(r)}>
-                    Delete
-                  </Button>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

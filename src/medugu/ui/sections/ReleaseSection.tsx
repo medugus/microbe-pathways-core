@@ -12,6 +12,7 @@ import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
 import { sealRelease, amendRelease } from "../../store/release.functions";
 import { configStore } from "../../store/configStore";
+import { receiverPrefs } from "../../store/receiverPrefs";
 import type { AutoDispatchResult } from "../../store/export.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Accession } from "../../domain/types";
@@ -113,7 +114,7 @@ export function ReleaseSection() {
       // accession_code as the natural key per tenant).
       const { data: row, error: lookupErr } = await supabase
         .from("accessions")
-        .select("id")
+        .select("id, tenant_id")
         .eq("accession_code", accession.accessionNumber)
         .maybeSingle();
       if (lookupErr) throw new Error(lookupErr.message);
@@ -123,6 +124,7 @@ export function ReleaseSection() {
         data: {
           accessionRowId: row.id as string,
           configVersion: configStore.getActiveVersion(),
+          excludedReceiverIds: receiverPrefs.getExcludedReceiverIds(row.tenant_id as string),
         },
       });
       if (!result.ok || !result.accessionJson) {
@@ -153,7 +155,7 @@ export function ReleaseSection() {
     try {
       const { data: row, error: lookupErr } = await supabase
         .from("accessions")
-        .select("id")
+        .select("id, tenant_id")
         .eq("accession_code", accession.accessionNumber)
         .maybeSingle();
       if (lookupErr) throw new Error(lookupErr.message);
@@ -164,6 +166,7 @@ export function ReleaseSection() {
           accessionRowId: row.id as string,
           amendmentReason: amendmentReason.trim(),
           configVersion: configStore.getActiveVersion(),
+          excludedReceiverIds: receiverPrefs.getExcludedReceiverIds(row.tenant_id as string),
         },
       });
       if (!result.ok || !result.accessionJson) {
