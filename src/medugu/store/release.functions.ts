@@ -16,6 +16,7 @@ import { ReleaseState } from "../domain/enums";
 import { runValidation } from "../logic/validationEngine";
 import { buildReportPreview } from "../logic/reportPreview";
 import { autoDispatchRelease, type AutoDispatchResult } from "./export.functions";
+import { canonicalStringify } from "../utils/canonicalJson";
 
 async function sha256Hex(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input);
