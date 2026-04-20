@@ -68,6 +68,9 @@ export function CaseManager() {
           );
         })}
       </ul>
+
+      <NewAccessionDialog open={intakeOpen} onOpenChange={setIntakeOpen} />
     </aside>
   );
 }
+
