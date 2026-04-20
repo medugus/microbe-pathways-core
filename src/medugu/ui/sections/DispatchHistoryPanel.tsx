@@ -127,6 +127,13 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
           ? `Retry succeeded (attempt #${result.row?.attempt_no}).`
           : `Retry failed: ${result.row?.error_message ?? result.reason ?? "unknown"}`,
       );
+      if (!result.ok) {
+        soundEngine.emit({
+          cls: "urgent",
+          key: `dispatch-fail:retry:${id}:${Date.now()}`,
+          label: `Dispatch retry failed`,
+        });
+      }
       await reload();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
