@@ -256,34 +256,44 @@ function IPCDashboardPage() {
                     Resolution: {r.resolution_note}
                   </p>
                 )}
-                {canAct && r.status !== "resolved" && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {r.status === "open" && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={drawerOpening}
+                    onClick={() => void openDrawer(r)}
+                  >
+                    View detail →
+                  </Button>
+                  {canAct && r.status !== "resolved" && (
+                    <>
+                      {r.status === "open" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busyId === r.id}
+                          onClick={() => void setStatus(r.id, "acknowledged")}
+                        >
+                          {busyId === r.id ? "…" : "Acknowledge"}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
-                        variant="outline"
                         disabled={busyId === r.id}
-                        onClick={() => void setStatus(r.id, "acknowledged")}
+                        onClick={() => {
+                          const note = window.prompt(
+                            "Resolution note (optional):",
+                            "",
+                          );
+                          if (note === null) return; // cancelled
+                          void setStatus(r.id, "resolved", note || undefined);
+                        }}
                       >
-                        {busyId === r.id ? "…" : "Acknowledge"}
+                        {busyId === r.id ? "…" : "Resolve"}
                       </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      disabled={busyId === r.id}
-                      onClick={() => {
-                        const note = window.prompt(
-                          "Resolution note (optional):",
-                          "",
-                        );
-                        if (note === null) return; // cancelled
-                        void setStatus(r.id, "resolved", note || undefined);
-                      }}
-                    >
-                      {busyId === r.id ? "…" : "Resolve"}
-                    </Button>
-                  </div>
-                )}
+                    </>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
