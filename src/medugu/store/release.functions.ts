@@ -16,6 +16,7 @@ import { ReleaseState } from "../domain/enums";
 import { runValidation } from "../logic/validationEngine";
 import { buildReportPreview } from "../logic/reportPreview";
 import { autoDispatchRelease, type AutoDispatchResult } from "./export.functions";
+import { canonicalStringify } from "../utils/canonicalJson";
 
 async function sha256Hex(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input);
@@ -71,7 +72,7 @@ export const sealRelease = createServerFn({ method: "POST" })
     const preview = buildReportPreview(accession);
     const nextVersion = (accession.release.reportVersion ?? 0) + 1;
     const builtAt = new Date().toISOString();
-    const canonicalBody = JSON.stringify(preview);
+    const canonicalBody = canonicalStringify(preview);
     const sealHash = await sha256Hex(canonicalBody);
 
     const pkg: ReleasePackage = {
@@ -211,7 +212,7 @@ export const amendRelease = createServerFn({ method: "POST" })
     const preview = buildReportPreview(accession);
     const nextVersion = (row.report_version ?? accession.release.reportVersion ?? 1) + 1;
     const builtAt = new Date().toISOString();
-    const canonicalBody = JSON.stringify(preview);
+    const canonicalBody = canonicalStringify(preview);
     const sealHash = await sha256Hex(canonicalBody);
 
     const pkg: ReleasePackage = {

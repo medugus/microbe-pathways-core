@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { canonicalStringify } from "../../utils/canonicalJson";
 
 interface PackageRow {
   id: string;
@@ -75,8 +76,9 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
       if (fetchErr) throw new Error(fetchErr.message);
       if (!data) throw new Error("Release package not visible.");
       // Canonical form must match how sealRelease/amendRelease produced it:
-      // JSON.stringify(preview) with no spacing.
-      const recomputed = await sha256Hex(JSON.stringify(data.body));
+      // recursive sorted-key JSON with no whitespace (canonicalStringify),
+      // because Postgres JSONB does not preserve key order on round-trip.
+      const recomputed = await sha256Hex(canonicalStringify(data.body));
       setVerify((m) => ({
         ...m,
         [pkgId]:
