@@ -73,9 +73,18 @@ export function IsolateSection() {
             className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
           >
             <option value="">—</option>
-            {GROWTH_QUANTIFIERS.map((g) => (
-              <option key={g.code} value={g.code}>{g.display}</option>
-            ))}
+            {GROWTH_QUANTIFIERS
+              .filter((g) => {
+                // Hide "No growth" when a real organism is selected
+                const nonGrowthOrganisms = ["NOGRO", "MIXED", "NORML"];
+                if (g.code === "NO_GROWTH" && !nonGrowthOrganisms.includes(organismCode)) {
+                  return false;
+                }
+                return true;
+              })
+              .map((g) => (
+                <option key={g.code} value={g.code}>{g.display}</option>
+              ))}
           </select>
         </label>
         <label className="text-xs">
