@@ -266,6 +266,14 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                       amended
                     </span>
                   )}
+                  {isLegacySeal(e.built_at) && (
+                    <span
+                      title="Sealed before the canonical-stringify fix. Verification may report mismatch because Postgres JSONB does not preserve key order. The stored hash is the historical record and is not re-sealed."
+                      className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+                    >
+                      Pre-canonical seal
+                    </span>
+                  )}
                   <span className="text-[10px] text-muted-foreground">
                     {new Date(e.built_at).toLocaleString()}
                   </span>
