@@ -16,6 +16,7 @@ import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AmsRouteImport } from './routes/ams'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsSoundsRouteImport } from './routes/settings.sounds'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminReceiversRouteImport } from './routes/admin.receivers'
 import { Route as AdminConfigRouteImport } from './routes/admin.config'
@@ -55,6 +56,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsSoundsRoute = SettingsSoundsRouteImport.update({
+  id: '/settings/sounds',
+  path: '/settings/sounds',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
+  '/settings/sounds': typeof SettingsSoundsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
+  '/settings/sounds': typeof SettingsSoundsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
+  '/settings/sounds': typeof SettingsSoundsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/admin/config'
     | '/admin/receivers'
     | '/admin/users'
+    | '/settings/sounds'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/admin/config'
     | '/admin/receivers'
     | '/admin/users'
+    | '/settings/sounds'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/admin/config'
     | '/admin/receivers'
     | '/admin/users'
+    | '/settings/sounds'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   AdminConfigRoute: typeof AdminConfigRoute
   AdminReceiversRoute: typeof AdminReceiversRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  SettingsSoundsRoute: typeof SettingsSoundsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/sounds': {
+      id: '/settings/sounds'
+      path: '/settings/sounds'
+      fullPath: '/settings/sounds'
+      preLoaderRoute: typeof SettingsSoundsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/admin/users'
@@ -246,7 +266,17 @@ const rootRouteChildren: RootRouteChildren = {
   AdminConfigRoute: AdminConfigRoute,
   AdminReceiversRoute: AdminReceiversRoute,
   AdminUsersRoute: AdminUsersRoute,
+  SettingsSoundsRoute: SettingsSoundsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

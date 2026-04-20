@@ -6,6 +6,9 @@ import { CaseManager } from "./CaseManager";
 import { ContextBar } from "./ContextBar";
 import { SectionRail } from "./SectionRail";
 import { SectionPanel } from "./SectionPanel";
+import { SoundTriggerGate } from "./SoundTriggerGate";
+import { SoundAckChip } from "./SoundAckChip";
+import { Link } from "@tanstack/react-router";
 import {
   PatientSection,
   SpecimenSection,
@@ -48,6 +51,7 @@ export function AppShell() {
 
   return (
     <div className="grid h-screen grid-cols-[280px_1fr] bg-background text-foreground">
+      <SoundTriggerGate />
       <CaseManager />
 
       <main className="flex h-screen min-w-0 flex-col overflow-hidden">
@@ -65,7 +69,15 @@ export function AppShell() {
                   </span>
                 </p>
               </div>
-              <div className="flex shrink-0 gap-2 text-[11px] uppercase">
+              <div className="flex shrink-0 items-center gap-2 text-[11px] uppercase">
+                <SoundAckChip />
+                <Link
+                  to="/settings/sounds"
+                  className="text-[11px] normal-case text-muted-foreground hover:text-foreground"
+                  title="Sound preferences"
+                >
+                  🔊
+                </Link>
                 <span className="rounded bg-muted px-2 py-1 text-muted-foreground">
                   {accession.workflowStatus}
                 </span>
@@ -75,7 +87,19 @@ export function AppShell() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No active accession selected.</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">No active accession selected.</p>
+              <div className="flex items-center gap-2">
+                <SoundAckChip />
+                <Link
+                  to="/settings/sounds"
+                  className="text-[11px] text-muted-foreground hover:text-foreground"
+                  title="Sound preferences"
+                >
+                  🔊
+                </Link>
+              </div>
+            </div>
           )}
         </header>
 
