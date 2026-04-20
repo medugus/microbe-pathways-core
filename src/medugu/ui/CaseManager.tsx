@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { meduguActions, useMeduguState } from "../store/useAccessionStore";
+import { NewAccessionDialog } from "./NewAccessionDialog";
 
 export function CaseManager() {
   const state = useMeduguState();
   const list = state.accessionOrder.map((id) => state.accessions[id]);
+  const [intakeOpen, setIntakeOpen] = useState(false);
 
   return (
     <aside className="flex h-full flex-col border-r border-border bg-sidebar">
@@ -18,6 +21,15 @@ export function CaseManager() {
           className="rounded-md border border-sidebar-border px-2 py-1 text-[11px] text-sidebar-foreground hover:bg-sidebar-accent"
         >
           Reset
+        </button>
+      </div>
+
+      <div className="border-b border-sidebar-border px-3 py-2">
+        <button
+          onClick={() => setIntakeOpen(true)}
+          className="w-full rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+        >
+          + New accession
         </button>
       </div>
 
@@ -56,6 +68,9 @@ export function CaseManager() {
           );
         })}
       </ul>
+
+      <NewAccessionDialog open={intakeOpen} onOpenChange={setIntakeOpen} />
     </aside>
   );
 }
+
