@@ -5,17 +5,13 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
+ * Medugu semantic palette (clinical UI).
+ * Pale fills + dark text for chips/badges; never colour-only signals.
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * Add a new semantic colour by:
+ * 1. Defining the variable in :root (and .dark if needed)
+ * 2. Registering it in @theme inline as --color-<name>: var(--<name>)
+ * 3. (Optional) Adding a .chip-<name> helper in @layer components
  */
 
 @theme inline {
@@ -26,6 +22,7 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -43,9 +40,46 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+
+  /* Semantic Medugu tokens (also Tailwind utility names: text-success, bg-warning, …) */
+  --color-bg-app: var(--bg-app);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-muted: var(--bg-muted);
+  --color-text-main: var(--text-main);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-secondary-teal: var(--secondary-teal);
+  --color-accent-indigo: var(--accent-indigo);
+
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-restricted: var(--restricted);
+  --color-restricted-bg: var(--restricted-bg);
+  --color-withheld: var(--withheld);
+  --color-withheld-bg: var(--withheld-bg);
+  --color-ipc-alert: var(--ipc-alert);
+  --color-ipc-alert-bg: var(--ipc-alert-bg);
+  --color-ams-pending: var(--ams-pending);
+  --color-ams-pending-bg: var(--ams-pending-bg);
+  --color-ams-approved: var(--ams-approved);
+  --color-ams-approved-bg: var(--ams-approved-bg);
+  --color-ams-denied: var(--ams-denied);
+  --color-ams-denied-bg: var(--ams-denied-bg);
+  --color-draft: var(--draft);
+  --color-released: var(--released);
+  --color-amended: var(--amended);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -62,74 +96,152 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --radius: 0.5rem;
+
+  /* Base neutrals */
+  --bg-app: #f6f8fb;
+  --bg-panel: #ffffff;
+  --bg-muted: #eef2f7;
+  --text-main: #102033;
+  --text-secondary: #4b5d73;
+  --text-muted: #6f8197;
+  --border-strong: #b7c4d3;
+
+  /* shadcn base bindings */
+  --background: var(--bg-app);
+  --foreground: var(--text-main);
+  --card: var(--bg-panel);
+  --card-foreground: var(--text-main);
+  --popover: var(--bg-panel);
+  --popover-foreground: var(--text-main);
+
+  /* Core identity */
+  --primary: #1f4e79;
+  --primary-foreground: #ffffff;
+  --secondary: var(--bg-muted);
+  --secondary-foreground: var(--text-main);
+  --secondary-teal: #0f766e;
+  --accent: var(--bg-muted);
+  --accent-foreground: var(--text-main);
+  --accent-indigo: #4f46e5;
+
+  --muted: var(--bg-muted);
+  --muted-foreground: var(--text-muted);
+
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
+  --border: #d7e0ea;
+  --input: #d7e0ea;
+  --ring: #1f4e79;
+
+  /* Semantic states */
+  --success: #1f7a4c;
+  --success-bg: #eaf7ef;
+  --warning: #b7791f;
+  --warning-bg: #fff6e6;
+  --danger: #b42318;
+  --danger-bg: #fdecec;
+  --info: #2563eb;
+  --info-bg: #eaf2ff;
+  --restricted: #7c3aed;
+  --restricted-bg: #f3ecff;
+  --withheld: #475467;
+  --withheld-bg: #f2f4f7;
+  --ipc-alert: #c2410c;
+  --ipc-alert-bg: #fff1e8;
+  --ams-pending: #a16207;
+  --ams-pending-bg: #fef7e6;
+  --ams-approved: #166534;
+  --ams-approved-bg: #eaf7ef;
+  --ams-denied: #9f1239;
+  --ams-denied-bg: #fce7f3;
+  --draft: #64748b;
+  --released: #1f7a4c;
+  --amended: #0f766e;
+
+  /* Charts — clinical, desaturated */
+  --chart-1: #1f4e79;
+  --chart-2: #0f766e;
+  --chart-3: #b7791f;
+  --chart-4: #7c3aed;
+  --chart-5: #c2410c;
+
+  /* Sidebar mirrors panel */
+  --sidebar: var(--bg-panel);
+  --sidebar-foreground: var(--text-main);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--bg-muted);
+  --sidebar-accent-foreground: var(--text-main);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--primary);
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* Dark mode kept conservative and readable; same semantic chip mapping. */
+  --bg-app: #0b1220;
+  --bg-panel: #111a2b;
+  --bg-muted: #1a2538;
+  --text-main: #e6edf6;
+  --text-secondary: #a8b6c8;
+  --text-muted: #7a8aa0;
+  --border-strong: #2c3a52;
+
+  --background: var(--bg-app);
+  --foreground: var(--text-main);
+  --card: var(--bg-panel);
+  --card-foreground: var(--text-main);
+  --popover: var(--bg-panel);
+  --popover-foreground: var(--text-main);
+
+  --primary: #5b8bbf;
+  --primary-foreground: #0b1220;
+  --secondary: var(--bg-muted);
+  --secondary-foreground: var(--text-main);
+  --muted: var(--bg-muted);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--bg-muted);
+  --accent-foreground: var(--text-main);
+  --destructive: #f97066;
+  --destructive-foreground: #0b1220;
+  --border: #243248;
+  --input: #243248;
+  --ring: #5b8bbf;
+
+  /* Chips: keep pale-on-dark by tinting with low opacity over panel */
+  --success-bg: color-mix(in oklab, #1f7a4c 22%, var(--bg-panel));
+  --warning-bg: color-mix(in oklab, #b7791f 22%, var(--bg-panel));
+  --danger-bg: color-mix(in oklab, #b42318 22%, var(--bg-panel));
+  --info-bg: color-mix(in oklab, #2563eb 22%, var(--bg-panel));
+  --restricted-bg: color-mix(in oklab, #7c3aed 22%, var(--bg-panel));
+  --withheld-bg: color-mix(in oklab, #475467 35%, var(--bg-panel));
+  --ipc-alert-bg: color-mix(in oklab, #c2410c 22%, var(--bg-panel));
+  --ams-pending-bg: color-mix(in oklab, #a16207 22%, var(--bg-panel));
+  --ams-approved-bg: color-mix(in oklab, #166534 22%, var(--bg-panel));
+  --ams-denied-bg: color-mix(in oklab, #9f1239 22%, var(--bg-panel));
+
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #fda29b;
+  --info: #93c5fd;
+  --restricted: #c4b5fd;
+  --withheld: #cbd5e1;
+  --ipc-alert: #fdba74;
+  --ams-pending: #fcd34d;
+  --ams-approved: #86efac;
+  --ams-denied: #fda4af;
+  --draft: #94a3b8;
+  --released: #4ade80;
+  --amended: #5eead4;
+
+  --sidebar: var(--bg-panel);
+  --sidebar-foreground: var(--text-main);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: #0b1220;
+  --sidebar-accent: var(--bg-muted);
+  --sidebar-accent-foreground: var(--text-main);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--primary);
 }
 
 @layer base {
@@ -141,4 +253,47 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+}
+
+@layer components {
+  /* Semantic chips — pale fill, dark ink, subtle hairline.
+     Always pair with a label or icon; never rely on colour alone. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1rem;
+    letter-spacing: 0.01em;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .chip-square { border-radius: 0.25rem; }
+
+  .chip-neutral    { background: var(--bg-muted);        color: var(--text-secondary); border-color: var(--border); }
+  .chip-success    { background: var(--success-bg);      color: var(--success);        border-color: color-mix(in oklab, var(--success) 30%, transparent); }
+  .chip-warning    { background: var(--warning-bg);      color: var(--warning);        border-color: color-mix(in oklab, var(--warning) 30%, transparent); }
+  .chip-danger     { background: var(--danger-bg);       color: var(--danger);         border-color: color-mix(in oklab, var(--danger) 30%, transparent); }
+  .chip-info       { background: var(--info-bg);         color: var(--info);           border-color: color-mix(in oklab, var(--info) 30%, transparent); }
+  .chip-restricted { background: var(--restricted-bg);   color: var(--restricted);     border-color: color-mix(in oklab, var(--restricted) 30%, transparent); }
+  .chip-withheld   { background: var(--withheld-bg);     color: var(--withheld);       border-color: color-mix(in oklab, var(--withheld) 30%, transparent); }
+  .chip-ipc        { background: var(--ipc-alert-bg);    color: var(--ipc-alert);      border-color: color-mix(in oklab, var(--ipc-alert) 30%, transparent); }
+
+  .chip-ams-pending  { background: var(--ams-pending-bg);  color: var(--ams-pending);  border-color: color-mix(in oklab, var(--ams-pending) 30%, transparent); }
+  .chip-ams-approved { background: var(--ams-approved-bg); color: var(--ams-approved); border-color: color-mix(in oklab, var(--ams-approved) 30%, transparent); }
+  .chip-ams-denied   { background: var(--ams-denied-bg);   color: var(--ams-denied);   border-color: color-mix(in oklab, var(--ams-denied) 30%, transparent); }
+
+  .chip-draft    { background: var(--bg-muted);     color: var(--draft);    border-color: var(--border); }
+  .chip-released { background: var(--success-bg);   color: var(--released); border-color: color-mix(in oklab, var(--released) 30%, transparent); }
+  .chip-amended  { background: color-mix(in oklab, var(--amended) 12%, var(--bg-panel)); color: var(--amended); border-color: color-mix(in oklab, var(--amended) 30%, transparent); }
+
+  /* Inline callouts (panels) — same palette, larger padding */
+  .callout         { border-radius: 0.5rem; border: 1px solid var(--border); padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+  .callout-warning { background: var(--warning-bg);    color: var(--warning);     border-color: color-mix(in oklab, var(--warning) 30%, transparent); }
+  .callout-danger  { background: var(--danger-bg);     color: var(--danger);      border-color: color-mix(in oklab, var(--danger) 30%, transparent); }
+  .callout-info    { background: var(--info-bg);       color: var(--info);        border-color: color-mix(in oklab, var(--info) 30%, transparent); }
+  .callout-success { background: var(--success-bg);    color: var(--success);     border-color: color-mix(in oklab, var(--success) 30%, transparent); }
 }

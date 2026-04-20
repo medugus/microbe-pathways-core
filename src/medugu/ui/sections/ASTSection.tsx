@@ -15,11 +15,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { approvalStatusForRow, isRestrictedRow } from "../../logic/amsEngine";
 
 const AMS_TONE_AST: Record<string, string> = {
-  not_requested: "bg-muted text-muted-foreground",
-  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  approved: "bg-primary/15 text-primary",
-  denied: "bg-destructive/15 text-destructive",
-  expired: "bg-destructive/10 text-destructive",
+  not_requested: "chip chip-square chip-neutral",
+  pending: "chip chip-square chip-ams-pending",
+  approved: "chip chip-square chip-ams-approved",
+  denied: "chip chip-square chip-ams-denied",
+  expired: "chip chip-square chip-danger",
 };
 
 const METHOD_OPTIONS: { code: ASTMethod; label: string }[] = [

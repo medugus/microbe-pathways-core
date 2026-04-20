@@ -258,11 +258,11 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary">
+                  <span className="chip chip-square chip-info font-mono">
                     v{e.version}
                   </span>
                   {e.amendmentReason && (
-                    <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                    <span className="chip chip-square chip-amended uppercase">
                       amended
                     </span>
                   )}
