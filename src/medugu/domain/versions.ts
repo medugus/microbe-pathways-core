@@ -4,7 +4,7 @@
 import type { RuleVersion } from "./types";
 
 export const BUILD_VERSION = "3.0.0-phase1";
-export const EXPORT_VERSION = "export-1.0.0";
+export const EXPORT_VERSION = "export-1.1.0";
 export const BREAKPOINT_VERSION = "EUCAST-2024";
 
 export const RULE_VERSION: RuleVersion = {

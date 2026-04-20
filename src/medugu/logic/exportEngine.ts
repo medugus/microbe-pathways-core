@@ -197,22 +197,47 @@ export function buildFhirBundle(accession: Accession): unknown {
     }
   }
 
+  const isAmendment = accession.release.state === ReleaseState.Amended;
+  const amendmentReason = accession.release.amendmentReason;
+  const amendmentExtensions = isAmendment
+    ? [
+        {
+          url: "urn:medugu:amendment-reason",
+          valueString: amendmentReason ?? "(no reason recorded)",
+        },
+        {
+          url: "urn:medugu:supersedes-version",
+          valueInteger: Math.max(1, doc.reportVersion - 1),
+        },
+      ]
+    : [];
+
   resources.push({
     resourceType: "DiagnosticReport",
     id: reportId,
-    status: accession.release.state === ReleaseState.Amended ? "amended" : "final",
+    meta: isAmendment
+      ? { tag: [{ system: "urn:medugu:report-tag", code: "amended", display: "Amended report" }] }
+      : undefined,
+    status: isAmendment ? "amended" : "final",
     category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/v2-0074", code: "MB" }] }],
-    code: { text: `Microbiology report v${doc.reportVersion}` },
+    code: { text: `Microbiology report v${doc.reportVersion}${isAmendment ? " (amended)" : ""}` },
     subject: { reference: `Patient/${patientId}` },
     specimen: [{ reference: `Specimen/${specimenId}` }],
     issued: accession.releasedAt ?? new Date().toISOString(),
     result: observationRefs,
-    conclusion: doc.comments.map((c) => `[${c.source}] ${c.text}`).join("\n") || undefined,
+    conclusion:
+      [
+        isAmendment ? `[amendment] ${amendmentReason ?? "Amended without recorded reason."}` : null,
+        ...doc.comments.map((c) => `[${c.source}] ${c.text}`),
+      ]
+        .filter(Boolean)
+        .join("\n") || undefined,
     extension: [
       { url: "urn:medugu:rule-version", valueString: doc.versions.rule },
       { url: "urn:medugu:breakpoint-version", valueString: doc.versions.breakpoint },
       { url: "urn:medugu:export-version", valueString: doc.versions.export },
       { url: "urn:medugu:build-version", valueString: doc.versions.build },
+      ...amendmentExtensions,
     ],
   });
 
@@ -279,6 +304,7 @@ export function buildHL7(accession: Accession): string {
     );
   }
 
+  const isAmendmentMsg = accession.release.state === ReleaseState.Amended;
   segments.push(
     hl7Segment("OBR", [
       "1",
@@ -302,12 +328,27 @@ export function buildHL7(accession: Accession): string {
       "",
       "",
       "",
-      "",
       ts,
       "",
-      accession.release.state === ReleaseState.Amended ? "C" : "F",
+      isAmendmentMsg ? "C" : "F",
     ]),
   );
+
+  // Amendment notice immediately under OBR so receivers process it before OBX rows.
+  if (isAmendmentMsg) {
+    const supersedes = Math.max(1, doc.reportVersion - 1);
+    segments.push(
+      hl7Segment("NTE", [
+        "0",
+        "L",
+        hl7Escape(
+          `*** AMENDED REPORT *** v${doc.reportVersion} supersedes v${supersedes}. Reason: ${
+            accession.release.amendmentReason ?? "(no reason recorded)"
+          }`,
+        ),
+      ]),
+    );
+  }
 
   let setId = 1;
   for (const iso of doc.isolates) {
@@ -399,6 +440,16 @@ export interface NormalisedExport {
   versions: ReportPreviewDoc["versions"];
   releaseState: string;
   reportVersion: number;
+  /**
+   * Correction block (HL7 OBR-25=C / FHIR DiagnosticReport.status=amended).
+   * Present and `isCorrection: true` when this export represents an amendment;
+   * receivers should treat it as a correction superseding `supersedesVersion`.
+   */
+  correction: {
+    isCorrection: boolean;
+    supersedesVersion?: number;
+    reason?: string;
+  };
   patient: Accession["patient"];
   accession: {
     id: string;
@@ -433,6 +484,7 @@ export interface NormalisedExport {
     reportVersion: number;
     releasedAt?: string;
     releasedBy?: string;
+    amendmentReason?: string;
     consultantApproval?: { approvedBy: string; approvedAt: string; reason?: string };
     fromReleasePackage: boolean;
   };
@@ -458,12 +510,18 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
       phenotypeFlags: a.phenotypeFlags,
     })),
   );
+  const isAmendment = accession.release.state === ReleaseState.Amended;
   return {
     schema: "medugu.normalised/1",
     exportedAt: new Date().toISOString(),
     versions: doc.versions,
     releaseState: accession.release.state,
     reportVersion: doc.reportVersion,
+    correction: {
+      isCorrection: isAmendment,
+      supersedesVersion: isAmendment ? Math.max(1, doc.reportVersion - 1) : undefined,
+      reason: isAmendment ? accession.release.amendmentReason : undefined,
+    },
     patient: accession.patient,
     accession: {
       id: accession.id,
@@ -489,6 +547,7 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
       reportVersion: accession.release.reportVersion,
       releasedAt: accession.releasedAt,
       releasedBy: accession.releasingActor,
+      amendmentReason: accession.release.amendmentReason,
       consultantApproval: accession.release.consultantApproval,
       fromReleasePackage: !!accession.releasePackage,
     },
