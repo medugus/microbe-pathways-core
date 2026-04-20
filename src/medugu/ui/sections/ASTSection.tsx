@@ -12,6 +12,15 @@ import { ASTMethod } from "../../domain/enums";
 import type { Accession, ASTGovernanceState, ASTStandard } from "../../domain/types";
 import { applyExpertRulesServer } from "../../store/engines.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { approvalStatusForRow, isRestrictedRow } from "../../logic/amsEngine";
+
+const AMS_TONE_AST: Record<string, string> = {
+  not_requested: "bg-muted text-muted-foreground",
+  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  approved: "bg-primary/15 text-primary",
+  denied: "bg-destructive/15 text-destructive",
+  expired: "bg-destructive/10 text-destructive",
+};
 
 const METHOD_OPTIONS: { code: ASTMethod; label: string }[] = [
   { code: ASTMethod.DiskDiffusion, label: "Disk diffusion (mm)" },
@@ -296,6 +305,13 @@ export function ASTSection() {
                         {r.expertRulesFired && r.expertRulesFired.length > 0 && (
                           <div className="mt-0.5 text-[10px] text-muted-foreground">
                             {r.expertRulesFired.map((e) => e.ruleCode).join(", ")}
+                          </div>
+                        )}
+                        {isRestrictedRow(r) && (
+                          <div className="mt-0.5">
+                            <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${AMS_TONE_AST[approvalStatusForRow(accession, r.id)]}`}>
+                              AMS · {approvalStatusForRow(accession, r.id).replace("_", " ")}
+                            </span>
                           </div>
                         )}
                       </td>

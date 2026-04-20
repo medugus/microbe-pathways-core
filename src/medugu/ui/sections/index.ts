@@ -4,6 +4,7 @@ export { MicroscopySection } from "./MicroscopySection";
 export { IsolateSection } from "./IsolateSection";
 export { ASTSection } from "./ASTSection";
 export { StewardshipSection } from "./StewardshipSection";
+export { AMSSection } from "./AMSSection";
 export { IPCSection } from "./IPCSection";
 export { ValidationSection } from "./ValidationSection";
 export { ReleaseSection } from "./ReleaseSection";
@@ -18,6 +19,7 @@ export const SECTION_ORDER = [
   { key: "isolate", label: "Isolate" },
   { key: "ast", label: "AST" },
   { key: "stewardship", label: "Stewardship" },
+  { key: "ams", label: "AMS approvals" },
   { key: "ipc", label: "IPC" },
   { key: "validation", label: "Validation" },
   { key: "release", label: "Release" },

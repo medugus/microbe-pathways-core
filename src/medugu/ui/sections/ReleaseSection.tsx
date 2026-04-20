@@ -285,6 +285,17 @@ export function ReleaseSection() {
         </div>
       </section>
 
+      {v.amsPendingRestrictedCount > 0 && (
+        <section className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-200">
+          <strong>{v.amsPendingRestrictedCount}</strong> restricted antimicrobial
+          row(s) are still hidden from the clinician report pending AMS approval.
+          Open the <span className="font-mono">AMS approvals</span> section to
+          request, approve, or deny. Release will proceed but those rows will
+          remain suppressed in the released report and exports until approved
+          (a later amendment will be required to surface them).
+        </section>
+      )}
+
       {/* Release action */}
       <section className="rounded-md border border-border bg-background p-3">
         <div className="flex flex-wrap items-center justify-between gap-3">

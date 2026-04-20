@@ -36,4 +36,8 @@ export const meduguActions = {
   recordConsultantApproval: accessionStore.recordConsultantApproval,
   applyExpertRules: accessionStore.applyExpertRules,
   recordConsultantOverride: accessionStore.recordConsultantOverride,
+  requestAMSApproval: accessionStore.requestAMSApproval,
+  decideAMSApproval: accessionStore.decideAMSApproval,
+  expireAMSApproval: accessionStore.expireAMSApproval,
+  escalateAMSApproval: accessionStore.escalateAMSApproval,
 };

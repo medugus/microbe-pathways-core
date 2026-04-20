@@ -8,6 +8,7 @@
 import type { Accession, ValidationIssue } from "../domain/types";
 import { resolveSpecimen } from "./specimenResolver";
 import { newId } from "../domain/ids";
+import { pendingRestrictedRowCount } from "./amsEngine";
 
 export interface ValidationReport {
   issues: ValidationIssue[];
@@ -21,6 +22,8 @@ export interface ValidationReport {
   phoneOutRequiredPending: boolean;
   /** True when consultant approval is required and not yet recorded. */
   consultantApprovalPending: boolean;
+  /** Count of restricted AST rows still awaiting AMS approval (warning, not blocking). */
+  amsPendingRestrictedCount: number;
 }
 
 function block(code: string, section: string, message: string): ValidationIssue {
@@ -115,6 +118,20 @@ export function runValidation(accession: Accession): ValidationReport {
     }
   }
 
+  // ---- Stage 6: AMS restricted-drug approvals (warning surface).
+  // Restricted rows are hidden from the clinician report by stewardship until
+  // approved, so this is informational/warn — not a release blocker.
+  const amsPendingRestrictedCount = pendingRestrictedRowCount(accession);
+  if (amsPendingRestrictedCount > 0) {
+    issues.push(
+      warn(
+        "AMS_PENDING_RESTRICTED",
+        "release",
+        `${amsPendingRestrictedCount} restricted antimicrobial row(s) hidden from clinician report pending AMS approval.`,
+      ),
+    );
+  }
+
   const blockers = issues.filter((i) => i.severity === "block");
   const warnings = issues.filter((i) => i.severity === "warn");
   const infos = issues.filter((i) => i.severity === "info");
@@ -128,5 +145,6 @@ export function runValidation(accession: Accession): ValidationReport {
     consultantReleaseRequired: !!profile?.gating.consultantReleaseRequired,
     phoneOutRequiredPending,
     consultantApprovalPending,
+    amsPendingRestrictedCount,
   };
 }

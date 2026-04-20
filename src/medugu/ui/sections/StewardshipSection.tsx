@@ -4,6 +4,16 @@
 import { useActiveAccession } from "../../store/useAccessionStore";
 import { evaluateStewardship } from "../../logic/stewardshipEngine";
 import { getAntibiotic } from "../../config/antibiotics";
+import { approvalStatusForRow, isRestrictedRow } from "../../logic/amsEngine";
+import type { AMSApprovalStatus } from "../../domain/types";
+
+const AMS_TONE: Record<AMSApprovalStatus, string> = {
+  not_requested: "bg-muted text-muted-foreground",
+  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  approved: "bg-primary/15 text-primary",
+  denied: "bg-destructive/15 text-destructive",
+  expired: "bg-destructive/10 text-destructive",
+};
 
 const CLASS_TONE: Record<string, string> = {
   unrestricted: "bg-secondary text-secondary-foreground",
@@ -86,6 +96,18 @@ export function StewardshipSection() {
                             hidden{d.approvalRequired ? " · approval needed" : ""}
                           </span>
                         )}
+                        {(() => {
+                          const row = accession.ast.find((a) => a.id === d.astId);
+                          if (!row || !isRestrictedRow(row)) return null;
+                          const status = approvalStatusForRow(accession, row.id);
+                          return (
+                            <div className="mt-0.5">
+                              <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${AMS_TONE[status]}`}>
+                                AMS · {status.replace("_", " ")}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {d.suppressionReason ?? d.advisory ?? "—"}

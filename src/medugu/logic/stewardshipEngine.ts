@@ -12,6 +12,7 @@ import {
   type ReleaseClass,
 } from "../config/stewardshipRules";
 import { newId } from "../domain/ids";
+import { approvalStatusForRow, isRestrictedRow } from "./amsEngine";
 
 export interface StewardshipDecision {
   astId: string;
@@ -68,11 +69,24 @@ export function evaluateStewardship(accession: Accession): StewardshipReport {
       }
     }
 
-    // Restricted agents require approval before clinician release
-    if (releaseClass === "restricted") {
-      approvalRequired = true;
-      visibleToClinician = false;
-      suppressionReason = suppressionReason ?? `Restricted agent (${aware}) — requires AMS approval before release.`;
+    // Restricted agents require AMS approval before clinician release.
+    // Browser-phase Stage 6: consult amsApprovals on the accession.
+    if (releaseClass === "restricted" || isRestrictedRow(row)) {
+      const amsStatus = approvalStatusForRow(accession, row.id);
+      if (amsStatus === "approved") {
+        approvalRequired = false;
+        // Released for clinician view because AMS pharmacist approved.
+        // visibleToClinician stays true unless suppressed for other reasons.
+      } else {
+        approvalRequired = true;
+        visibleToClinician = false;
+        const stateLabel =
+          amsStatus === "pending" ? "approval pending"
+          : amsStatus === "denied" ? "approval denied"
+          : amsStatus === "expired" ? "approval expired"
+          : "approval not requested";
+        suppressionReason = suppressionReason ?? `Restricted agent (${aware}) — AMS ${stateLabel}.`;
+      }
     }
 
     // Phenotype-driven cascade suppression already encoded on the row

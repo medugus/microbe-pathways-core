@@ -49,6 +49,11 @@ export function ValidationSection() {
             phone-out required (blocking)
           </span>
         )}
+        {v.amsPendingRestrictedCount > 0 && (
+          <span className="rounded bg-amber-500/15 px-2 py-1 text-amber-700 dark:text-amber-300">
+            {v.amsPendingRestrictedCount} AMS approval(s) pending
+          </span>
+        )}
       </div>
 
       {(["block", "warn", "info"] as const).map((sev) => {
