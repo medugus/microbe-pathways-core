@@ -47,9 +47,9 @@ interface Props {
 type VerifyState =
   | { status: "idle" }
   | { status: "verifying" }
-  | { status: "ok"; recomputed: string }
-  | { status: "mismatch"; recomputed: string }
-  | { status: "error"; message: string };
+  | { status: "ok"; stored: string; recomputed: string; verifiedAt: string }
+  | { status: "mismatch"; stored: string; recomputed: string; verifiedAt: string }
+  | { status: "error"; message: string; verifiedAt: string };
 
 async function sha256Hex(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input);
@@ -68,28 +68,37 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
   async function verifySeal(pkgId: string, expectedSha: string) {
     setVerify((m) => ({ ...m, [pkgId]: { status: "verifying" } }));
     try {
+      // Always re-fetch the FROZEN body from release_packages (never reads
+      // live accession state) and re-fetch body_sha256 in the same row so
+      // we are comparing what the server has right now, not a stale prop.
       const { data, error: fetchErr } = await supabase
         .from("release_packages")
-        .select("body")
+        .select("body, body_sha256")
         .eq("id", pkgId)
         .maybeSingle();
       if (fetchErr) throw new Error(fetchErr.message);
       if (!data) throw new Error("Release package not visible.");
+      const stored = (data.body_sha256 as string) ?? expectedSha;
       // Canonical form must match how sealRelease/amendRelease produced it:
       // recursive sorted-key JSON with no whitespace (canonicalStringify),
       // because Postgres JSONB does not preserve key order on round-trip.
       const recomputed = await sha256Hex(canonicalStringify(data.body));
+      const verifiedAt = new Date().toISOString();
       setVerify((m) => ({
         ...m,
         [pkgId]:
-          recomputed === expectedSha
-            ? { status: "ok", recomputed }
-            : { status: "mismatch", recomputed },
+          recomputed === stored
+            ? { status: "ok", stored, recomputed, verifiedAt }
+            : { status: "mismatch", stored, recomputed, verifiedAt },
       }));
     } catch (err) {
       setVerify((m) => ({
         ...m,
-        [pkgId]: { status: "error", message: err instanceof Error ? err.message : String(err) },
+        [pkgId]: {
+          status: "error",
+          message: err instanceof Error ? err.message : String(err),
+          verifiedAt: new Date().toISOString(),
+        },
       }));
     }
   }
