@@ -62,6 +62,7 @@ export function evaluateIPC(
     for (const rule of matched) {
       // Dedup against prior accessions for the same patient/MRN within window
       let isNewEpisode = true;
+      let priorAccessionIds: string[] = [];
       if (allAccessions && rule.rollingWindowDays) {
         const priors = Object.values(allAccessions).filter(
           (a) =>
@@ -69,10 +70,13 @@ export function evaluateIPC(
             a.patient.mrn === accession.patient.mrn &&
             withinWindow(a.createdAt, rule.rollingWindowDays!),
         );
-        const seenSame = priors.some((a) =>
+        const contributing = priors.filter((a) =>
           a.ipc.some((s) => s.ruleCode === rule.ruleCode && s.organismCode === iso.organismCode),
         );
-        if (seenSame) isNewEpisode = false;
+        if (contributing.length > 0) {
+          isNewEpisode = false;
+          priorAccessionIds = contributing.map((a) => a.id);
+        }
       }
 
       // Clearance for screen pathway
@@ -98,6 +102,7 @@ export function evaluateIPC(
         phenotypes,
         isNewEpisode,
         clearanceProgress,
+        priorAccessionIds: priorAccessionIds.length > 0 ? priorAccessionIds : undefined,
       };
       decisions.push(decision);
 
