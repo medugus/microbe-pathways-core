@@ -3,7 +3,6 @@
 // only and exposes a single "Open accession" navigation action — no IPC
 // workflow controls, no engine calls.
 
-import { Link } from "@tanstack/react-router";
 import {
   Sheet,
   SheetContent,
@@ -18,9 +17,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   detail: IPCEpisodeDetail | null;
-  /** Where the "Open accession" button should send the user. When omitted the
-   *  drawer is opened from inside the case workspace and the action is hidden. */
-  openAccessionHref?: string;
+  /** Callback invoked when the user clicks "Open accession". When omitted the
+   *  button is hidden (e.g. when the drawer is opened from inside the linked
+   *  accession's own workspace). */
+  onOpenAccession?: () => void;
 }
 
 const TIMING_TONE: Record<string, string> = {
@@ -41,7 +41,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export function IPCEpisodeDrawer({ open, onOpenChange, detail, openAccessionHref }: Props) {
+export function IPCEpisodeDrawer({ open, onOpenChange, detail, onOpenAccession }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
@@ -174,14 +174,13 @@ export function IPCEpisodeDrawer({ open, onOpenChange, detail, openAccessionHref
               )}
             </dl>
 
-            {openAccessionHref && (
+            {onOpenAccession ? (
               <div className="mt-4 flex justify-end">
-                <Button asChild size="sm">
-                  <Link to={openAccessionHref}>Open accession →</Link>
+                <Button size="sm" onClick={onOpenAccession}>
+                  Open accession →
                 </Button>
               </div>
-            )}
-            {!openAccessionHref && (
+            ) : (
               <p className="mt-4 text-[10px] text-muted-foreground">
                 Already viewing the linked accession.
               </p>
