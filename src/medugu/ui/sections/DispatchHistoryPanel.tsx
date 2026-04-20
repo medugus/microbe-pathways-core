@@ -18,6 +18,7 @@ import {
   type DispatchStatus,
 } from "../../store/dispatch.functions";
 import type { ExportFormat } from "../../logic/exportEngine";
+import { soundEngine } from "../../logic/soundEngine";
 
 interface Props {
   accessionRowId: string;
