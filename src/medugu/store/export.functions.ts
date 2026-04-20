@@ -171,6 +171,7 @@ export async function autoDispatchRelease(
   accession: Accession,
   accessionRowId: string,
   pkgRow: PackageRow,
+  excludedReceiverIds: string[] = [],
 ): Promise<AutoDispatchResult[]> {
   const { data: receivers, error } = await supabase
     .from("receivers")
@@ -179,8 +180,19 @@ export async function autoDispatchRelease(
     .eq("enabled", true);
   if (error || !receivers || receivers.length === 0) return [];
 
+  const excluded = new Set(excludedReceiverIds);
   const results: AutoDispatchResult[] = [];
   for (const r of receivers as unknown as ReceiverRow[]) {
+    if (excluded.has(r.id)) {
+      results.push({
+        receiverId: r.id,
+        receiverName: r.name,
+        format: r.format as ExportFormat,
+        ok: true,
+        reason: "Skipped — auto-dispatch disabled for this receiver.",
+      });
+      continue;
+    }
     const out = await dispatchToReceiver(
       supabase,
       userId,
