@@ -4,7 +4,7 @@ import { NewAccessionDialog } from "./NewAccessionDialog";
 
 export function CaseManager() {
   const state = useMeduguState();
-  const list = state.accessionOrder.map((id) => state.accessions[id]);
+  const list = [...state.accessionOrder].reverse().map((id) => state.accessions[id]);
   const [intakeOpen, setIntakeOpen] = useState(false);
 
   return (
