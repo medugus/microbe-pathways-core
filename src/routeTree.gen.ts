@@ -17,6 +17,7 @@ import { Route as AmsRouteImport } from './routes/ams'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminReceiversRouteImport } from './routes/admin.receivers'
+import { Route as AdminConfigRouteImport } from './routes/admin.config'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -58,6 +59,11 @@ const AdminReceiversRoute = AdminReceiversRouteImport.update({
   path: '/admin/receivers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminConfigRoute = AdminConfigRouteImport.update({
+  id: '/admin/config',
+  path: '/admin/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/ipc'
     | '/login'
     | '/signup'
+    | '/admin/config'
     | '/admin/receivers'
     | '/admin/users'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/ipc'
     | '/login'
     | '/signup'
+    | '/admin/config'
     | '/admin/receivers'
     | '/admin/users'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/ipc'
     | '/login'
     | '/signup'
+    | '/admin/config'
     | '/admin/receivers'
     | '/admin/users'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   IpcRoute: typeof IpcRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  AdminConfigRoute: typeof AdminConfigRoute
   AdminReceiversRoute: typeof AdminReceiversRoute
   AdminUsersRoute: typeof AdminUsersRoute
 }
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReceiversRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/config': {
+      id: '/admin/config'
+      path: '/admin/config'
+      fullPath: '/admin/config'
+      preLoaderRoute: typeof AdminConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -202,9 +222,19 @@ const rootRouteChildren: RootRouteChildren = {
   IpcRoute: IpcRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  AdminConfigRoute: AdminConfigRoute,
   AdminReceiversRoute: AdminReceiversRoute,
   AdminUsersRoute: AdminUsersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
