@@ -304,6 +304,7 @@ export function buildHL7(accession: Accession): string {
     );
   }
 
+  const isAmendmentMsg = accession.release.state === ReleaseState.Amended;
   segments.push(
     hl7Segment("OBR", [
       "1",
@@ -327,12 +328,27 @@ export function buildHL7(accession: Accession): string {
       "",
       "",
       "",
-      "",
       ts,
       "",
-      accession.release.state === ReleaseState.Amended ? "C" : "F",
+      isAmendmentMsg ? "C" : "F",
     ]),
   );
+
+  // Amendment notice immediately under OBR so receivers process it before OBX rows.
+  if (isAmendmentMsg) {
+    const supersedes = Math.max(1, doc.reportVersion - 1);
+    segments.push(
+      hl7Segment("NTE", [
+        "0",
+        "L",
+        hl7Escape(
+          `*** AMENDED REPORT *** v${doc.reportVersion} supersedes v${supersedes}. Reason: ${
+            accession.release.amendmentReason ?? "(no reason recorded)"
+          }`,
+        ),
+      ]),
+    );
+  }
 
   let setId = 1;
   for (const iso of doc.isolates) {
