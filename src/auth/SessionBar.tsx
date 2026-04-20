@@ -8,11 +8,17 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { AllRolesPopover } from "./AllRolesPopover";
+import { useDemoRoleView } from "./demoRoleView";
+import { ROLE_CATALOG } from "./rolesCatalog";
 
 export function SessionBar() {
   const { profile, roles, user, signOut, hasRole } = useAuth();
   const [tenantName, setTenantName] = useState<string | null>(null);
-
+  const { activeView } = useDemoRoleView();
+  const activeViewEntry = activeView
+    ? ROLE_CATALOG.find((r) => r.code === activeView)
+    : null;
   useEffect(() => {
     if (!profile?.tenant_id) {
       setTenantName(null);
@@ -50,6 +56,17 @@ export function SessionBar() {
                   {r}
                 </span>
               ))}
+            </span>
+          </>
+        )}
+        {activeViewEntry && (
+          <>
+            <span>·</span>
+            <span
+              className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300"
+              title="Demo role view active — UI preview only, does not change real authority."
+            >
+              demo view: {activeViewEntry.code}
             </span>
           </>
         )}
@@ -95,6 +112,7 @@ export function SessionBar() {
             </Link>
           </>
         )}
+        <AllRolesPopover />
         <Button
           size="sm"
           variant="ghost"
