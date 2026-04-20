@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { useActiveAccession, meduguActions } from "../../store/useAccessionStore";
-import { runValidation } from "../../logic/validationEngine";
+import { useAuthoritativeValidation } from "../../store/useAuthoritativeValidation";
 import { transition, nextSuggested } from "../../logic/workflowEngine";
 import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
@@ -63,7 +63,8 @@ export function ReleaseSection() {
     );
   }
 
-  const v = runValidation(accession);
+  const validation = useAuthoritativeValidation(accession, accessionRowId);
+  const v = validation.report;
   const suggestedNext = nextSuggested(accession.workflowStatus);
   const released =
     accession.release.state === ReleaseState.Released ||
@@ -217,6 +218,9 @@ export function ReleaseSection() {
           )}
         </div>
       </section>
+
+      {/* Validation source badge */}
+      <ValidationSourceBadge validation={validation} />
 
       {/* Finalisation board */}
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -475,6 +479,54 @@ export function ReleaseSection() {
           accessionRowId={accessionRowId}
         />
       )}
+    </div>
+  );
+}
+
+// ---------- Validation source badge ----------
+//
+// Tells the operator whether the blockers/warnings on screen came from the
+// server-authoritative engine or the local fallback. Pale-on-tone so it never
+// out-shouts the actual blocker count, but legible at a glance.
+
+import type { AuthoritativeValidation } from "../../store/useAuthoritativeValidation";
+
+function ValidationSourceBadge({ validation }: { validation: AuthoritativeValidation }) {
+  const { source, loading, fallbackReason, lastServerAt } = validation;
+
+  let label: string;
+  let toneClass: string;
+  let title: string | undefined;
+  switch (source) {
+    case "server":
+      label = "server-authoritative";
+      toneClass = "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+      title = lastServerAt
+        ? `Validation report received from server at ${new Date(lastServerAt).toLocaleTimeString()}.`
+        : "Validation report received from server.";
+      break;
+    case "client-fallback":
+      label = "client fallback (server unavailable)";
+      toneClass = "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+      title = fallbackReason ?? "Server validation request failed; showing local engine output.";
+      break;
+    case "client":
+    default:
+      label = "client engine";
+      toneClass = "border-border bg-muted text-muted-foreground";
+      title = fallbackReason ?? "PHASE5_SERVER_VALIDATION is disabled; local engine is the contract.";
+      break;
+  }
+
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-2 rounded-md border px-2 py-1 text-[11px] ${toneClass}`}
+      title={title}
+      aria-live="polite"
+    >
+      <span className="font-medium uppercase tracking-wide">Validation:</span>
+      <span>{label}</span>
+      {loading && <span className="opacity-70">· checking server…</span>}
     </div>
   );
 }
