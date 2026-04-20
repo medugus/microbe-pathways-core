@@ -18,6 +18,7 @@ import {
   type DispatchStatus,
 } from "../../store/dispatch.functions";
 import type { ExportFormat } from "../../logic/exportEngine";
+import { soundEngine } from "../../logic/soundEngine";
 
 interface Props {
   accessionRowId: string;
@@ -101,6 +102,13 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
           ? `Simulated dispatch sent (attempt #${result.row?.attempt_no}).`
           : `Simulated dispatch failed: ${result.row?.error_message ?? result.reason ?? "unknown"}`,
       );
+      if (!result.ok) {
+        soundEngine.emit({
+          cls: "urgent",
+          key: `dispatch-fail:sim:${result.row?.id ?? Date.now()}`,
+          label: `Dispatch failed (${format})`,
+        });
+      }
       await reload();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
@@ -119,6 +127,13 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
           ? `Retry succeeded (attempt #${result.row?.attempt_no}).`
           : `Retry failed: ${result.row?.error_message ?? result.reason ?? "unknown"}`,
       );
+      if (!result.ok) {
+        soundEngine.emit({
+          cls: "urgent",
+          key: `dispatch-fail:retry:${id}:${Date.now()}`,
+          label: `Dispatch retry failed`,
+        });
+      }
       await reload();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
