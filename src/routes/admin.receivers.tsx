@@ -10,9 +10,11 @@ import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { receiverPrefs } from "@/medugu/store/receiverPrefs";
 
 interface ReceiverRow {
   id: string;
+  tenant_id: string;
   name: string;
   endpoint_url: string;
   format: "fhir" | "hl7" | "json";
@@ -49,7 +51,7 @@ function ReceiversAdminPage() {
     setErr(null);
     const { data, error } = await supabase
       .from("receivers")
-      .select("id, name, endpoint_url, format, bearer_token, enabled, created_at")
+      .select("id, tenant_id, name, endpoint_url, format, bearer_token, enabled, created_at")
       .order("created_at", { ascending: false });
     if (error) setErr(error.message);
     setRows((data ?? []) as ReceiverRow[]);
