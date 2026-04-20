@@ -41,11 +41,12 @@ export interface ReleaseSealResult {
 
 export const sealRelease = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { accessionRowId: string; configVersion?: number }) =>
+  .inputValidator((input: { accessionRowId: string; configVersion?: number; excludedReceiverIds?: string[] }) =>
     z
       .object({
         accessionRowId: z.string().uuid(),
         configVersion: z.number().int().positive().optional(),
+        excludedReceiverIds: z.array(z.string().uuid()).optional(),
       })
       .parse(input),
   )
@@ -154,6 +155,7 @@ export const sealRelease = createServerFn({ method: "POST" })
       releasedAccession,
       row.id as string,
       insertedPkg as never,
+      data.excludedReceiverIds ?? [],
     );
 
     return {
@@ -181,12 +183,13 @@ export const sealRelease = createServerFn({ method: "POST" })
  */
 export const amendRelease = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { accessionRowId: string; amendmentReason: string; configVersion?: number }) =>
+  .inputValidator((input: { accessionRowId: string; amendmentReason: string; configVersion?: number; excludedReceiverIds?: string[] }) =>
     z
       .object({
         accessionRowId: z.string().uuid(),
         amendmentReason: z.string().min(4).max(500),
         configVersion: z.number().int().positive().optional(),
+        excludedReceiverIds: z.array(z.string().uuid()).optional(),
       })
       .parse(input),
   )
