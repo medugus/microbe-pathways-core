@@ -8,19 +8,19 @@ import { approvalStatusForRow, isRestrictedRow } from "../../logic/amsEngine";
 import type { AMSApprovalStatus } from "../../domain/types";
 
 const AMS_TONE: Record<AMSApprovalStatus, string> = {
-  not_requested: "bg-muted text-muted-foreground",
-  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  approved: "bg-primary/15 text-primary",
-  denied: "bg-destructive/15 text-destructive",
-  expired: "bg-destructive/10 text-destructive",
+  not_requested: "chip chip-square chip-neutral",
+  pending: "chip chip-square chip-ams-pending",
+  approved: "chip chip-square chip-ams-approved",
+  denied: "chip chip-square chip-ams-denied",
+  expired: "chip chip-square chip-danger",
 };
 
 const CLASS_TONE: Record<string, string> = {
-  unrestricted: "bg-secondary text-secondary-foreground",
-  first_line_preferred: "bg-primary/15 text-primary",
-  cascade_suppressed: "bg-muted text-muted-foreground",
-  restricted: "bg-destructive/15 text-destructive",
-  screening_only: "bg-muted text-muted-foreground",
+  unrestricted: "chip chip-square chip-neutral",
+  first_line_preferred: "chip chip-square chip-success",
+  cascade_suppressed: "chip chip-square chip-withheld",
+  restricted: "chip chip-square chip-restricted",
+  screening_only: "chip chip-square chip-withheld",
 };
 
 export function StewardshipSection() {

@@ -296,7 +296,7 @@ export function ReleaseSection() {
       </section>
 
       {v.amsPendingRestrictedCount > 0 && (
-        <section className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-200">
+        <section className="callout callout-warning text-[11px]">
           <strong>{v.amsPendingRestrictedCount}</strong> restricted antimicrobial
           row(s) are still hidden from the clinician report pending AMS approval.
           Open the <span className="font-mono">AMS approvals</span> section to

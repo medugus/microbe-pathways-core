@@ -31,10 +31,10 @@ interface PackageOpt {
 const FORMAT_OPTS: ExportFormat[] = ["fhir", "hl7", "json"];
 
 const STATUS_STYLE: Record<DispatchStatus, string> = {
-  queued: "bg-muted text-muted-foreground",
-  sent: "bg-primary/15 text-primary",
-  failed: "bg-destructive/15 text-destructive",
-  cancelled: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  queued: "chip chip-square chip-neutral",
+  sent: "chip chip-square chip-success",
+  failed: "chip chip-square chip-danger",
+  cancelled: "chip chip-square chip-warning",
 };
 
 export function DispatchHistoryPanel({ accessionRowId }: Props) {
@@ -133,7 +133,7 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Dispatch history (mock transport)
         </h4>
-        <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700 dark:text-amber-400">
+        <span className="chip chip-square chip-warning uppercase">
           Browser-phase only — no external delivery
         </span>
       </div>

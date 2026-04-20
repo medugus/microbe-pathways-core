@@ -70,7 +70,7 @@ function AMSQueueInner() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-4 p-6">
-        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-200">
+        <div className="callout callout-warning text-[11px]">
           Browser-phase AMS workflow — actor is a manual placeholder, no external
           notifications are delivered, SLA values are informational only, and
           production role enforcement is out of scope for this stage.
@@ -120,11 +120,11 @@ function AMSQueueInner() {
                     </div>
                     <div className="flex items-center gap-2">
                       {item.overdue ? (
-                        <span className="rounded bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                        <span className="chip chip-square chip-danger uppercase">
                           OVERDUE
                         </span>
                       ) : (
-                        <span className="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                        <span className="chip chip-square chip-ams-pending uppercase">
                           PENDING
                         </span>
                       )}

@@ -37,20 +37,20 @@ export function ValidationSection() {
           <span
             className={`rounded px-2 py-1 ${
               v.consultantApprovalPending
-                ? "bg-destructive/15 text-destructive"
-                : "bg-secondary text-secondary-foreground"
+                ? "chip chip-square chip-danger"
+                : "chip chip-square chip-success"
             }`}
           >
             consultant {v.consultantApprovalPending ? "approval pending" : "approved"}
           </span>
         )}
         {v.phoneOutRequiredPending && (
-          <span className="rounded bg-destructive/15 px-2 py-1 text-destructive">
+          <span className="chip chip-square chip-danger">
             phone-out required (blocking)
           </span>
         )}
         {v.amsPendingRestrictedCount > 0 && (
-          <span className="rounded bg-amber-500/15 px-2 py-1 text-amber-700 dark:text-amber-300">
+          <span className="chip chip-square chip-ams-pending">
             {v.amsPendingRestrictedCount} AMS approval(s) pending
           </span>
         )}

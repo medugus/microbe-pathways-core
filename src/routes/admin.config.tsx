@@ -119,7 +119,7 @@ function AdminConfigInner() {
         </div>
       </header>
 
-      <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
+      <div className="callout callout-warning text-xs">
         <strong>Browser-phase scope:</strong> changes persist locally in this browser only.
         There is no multi-user editing, no server-side approval workflow, and no enterprise
         change-control. The same engine contract will later back onto a server-owned config
@@ -225,7 +225,7 @@ function SectionNav({
               {changes > 0 && (
                 <span
                   className={`rounded-sm px-1 ${
-                    isActive ? "bg-primary-foreground/20" : "bg-amber-500/20 text-amber-700 dark:text-amber-300"
+                    isActive ? "bg-primary-foreground/20" : "chip chip-square chip-warning"
                   }`}
                 >
                   Δ{changes}
@@ -320,10 +320,10 @@ function SectionEditor({ section }: { section: ConfigSection }) {
                 <span
                   className={
                     r.status === "added"
-                      ? "text-emerald-600 dark:text-emerald-400"
+                      ? "text-success"
                       : r.status === "removed"
                         ? "text-destructive"
-                        : "text-amber-600 dark:text-amber-400"
+                        : "text-warning"
                   }
                 >
                   {r.status === "added" ? "+" : r.status === "removed" ? "−" : "~"}
@@ -507,11 +507,11 @@ function DiffSummary({ diff }: { diff: ReturnType<typeof diffPayloads> }) {
           {diff.sections.map((s) => (
             <tr key={s.section} className="border-t border-border/40">
               <td className="py-1 font-mono">{s.section}</td>
-              <td className="py-1 text-right text-emerald-600 dark:text-emerald-400">
+              <td className="py-1 text-right text-success">
                 {s.added || ""}
               </td>
               <td className="py-1 text-right text-destructive">{s.removed || ""}</td>
-              <td className="py-1 text-right text-amber-600 dark:text-amber-400">
+              <td className="py-1 text-right text-warning">
                 {s.changed || ""}
               </td>
               <td className="py-1 text-right text-muted-foreground">{s.unchanged}</td>
@@ -551,7 +551,7 @@ function RollbackButton({ toVersion }: { toVersion: number }) {
     );
   }
   return (
-    <div className="w-full space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+    <div className="w-full space-y-2 callout callout-warning">
       <p className="text-xs">
         Restore <strong>v{toVersion}</strong> as a new active version. The current active
         version stays in history; nothing is destroyed.

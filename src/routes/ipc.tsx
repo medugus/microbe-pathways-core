@@ -47,9 +47,9 @@ export const Route = createFileRoute("/ipc")({
 });
 
 const STATUS_TONE: Record<SignalRow["status"], string> = {
-  open: "bg-destructive/15 text-destructive",
-  acknowledged: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  resolved: "bg-muted text-muted-foreground",
+  open: "chip chip-square chip-ipc",
+  acknowledged: "chip chip-square chip-warning",
+  resolved: "chip chip-square chip-success",
 };
 
 function IPCDashboardPage() {

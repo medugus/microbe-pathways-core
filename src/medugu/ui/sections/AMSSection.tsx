@@ -19,11 +19,11 @@ import { newId } from "../../domain/ids";
 import type { AMSApprovalRequest, AMSApprovalStatus, ASTResult } from "../../domain/types";
 
 const STATUS_TONE: Record<AMSApprovalStatus, string> = {
-  not_requested: "bg-muted text-muted-foreground",
-  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  approved: "bg-primary/15 text-primary",
-  denied: "bg-destructive/15 text-destructive",
-  expired: "bg-destructive/10 text-destructive",
+  not_requested: "chip chip-square chip-neutral",
+  pending: "chip chip-square chip-ams-pending",
+  approved: "chip chip-square chip-ams-approved",
+  denied: "chip chip-square chip-ams-denied",
+  expired: "chip chip-square chip-danger",
 };
 
 const STATUS_LABEL: Record<AMSApprovalStatus, string> = {
@@ -84,7 +84,7 @@ export function AMSSection() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-200">
+      <div className="callout callout-warning text-[11px]">
         Browser-phase AMS workflow — actor identity is a manual placeholder, no
         external notifications are delivered, and SLA / escalation values are
         informational only. Production auth/role enforcement is out of scope for
