@@ -299,6 +299,12 @@ function IPCDashboardPage() {
           </ul>
         )}
       </main>
+      <IPCEpisodeDrawer
+        open={drawerDetail !== null}
+        onOpenChange={(o) => { if (!o) setDrawerDetail(null); }}
+        detail={drawerDetail}
+        onOpenAccession={openLinkedAccession}
+      />
     </div>
   );
 }
