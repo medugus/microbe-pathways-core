@@ -44,12 +44,22 @@ export interface ReportIsolate {
   ast: ReportASTRow[];
 }
 
+export interface ReportBloodSet {
+  setNo: number;
+  drawSite: string;
+  lumenLabel?: string;
+  bottleTypes: string[];
+  drawTime?: string;
+}
+
 export interface ReportPreviewDoc {
   accessionNumber: string;
   releaseState: string;
   reportVersion: number;
   patient: { name: string; mrn: string; sex: string; ward?: string };
   specimen: { display: string; syndrome?: string; pathway: string };
+  /** Per-set blood culture details, when specimen family is BLOOD. */
+  bloodSets?: ReportBloodSet[];
   microscopySummary: string;
   isolates: ReportIsolate[];
   comments: ReportComment[];
