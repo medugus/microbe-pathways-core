@@ -4,6 +4,7 @@
 import { useActiveAccession } from "../../store/useAccessionStore";
 import { resolveSpecimen } from "../../logic/specimenResolver";
 import { getFamily } from "../../config/specimenFamilies";
+import { SpecimenFieldsForm } from "./SpecimenFieldsForm";
 
 const FIELD_LABELS: Record<string, string> = {
   setCount: "Set count",
