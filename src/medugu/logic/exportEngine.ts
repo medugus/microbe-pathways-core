@@ -136,6 +136,15 @@ export function buildFhirBundle(accession: Accession): unknown {
     },
     receivedTime: accession.specimen.receivedAt,
     collection: { collectedDateTime: accession.specimen.collectedAt },
+    extension: doc.bloodSets && doc.bloodSets.length > 0
+      ? [{
+          url: "urn:medugu:blood-culture-sets",
+          extension: doc.bloodSets.map((s) => ({
+            url: `set-${s.setNo}`,
+            valueString: `Set ${s.setNo} | site=${s.drawSite || "—"}${s.lumenLabel ? ` | lumen=${s.lumenLabel}` : ""} | bottles=${s.bottleTypes.join(",") || "—"}${s.drawTime ? ` | drawn=${s.drawTime}` : ""}`,
+          })),
+        }]
+      : undefined,
   });
 
   const observationRefs: { reference: string }[] = [];
