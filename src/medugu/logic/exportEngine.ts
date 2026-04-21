@@ -484,6 +484,7 @@ export interface NormalisedExport {
     releasedAt?: string;
   };
   specimen: Accession["specimen"] & { display: string; pathway: string; syndrome?: string };
+  bloodSets?: ReportPreviewDoc["bloodSets"];
   isolates: ReportPreviewDoc["isolates"];
   ast: {
     isolateNo: number;
