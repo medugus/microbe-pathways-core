@@ -69,6 +69,13 @@ export interface Specimen {
   volumeMl?: number;
   /** Display only; never drives logic. */
   freeTextLabel?: string;
+  /**
+   * Resolver-driven captured field values (browser-phase).
+   * Keys correspond to specimenResolver FieldKey entries (e.g. setCount,
+   * bottleType, drawSite). Stored as opaque JSON; logic engines are free to
+   * read specific keys but must not depend on schema beyond the resolver.
+   */
+  details?: Record<string, unknown>;
 }
 
 /** Backwards-compat alias for older imports. */
