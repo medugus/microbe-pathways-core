@@ -106,6 +106,45 @@ export function runValidation(accession: Accession): ValidationReport {
     }
   }
 
+  // ---- Blood culture per-set completeness (BLOCKERS, one per missing field per set).
+  if (accession.specimen.familyCode === "BLOOD") {
+    const details = (accession.specimen.details ?? {}) as Record<string, unknown>;
+    const sets = Array.isArray(details.sets) ? (details.sets as Array<Record<string, unknown>>) : [];
+    if (sets.length === 0) {
+      issues.push(
+        block(
+          "BC_SETS_MISSING",
+          "specimen",
+          "Blood culture: at least one set must be recorded with draw site, bottle type and draw time before release.",
+        ),
+      );
+    } else {
+      sets.forEach((s, idx) => {
+        const setNo = idx + 1;
+        const drawSite = typeof s.drawSite === "string" ? s.drawSite.trim() : "";
+        const bottleTypes = Array.isArray(s.bottleTypes)
+          ? (s.bottleTypes as unknown[]).filter((b) => typeof b === "string" && b)
+          : [];
+        const drawTime = typeof s.drawTime === "string" ? s.drawTime.trim() : "";
+        if (!drawSite) {
+          issues.push(
+            block(`BC_SET_${setNo}_DRAWSITE_MISSING`, "specimen", `Blood culture set ${setNo}: draw site is required.`),
+          );
+        }
+        if (bottleTypes.length === 0) {
+          issues.push(
+            block(`BC_SET_${setNo}_BOTTLES_MISSING`, "specimen", `Blood culture set ${setNo}: at least one bottle type is required.`),
+          );
+        }
+        if (!drawTime) {
+          issues.push(
+            block(`BC_SET_${setNo}_DRAWTIME_MISSING`, "specimen", `Blood culture set ${setNo}: draw time is required.`),
+          );
+        }
+      });
+    }
+  }
+
   // ---- Phone-out: now a BLOCKER for critical-pathway specimens with significant findings.
   let phoneOutRequiredPending = false;
   if (profile?.gating.criticalCommunicationRequired) {
