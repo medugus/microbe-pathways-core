@@ -14,6 +14,7 @@ import {
   suggestSignificance,
 } from "../../logic/isolateHelpers";
 import type { IsolateSignificance } from "../../domain/types";
+import { BottleResultsEditor } from "./BottleResultsEditor";
 
 export function IsolateSection() {
   const accession = useActiveAccession();
