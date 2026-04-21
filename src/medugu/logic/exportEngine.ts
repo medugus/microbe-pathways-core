@@ -136,6 +136,15 @@ export function buildFhirBundle(accession: Accession): unknown {
     },
     receivedTime: accession.specimen.receivedAt,
     collection: { collectedDateTime: accession.specimen.collectedAt },
+    extension: doc.bloodSets && doc.bloodSets.length > 0
+      ? [{
+          url: "urn:medugu:blood-culture-sets",
+          extension: doc.bloodSets.map((s) => ({
+            url: `set-${s.setNo}`,
+            valueString: `Set ${s.setNo} | site=${s.drawSite || "—"}${s.lumenLabel ? ` | lumen=${s.lumenLabel}` : ""} | bottles=${s.bottleTypes.join(",") || "—"}${s.drawTime ? ` | drawn=${s.drawTime}` : ""}`,
+          })),
+        }]
+      : undefined,
   });
 
   const observationRefs: { reference: string }[] = [];
@@ -350,6 +359,21 @@ export function buildHL7(accession: Accession): string {
     );
   }
 
+  // Per-set blood culture details — labelled draws appear under OBR before isolate OBX rows.
+  if (doc.bloodSets && doc.bloodSets.length > 0) {
+    for (const s of doc.bloodSets) {
+      segments.push(
+        hl7Segment("NTE", [
+          "0",
+          "L",
+          hl7Escape(
+            `Blood culture set ${s.setNo}: site=${s.drawSite || "—"}${s.lumenLabel ? `; lumen=${s.lumenLabel}` : ""}; bottles=${s.bottleTypes.join(",") || "—"}${s.drawTime ? `; drawn=${s.drawTime}` : ""}`,
+          ),
+        ]),
+      );
+    }
+  }
+
   let setId = 1;
   for (const iso of doc.isolates) {
     segments.push(
@@ -460,6 +484,7 @@ export interface NormalisedExport {
     releasedAt?: string;
   };
   specimen: Accession["specimen"] & { display: string; pathway: string; syndrome?: string };
+  bloodSets?: ReportPreviewDoc["bloodSets"];
   isolates: ReportPreviewDoc["isolates"];
   ast: {
     isolateNo: number;
@@ -537,6 +562,7 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
       pathway: doc.specimen.pathway,
       syndrome: doc.specimen.syndrome,
     },
+    bloodSets: doc.bloodSets,
     isolates: doc.isolates,
     ast: flatAst,
     stewardship: doc.comments.filter((c) => c.source === "stewardship").map((c) => ({ source: c.source, code: c.code, text: c.text })),

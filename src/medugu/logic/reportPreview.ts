@@ -44,12 +44,22 @@ export interface ReportIsolate {
   ast: ReportASTRow[];
 }
 
+export interface ReportBloodSet {
+  setNo: number;
+  drawSite: string;
+  lumenLabel?: string;
+  bottleTypes: string[];
+  drawTime?: string;
+}
+
 export interface ReportPreviewDoc {
   accessionNumber: string;
   releaseState: string;
   reportVersion: number;
   patient: { name: string; mrn: string; sex: string; ward?: string };
   specimen: { display: string; syndrome?: string; pathway: string };
+  /** Per-set blood culture details, when specimen family is BLOOD. */
+  bloodSets?: ReportBloodSet[];
   microscopySummary: string;
   isolates: ReportIsolate[];
   comments: ReportComment[];
@@ -135,6 +145,22 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
           .map((m) => `${m.stainCode}: ${m.result}${m.notes ? ` (${m.notes})` : ""}`)
           .join("; ");
 
+  // Per-set blood culture details (Epic Beaker-style), only when present.
+  let bloodSets: ReportBloodSet[] | undefined;
+  const rawSets = (accession.specimen.details as Record<string, unknown> | undefined)?.sets;
+  if (Array.isArray(rawSets) && rawSets.length > 0) {
+    bloodSets = rawSets.map((s, idx) => {
+      const set = s as Record<string, unknown>;
+      return {
+        setNo: idx + 1,
+        drawSite: typeof set.drawSite === "string" ? set.drawSite : "",
+        lumenLabel: typeof set.lumenLabel === "string" && set.lumenLabel ? set.lumenLabel : undefined,
+        bottleTypes: Array.isArray(set.bottleTypes) ? (set.bottleTypes as string[]) : [],
+        drawTime: typeof set.drawTime === "string" && set.drawTime ? set.drawTime : undefined,
+      };
+    });
+  }
+
   return {
     accessionNumber: accession.accessionNumber,
     releaseState: accession.release.state,
@@ -150,6 +176,7 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
       syndrome: profile?.syndrome ?? undefined,
       pathway: profile?.gating.pathway ?? "diagnostic",
     },
+    bloodSets,
     microscopySummary,
     isolates,
     comments,
