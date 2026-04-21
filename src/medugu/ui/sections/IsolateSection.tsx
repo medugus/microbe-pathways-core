@@ -14,6 +14,7 @@ import {
   suggestSignificance,
 } from "../../logic/isolateHelpers";
 import type { IsolateSignificance } from "../../domain/types";
+import { BottleResultsEditor } from "./BottleResultsEditor";
 
 export function IsolateSection() {
   const accession = useActiveAccession();
@@ -132,41 +133,54 @@ export function IsolateSection() {
           {accession.isolates.map((i) => (
             <li
               key={i.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-card p-3 text-sm"
+              className="rounded-md border border-border bg-card p-3 text-sm"
             >
-              <div className="min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">#{i.isolateNo}</span>
+                    <span className="font-medium text-foreground">{i.organismDisplay}</span>
+                    {i.purityFlag && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">pure</span>}
+                    {i.mixedGrowth && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">mixed</span>}
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    growth: {describeGrowth(i)}
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">#{i.isolateNo}</span>
-                  <span className="font-medium text-foreground">{i.organismDisplay}</span>
-                  {i.purityFlag && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">pure</span>}
-                  {i.mixedGrowth && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">mixed</span>}
-                </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
-                  growth: {describeGrowth(i)}
+                  <select
+                    value={i.significance ?? "indeterminate"}
+                    onChange={(e) =>
+                      meduguActions.updateIsolate(accession.id, i.id, {
+                        significance: e.target.value as IsolateSignificance,
+                      })
+                    }
+                    className="rounded border border-border bg-background px-2 py-1 text-xs"
+                  >
+                    {SIGNIFICANCE_OPTIONS.map((s) => (
+                      <option key={s.code} value={s.code}>{s.display}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => meduguActions.removeIsolate(accession.id, i.id)}
+                    className="rounded border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={i.significance ?? "indeterminate"}
-                  onChange={(e) =>
-                    meduguActions.updateIsolate(accession.id, i.id, {
-                      significance: e.target.value as IsolateSignificance,
-                    })
-                  }
-                  className="rounded border border-border bg-background px-2 py-1 text-xs"
-                >
-                  {SIGNIFICANCE_OPTIONS.map((s) => (
-                    <option key={s.code} value={s.code}>{s.display}</option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => meduguActions.removeIsolate(accession.id, i.id)}
-                  className="rounded border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  Remove
-                </button>
-              </div>
+
+              {accession.specimen.familyCode === "BLOOD" && i.organismCode !== "NOGRO" && (
+                <details className="mt-3 rounded border border-border bg-background/50 p-2 text-xs" open>
+                  <summary className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Per-set / per-bottle growth
+                  </summary>
+                  <div className="mt-2">
+                    <BottleResultsEditor accession={accession} isolate={i} />
+                  </div>
+                </details>
+              )}
             </li>
           ))}
         </ul>

@@ -133,6 +133,29 @@ export interface Isolate {
   identifiedAt?: string;
   identificationMethodCode?: string;
   notes?: string;
+  /**
+   * Blood culture per-bottle growth tracking. One row per (setNo, bottleType)
+   * the lab loaded into the instrument. Optional (absent for non-BLOOD or for
+   * isolates entered before per-bottle tracking was added). The row carries the
+   * bottle-level growth call and, when growth, the positivity timestamp and
+   * computed time-to-positivity in hours; downstream rules (e.g. differential
+   * TTP for line vs peripheral) read this array.
+   */
+  bottleResults?: BloodBottleResult[];
+}
+
+export type BottleGrowthState = "growth" | "no_growth" | "pending";
+
+export interface BloodBottleResult {
+  /** 1-based set number, matches Specimen.details.sets[idx].setNo. */
+  setNo: number;
+  /** Bottle type code (AEROBIC, ANAEROBIC, MYCOLOGY, ...). */
+  bottleType: string;
+  growth: BottleGrowthState;
+  /** ISO timestamp the bottle flagged positive (only when growth === "growth"). */
+  positiveAt?: string;
+  /** Computed time-to-positivity in hours (positiveAt − set.drawTime). */
+  ttpHours?: number;
 }
 
 // ---------- AST ----------
