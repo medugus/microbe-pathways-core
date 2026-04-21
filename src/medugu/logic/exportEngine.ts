@@ -562,6 +562,7 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
       pathway: doc.specimen.pathway,
       syndrome: doc.specimen.syndrome,
     },
+    bloodSets: doc.bloodSets,
     isolates: doc.isolates,
     ast: flatAst,
     stewardship: doc.comments.filter((c) => c.source === "stewardship").map((c) => ({ source: c.source, code: c.code, text: c.text })),
