@@ -50,6 +50,42 @@ export function ReportSection() {
           </div>
         </section>
 
+        {doc.bloodSets && doc.bloodSets.length > 0 && (
+          <section className="mt-3">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              Blood culture sets ({doc.bloodSets.length})
+            </div>
+            <table className="mt-1 w-full text-xs">
+              <thead className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="py-1 pr-2 text-left">Set</th>
+                  <th className="py-1 pr-2 text-left">Draw site</th>
+                  <th className="py-1 pr-2 text-left">Lumen / label</th>
+                  <th className="py-1 pr-2 text-left">Bottles</th>
+                  <th className="py-1 pr-2 text-left">Drawn at</th>
+                </tr>
+              </thead>
+              <tbody>
+                {doc.bloodSets.map((s) => (
+                  <tr key={s.setNo} className="border-t border-border align-top">
+                    <td className="py-1 pr-2 font-mono text-foreground">#{s.setNo}</td>
+                    <td className="py-1 pr-2 text-foreground">
+                      {s.drawSite ? s.drawSite.replace(/_/g, " ").toLowerCase() : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="py-1 pr-2 text-foreground">{s.lumenLabel ?? <span className="text-muted-foreground">—</span>}</td>
+                    <td className="py-1 pr-2 text-foreground">
+                      {s.bottleTypes.length > 0 ? s.bottleTypes.join(", ").toLowerCase() : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="py-1 pr-2 font-mono text-muted-foreground">
+                      {s.drawTime ? new Date(s.drawTime).toLocaleString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
+
         <section className="mt-3">
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Microscopy</div>
           <p className="text-sm text-foreground">{doc.microscopySummary}</p>
