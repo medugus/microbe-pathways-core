@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { meduguActions } from "../../store/useAccessionStore";
 import type { Accession } from "../../domain/types";
 import type { FieldKey } from "../../logic/specimenResolver";
+import { BloodSetsForm } from "./BloodSetsForm";
 
 const FIELD_LABELS: Record<string, string> = {
   setCount: "Number of sets",
@@ -264,13 +265,50 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
     }
   };
 
+  // For blood cultures, the per-set composer replaces the legacy flat fields
+  // (setCount, bottleType, drawSite, drawTime). Render any *remaining* required
+  // / optional fields (e.g. neonatalWeight, contaminationContext) below it.
+  const isBlood = accession.specimen.familyCode === "BLOOD";
+  const BLOOD_HANDLED: FieldKey[] = ["setCount", "bottleType", "drawSite", "drawTime"];
+
+  const visibleRequired = isBlood ? required.filter((f) => !BLOOD_HANDLED.includes(f)) : required;
+  const visibleOptional = isBlood ? optional.filter((f) => !BLOOD_HANDLED.includes(f)) : optional;
+
   const allFields = useMemo(
     () => [
-      ...required.map((f) => ({ field: f, isRequired: true })),
-      ...optional.map((f) => ({ field: f, isRequired: false })),
+      ...visibleRequired.map((f) => ({ field: f, isRequired: true })),
+      ...visibleOptional.map((f) => ({ field: f, isRequired: false })),
     ],
-    [required, optional],
+    [visibleRequired, visibleOptional],
   );
+
+  if (isBlood) {
+    return (
+      <div className="space-y-4">
+        <BloodSetsForm accession={accession} />
+        {allFields.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 rounded-lg border border-border bg-card p-4 md:grid-cols-2">
+            {allFields.map(({ field, isRequired }) => (
+              <div key={field} className="min-w-0">
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {FIELD_LABELS[field] ?? field}
+                    {isRequired && <span className="ml-1 text-destructive">*</span>}
+                  </span>
+                  {!isRequired && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] uppercase text-muted-foreground">
+                      optional
+                    </span>
+                  )}
+                </div>
+                {renderField(field)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (allFields.length === 0) {
     return (
