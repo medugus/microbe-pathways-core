@@ -61,6 +61,31 @@ export function BloodSetsForm({ accession }: Props) {
   const subtypeCode = accession.specimen.subtypeCode;
   const presets = useMemo(() => getPresetsForSubtype(subtypeCode), [subtypeCode]);
 
+  // Compute live blocking validation issues for THIS specimen so we can
+  // highlight the offending set/field inline (no need to scroll to ValidationSection).
+  const bcBlockers = useMemo(() => {
+    const report = runValidation(accession);
+    return report.blockers.filter((b) => b.code.startsWith("BC_"));
+  }, [accession]);
+
+  // Map: setNo -> { drawSite?: msg, bottles?: msg, drawTime?: msg }
+  const setErrorMap = useMemo(() => {
+    const map: Record<number, { drawSite?: string; bottles?: string; drawTime?: string }> = {};
+    for (const b of bcBlockers) {
+      const m = /^BC_SET_(\d+)_(DRAWSITE|BOTTLES|DRAWTIME)_MISSING$/.exec(b.code);
+      if (!m) continue;
+      const setNo = Number(m[1]);
+      const field = m[2];
+      map[setNo] = map[setNo] ?? {};
+      if (field === "DRAWSITE") map[setNo].drawSite = b.message;
+      else if (field === "BOTTLES") map[setNo].bottles = b.message;
+      else if (field === "DRAWTIME") map[setNo].drawTime = b.message;
+    }
+    return map;
+  }, [bcBlockers]);
+
+  const noSetsBlocker = bcBlockers.find((b) => b.code === "BC_SETS_MISSING");
+
   function persist(nextSets: BloodSet[]) {
     const nextDetails: Record<string, unknown> = { ...details };
     nextDetails.sets = nextSets;
