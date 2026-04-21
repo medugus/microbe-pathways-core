@@ -19,6 +19,7 @@ import { useMemo } from "react";
 import { meduguActions } from "../../store/useAccessionStore";
 import type { Accession } from "../../domain/types";
 import { getPresetsForSubtype, type BloodWorkupPreset } from "../../config/bloodCulturePresets";
+import { runValidation } from "../../logic/validationEngine";
 
 // ---- coded option lists (display-only labels) ----
 const BOTTLE_TYPES = [
@@ -59,6 +60,31 @@ export function BloodSetsForm({ accession }: Props) {
   const sets: BloodSet[] = Array.isArray(details.sets) ? (details.sets as BloodSet[]) : [];
   const subtypeCode = accession.specimen.subtypeCode;
   const presets = useMemo(() => getPresetsForSubtype(subtypeCode), [subtypeCode]);
+
+  // Compute live blocking validation issues for THIS specimen so we can
+  // highlight the offending set/field inline (no need to scroll to ValidationSection).
+  const bcBlockers = useMemo(() => {
+    const report = runValidation(accession);
+    return report.blockers.filter((b) => b.code.startsWith("BC_"));
+  }, [accession]);
+
+  // Map: setNo -> { drawSite?: msg, bottles?: msg, drawTime?: msg }
+  const setErrorMap = useMemo(() => {
+    const map: Record<number, { drawSite?: string; bottles?: string; drawTime?: string }> = {};
+    for (const b of bcBlockers) {
+      const m = /^BC_SET_(\d+)_(DRAWSITE|BOTTLES|DRAWTIME)_MISSING$/.exec(b.code);
+      if (!m) continue;
+      const setNo = Number(m[1]);
+      const field = m[2];
+      map[setNo] = map[setNo] ?? {};
+      if (field === "DRAWSITE") map[setNo].drawSite = b.message;
+      else if (field === "BOTTLES") map[setNo].bottles = b.message;
+      else if (field === "DRAWTIME") map[setNo].drawTime = b.message;
+    }
+    return map;
+  }, [bcBlockers]);
+
+  const noSetsBlocker = bcBlockers.find((b) => b.code === "BC_SETS_MISSING");
 
   function persist(nextSets: BloodSet[]) {
     const nextDetails: Record<string, unknown> = { ...details };
@@ -160,22 +186,38 @@ export function BloodSetsForm({ accession }: Props) {
       {/* Sets list */}
       <div className="space-y-2">
         {sets.length === 0 && (
-          <p className="rounded border border-dashed border-border p-3 text-xs text-muted-foreground">
-            No sets yet. Add a set manually, or apply a preset above.
-          </p>
+          <div
+            className={`rounded border p-3 text-xs ${
+              noSetsBlocker
+                ? "border-destructive bg-destructive/10 text-destructive"
+                : "border-dashed border-border text-muted-foreground"
+            }`}
+          >
+            {noSetsBlocker ? noSetsBlocker.message : "No sets yet. Add a set manually, or apply a preset above."}
+          </div>
         )}
 
         {sets.map((s, idx) => {
           const isLine =
             s.drawSite === "CENTRAL_LINE" || s.drawSite === "PORTACATH" || s.drawSite === "ARTERIAL_LINE";
+          const setNo = idx + 1;
+          const errs = setErrorMap[setNo] ?? {};
+          const hasError = !!(errs.drawSite || errs.bottles || errs.drawTime);
           return (
             <div
               key={s.id}
-              className="rounded-lg border border-border bg-card p-3"
+              className={`rounded-lg border bg-card p-3 ${
+                hasError ? "border-destructive ring-1 ring-destructive/40" : "border-border"
+              }`}
             >
               <div className="mb-2 flex items-center justify-between">
-                <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
-                  Set {idx + 1}
+                <span
+                  className={`rounded px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+                    hasError ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  Set {setNo}
+                  {hasError && " · incomplete"}
                 </span>
                 <button
                   type="button"
@@ -195,7 +237,10 @@ export function BloodSetsForm({ accession }: Props) {
                   <select
                     value={s.drawSite}
                     onChange={(e) => updateSet(s.id, { drawSite: e.target.value })}
-                    className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm"
+                    aria-invalid={!!errs.drawSite}
+                    className={`w-full rounded border bg-background px-2 py-1.5 text-sm ${
+                      errs.drawSite ? "border-destructive" : "border-border"
+                    }`}
                   >
                     <option value="">— select —</option>
                     {DRAW_SITES.map((o) => (
@@ -204,6 +249,9 @@ export function BloodSetsForm({ accession }: Props) {
                       </option>
                     ))}
                   </select>
+                  {errs.drawSite && (
+                    <p className="mt-1 text-[10px] text-destructive">{errs.drawSite}</p>
+                  )}
                 </div>
 
                 {/* Lumen label (only for line draws) */}
@@ -230,8 +278,14 @@ export function BloodSetsForm({ accession }: Props) {
                     type="datetime-local"
                     value={s.drawTime && s.drawTime.length >= 16 ? s.drawTime.slice(0, 16) : s.drawTime ?? ""}
                     onChange={(e) => updateSet(s.id, { drawTime: e.target.value })}
-                    className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm"
+                    aria-invalid={!!errs.drawTime}
+                    className={`w-full rounded border bg-background px-2 py-1.5 text-sm ${
+                      errs.drawTime ? "border-destructive" : "border-border"
+                    }`}
                   />
+                  {errs.drawTime && (
+                    <p className="mt-1 text-[10px] text-destructive">{errs.drawTime}</p>
+                  )}
                 </div>
 
                 {/* Bottle types */}
@@ -239,7 +293,11 @@ export function BloodSetsForm({ accession }: Props) {
                   <label className="mb-1 block text-[10px] uppercase tracking-wide text-muted-foreground">
                     Bottle types
                   </label>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div
+                    className={`flex flex-wrap gap-1.5 ${
+                      errs.bottles ? "rounded border border-destructive p-1.5" : ""
+                    }`}
+                  >
                     {BOTTLE_TYPES.map((b) => {
                       const active = s.bottleTypes.includes(b.code);
                       return (
@@ -264,6 +322,9 @@ export function BloodSetsForm({ accession }: Props) {
                       );
                     })}
                   </div>
+                  {errs.bottles && (
+                    <p className="mt-1 text-[10px] text-destructive">{errs.bottles}</p>
+                  )}
                 </div>
               </div>
             </div>
