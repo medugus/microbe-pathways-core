@@ -359,6 +359,21 @@ export function buildHL7(accession: Accession): string {
     );
   }
 
+  // Per-set blood culture details — labelled draws appear under OBR before isolate OBX rows.
+  if (doc.bloodSets && doc.bloodSets.length > 0) {
+    for (const s of doc.bloodSets) {
+      segments.push(
+        hl7Segment("NTE", [
+          "0",
+          "L",
+          hl7Escape(
+            `Blood culture set ${s.setNo}: site=${s.drawSite || "—"}${s.lumenLabel ? `; lumen=${s.lumenLabel}` : ""}; bottles=${s.bottleTypes.join(",") || "—"}${s.drawTime ? `; drawn=${s.drawTime}` : ""}`,
+          ),
+        ]),
+      );
+    }
+  }
+
   let setId = 1;
   for (const iso of doc.isolates) {
     segments.push(
