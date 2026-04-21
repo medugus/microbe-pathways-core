@@ -101,42 +101,17 @@ export function SpecimenSection() {
         <p className="rounded-md border border-border bg-muted/40 p-3 text-xs text-foreground">{p.acceptance.notes}</p>
       )}
 
-      {/* Required fields (resolver-driven; only fields relevant to subtype show) */}
+      {/* Editable collection fields (resolver-driven) */}
       <section>
         <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Required fields
+          Collection details
         </h4>
-        {p.requiredFields.length === 0 ? (
-          <p className="text-xs text-muted-foreground">None for this specimen.</p>
-        ) : (
-          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {p.requiredFields.map((f) => (
-              <li
-                key={f}
-                className="flex items-center justify-between rounded border border-border bg-background px-3 py-2 text-sm"
-              >
-                <span className="text-foreground">{FIELD_LABELS[f] ?? f}</span>
-                <code className="text-[10px] text-muted-foreground">{f}</code>
-              </li>
-            ))}
-          </ul>
-        )}
+        <SpecimenFieldsForm
+          accession={accession}
+          required={p.requiredFields}
+          optional={p.optionalFields}
+        />
       </section>
-
-      {p.optionalFields.length > 0 && (
-        <section>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Optional fields
-          </h4>
-          <ul className="flex flex-wrap gap-1.5">
-            {p.optionalFields.map((f) => (
-              <li key={f} className="rounded bg-muted px-2 py-1 text-xs text-foreground">
-                {FIELD_LABELS[f] ?? f}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {/* Workbench panels + report sections projection */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
