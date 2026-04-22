@@ -41,6 +41,16 @@ export interface ReportIsolate {
   significance?: string;
   growth?: string;
   phenotypeFlags: string[];
+  /** Blood-culture only: positive (set, bottle) sources for this isolate. */
+  bloodSourceLinks?: { setNo: number; bottleType: string }[];
+  /** Blood-culture only: per-bottle growth rows (mirrored for export). */
+  bottleResults?: {
+    setNo: number;
+    bottleType: string;
+    growth: string;
+    positiveAt?: string;
+    ttpHours?: number;
+  }[];
   ast: ReportASTRow[];
 }
 
@@ -94,6 +104,17 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
           ? `${i.colonyCountCfuPerMl.toExponential(0)} CFU/mL`
           : i.growthQuantifierCode,
       phenotypeFlags: phenotypesByIsolate[i.id] ?? [],
+      bloodSourceLinks: i.bloodSourceLinks && i.bloodSourceLinks.length > 0 ? i.bloodSourceLinks : undefined,
+      bottleResults:
+        i.bottleResults && i.bottleResults.length > 0
+          ? i.bottleResults.map((r) => ({
+              setNo: r.setNo,
+              bottleType: r.bottleType,
+              growth: r.growth,
+              positiveAt: r.positiveAt,
+              ttpHours: r.ttpHours,
+            }))
+          : undefined,
       ast: accession.ast
         .filter((a) => a.isolateId === i.id)
         .map<ReportASTRow>((a) => {
