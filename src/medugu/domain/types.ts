@@ -142,6 +142,18 @@ export interface Isolate {
    * TTP for line vs peripheral) read this array.
    */
   bottleResults?: BloodBottleResult[];
+  /**
+   * Blood culture source linkage. Lists the positive (setNo, bottleType)
+   * pairs this isolate was recovered from. Empty/absent for non-blood or
+   * until the lab links sources. Drives report preview, normalised JSON
+   * export, and validation that BC isolates are tied to a positive bottle.
+   */
+  bloodSourceLinks?: BloodSourceLink[];
+}
+
+export interface BloodSourceLink {
+  setNo: number;
+  bottleType: string;
 }
 
 export type BottleGrowthState = "growth" | "no_growth" | "pending";
