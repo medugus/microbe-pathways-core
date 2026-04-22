@@ -35,6 +35,14 @@ export interface ReportASTRow {
   releaseClass?: string;
   aware?: string;
   phenotypeFlags?: string[];
+  /** Active breakpoint cutoffs used to derive S/I/R, if any matched. */
+  breakpoint?: {
+    standard: string;
+    summary: string; // e.g. "S≥17 / R≤13 mm" or "S≤1 / R≥4 mg/L"
+    susceptible?: number;
+    resistant?: number;
+    unit: "mm" | "mg/L";
+  };
 }
 
 export interface ReportIsolate {
