@@ -169,6 +169,14 @@ export function buildFhirBundle(accession: Accession): unknown {
         ...(iso.phenotypeFlags.length
           ? [{ code: { text: "Phenotypes" }, valueString: iso.phenotypeFlags.join(",") }]
           : []),
+        ...(iso.bloodSourceLinks && iso.bloodSourceLinks.length > 0
+          ? [{
+              code: { text: "Blood source linkage" },
+              valueString: iso.bloodSourceLinks
+                .map((l) => `set${l.setNo}/${l.bottleType}`)
+                .join(", "),
+            }]
+          : []),
       ],
     });
     observationRefs.push({ reference: `Observation/${isoObsId}` });
