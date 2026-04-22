@@ -158,6 +158,29 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
   for (const ipc of accession.ipc) {
     comments.push({ source: "ipc", code: ipc.ruleCode, text: ipc.message });
   }
+  // Blood culture isolate-allocation derived comments (contaminant carry,
+  // triple-pathogen senior-review) — governed, derived from rules module.
+  if (accession.specimen.familyCode === "BLOOD") {
+    const real = accession.isolates.filter((i) => i.organismCode !== "NOGRO");
+    for (const iso of real) {
+      if (iso.significance === "probable_contaminant") {
+        comments.push({
+          source: "clinical",
+          code: "BC_ISO_CONTAMINANT",
+          text: `Isolate ${iso.isolateNo} (${iso.organismDisplay}) reported as probable contaminant — interpret with caution.`,
+          governed: true,
+        });
+      }
+    }
+    if (real.length === 3 && real.every((i) => i.significance === "significant")) {
+      comments.push({
+        source: "clinical",
+        code: "BC_ISO_TRIPLE_PATHOGEN_REVIEW",
+        text: "Three blood-culture isolates all reported as true pathogens — senior/consultant review recommended.",
+        governed: true,
+      });
+    }
+  }
 
   const microscopySummary =
     accession.microscopy.length === 0
