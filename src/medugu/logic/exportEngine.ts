@@ -737,6 +737,7 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
     },
     bloodSets: doc.bloodSets,
     isolates: doc.isolates,
+    bloodLinkage,
     ast: flatAst,
     stewardship: doc.comments.filter((c) => c.source === "stewardship").map((c) => ({ source: c.source, code: c.code, text: c.text })),
     ipc: doc.ipc,
