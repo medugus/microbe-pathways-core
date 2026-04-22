@@ -127,6 +127,7 @@ export function ReportSection() {
                           <th className="py-1 text-left">Antibiotic</th>
                           <th className="py-1 text-left">Result</th>
                           <th className="py-1 text-left">Raw</th>
+                          <th className="py-1 text-left">Breakpoint</th>
                           <th className="py-1 text-left">Class</th>
                           <th className="py-1 text-left">Status</th>
                         </tr>
@@ -135,9 +136,24 @@ export function ReportSection() {
                         {iso.ast.map((r) => (
                           <tr key={r.antibioticCode} className={`border-t border-border ${r.visibleToClinician ? "" : "opacity-60"}`}>
                             <td className="py-1 text-foreground">{r.antibioticDisplay}</td>
-                            <td className="py-1 font-mono">{r.visibleToClinician ? (r.interpretation ?? "—") : "·"}</td>
+                            <td
+                              className="py-1 font-mono"
+                              title={r.breakpoint ? `${r.breakpoint.standard} breakpoint: ${r.breakpoint.summary}` : undefined}
+                            >
+                              {r.visibleToClinician ? (r.interpretation ?? "—") : "·"}
+                            </td>
                             <td className="py-1 text-muted-foreground">
                               {r.rawValue ?? "—"} {r.rawUnit ?? ""}
+                            </td>
+                            <td className="py-1 font-mono text-[11px] text-muted-foreground">
+                              {r.breakpoint ? (
+                                <span title={`${r.breakpoint.standard} · derived from active config`}>
+                                  {r.breakpoint.summary}
+                                  <span className="ml-1 text-[9px] uppercase opacity-70">{r.breakpoint.standard}</span>
+                                </span>
+                              ) : (
+                                <span className="opacity-60">—</span>
+                              )}
                             </td>
                             <td className="py-1 text-[10px] text-muted-foreground">
                               {r.releaseClass ?? "—"}{r.aware ? ` · ${r.aware}` : ""}
