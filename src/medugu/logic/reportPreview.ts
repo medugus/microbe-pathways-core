@@ -8,6 +8,8 @@ import { getAntibiotic } from "../config/antibiotics";
 import { evaluateStewardship, type StewardshipDecision } from "./stewardshipEngine";
 import { evaluateIPC } from "./ipcEngine";
 import { evaluateAccession } from "./astEngine";
+import { getOrganism } from "../config/organisms";
+import { findDiskBreakpoint, findMICBreakpoint } from "../config/breakpoints";
 
 export type CommentSource = "clinical" | "stewardship" | "ipc";
 
