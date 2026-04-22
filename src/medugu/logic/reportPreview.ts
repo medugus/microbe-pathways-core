@@ -147,7 +147,7 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
                 unit: "mm",
               };
             }
-          } else if (a.method === "mic" || a.method === "broth_microdilution" || a.method === "etest") {
+          } else if (a.method === "mic_broth" || a.method === "mic_etest" || a.method === "automated_phoenix" || a.method === "automated_vitek") {
             const bp = findMICBreakpoint(orgGroup, a.antibioticCode, a.standard);
             if (bp) {
               const parts: string[] = [];
