@@ -601,6 +601,113 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
       phenotypeFlags: a.phenotypeFlags,
     })),
   );
+
+  // Build a stable, normalised blood-culture linkage block. We only emit it
+  // when there is something to say (BLOOD specimen with at least one set or
+  // one per-bottle row). Sorting is deterministic so the JSON is byte-stable
+  // across runs and safe to seal/diff.
+  let bloodLinkage: NormalisedExport["bloodLinkage"];
+  const hasSets = !!(doc.bloodSets && doc.bloodSets.length > 0);
+  const hasBottleRows = doc.isolates.some(
+    (iso) => iso.bottleResults && iso.bottleResults.length > 0,
+  );
+  if (hasSets || hasBottleRows) {
+    // Bottle inventory: union of (setNo, bottleType) declared on sets and
+    // any (setNo, bottleType) referenced by isolate bottleResults. Set-level
+    // metadata (drawSite, lumenLabel, drawTime) is denormalised onto each
+    // bottle row so receivers do not need a second join.
+    const setMeta = new Map<
+      number,
+      { drawSite?: string; lumenLabel?: string; drawTime?: string; bottleTypes: string[] }
+    >();
+    for (const s of doc.bloodSets ?? []) {
+      setMeta.set(s.setNo, {
+        drawSite: s.drawSite || undefined,
+        lumenLabel: s.lumenLabel,
+        drawTime: s.drawTime,
+        bottleTypes: s.bottleTypes ?? [],
+      });
+    }
+
+    type BottleKey = string;
+    const keyOf = (setNo: number, bt: string): BottleKey => `${setNo}::${bt}`;
+    const bottleRows = new Map<
+      BottleKey,
+      {
+        setNo: number;
+        bottleType: string;
+        drawSite?: string;
+        lumenLabel?: string;
+        drawTime?: string;
+        growth: string;
+        positiveAt?: string;
+        ttpHours?: number;
+      }
+    >();
+
+    // Seed from declared sets so empty/no-growth bottles are still listed.
+    for (const [setNo, meta] of setMeta.entries()) {
+      for (const bt of meta.bottleTypes) {
+        bottleRows.set(keyOf(setNo, bt), {
+          setNo,
+          bottleType: bt,
+          drawSite: meta.drawSite,
+          lumenLabel: meta.lumenLabel,
+          drawTime: meta.drawTime,
+          growth: "pending",
+        });
+      }
+    }
+
+    // Overlay per-bottle results from any isolate (last write wins per
+    // bottle key — bottle-level growth/TTP is shared across isolates).
+    for (const iso of doc.isolates) {
+      for (const r of iso.bottleResults ?? []) {
+        const meta = setMeta.get(r.setNo);
+        const k = keyOf(r.setNo, r.bottleType);
+        const existing = bottleRows.get(k);
+        bottleRows.set(k, {
+          setNo: r.setNo,
+          bottleType: r.bottleType,
+          drawSite: existing?.drawSite ?? meta?.drawSite,
+          lumenLabel: existing?.lumenLabel ?? meta?.lumenLabel,
+          drawTime: existing?.drawTime ?? meta?.drawTime,
+          growth: r.growth,
+          positiveAt: r.positiveAt,
+          ttpHours: r.ttpHours,
+        });
+      }
+    }
+
+    const bottles = Array.from(bottleRows.values()).sort(
+      (a, b) => a.setNo - b.setNo || a.bottleType.localeCompare(b.bottleType),
+    );
+
+    // Isolate→source link rows: one row per (isolateNo, setNo, bottleType).
+    const isolateLinks: NonNullable<NormalisedExport["bloodLinkage"]>["isolateLinks"] = [];
+    for (const iso of doc.isolates) {
+      const src = accession.isolates.find((x) => x.isolateNo === iso.isolateNo);
+      const organismCode = src?.organismCode ?? "UNK";
+      for (const link of iso.bloodSourceLinks ?? []) {
+        isolateLinks.push({
+          isolateNo: iso.isolateNo,
+          organismCode,
+          organismDisplay: iso.organismDisplay,
+          setNo: link.setNo,
+          bottleType: link.bottleType,
+        });
+      }
+    }
+    isolateLinks.sort(
+      (a, b) =>
+        a.setNo - b.setNo ||
+        a.bottleType.localeCompare(b.bottleType) ||
+        a.isolateNo - b.isolateNo,
+    );
+
+    bloodLinkage = { bottles, isolateLinks };
+  }
+
   const isAmendment = accession.release.state === ReleaseState.Amended;
   return {
     schema: "medugu.normalised/1",
