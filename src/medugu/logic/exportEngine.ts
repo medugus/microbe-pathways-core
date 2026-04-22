@@ -516,6 +516,42 @@ export interface NormalisedExport {
   specimen: Accession["specimen"] & { display: string; pathway: string; syndrome?: string };
   bloodSets?: ReportPreviewDoc["bloodSets"];
   isolates: ReportPreviewDoc["isolates"];
+  /**
+   * Normalised blood-culture linkage block. Stable, deterministic shape ready
+   * for downstream FHIR (Observation.component / Observation.specimen) and
+   * HL7 (NTE under each ORG OBX) extensions. Present only when the specimen
+   * family is BLOOD and at least one set has been recorded.
+   *
+   * Schema:
+   *  - bottles[]: one row per (setNo, bottleType) the lab loaded — the
+   *    canonical bottle-level inventory with growth state and TTP.
+   *  - isolateLinks[]: one row per (isolateNo, setNo, bottleType) — the
+   *    explicit isolate→source linkage. Same isolate appears once per
+   *    positive bottle it was recovered from. No nesting, no duplication of
+   *    bottle metadata, so receivers can join on (setNo, bottleType).
+   *
+   * Both arrays are sorted by (setNo, bottleType, isolateNo) so the output
+   * is byte-stable across runs (canonical-friendly for sealing).
+   */
+  bloodLinkage?: {
+    bottles: {
+      setNo: number;
+      bottleType: string;
+      drawSite?: string;
+      lumenLabel?: string;
+      drawTime?: string;
+      growth: string;
+      positiveAt?: string;
+      ttpHours?: number;
+    }[];
+    isolateLinks: {
+      isolateNo: number;
+      organismCode: string;
+      organismDisplay: string;
+      setNo: number;
+      bottleType: string;
+    }[];
+  };
   ast: {
     isolateNo: number;
     antibioticCode: string;
