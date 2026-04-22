@@ -8,6 +8,8 @@ import { getAntibiotic } from "../config/antibiotics";
 import { evaluateStewardship, type StewardshipDecision } from "./stewardshipEngine";
 import { evaluateIPC } from "./ipcEngine";
 import { evaluateAccession } from "./astEngine";
+import { getOrganism } from "../config/organisms";
+import { findDiskBreakpoint, findMICBreakpoint } from "../config/breakpoints";
 
 export type CommentSource = "clinical" | "stewardship" | "ipc";
 
@@ -33,6 +35,14 @@ export interface ReportASTRow {
   releaseClass?: string;
   aware?: string;
   phenotypeFlags?: string[];
+  /** Active breakpoint cutoffs used to derive S/I/R, if any matched. */
+  breakpoint?: {
+    standard: string;
+    summary: string; // e.g. "S≥17 / R≤13 mm" or "S≤1 / R≥4 mg/L"
+    susceptible?: number;
+    resistant?: number;
+    unit: "mm" | "mg/L";
+  };
 }
 
 export interface ReportIsolate {
@@ -95,6 +105,7 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
 
   const isolates: ReportIsolate[] = accession.isolates.map((i) => {
     const rowOutputs = astByIsolate.find((o) => o.isolateId === i.id);
+    const orgGroup = getOrganism(i.organismCode)?.group;
     return {
       isolateNo: i.isolateNo,
       organismDisplay: i.organismDisplay,
@@ -121,6 +132,36 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
           const dec: StewardshipDecision | undefined = stewardship.byAst[a.id];
           const enginePatch = rowOutputs?.rowPatches[a.id];
           const interp = a.finalInterpretation ?? enginePatch?.interpretedSIR ?? a.interpretedSIR ?? a.rawInterpretation;
+          let breakpoint: ReportASTRow["breakpoint"];
+          if (a.method === "disk_diffusion") {
+            const bp = findDiskBreakpoint(orgGroup, a.antibioticCode, a.standard);
+            if (bp) {
+              const parts: string[] = [];
+              if (bp.susceptibleMinMm !== undefined) parts.push(`S≥${bp.susceptibleMinMm}`);
+              if (bp.resistantMaxMm !== undefined) parts.push(`R≤${bp.resistantMaxMm}`);
+              breakpoint = {
+                standard: bp.standard,
+                summary: `${parts.join(" / ")} mm`,
+                susceptible: bp.susceptibleMinMm,
+                resistant: bp.resistantMaxMm,
+                unit: "mm",
+              };
+            }
+          } else if (a.method === "mic_broth" || a.method === "mic_etest" || a.method === "automated_phoenix" || a.method === "automated_vitek") {
+            const bp = findMICBreakpoint(orgGroup, a.antibioticCode, a.standard);
+            if (bp) {
+              const parts: string[] = [];
+              if (bp.susceptibleMaxMgL !== undefined) parts.push(`S≤${bp.susceptibleMaxMgL}`);
+              if (bp.resistantMinMgL !== undefined) parts.push(`R≥${bp.resistantMinMgL}`);
+              breakpoint = {
+                standard: bp.standard,
+                summary: `${parts.join(" / ")} mg/L`,
+                susceptible: bp.susceptibleMaxMgL,
+                resistant: bp.resistantMinMgL,
+                unit: "mg/L",
+              };
+            }
+          }
           return {
             antibioticCode: a.antibioticCode,
             antibioticDisplay: getAntibiotic(a.antibioticCode)?.display ?? a.antibioticCode,
@@ -134,6 +175,7 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
             releaseClass: dec?.releaseClass,
             aware: dec?.aware,
             phenotypeFlags: enginePatch?.phenotypeFlags ?? a.phenotypeFlags,
+            breakpoint,
           };
         }),
     };
