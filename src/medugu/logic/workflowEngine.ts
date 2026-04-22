@@ -14,6 +14,8 @@ export const WORKFLOW_TRACK: WorkflowStage[] = [
   WorkflowStage.Culture,
   WorkflowStage.Isolate,
   WorkflowStage.AST,
+  WorkflowStage.Stewardship,
+  WorkflowStage.IPC,
   WorkflowStage.Validation,
   WorkflowStage.Released,
 ];
