@@ -408,6 +408,28 @@ export function buildHL7(accession: Accession): string {
         ]),
       );
     }
+    if (iso.bloodSourceLinks && iso.bloodSourceLinks.length > 0) {
+      segments.push(
+        hl7Segment("NTE", [
+          String(setId),
+          "L",
+          hl7Escape(
+            `Source linkage: ${iso.bloodSourceLinks
+              .map((l) => `set ${l.setNo} ${l.bottleType}`)
+              .join("; ")}`,
+          ),
+        ]),
+      );
+    }
+    if (iso.significance) {
+      segments.push(
+        hl7Segment("NTE", [
+          String(setId),
+          "L",
+          hl7Escape(`Significance: ${iso.significance}`),
+        ]),
+      );
+    }
     for (const a of iso.ast) {
       const visible = a.visibleToClinician !== false;
       segments.push(
