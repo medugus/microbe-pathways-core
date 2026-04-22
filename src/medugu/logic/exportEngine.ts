@@ -169,6 +169,14 @@ export function buildFhirBundle(accession: Accession): unknown {
         ...(iso.phenotypeFlags.length
           ? [{ code: { text: "Phenotypes" }, valueString: iso.phenotypeFlags.join(",") }]
           : []),
+        ...(iso.bloodSourceLinks && iso.bloodSourceLinks.length > 0
+          ? [{
+              code: { text: "Blood source linkage" },
+              valueString: iso.bloodSourceLinks
+                .map((l) => `set${l.setNo}/${l.bottleType}`)
+                .join(", "),
+            }]
+          : []),
       ],
     });
     observationRefs.push({ reference: `Observation/${isoObsId}` });
@@ -397,6 +405,28 @@ export function buildHL7(accession: Accession): string {
           String(setId),
           "L",
           hl7Escape(`Phenotype flags: ${iso.phenotypeFlags.join(", ")}`),
+        ]),
+      );
+    }
+    if (iso.bloodSourceLinks && iso.bloodSourceLinks.length > 0) {
+      segments.push(
+        hl7Segment("NTE", [
+          String(setId),
+          "L",
+          hl7Escape(
+            `Source linkage: ${iso.bloodSourceLinks
+              .map((l) => `set ${l.setNo} ${l.bottleType}`)
+              .join("; ")}`,
+          ),
+        ]),
+      );
+    }
+    if (iso.significance) {
+      segments.push(
+        hl7Segment("NTE", [
+          String(setId),
+          "L",
+          hl7Escape(`Significance: ${iso.significance}`),
         ]),
       );
     }

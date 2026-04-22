@@ -41,6 +41,16 @@ export interface ReportIsolate {
   significance?: string;
   growth?: string;
   phenotypeFlags: string[];
+  /** Blood-culture only: positive (set, bottle) sources for this isolate. */
+  bloodSourceLinks?: { setNo: number; bottleType: string }[];
+  /** Blood-culture only: per-bottle growth rows (mirrored for export). */
+  bottleResults?: {
+    setNo: number;
+    bottleType: string;
+    growth: string;
+    positiveAt?: string;
+    ttpHours?: number;
+  }[];
   ast: ReportASTRow[];
 }
 
@@ -94,6 +104,17 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
           ? `${i.colonyCountCfuPerMl.toExponential(0)} CFU/mL`
           : i.growthQuantifierCode,
       phenotypeFlags: phenotypesByIsolate[i.id] ?? [],
+      bloodSourceLinks: i.bloodSourceLinks && i.bloodSourceLinks.length > 0 ? i.bloodSourceLinks : undefined,
+      bottleResults:
+        i.bottleResults && i.bottleResults.length > 0
+          ? i.bottleResults.map((r) => ({
+              setNo: r.setNo,
+              bottleType: r.bottleType,
+              growth: r.growth,
+              positiveAt: r.positiveAt,
+              ttpHours: r.ttpHours,
+            }))
+          : undefined,
       ast: accession.ast
         .filter((a) => a.isolateId === i.id)
         .map<ReportASTRow>((a) => {
@@ -136,6 +157,29 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
   }
   for (const ipc of accession.ipc) {
     comments.push({ source: "ipc", code: ipc.ruleCode, text: ipc.message });
+  }
+  // Blood culture isolate-allocation derived comments (contaminant carry,
+  // triple-pathogen senior-review) — governed, derived from rules module.
+  if (accession.specimen.familyCode === "BLOOD") {
+    const real = accession.isolates.filter((i) => i.organismCode !== "NOGRO");
+    for (const iso of real) {
+      if (iso.significance === "probable_contaminant") {
+        comments.push({
+          source: "clinical",
+          code: "BC_ISO_CONTAMINANT",
+          text: `Isolate ${iso.isolateNo} (${iso.organismDisplay}) reported as probable contaminant — interpret with caution.`,
+          governed: true,
+        });
+      }
+    }
+    if (real.length === 3 && real.every((i) => i.significance === "significant")) {
+      comments.push({
+        source: "clinical",
+        code: "BC_ISO_TRIPLE_PATHOGEN_REVIEW",
+        text: "Three blood-culture isolates all reported as true pathogens — senior/consultant review recommended.",
+        governed: true,
+      });
+    }
   }
 
   const microscopySummary =

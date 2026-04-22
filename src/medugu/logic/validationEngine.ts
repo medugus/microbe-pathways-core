@@ -11,6 +11,7 @@ import { newId } from "../domain/ids";
 import { pendingRestrictedRowCount } from "./amsEngine";
 import { evaluateIPC } from "./ipcEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
+import { validateBloodIsolates } from "./bloodIsolateRules";
 
 /**
  * IPC rule codes that constitute a critical alert. When any of these fires on a
@@ -142,6 +143,15 @@ export function runValidation(accession: Accession): ValidationReport {
           );
         }
       });
+    }
+
+    // Per-rule blood culture isolate allocation (1–3, source linkage,
+    // significance, senior-review on triple pathogen, contaminant carry).
+    for (const r of validateBloodIsolates(accession)) {
+      const issue = r.severity === "block"
+        ? block(r.code, "isolate", r.message)
+        : warn(r.code, "isolate", r.message);
+      issues.push(issue);
     }
   }
 
