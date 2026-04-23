@@ -86,6 +86,16 @@ export const BLOOD_WORKUP_PRESETS: BloodWorkupPreset[] = [
     ],
   },
   {
+    code: "PAEDIATRIC_WORKUP",
+    display: "Paediatric (1–2 sets, weight-based volume)",
+    rationale:
+      "One or two paediatric bottles drawn from peripheral venepuncture. Volume titrated to patient weight; document weight for adequacy assessment.",
+    sets: [
+      { drawSite: "PERIPHERAL_LEFT", bottleTypes: ["PAEDIATRIC"] },
+      { drawSite: "PERIPHERAL_RIGHT", bottleTypes: ["PAEDIATRIC"] },
+    ],
+  },
+  {
     code: "NEONATAL_LOW_VOLUME",
     display: "Neonatal (1 set, paediatric bottle)",
     rationale:

@@ -91,7 +91,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
     { code: "BC_NEONATAL", label: "Neonatal" },
   ];
   const BLOOD_PRESET_CHIPS = BLOOD_WORKUP_PRESETS.filter((p) =>
-    ["STANDARD_ADULT", "CLABSI_WORKUP", "ENDOCARDITIS_WORKUP", "FUNGAEMIA_WORKUP"].includes(p.code),
+    ["STANDARD_ADULT", "PAEDIATRIC_WORKUP", "CLABSI_WORKUP", "ENDOCARDITIS_WORKUP", "FUNGAEMIA_WORKUP"].includes(p.code),
   );
 
   const subtypes = getFamily(familyCode)?.subtypes ?? [];
