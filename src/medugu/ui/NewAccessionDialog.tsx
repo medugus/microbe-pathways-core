@@ -79,6 +79,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
   const [collectedAt, setCollectedAt] = useState<string>(localISO(new Date()));
   const [receivedAt, setReceivedAt] = useState<string>(localISO(new Date()));
   const [bloodPreset, setBloodPreset] = useState<string>("STANDARD_ADULT");
+  const [bloodSources, setBloodSources] = useState<string[]>([]);
 
   const isBlood = familyCode === "BLOOD";
   // Compact source chips for blood culture (subset shown inline; full editor in Collection Details)
