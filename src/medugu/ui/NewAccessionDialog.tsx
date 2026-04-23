@@ -79,6 +79,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
   const [collectedAt, setCollectedAt] = useState<string>(localISO(new Date()));
   const [receivedAt, setReceivedAt] = useState<string>(localISO(new Date()));
   const [bloodPreset, setBloodPreset] = useState<string>("STANDARD_ADULT");
+  const [bloodSources, setBloodSources] = useState<string[]>([]);
 
   const isBlood = familyCode === "BLOOD";
   // Compact source chips for blood culture (subset shown inline; full editor in Collection Details)
@@ -112,13 +113,14 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
     setCollectedAt(nowL);
     setReceivedAt(nowL);
     setBloodPreset("STANDARD_ADULT");
+    setBloodSources([]);
   }
 
   const canSubmit =
     accessionNumber.trim().length > 0 &&
     !state.accessions[accessionNumber] &&
     familyCode &&
-    subtypeCode &&
+    (isBlood ? bloodSources.length > 0 : !!subtypeCode) &&
     (mode === "existing"
       ? !!existingMrn
       : givenName.trim().length > 0 && familyName.trim().length > 0 && mrn.trim().length > 0);
@@ -157,9 +159,10 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
       patient,
       specimen: {
         familyCode,
-        subtypeCode,
+        subtypeCode: isBlood ? (bloodSources[0] ?? subtypeCode) : subtypeCode,
         collectedAt: collectedAt ? new Date(collectedAt).toISOString() : undefined,
         receivedAt: receivedAt ? new Date(receivedAt).toISOString() : undefined,
+        ...(isBlood ? { details: { sources: bloodSources } } : {}),
       },
       specimenAssessments: [],
       microscopy: [],
@@ -182,9 +185,9 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
             accessionNumber,
             mrn: patient.mrn,
             familyCode,
-            subtypeCode,
+            subtypeCode: isBlood ? (bloodSources[0] ?? subtypeCode) : subtypeCode,
             mode,
-            ...(isBlood ? { bloodPreset } : {}),
+            ...(isBlood ? { bloodPreset, bloodSources } : {}),
           },
         },
       ],
@@ -368,15 +371,22 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
               </div>
 
               <div className="space-y-2 col-span-2">
-                <Label>Source</Label>
+                <Label>Source(s) <span className="text-muted-foreground font-normal">— select one or more</span></Label>
                 <div className="flex flex-wrap gap-1.5">
                   {BLOOD_SOURCE_CHIPS.map((s) => {
-                    const active = subtypeCode === s.code;
+                    const active = bloodSources.includes(s.code);
                     return (
                       <button
                         key={s.code}
                         type="button"
-                        onClick={() => setSubtypeCode(s.code)}
+                        onClick={() => {
+                          setBloodSources((prev) =>
+                            prev.includes(s.code)
+                              ? prev.filter((c) => c !== s.code)
+                              : [...prev, s.code],
+                          );
+                        }}
+                        aria-pressed={active}
                         className={cn(
                           "rounded-md border px-2.5 py-1 text-xs transition-colors",
                           active
@@ -384,11 +394,14 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
                             : "border-border bg-background hover:bg-accent",
                         )}
                       >
-                        {s.label}
+                        {active ? "✓ " : ""}{s.label}
                       </button>
                     );
                   })}
                 </div>
+                {bloodSources.length === 0 && (
+                  <p className="text-[11px] text-destructive">Select at least one source.</p>
+                )}
               </div>
             </>
           ) : (
