@@ -113,6 +113,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
     setCollectedAt(nowL);
     setReceivedAt(nowL);
     setBloodPreset("STANDARD_ADULT");
+    setBloodSources([]);
   }
 
   const canSubmit =
