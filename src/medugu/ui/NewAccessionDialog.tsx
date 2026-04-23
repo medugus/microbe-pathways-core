@@ -120,7 +120,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
     accessionNumber.trim().length > 0 &&
     !state.accessions[accessionNumber] &&
     familyCode &&
-    subtypeCode &&
+    (isBlood ? bloodSources.length > 0 : !!subtypeCode) &&
     (mode === "existing"
       ? !!existingMrn
       : givenName.trim().length > 0 && familyName.trim().length > 0 && mrn.trim().length > 0);
