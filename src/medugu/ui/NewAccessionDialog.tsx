@@ -159,9 +159,10 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
       patient,
       specimen: {
         familyCode,
-        subtypeCode,
+        subtypeCode: isBlood ? (bloodSources[0] ?? subtypeCode) : subtypeCode,
         collectedAt: collectedAt ? new Date(collectedAt).toISOString() : undefined,
         receivedAt: receivedAt ? new Date(receivedAt).toISOString() : undefined,
+        ...(isBlood ? { details: { sources: bloodSources } } : {}),
       },
       specimenAssessments: [],
       microscopy: [],
