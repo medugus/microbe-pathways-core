@@ -24,8 +24,8 @@ import { runValidation } from "../../logic/validationEngine";
 
 // ---- coded option lists (display-only labels) ----
 const BOTTLE_TYPES = [
-  { code: "AEROBIC", display: "Aerobic" },
-  { code: "ANAEROBIC", display: "Anaerobic" },
+  { code: "AEROBIC", display: "Adult aerobic" },
+  { code: "ANAEROBIC", display: "Adult anaerobic" },
   { code: "PAEDIATRIC", display: "Paediatric" },
   { code: "MYCOLOGY", display: "Mycology / fungal" },
   { code: "MYCOBACTERIAL", display: "Mycobacterial (AFB)" },
