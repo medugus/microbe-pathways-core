@@ -336,21 +336,76 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
             </Select>
           </div>
 
-          <div className="space-y-1 col-span-2">
-            <Label>Specimen subtype</Label>
-            <Select value={subtypeCode} onValueChange={setSubtypeCode}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {subtypes.map((s) => (
-                  <SelectItem key={s.code} value={s.code}>
-                    {s.display}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {isBlood ? (
+            <>
+              <div className="space-y-2 col-span-2">
+                <Label>Workup preset</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {BLOOD_PRESET_CHIPS.map((p) => {
+                    const active = bloodPreset === p.code;
+                    return (
+                      <button
+                        key={p.code}
+                        type="button"
+                        onClick={() => setBloodPreset(p.code)}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-xs transition-colors",
+                          active
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-background hover:bg-accent",
+                        )}
+                      >
+                        {p.display.split(" (")[0]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Detailed set/site editing available in Collection Details after creation.
+                </p>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label>Source</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {BLOOD_SOURCE_CHIPS.map((s) => {
+                    const active = subtypeCode === s.code;
+                    return (
+                      <button
+                        key={s.code}
+                        type="button"
+                        onClick={() => setSubtypeCode(s.code)}
+                        className={cn(
+                          "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                          active
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-background hover:bg-accent",
+                        )}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-1 col-span-2">
+              <Label>Specimen subtype</Label>
+              <Select value={subtypeCode} onValueChange={setSubtypeCode}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {subtypes.map((s) => (
+                    <SelectItem key={s.code} value={s.code}>
+                      {s.display}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-1">
             <Label htmlFor="collected">Collection datetime</Label>
