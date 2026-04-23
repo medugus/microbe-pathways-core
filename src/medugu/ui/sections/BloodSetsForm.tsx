@@ -19,6 +19,7 @@ import { useMemo } from "react";
 import { meduguActions } from "../../store/useAccessionStore";
 import type { Accession } from "../../domain/types";
 import { getPresetsForSubtype, type BloodWorkupPreset } from "../../config/bloodCulturePresets";
+import { PaediatricBottleGuide } from "./PaediatricBottleGuide";
 import { runValidation } from "../../logic/validationEngine";
 
 // ---- coded option lists (display-only labels) ----
@@ -182,6 +183,9 @@ export function BloodSetsForm({ accession }: Props) {
           Applying a preset replaces the current sets. You can edit any set after applying.
         </p>
       </div>
+
+      {/* Paediatric bottle & volume guide (visible when patient is a child or toggled on) */}
+      <PaediatricBottleGuide accession={accession} />
 
       {/* Sets list */}
       <div className="space-y-2">
