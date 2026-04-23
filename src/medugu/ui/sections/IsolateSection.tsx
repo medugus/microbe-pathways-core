@@ -225,7 +225,7 @@ export function IsolateSection() {
                       }`}
                     >
                       {SIGNIFICANCE_OPTIONS.map((s) => (
-                        <option key={s.code} value={s.code}>{s.display}</option>
+                        <option key={s.code} value={s.code}>{s.label}</option>
                       ))}
                     </select>
                     <button
