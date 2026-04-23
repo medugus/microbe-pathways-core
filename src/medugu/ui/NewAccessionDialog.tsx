@@ -78,6 +78,21 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
   );
   const [collectedAt, setCollectedAt] = useState<string>(localISO(new Date()));
   const [receivedAt, setReceivedAt] = useState<string>(localISO(new Date()));
+  const [bloodPreset, setBloodPreset] = useState<string>("STANDARD_ADULT");
+
+  const isBlood = familyCode === "BLOOD";
+  // Compact source chips for blood culture (subset shown inline; full editor in Collection Details)
+  const BLOOD_SOURCE_CHIPS: Array<{ code: string; label: string }> = [
+    { code: "BC_PERIPHERAL", label: "Peripheral venepuncture" },
+    { code: "BC_CENTRAL_LINE", label: "Central line" },
+    { code: "BC_ARTERIAL", label: "Arterial line" },
+    { code: "BC_PERIPHERAL_CANNULA", label: "Peripheral cannula" },
+    { code: "BC_PORTACATH", label: "Portacath" },
+    { code: "BC_NEONATAL", label: "Neonatal" },
+  ];
+  const BLOOD_PRESET_CHIPS = BLOOD_WORKUP_PRESETS.filter((p) =>
+    ["STANDARD_ADULT", "CLABSI_WORKUP", "ENDOCARDITIS_WORKUP", "FUNGAEMIA_WORKUP"].includes(p.code),
+  );
 
   const subtypes = getFamily(familyCode)?.subtypes ?? [];
 
