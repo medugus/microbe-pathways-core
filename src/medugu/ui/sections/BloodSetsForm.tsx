@@ -184,6 +184,9 @@ export function BloodSetsForm({ accession }: Props) {
         </p>
       </div>
 
+      {/* Paediatric bottle & volume guide (visible when patient is a child or toggled on) */}
+      <PaediatricBottleGuide accession={accession} />
+
       {/* Sets list */}
       <div className="space-y-2">
         {sets.length === 0 && (
