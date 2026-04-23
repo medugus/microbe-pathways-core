@@ -184,6 +184,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
             familyCode,
             subtypeCode,
             mode,
+            ...(isBlood ? { bloodPreset } : {}),
           },
         },
       ],
