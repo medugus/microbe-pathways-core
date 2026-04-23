@@ -371,15 +371,22 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
               </div>
 
               <div className="space-y-2 col-span-2">
-                <Label>Source</Label>
+                <Label>Source(s) <span className="text-muted-foreground font-normal">— select one or more</span></Label>
                 <div className="flex flex-wrap gap-1.5">
                   {BLOOD_SOURCE_CHIPS.map((s) => {
-                    const active = subtypeCode === s.code;
+                    const active = bloodSources.includes(s.code);
                     return (
                       <button
                         key={s.code}
                         type="button"
-                        onClick={() => setSubtypeCode(s.code)}
+                        onClick={() => {
+                          setBloodSources((prev) =>
+                            prev.includes(s.code)
+                              ? prev.filter((c) => c !== s.code)
+                              : [...prev, s.code],
+                          );
+                        }}
+                        aria-pressed={active}
                         className={cn(
                           "rounded-md border px-2.5 py-1 text-xs transition-colors",
                           active
@@ -387,11 +394,14 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
                             : "border-border bg-background hover:bg-accent",
                         )}
                       >
-                        {s.label}
+                        {active ? "✓ " : ""}{s.label}
                       </button>
                     );
                   })}
                 </div>
+                {bloodSources.length === 0 && (
+                  <p className="text-[11px] text-destructive">Select at least one source.</p>
+                )}
               </div>
             </>
           ) : (
