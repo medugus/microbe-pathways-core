@@ -19,6 +19,7 @@ import { useMemo } from "react";
 import { meduguActions } from "../../store/useAccessionStore";
 import type { Accession } from "../../domain/types";
 import { getPresetsForSubtype, type BloodWorkupPreset } from "../../config/bloodCulturePresets";
+import { PaediatricBottleGuide } from "./PaediatricBottleGuide";
 import { runValidation } from "../../logic/validationEngine";
 
 // ---- coded option lists (display-only labels) ----
