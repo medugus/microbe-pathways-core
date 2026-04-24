@@ -113,6 +113,15 @@ function LoginPage() {
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? "Signing in…" : "Sign in"}
           </Button>
+
+          <p className="text-right text-sm">
+            <Link
+              to="/forgot-password"
+              className="font-medium text-primary hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </p>
         </form>
 
         <div className="my-4 flex items-center gap-2">
