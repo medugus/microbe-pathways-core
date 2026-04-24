@@ -79,6 +79,19 @@ function LoginPage() {
           Medugu microbiology workflow platform
         </p>
 
+        <div className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">Email verification</p>
+          <p className="mt-1">
+            New signups are auto-confirmed — you can sign in immediately after creating
+            your account. If sign-in fails with an "email not confirmed" message, request
+            a{" "}
+            <Link to="/forgot-password" className="underline font-medium text-primary">
+              password reset link
+            </Link>{" "}
+            to confirm your address and set a new password.
+          </p>
+        </div>
+
         <form onSubmit={onEmailSignIn} className="mt-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -105,9 +118,22 @@ function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
+            <div
+              className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+              role="alert"
+            >
+              <p className="font-medium">{error}</p>
+              {/email not confirmed|confirm.*email|not.*verified/i.test(error) && (
+                <p className="mt-1 text-xs text-destructive/90">
+                  Your email hasn't been verified yet. Check your inbox (and spam folder)
+                  for the confirmation link, or use{" "}
+                  <Link to="/forgot-password" className="underline font-medium">
+                    Forgot password
+                  </Link>{" "}
+                  to receive a fresh link that also confirms your account.
+                </p>
+              )}
+            </div>
           )}
 
           <Button type="submit" className="w-full" disabled={busy}>

@@ -154,7 +154,21 @@ function SignupPage() {
             </p>
           )}
           {info && (
-            <p className="text-sm text-primary">{info}</p>
+            <div
+              className="rounded-md border border-primary/30 bg-primary/10 p-3 text-sm"
+              role="status"
+            >
+              <p className="font-medium text-foreground">Account created</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Email verification is currently auto-confirmed for this workspace, so
+                you can{" "}
+                <Link to="/login" className="underline font-medium text-primary">
+                  sign in now
+                </Link>
+                . If a confirmation email is required, check your inbox (and spam
+                folder) for the link before signing in.
+              </p>
+            </div>
           )}
 
           <Button type="submit" className="w-full" disabled={busy}>
