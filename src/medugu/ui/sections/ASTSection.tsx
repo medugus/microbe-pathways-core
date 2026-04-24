@@ -384,7 +384,7 @@ function AntibiogramGrid({ accession }: { accession: Accession }) {
                       <div className="text-center text-[9px] text-muted-foreground/80">
                         {cell.method} · {cell.standard}
                       </div>
-                      {cell.cascadeDecision && cell.cascadeDecision !== "release" && (
+                      {cell.cascadeDecision && cell.cascadeDecision !== "shown" && (
                         <span className="rounded bg-muted px-1 py-0.5 text-center text-[9px] text-muted-foreground">
                           {cell.cascadeDecision}
                         </span>
