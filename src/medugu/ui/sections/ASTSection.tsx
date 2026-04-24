@@ -76,10 +76,6 @@ export function ASTSection() {
     );
   }
 
-  const rowsByIsolate = isolates.map((iso) => ({
-    iso,
-    rows: accession.ast.filter((a) => a.isolateId === iso.id),
-  }));
 
   async function applyExpertRules() {
     if (!accession) return;
