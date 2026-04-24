@@ -7,13 +7,14 @@ import { useMemo, useState } from "react";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
 import { ANTIBIOTICS, AST_PANELS, getASTPanel, getAntibiotic } from "../../config/antibiotics";
 import { PRIMARY_STANDARD, SECONDARY_STANDARD } from "../../config/breakpoints";
-import { buildASTResult } from "../../logic/astDrafting";
+import { buildASTResult, rebuildASTFromRawEdit } from "../../logic/astDrafting";
 import { ASTMethod } from "../../domain/enums";
 import type { Accession, ASTGovernanceState, ASTStandard } from "../../domain/types";
 import { applyExpertRulesServer } from "../../store/engines.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { approvalStatusForRow, isRestrictedRow } from "../../logic/amsEngine";
 import { ASTReportabilityBoard } from "./ASTReportabilityBoard";
+import { isBloodCulture, listPositiveBottles, sourceLinkKey } from "../../logic/bloodIsolateRules";
 
 const AMS_TONE_AST: Record<string, string> = {
   not_requested: "chip chip-square chip-neutral",
@@ -60,6 +61,16 @@ export function ASTSection() {
   const isolates = accession.isolates;
   const activeIsolateId = isolateId || isolates[0]?.id || "";
   const selectedPanel = getASTPanel(panelId) ?? AST_PANELS[0];
+  const selectedIsolate = isolates.find((i) => i.id === activeIsolateId);
+  const bloodPositiveSources = useMemo(() => {
+    if (!isBloodCulture(accession)) return new Set<string>();
+    return new Set(listPositiveBottles(accession).map((p) => sourceLinkKey(p.setNo, p.bottleType)));
+  }, [accession]);
+  const selectedIsolateHasPositiveLink =
+    !!selectedIsolate?.bloodSourceLinks?.some((l) =>
+      bloodPositiveSources.has(sourceLinkKey(l.setNo, l.bottleType)),
+    );
+  const isBloodASTBlocked = isBloodCulture(accession) && !!selectedIsolate && !selectedIsolateHasPositiveLink;
 
   const panelMeta = useMemo(() => {
     if (!selectedPanel || !activeIsolateId) {
@@ -84,7 +95,7 @@ export function ASTSection() {
   }, [accession.ast, activeIsolateId, selectedPanel]);
 
   function onAdd() {
-    if (!accession || !activeIsolateId) return;
+    if (!accession || !activeIsolateId || isBloodASTBlocked) return;
     const v = rawValue.trim() === "" ? undefined : Number(rawValue);
     const row = buildASTResult(accession, {
       isolateId: activeIsolateId,
@@ -98,7 +109,7 @@ export function ASTSection() {
   }
 
   function onAddPanel() {
-    if (!accession || !activeIsolateId || !selectedPanel) return;
+    if (!accession || !activeIsolateId || !selectedPanel || isBloodASTBlocked) return;
 
     let added = 0;
     let duplicates = 0;
@@ -236,10 +247,16 @@ export function ASTSection() {
               <button
                 type="button"
                 onClick={onAddPanel}
+                disabled={isBloodASTBlocked}
                 className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
               >
                 Add panel
               </button>
+              {isBloodASTBlocked && (
+                <span className="ml-2 text-[11px] text-destructive">
+                  Blood culture AST requires organism linkage to a positive bottle.
+                </span>
+              )}
             </div>
             <div className="md:col-span-6 rounded border border-border bg-card px-2 py-2 text-[11px] text-muted-foreground">
               <div className="font-medium text-foreground">Panel preview</div>
@@ -319,10 +336,16 @@ export function ASTSection() {
               <button
                 type="button"
                 onClick={onAdd}
+                disabled={isBloodASTBlocked}
                 className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
               >
                 Add AST row
               </button>
+              {isBloodASTBlocked && (
+                <span className="text-[11px] text-destructive">
+                  Blood culture AST requires organism linkage to a positive bottle.
+                </span>
+              )}
             </div>
           </>
         )}
@@ -466,6 +489,9 @@ function AntibiogramGrid({ accession }: { accession: Accession }) {
                 }
                 const sir = cell.finalInterpretation ?? cell.interpretedSIR ?? "";
                 const tone = SIR_TONE[sir] ?? "bg-muted text-muted-foreground border-border";
+                const rawValueInput = cell.rawValue ?? "";
+                const effectiveUnit = cell.method === ASTMethod.DiskDiffusion ? "mm" : "mg/L";
+                const hasNoBreakpoint = cell.rawValue !== undefined && cell.rawInterpretation === undefined;
                 return (
                   <td
                     key={iso.id}
@@ -489,10 +515,43 @@ function AntibiogramGrid({ accession }: { accession: Accession }) {
                         <option value="NS">NS</option>
                         <option value="ND">ND</option>
                       </select>
-                      <div className="text-center text-[10px] text-muted-foreground">
-                        {cell.rawValue ?? "—"}
-                        {cell.rawUnit ? ` ${cell.rawUnit}` : ""}
+                      <div className="grid grid-cols-[1fr_auto] gap-1">
+                        <input
+                          type="number"
+                          step="any"
+                          value={rawValueInput}
+                          onChange={(e) => {
+                            const nextRawValue =
+                              e.target.value.trim() === "" ? undefined : Number(e.target.value);
+                            meduguActions.updateAST(
+                              accession.id,
+                              cell.id,
+                              rebuildASTFromRawEdit(accession, cell, {
+                                rawValue: Number.isFinite(nextRawValue) ? nextRawValue : undefined,
+                              }),
+                            );
+                          }}
+                          placeholder={effectiveUnit}
+                          className="w-full rounded border border-border bg-background px-1.5 py-0.5 text-[10px]"
+                          title="Raw AST value"
+                        />
+                        <select
+                          value={cell.rawUnit ?? effectiveUnit}
+                          onChange={(e) =>
+                            meduguActions.updateAST(accession.id, cell.id, {
+                              rawUnit: e.target.value as "mm" | "mg/L",
+                            })
+                          }
+                          className="rounded border border-border bg-background px-1 py-0.5 text-[10px]"
+                        >
+                          <option value={effectiveUnit}>{effectiveUnit}</option>
+                        </select>
                       </div>
+                      {hasNoBreakpoint && (
+                        <span className="text-center text-[9px] text-amber-700 dark:text-amber-300">
+                          No breakpoint
+                        </span>
+                      )}
                       <div className="flex items-center justify-between gap-1">
                         <select
                           value={cell.governance}

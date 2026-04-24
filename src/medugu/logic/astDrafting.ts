@@ -12,7 +12,7 @@ import type {
   Accession,
   Isolate,
 } from "../domain/types";
-import type { ASTInterpretation, ASTMethod } from "../domain/enums";
+import { ASTMethod, type ASTInterpretation } from "../domain/enums";
 import { newId } from "../domain/ids";
 import { getOrganism } from "../config/organisms";
 import {
@@ -77,4 +77,57 @@ export function buildASTResult(accession: Accession, input: DraftASTInput): ASTR
     cascade,
     comment: input.comment,
   };
+}
+
+function isMICMethod(method: ASTMethod): boolean {
+  return method !== ASTMethod.DiskDiffusion;
+}
+
+function resolvedRawUnit(method: ASTMethod): "mg/L" | "mm" {
+  return isMICMethod(method) ? "mg/L" : "mm";
+}
+
+export function rebuildASTFromRawEdit(
+  accession: Accession,
+  row: ASTResult,
+  patch: {
+    rawValue?: number;
+    method?: ASTMethod;
+    standard?: ASTStandard;
+    rawUnit?: "mg/L" | "mm";
+  },
+): Partial<ASTResult> {
+  const method = patch.method ?? row.method;
+  const standard = patch.standard ?? row.standard;
+  const rawValue = patch.rawValue;
+  const rawUnit = patch.rawUnit ?? resolvedRawUnit(method);
+  const draft = draftInterpretation(accession.isolates.find((i) => i.id === row.isolateId), {
+    isolateId: row.isolateId,
+    antibioticCode: row.antibioticCode,
+    method,
+    standard,
+    rawValue,
+  });
+
+  const patchOut: Partial<ASTResult> = {
+    method,
+    standard,
+    rawValue,
+    rawUnit,
+    micMgL: rawUnit === "mg/L" ? rawValue : undefined,
+    zoneMm: rawUnit === "mm" ? rawValue : undefined,
+    rawInterpretation: draft,
+    interpretedSIR: draft,
+  };
+
+  const hasManualOverride =
+    row.finalInterpretation !== undefined &&
+    row.finalInterpretation !== row.interpretedSIR &&
+    row.finalInterpretation !== row.rawInterpretation;
+
+  if (!hasManualOverride) {
+    patchOut.finalInterpretation = draft;
+  }
+
+  return patchOut;
 }
