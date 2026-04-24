@@ -29,7 +29,7 @@ export function CaseManager() {
           onClick={() => setIntakeOpen(true)}
           className="w-full rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
         >
-          <span className="text-pink-400">+</span> New accession
+          <span style={{color:"#f472b6"}}>+</span> New accession
         </button>
       </div>
 
