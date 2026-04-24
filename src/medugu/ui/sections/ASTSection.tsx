@@ -209,133 +209,194 @@ export function ASTSection() {
         )}
       </div>
 
-      {/* Per-isolate AST tables */}
-      {rowsByIsolate.map(({ iso, rows }) => (
-        <section key={iso.id} className="rounded-md border border-border bg-card">
-          <header className="flex items-center justify-between border-b border-border px-3 py-2">
-            <div className="text-xs">
-              <span className="font-mono text-muted-foreground">#{iso.isolateNo}</span>{" "}
-              <span className="font-medium text-foreground">{iso.organismDisplay}</span>
-            </div>
-            <span className="text-[10px] text-muted-foreground">{rows.length} row(s)</span>
-          </header>
-          {rows.length === 0 ? (
-            <p className="p-3 text-xs text-muted-foreground">No AST rows yet for this isolate.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2 text-left">Antibiotic</th>
-                    <th className="px-3 py-2 text-left">Method</th>
-                    <th className="px-3 py-2 text-left">Std</th>
-                    <th className="px-3 py-2 text-left">Raw</th>
-                    <th className="px-3 py-2 text-left">S/I/R</th>
-                    <th className="px-3 py-2 text-left">Governance</th>
-                    <th className="px-3 py-2 text-left">Cascade</th>
-                    <th className="px-3 py-2 text-left">Phenotype</th>
-                    <th className="px-3 py-2 text-right">·</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.id} className="border-t border-border">
-                      <td className="px-3 py-2">
-                        <div className="font-medium text-foreground">
-                          {getAntibiotic(r.antibioticCode)?.display ?? r.antibioticCode}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">{r.antibioticCode}</div>
-                      </td>
-                      <td className="px-3 py-2 text-muted-foreground">{r.method}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{r.standard}</td>
-                      <td className="px-3 py-2 text-foreground">
-                        {r.rawValue ?? "—"} {r.rawUnit ?? ""}
-                      </td>
-                      <td className="px-3 py-2">
-                        <select
-                          value={r.finalInterpretation ?? ""}
-                          onChange={(e) =>
-                            meduguActions.updateAST(accession.id, r.id, {
-                              finalInterpretation: (e.target.value || undefined) as never,
-                            })
-                          }
-                          className="rounded border border-border bg-background px-1.5 py-1 text-xs"
+      {/* Antibiogram grid — Epic Beaker style: antibiotics × isolates */}
+      <AntibiogramGrid accession={accession} />
+
+      <p className="text-[11px] text-muted-foreground">
+        Antibiogram view — antibiotics down, isolates across. S/I/R cells are
+        color-coded with raw value below. Click a cell to edit interpretation or
+        governance; phenotype + cascade decisions are written by the server expert
+        engine. Use consultant override (per row) to deviate, with reason audited.
+      </p>
+    </div>
+  );
+}
+
+// ---------------- Antibiogram grid ----------------
+
+const SIR_TONE: Record<string, string> = {
+  S: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  I: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  SDD: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  R: "bg-destructive/15 text-destructive border-destructive/30",
+  NS: "bg-destructive/10 text-destructive border-destructive/20",
+  ND: "bg-muted text-muted-foreground border-border",
+};
+
+function AntibiogramGrid({ accession }: { accession: Accession }) {
+  const isolates = accession.isolates;
+  // Antibiotics included = union of those tested across isolates, in canonical order.
+  const testedCodes = new Set(accession.ast.map((r) => r.antibioticCode));
+  const drugs = ANTIBIOTICS.filter((a) => testedCodes.has(a.code));
+
+  if (drugs.length === 0) {
+    return (
+      <div className="rounded-md border border-dashed border-border bg-card p-6 text-center text-xs text-muted-foreground">
+        No AST rows yet. Add an entry above to populate the antibiogram.
+      </div>
+    );
+  }
+
+  // Lookup: drugCode -> isolateId -> ASTResult
+  const cellLookup = new Map<string, Map<string, typeof accession.ast[number]>>();
+  for (const r of accession.ast) {
+    let inner = cellLookup.get(r.antibioticCode);
+    if (!inner) {
+      inner = new Map();
+      cellLookup.set(r.antibioticCode, inner);
+    }
+    // If multiple rows for same drug+isolate, keep most recently added (last wins).
+    inner.set(r.isolateId, r);
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-md border border-border bg-card">
+      <table className="w-full border-collapse text-xs">
+        <thead>
+          <tr className="border-b border-border bg-muted/40">
+            <th className="sticky left-0 z-10 bg-muted/40 px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Antibiotic
+            </th>
+            {isolates.map((iso) => {
+              const isoRows = accession.ast.filter((r) => r.isolateId === iso.id);
+              const phenotypes = Array.from(
+                new Set(isoRows.flatMap((r) => r.phenotypeFlags ?? [])),
+              );
+              return (
+                <th
+                  key={iso.id}
+                  className="min-w-[140px] border-l border-border px-3 py-2 text-left align-top"
+                >
+                  <div className="text-[10px] font-mono text-muted-foreground">
+                    #{iso.isolateNo}
+                  </div>
+                  <div className="text-xs font-semibold text-foreground">
+                    {iso.organismDisplay}
+                  </div>
+                  {phenotypes.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {phenotypes.map((p) => (
+                        <span
+                          key={p}
+                          className="rounded bg-destructive/10 px-1 py-0.5 text-[9px] font-medium text-destructive"
                         >
-                          <option value="">—</option>
-                          <option value="S">S</option>
-                          <option value="I">I</option>
-                          <option value="R">R</option>
-                          <option value="SDD">SDD</option>
-                          <option value="NS">NS</option>
-                          <option value="ND">ND</option>
-                        </select>
-                      </td>
-                      <td className="px-3 py-2">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {drugs.map((drug) => (
+            <tr key={drug.code} className="border-t border-border">
+              <th className="sticky left-0 z-10 bg-card px-3 py-2 text-left align-top">
+                <div className="text-xs font-medium text-foreground">{drug.display}</div>
+                <div className="text-[10px] text-muted-foreground">{drug.code}</div>
+              </th>
+              {isolates.map((iso) => {
+                const cell = cellLookup.get(drug.code)?.get(iso.id);
+                if (!cell) {
+                  return (
+                    <td
+                      key={iso.id}
+                      className="border-l border-border px-2 py-2 align-top text-center text-[10px] text-muted-foreground/50"
+                    >
+                      —
+                    </td>
+                  );
+                }
+                const sir = cell.finalInterpretation ?? cell.interpretedSIR ?? "";
+                const tone = SIR_TONE[sir] ?? "bg-muted text-muted-foreground border-border";
+                return (
+                  <td
+                    key={iso.id}
+                    className="border-l border-border px-2 py-2 align-top"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <select
+                        value={cell.finalInterpretation ?? ""}
+                        onChange={(e) =>
+                          meduguActions.updateAST(accession.id, cell.id, {
+                            finalInterpretation: (e.target.value || undefined) as never,
+                          })
+                        }
+                        className={`rounded border px-1.5 py-0.5 text-center text-xs font-bold ${tone}`}
+                      >
+                        <option value="">—</option>
+                        <option value="S">S</option>
+                        <option value="I">I</option>
+                        <option value="SDD">SDD</option>
+                        <option value="R">R</option>
+                        <option value="NS">NS</option>
+                        <option value="ND">ND</option>
+                      </select>
+                      <div className="text-center text-[10px] text-muted-foreground">
+                        {cell.rawValue ?? "—"}
+                        {cell.rawUnit ? ` ${cell.rawUnit}` : ""}
+                      </div>
+                      <div className="flex items-center justify-between gap-1">
                         <select
-                          value={r.governance}
+                          value={cell.governance}
                           onChange={(e) =>
-                            meduguActions.updateAST(accession.id, r.id, {
+                            meduguActions.updateAST(accession.id, cell.id, {
                               governance: e.target.value as ASTGovernanceState,
                             })
                           }
-                          className="rounded border border-border bg-background px-1.5 py-1 text-xs"
+                          className="flex-1 rounded border border-border bg-background px-1 py-0.5 text-[9px]"
+                          title="Governance"
                         >
                           {GOVERNANCE_OPTIONS.map((g) => (
-                            <option key={g} value={g}>{g}</option>
+                            <option key={g} value={g}>
+                              {g}
+                            </option>
                           ))}
                         </select>
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                          {r.cascadeDecision ?? r.cascade}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        {r.phenotypeFlags && r.phenotypeFlags.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {r.phenotypeFlags.map((f) => (
-                              <span key={f} className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">
-                                {f}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="italic text-muted-foreground/70 text-[10px]">none</span>
-                        )}
-                        {r.expertRulesFired && r.expertRulesFired.length > 0 && (
-                          <div className="mt-0.5 text-[10px] text-muted-foreground">
-                            {r.expertRulesFired.map((e) => e.ruleCode).join(", ")}
-                          </div>
-                        )}
-                        {isRestrictedRow(r) && (
-                          <div className="mt-0.5">
-                            <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${AMS_TONE_AST[approvalStatusForRow(accession, r.id)]}`}>
-                              AMS · {approvalStatusForRow(accession, r.id).replace("_", " ")}
-                            </span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-right">
                         <button
                           type="button"
-                          onClick={() => meduguActions.removeAST(accession.id, r.id)}
-                          className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                          onClick={() => meduguActions.removeAST(accession.id, cell.id)}
+                          className="rounded border border-border px-1 py-0.5 text-[9px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                          title="Remove row"
                         >
-                          Remove
+                          ✕
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      ))}
-
-      <p className="text-[11px] text-muted-foreground">
-        Phase 3: phenotype + cascade decisions written by the AST expert engine. Use consultant override on the row to deviate, with reason audited.
-      </p>
+                      </div>
+                      {isRestrictedRow(cell) && (
+                        <span
+                          className={`text-center text-[9px] font-semibold ${AMS_TONE_AST[approvalStatusForRow(accession, cell.id)]}`}
+                        >
+                          AMS · {approvalStatusForRow(accession, cell.id).replace("_", " ")}
+                        </span>
+                      )}
+                      <div className="text-center text-[9px] text-muted-foreground/80">
+                        {cell.method} · {cell.standard}
+                      </div>
+                      {cell.cascadeDecision && cell.cascadeDecision !== "release" && (
+                        <span className="rounded bg-muted px-1 py-0.5 text-center text-[9px] text-muted-foreground">
+                          {cell.cascadeDecision}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
