@@ -86,6 +86,7 @@ type CellVariant =
   | "empty"       // no metadata / set not started
   | "incubating"  // day is within incubation period, no flag yet
   | "flagged"     // this is the day the bottle flagged positive
+  | "removed"     // bottle was removed from incubator after positive flag
   | "no_growth"   // bottle is confirmed no-growth (terminal negative)
   | "pending_ng"; // no_growth not yet terminal (earlier days for no_growth bottles)
 
@@ -98,6 +99,7 @@ function getVariant(
 
   if (result.growth === "growth" && positiveInfo) {
     if (day === positiveInfo.day) return "flagged";
+    if (day > positiveInfo.day) return "removed";
     return "incubating";
   }
 
@@ -131,6 +133,12 @@ function cellStyle(variant: CellVariant): CellStyleConfig {
           "rounded border border-border bg-muted/30 px-1 py-0.5 text-center",
         label: "text-muted-foreground",
       };
+    case "removed":
+      return {
+        wrapper:
+          "rounded border border-border bg-muted/20 px-1 py-0.5 text-center",
+        label: "text-muted-foreground",
+      };
     case "pending_ng":
       return {
         wrapper: "rounded border border-border px-1 py-0.5 text-center",
@@ -162,6 +170,8 @@ function cellText(
         : "Flag";
     case "no_growth":
       return "No growth";
+    case "removed":
+      return "Removed";
     case "pending_ng":
     case "incubating":
       return "Incub.";
@@ -188,6 +198,8 @@ function cellTitle(
       return `${bottleLabel}: flagged positive on Day ${day} (timing unavailable)`;
     case "no_growth":
       return `${bottleLabel}: terminal no growth at Day ${day}`;
+    case "removed":
+      return `${bottleLabel}: Bottle removed from automated incubation after positive flag.`;
     case "pending_ng":
       return `${bottleLabel}: incubating (no growth recorded at Day ${day})`;
     case "incubating":
