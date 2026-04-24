@@ -13,6 +13,7 @@ import type { Accession, ASTGovernanceState, ASTStandard } from "../../domain/ty
 import { applyExpertRulesServer } from "../../store/engines.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { approvalStatusForRow, isRestrictedRow } from "../../logic/amsEngine";
+import { ASTReportabilityBoard } from "./ASTReportabilityBoard";
 
 const AMS_TONE_AST: Record<string, string> = {
   not_requested: "chip chip-square chip-neutral",
@@ -204,6 +205,8 @@ export function ASTSection() {
           </p>
         )}
       </div>
+
+      <ASTReportabilityBoard accession={accession} />
 
       {/* Antibiogram grid — Epic Beaker style: antibiotics × isolates */}
       <AntibiogramGrid accession={accession} />
