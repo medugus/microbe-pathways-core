@@ -3,9 +3,9 @@
 // performed server-side via applyExpertRulesServer so the browser cannot
 // fabricate phenotype flags.
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
-import { ANTIBIOTICS, getAntibiotic } from "../../config/antibiotics";
+import { ANTIBIOTICS, AST_PANELS, getASTPanel, getAntibiotic } from "../../config/antibiotics";
 import { PRIMARY_STANDARD, SECONDARY_STANDARD } from "../../config/breakpoints";
 import { buildASTResult } from "../../logic/astDrafting";
 import { ASTMethod } from "../../domain/enums";
@@ -33,13 +33,18 @@ const METHOD_OPTIONS: { code: ASTMethod; label: string }[] = [
 
 const GOVERNANCE_OPTIONS: ASTGovernanceState[] = ["draft", "interpreted", "approved", "released"];
 
+type EntryMode = "panel" | "single";
+
 export function ASTSection() {
   const accession = useActiveAccession();
+  const [entryMode, setEntryMode] = useState<EntryMode>("panel");
   const [isolateId, setIsolateId] = useState<string>("");
+  const [panelId, setPanelId] = useState<string>(AST_PANELS[0]?.id ?? "");
   const [antibioticCode, setAntibioticCode] = useState<string>(ANTIBIOTICS[0].code);
   const [method, setMethod] = useState<ASTMethod>(ASTMethod.DiskDiffusion);
   const [standard, setStandard] = useState<ASTStandard>(PRIMARY_STANDARD);
   const [rawValue, setRawValue] = useState<string>("");
+  const [panelSummary, setPanelSummary] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [appliedSummary, setAppliedSummary] = useState<string | null>(null);
@@ -54,6 +59,29 @@ export function ASTSection() {
 
   const isolates = accession.isolates;
   const activeIsolateId = isolateId || isolates[0]?.id || "";
+  const selectedPanel = getASTPanel(panelId) ?? AST_PANELS[0];
+
+  const panelMeta = useMemo(() => {
+    if (!selectedPanel || !activeIsolateId) {
+      return { pendingCodes: [] as string[], duplicateCount: 0 };
+    }
+
+    const pendingCodes: string[] = [];
+    let duplicateCount = 0;
+
+    for (const code of selectedPanel.codes) {
+      const alreadyExists = accession.ast.some(
+        (row) => row.isolateId === activeIsolateId && row.antibioticCode === code,
+      );
+      if (alreadyExists) {
+        duplicateCount += 1;
+      } else {
+        pendingCodes.push(code);
+      }
+    }
+
+    return { pendingCodes, duplicateCount };
+  }, [accession.ast, activeIsolateId, selectedPanel]);
 
   function onAdd() {
     if (!accession || !activeIsolateId) return;
@@ -69,6 +97,34 @@ export function ASTSection() {
     setRawValue("");
   }
 
+  function onAddPanel() {
+    if (!accession || !activeIsolateId || !selectedPanel) return;
+
+    let added = 0;
+    let duplicates = 0;
+    for (const code of selectedPanel.codes) {
+      const alreadyExists = accession.ast.some(
+        (row) => row.isolateId === activeIsolateId && row.antibioticCode === code,
+      );
+      if (alreadyExists) {
+        duplicates += 1;
+        continue;
+      }
+
+      const row = buildASTResult(accession, {
+        isolateId: activeIsolateId,
+        antibioticCode: code,
+        method,
+        standard,
+        rawValue: undefined,
+      });
+      meduguActions.addAST(accession.id, row);
+      added += 1;
+    }
+
+    setPanelSummary(`Added ${added} AST rows. Skipped ${duplicates} duplicates.`);
+  }
+
   if (isolates.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -76,7 +132,6 @@ export function ASTSection() {
       </p>
     );
   }
-
 
   async function applyExpertRules() {
     if (!accession) return;
@@ -113,7 +168,19 @@ export function ASTSection() {
     <div className="space-y-5">
       {/* Entry surface */}
       <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-background p-3 md:grid-cols-6">
-        <label className="md:col-span-2 text-xs">
+        <label className="text-xs md:col-span-2">
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Entry mode</span>
+          <select
+            value={entryMode}
+            onChange={(e) => setEntryMode(e.target.value as EntryMode)}
+            className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
+          >
+            <option value="panel">Panel</option>
+            <option value="single">Single row</option>
+          </select>
+        </label>
+
+        <label className="text-xs md:col-span-2">
           <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Isolate</span>
           <select
             value={activeIsolateId}
@@ -127,61 +194,140 @@ export function ASTSection() {
             ))}
           </select>
         </label>
-        <label className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Antibiotic</span>
-          <select
-            value={antibioticCode}
-            onChange={(e) => setAntibioticCode(e.target.value)}
-            className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
-          >
-            {ANTIBIOTICS.map((a) => (
-              <option key={a.code} value={a.code}>{a.display} ({a.code})</option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Method</span>
-          <select
-            value={method}
-            onChange={(e) => setMethod(e.target.value as ASTMethod)}
-            className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
-          >
-            {METHOD_OPTIONS.map((m) => (
-              <option key={m.code} value={m.code}>{m.label}</option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Standard</span>
-          <select
-            value={standard}
-            onChange={(e) => setStandard(e.target.value as ASTStandard)}
-            className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
-          >
-            <option value={PRIMARY_STANDARD}>{PRIMARY_STANDARD} (primary)</option>
-            <option value={SECONDARY_STANDARD}>{SECONDARY_STANDARD} (secondary)</option>
-          </select>
-        </label>
-        <label className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-            Raw value
-          </span>
-          <input
-            value={rawValue}
-            onChange={(e) => setRawValue(e.target.value)}
-            inputMode="decimal"
-            placeholder={method === ASTMethod.DiskDiffusion ? "mm" : "mg/L"}
-            className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
-          />
-        </label>
+
+        {entryMode === "panel" ? (
+          <>
+            <label className="text-xs md:col-span-2">
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Panel</span>
+              <select
+                value={selectedPanel?.id ?? ""}
+                onChange={(e) => setPanelId(e.target.value)}
+                className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
+              >
+                {AST_PANELS.map((panel) => (
+                  <option key={panel.id} value={panel.id}>{panel.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Method</span>
+              <select
+                value={method}
+                onChange={(e) => setMethod(e.target.value as ASTMethod)}
+                className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
+              >
+                {METHOD_OPTIONS.map((m) => (
+                  <option key={m.code} value={m.code}>{m.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Standard</span>
+              <select
+                value={standard}
+                onChange={(e) => setStandard(e.target.value as ASTStandard)}
+                className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
+              >
+                <option value={PRIMARY_STANDARD}>{PRIMARY_STANDARD} (primary)</option>
+                <option value={SECONDARY_STANDARD}>{SECONDARY_STANDARD} (secondary)</option>
+              </select>
+            </label>
+            <div className="md:col-span-4 flex items-end">
+              <button
+                type="button"
+                onClick={onAddPanel}
+                className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+              >
+                Add panel
+              </button>
+            </div>
+            <div className="md:col-span-6 rounded border border-border bg-card px-2 py-2 text-[11px] text-muted-foreground">
+              <div className="font-medium text-foreground">Panel preview</div>
+              <div className="mt-1">
+                Will add {panelMeta.pendingCodes.length} row(s); {panelMeta.duplicateCount} duplicate(s) detected for isolate.
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {selectedPanel?.codes.map((code) => (
+                  <span key={code} className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
+                    {getAntibiotic(code)?.display ?? code} ({code})
+                  </span>
+                ))}
+              </div>
+              {selectedPanel && selectedPanel.missingRequested.length > 0 && (
+                <div className="mt-2">
+                  <span className="font-medium text-foreground">Missing requested:</span>{" "}
+                  {selectedPanel.missingRequested.join(", ")}
+                </div>
+              )}
+            </div>
+            {panelSummary && (
+              <p className="md:col-span-6 text-[11px] text-muted-foreground">
+                {panelSummary}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <label className="text-xs">
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Antibiotic</span>
+              <select
+                value={antibioticCode}
+                onChange={(e) => setAntibioticCode(e.target.value)}
+                className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
+              >
+                {ANTIBIOTICS.map((a) => (
+                  <option key={a.code} value={a.code}>{a.display} ({a.code})</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Method</span>
+              <select
+                value={method}
+                onChange={(e) => setMethod(e.target.value as ASTMethod)}
+                className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
+              >
+                {METHOD_OPTIONS.map((m) => (
+                  <option key={m.code} value={m.code}>{m.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Standard</span>
+              <select
+                value={standard}
+                onChange={(e) => setStandard(e.target.value as ASTStandard)}
+                className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
+              >
+                <option value={PRIMARY_STANDARD}>{PRIMARY_STANDARD} (primary)</option>
+                <option value={SECONDARY_STANDARD}>{SECONDARY_STANDARD} (secondary)</option>
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+                Raw value
+              </span>
+              <input
+                value={rawValue}
+                onChange={(e) => setRawValue(e.target.value)}
+                inputMode="decimal"
+                placeholder={method === ASTMethod.DiskDiffusion ? "mm" : "mg/L"}
+                className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
+              />
+            </label>
+            <div className="md:col-span-6 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={onAdd}
+                className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+              >
+                Add AST row
+              </button>
+            </div>
+          </>
+        )}
+
         <div className="md:col-span-6 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={onAdd}
-            className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
-          >
-            Add AST row
-          </button>
           <button
             type="button"
             onClick={applyExpertRules}
