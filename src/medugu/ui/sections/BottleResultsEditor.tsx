@@ -13,6 +13,7 @@
 import { useMemo } from "react";
 import { meduguActions } from "../../store/useAccessionStore";
 import type { Accession, BloodBottleResult, BottleGrowthState, Isolate } from "../../domain/types";
+import { BottleIncubationBoard } from "./BottleIncubationBoard";
 
 const BOTTLE_LABEL: Record<string, string> = {
   AEROBIC: "Aerobic",
@@ -108,6 +109,7 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
 
   return (
     <div className="space-y-2">
+      <BottleIncubationBoard sets={sets} bottleResults={existing} />
       <div className="overflow-x-auto rounded border border-border">
         <table className="w-full text-xs">
           <thead className="bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
