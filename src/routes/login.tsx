@@ -79,6 +79,19 @@ function LoginPage() {
           Medugu microbiology workflow platform
         </p>
 
+        <div className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">Email verification</p>
+          <p className="mt-1">
+            New signups are auto-confirmed — you can sign in immediately after creating
+            your account. If sign-in fails with an "email not confirmed" message, request
+            a{" "}
+            <Link to="/forgot-password" className="underline font-medium text-primary">
+              password reset link
+            </Link>{" "}
+            to confirm your address and set a new password.
+          </p>
+        </div>
+
         <form onSubmit={onEmailSignIn} className="mt-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
