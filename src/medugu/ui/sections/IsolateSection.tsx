@@ -34,8 +34,7 @@ export function IsolateSection() {
   const [organismCode, setOrganismCode] = useState<string>(ORGANISMS[0].code);
   const [growthCode, setGrowthCode] = useState<string>("");
   const [colonyCount, setColonyCount] = useState<string>("");
-  const [purity, setPurity] = useState(false);
-  const [mixed, setMixed] = useState(false);
+  const [composition, setComposition] = useState<"" | "pure" | "mixed">("");
 
   const isoBlockers = useMemo(() => {
     if (!accession) return new Set<string>();
@@ -64,14 +63,13 @@ export function IsolateSection() {
     const iso = buildIsolate(accession, organismCode, {
       growthQuantifierCode: growthCode || undefined,
       colonyCountCfuPerMl: Number.isFinite(cfu) ? cfu : undefined,
-      purityFlag: purity || undefined,
-      mixedGrowth: mixed || undefined,
+      purityFlag: composition === "pure" ? true : undefined,
+      mixedGrowth: composition === "mixed" ? true : undefined,
       significance: suggestSignificance(accession, organismCode),
     });
     meduguActions.addIsolate(accession.id, iso);
     setColonyCount("");
-    setPurity(false);
-    setMixed(false);
+    setComposition("");
   }
 
   return (
@@ -154,14 +152,36 @@ export function IsolateSection() {
             className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
           />
         </label>
-        <label className="flex items-end gap-2 text-xs">
-          <input type="checkbox" checked={purity} onChange={(e) => setPurity(e.target.checked)} />
-          <span>Pure</span>
-        </label>
-        <label className="flex items-end gap-2 text-xs">
-          <input type="checkbox" checked={mixed} onChange={(e) => setMixed(e.target.checked)} />
-          <span>Mixed</span>
-        </label>
+        <fieldset className="text-xs">
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Composition</span>
+          <div className="mt-1 flex items-center gap-3">
+            <label className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                name="composition"
+                checked={composition === "pure"}
+                onChange={() => setComposition("pure")}
+              />
+              <span>Pure growth</span>
+            </label>
+            <label className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                name="composition"
+                checked={composition === "mixed"}
+                onChange={() => setComposition("mixed")}
+              />
+              <span>Mixed growth</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => setComposition("")}
+              className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Clear
+            </button>
+          </div>
+        </fieldset>
         <div className="md:col-span-6 flex items-center gap-3">
           <button
             type="button"
@@ -249,10 +269,12 @@ export function IsolateSection() {
                   <div className={`mt-3 rounded border p-2 ${srcMissing ? "border-destructive bg-destructive/5" : "border-border bg-background/40"}`}>
                     <div className="mb-1.5 flex items-center justify-between">
                       <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        Source linkage (positive set / bottle)
+                        Linked positive bottle(s) for this organism
                       </span>
                       {srcMissing && (
-                        <span className="text-[11px] text-destructive">link at least one positive bottle</span>
+                        <span className="text-[11px] text-destructive">
+                          Link this organism to at least one positive blood culture bottle before AST entry.
+                        </span>
                       )}
                     </div>
                     {positiveBottles.length === 0 ? (
@@ -310,29 +332,42 @@ function SourceLinkPicker({
   const links = isolate.bloodSourceLinks ?? [];
   const linkedSet = new Set(links.map((l) => sourceLinkKey(l.setNo, l.bottleType)));
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {positives.map((p) => {
-        const key = sourceLinkKey(p.setNo, p.bottleType);
-        const active = linkedSet.has(key);
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() =>
-              meduguActions.updateIsolate(accession, isolate.id, {
-                bloodSourceLinks: toggleSourceLink(isolate.bloodSourceLinks, p.setNo, p.bottleType),
-              })
-            }
-            className={`rounded border px-2 py-1 text-[11px] ${
-              active
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-background text-muted-foreground hover:border-primary/40"
-            }`}
-          >
-            Set {p.setNo} · {p.bottleType.toLowerCase()}
-          </button>
-        );
-      })}
+    <div className="space-y-2">
+      {links.length === 0 ? (
+        <p className="text-[11px] text-muted-foreground">No source bottle linked yet.</p>
+      ) : (
+        <p className="text-[11px] text-foreground">
+          Linked:{" "}
+          {positives
+            .filter((p) => linkedSet.has(sourceLinkKey(p.setNo, p.bottleType)))
+            .map((p) => `Set ${p.setNo} · ${p.bottleType.toLowerCase()}`)
+            .join(", ")}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-1.5">
+        {positives.map((p) => {
+          const key = sourceLinkKey(p.setNo, p.bottleType);
+          const active = linkedSet.has(key);
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() =>
+                meduguActions.updateIsolate(accession, isolate.id, {
+                  bloodSourceLinks: toggleSourceLink(isolate.bloodSourceLinks, p.setNo, p.bottleType),
+                })
+              }
+              className={`rounded border px-2 py-1 text-[11px] ${
+                active
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              {active ? "Linked · " : "Available · "}Set {p.setNo} · {p.bottleType.toLowerCase()}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
