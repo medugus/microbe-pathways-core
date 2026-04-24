@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IpcRouteImport } from './routes/ipc'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AmsRouteImport } from './routes/ams'
@@ -26,6 +28,11 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -34,6 +41,11 @@ const LoginRoute = LoginRouteImport.update({
 const IpcRoute = IpcRouteImport.update({
   id: '/ipc',
   path: '/ipc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuditRoute = AuditRouteImport.update({
@@ -82,8 +94,10 @@ export interface FileRoutesByFullPath {
   '/ams': typeof AmsRoute
   '/analytics': typeof AnalyticsRoute
   '/audit': typeof AuditRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
@@ -95,8 +109,10 @@ export interface FileRoutesByTo {
   '/ams': typeof AmsRoute
   '/analytics': typeof AnalyticsRoute
   '/audit': typeof AuditRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
@@ -109,8 +125,10 @@ export interface FileRoutesById {
   '/ams': typeof AmsRoute
   '/analytics': typeof AnalyticsRoute
   '/audit': typeof AuditRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
@@ -124,8 +142,10 @@ export interface FileRouteTypes {
     | '/ams'
     | '/analytics'
     | '/audit'
+    | '/forgot-password'
     | '/ipc'
     | '/login'
+    | '/reset-password'
     | '/signup'
     | '/admin/config'
     | '/admin/receivers'
@@ -137,8 +157,10 @@ export interface FileRouteTypes {
     | '/ams'
     | '/analytics'
     | '/audit'
+    | '/forgot-password'
     | '/ipc'
     | '/login'
+    | '/reset-password'
     | '/signup'
     | '/admin/config'
     | '/admin/receivers'
@@ -150,8 +172,10 @@ export interface FileRouteTypes {
     | '/ams'
     | '/analytics'
     | '/audit'
+    | '/forgot-password'
     | '/ipc'
     | '/login'
+    | '/reset-password'
     | '/signup'
     | '/admin/config'
     | '/admin/receivers'
@@ -164,8 +188,10 @@ export interface RootRouteChildren {
   AmsRoute: typeof AmsRoute
   AnalyticsRoute: typeof AnalyticsRoute
   AuditRoute: typeof AuditRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   IpcRoute: typeof IpcRoute
   LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   AdminConfigRoute: typeof AdminConfigRoute
   AdminReceiversRoute: typeof AdminReceiversRoute
@@ -182,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -194,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/ipc'
       fullPath: '/ipc'
       preLoaderRoute: typeof IpcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/audit': {
@@ -260,8 +300,10 @@ const rootRouteChildren: RootRouteChildren = {
   AmsRoute: AmsRoute,
   AnalyticsRoute: AnalyticsRoute,
   AuditRoute: AuditRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   IpcRoute: IpcRoute,
   LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   AdminConfigRoute: AdminConfigRoute,
   AdminReceiversRoute: AdminReceiversRoute,
