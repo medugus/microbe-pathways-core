@@ -93,6 +93,16 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
     persist(next);
   }
 
+  function linkedOrganisms(setNo: number, bottleType: string): string[] {
+    return accession.isolates
+      .filter((iso) =>
+        (iso.bloodSourceLinks ?? []).some(
+          (link) => link.setNo === setNo && link.bottleType === bottleType,
+        ),
+      )
+      .map((iso) => iso.organismDisplay);
+  }
+
   // Differential TTP hint (display-only, no clinical decision):
   // central-line bottle positive ≥ 2h before paired peripheral bottle in the
   // same isolate suggests CLABSI workup. We expose the gap so downstream rules
@@ -119,6 +129,7 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
               <th className="p-1.5 text-left">Growth</th>
               <th className="p-1.5 text-left">Positive at</th>
               <th className="p-1.5 text-left">TTP (h)</th>
+              <th className="p-1.5 text-left">Linked organism(s)</th>
             </tr>
           </thead>
           <tbody>
@@ -126,6 +137,7 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
               set.bottleTypes.map((bottle) => {
                 const row = findRow(set.setNo, bottle);
                 const growth = row?.growth ?? "pending";
+                const linked = linkedOrganisms(set.setNo, bottle);
                 return (
                   <tr key={`${set.setNo}-${bottle}`} className="border-t border-border align-middle">
                     <td className="p-1.5 font-mono text-foreground">
@@ -166,6 +178,13 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
                     </td>
                     <td className="p-1.5 font-mono text-muted-foreground">
                       {row?.ttpHours !== undefined ? `${row.ttpHours} h` : "—"}
+                    </td>
+                    <td className="p-1.5 text-[11px] text-muted-foreground">
+                      {linked.length === 0
+                        ? "none"
+                        : linked.length === 1
+                          ? linked[0]
+                          : linked.join("; ")}
                     </td>
                   </tr>
                 );
