@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthShell } from "@/auth/AuthHero";
+import { AuthCard } from "@/auth/AuthCard";
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
@@ -103,8 +104,8 @@ function LoginPage() {
 
   return (
     <AuthShell currentPage="login">
-      <div className="rounded-xl border border-border bg-card p-7 shadow-lg">
-        <h1 className="font-serif text-4xl tracking-tight text-foreground">Sign in</h1>
+      <AuthCard>
+        <h1 className="font-serif text-3xl tracking-tight text-foreground">Sign in</h1>
         <p className="mt-1 text-sm text-muted-foreground">Medugu microbiology workflow platform</p>
 
         <div className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
@@ -205,7 +206,7 @@ function LoginPage() {
             Create an account
           </Link>
         </p>
-      </div>
+      </AuthCard>
     </AuthShell>
   );
 }

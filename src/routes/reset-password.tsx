@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthShell } from "@/auth/AuthHero";
+import { AuthCard } from "@/auth/AuthCard";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -66,7 +67,7 @@ function ResetPasswordPage() {
 
   return (
     <AuthShell currentPage="reset">
-      <div className="w-full rounded-lg border border-border bg-card p-6 shadow-sm">
+      <AuthCard className="p-6">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Set new password</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {ready
@@ -119,7 +120,7 @@ function ResetPasswordPage() {
             Back to sign in
           </Link>
         </p>
-      </div>
+      </AuthCard>
     </AuthShell>
   );
 }

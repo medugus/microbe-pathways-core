@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthShell } from "@/auth/AuthHero";
+import { AuthCard } from "@/auth/AuthCard";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
@@ -40,8 +41,8 @@ function ForgotPasswordPage() {
 
   return (
     <AuthShell currentPage="forgot">
-      <div className="rounded-xl border border-border bg-card p-7 shadow-lg">
-        <h1 className="font-serif text-4xl tracking-tight text-foreground">Reset password</h1>
+      <AuthCard>
+        <h1 className="font-serif text-3xl tracking-tight text-foreground">Reset password</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Enter your email and we'll send you a reset link.
         </p>
@@ -76,7 +77,7 @@ function ForgotPasswordPage() {
             Back to sign in
           </Link>
         </p>
-      </div>
+      </AuthCard>
     </AuthShell>
   );
 }

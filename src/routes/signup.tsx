@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthShell } from "@/auth/AuthHero";
+import { AuthCard } from "@/auth/AuthCard";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -89,8 +90,8 @@ function SignupPage() {
 
   return (
     <AuthShell currentPage="signup">
-      <div className="rounded-xl border border-border bg-card p-7 shadow-lg">
-        <h1 className="font-serif text-4xl tracking-tight text-foreground">Create account</h1>
+      <AuthCard>
+        <h1 className="font-serif text-3xl tracking-tight text-foreground">Create account</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           The first user in a new lab becomes its administrator.
         </p>
@@ -194,7 +195,7 @@ function SignupPage() {
             Sign in
           </Link>
         </p>
-      </div>
+      </AuthCard>
     </AuthShell>
   );
 }
