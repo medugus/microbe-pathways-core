@@ -35,7 +35,7 @@ export function SectionPanel({
       >
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-foreground">{title}</h3>
             {badge && (
               <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
                 {badge}
