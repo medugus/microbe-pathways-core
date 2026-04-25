@@ -178,14 +178,14 @@
 }
 
 .dark {
-  /* Dark mode kept conservative and readable; same semantic chip mapping. */
-  --bg-app: #0b1220;
-  --bg-panel: #111a2b;
-  --bg-muted: #1a2538;
-  --text-main: #e6edf6;
-  --text-secondary: #a8b6c8;
-  --text-muted: #7a8aa0;
-  --border-strong: #2c3a52;
+  /* Dark mode — deeper bg, brighter ink */
+  --bg-app: #04080f;
+  --bg-panel: #0d1626;
+  --bg-muted: #182338;
+  --text-main: #f4f8ff;
+  --text-secondary: #becdde;
+  --text-muted: #8597ae;
+  --border-strong: #3a4a66;
 
   --background: var(--bg-app);
   --foreground: var(--text-main);
@@ -194,19 +194,19 @@
   --popover: var(--bg-panel);
   --popover-foreground: var(--text-main);
 
-  --primary: #5b8bbf;
-  --primary-foreground: #0b1220;
+  --primary: #7eb0e6;
+  --primary-foreground: #04080f;
   --secondary: var(--bg-muted);
   --secondary-foreground: var(--text-main);
   --muted: var(--bg-muted);
   --muted-foreground: var(--text-muted);
   --accent: var(--bg-muted);
   --accent-foreground: var(--text-main);
-  --destructive: #f97066;
-  --destructive-foreground: #0b1220;
-  --border: #243248;
-  --input: #243248;
-  --ring: #5b8bbf;
+  --destructive: #ff8a80;
+  --destructive-foreground: #04080f;
+  --border: #2c3b54;
+  --input: #2c3b54;
+  --ring: #7eb0e6;
 
   /* Chips: keep pale-on-dark by tinting with low opacity over panel */
   --success-bg: color-mix(in oklab, #1f7a4c 22%, var(--bg-panel));
