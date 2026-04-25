@@ -5,14 +5,17 @@
 
 import { useMemo, useState } from "react";
 import { AMS_BROWSER_PHASE_WARNING, AMS_POLICY } from "../../config/amsConfig";
+import { AMS_RULES } from "../../config/stewardshipRules";
 import { newId } from "../../domain/ids";
 import type { AMSApprovalRequest, ASTResult } from "../../domain/types";
 import { approvalStatusForRow, computeDueBy, findExpirableRequestIds, isRestrictedRow } from "../../logic/amsEngine";
+import { getRuleForAMSRecommendation } from "../../logic/amsRuleGovernance";
 import { resolveSpecimen } from "../../logic/specimenResolver";
 import { evaluateAMSRecommendation, evaluateStewardship } from "../../logic/stewardshipEngine";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
 import { AMSApprovalQueue } from "./AMSApprovalQueue";
 import { AMSRecommendationCard } from "./ams/AMSRecommendationCard";
+import { AMSRuleGovernancePanel } from "./ams/AMSRuleGovernancePanel";
 import { AMSSummaryStrip } from "./ams/AMSSummaryStrip";
 
 export function AMSSection() {
@@ -44,6 +47,7 @@ export function AMSSection() {
         if (!decision) return null;
         const approval = approvalStatusForRow(currentAccession, row.id);
         const recommendation = evaluateAMSRecommendation(currentAccession, row, decision, stewardship.byAst);
+        const governanceRule = getRuleForAMSRecommendation(recommendation, AMS_RULES);
         const isolate = currentAccession.isolates.find((i) => i.id === row.isolateId);
         return {
           row,
@@ -51,6 +55,7 @@ export function AMSSection() {
           decision,
           approval,
           recommendation,
+          governanceRuleCode: governanceRule?.ruleCode ?? recommendation.explanation.matchedRuleCode,
           restriction: decision.releaseClass === "restricted" ? "locally restricted" : "not locally restricted",
         };
       })
@@ -112,6 +117,8 @@ export function AMSSection() {
 
       <AMSSummaryStrip counts={summary} />
 
+      <AMSRuleGovernancePanel linkedRuleCodes={recommendationRows.map((entry) => entry.governanceRuleCode)} />
+
       <div className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-background p-3">
         <label className="text-xs">
           <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -156,6 +163,7 @@ export function AMSSection() {
               reason={entry.recommendation.reason}
               releaseImpact={entry.recommendation.releaseImpact}
               explanation={entry.recommendation.explanation}
+              governanceRuleCode={entry.governanceRuleCode}
             />
           ))}
         </div>

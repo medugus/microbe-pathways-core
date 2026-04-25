@@ -114,3 +114,154 @@ export function getSyndromePref(syndrome?: string | null): SyndromePreference | 
   if (!syndrome) return undefined;
   return SYNDROME_PREFERENCES.find((s) => s.syndrome === syndrome);
 }
+
+export type AMSRuleGovernanceStatus = "active" | "review_only" | "draft" | "disabled";
+export type AMSRuleCategory =
+  | "restricted_approval"
+  | "reserve_review"
+  | "bug_drug_mismatch"
+  | "de_escalation"
+  | "syndrome_specific"
+  | "reportability"
+  | "safety_review"
+  | "insufficient_data";
+export type AMSRuleOwner = "AMS" | "Microbiology" | "IPC" | "Joint";
+
+export interface AMSRuleDefinition {
+  ruleCode: string;
+  ruleCategory?: AMSRuleCategory;
+  governanceStatus?: AMSRuleGovernanceStatus;
+  ruleOwner?: AMSRuleOwner;
+  version?: string;
+  sourceLabel?: string;
+  reviewDate?: string;
+  lastReviewedBy?: string;
+  localPolicyRef?: string;
+  rationale?: string;
+  limitation?: string;
+  antibiotics?: string[];
+  awareScopes?: AWaRe[];
+  classes?: string[];
+  organismScopes?: string[];
+  phenotypeScopes?: string[];
+  specimenScopes?: string[];
+  syndromeScopes?: string[];
+  recommendationCategory?: string;
+  approvalRequired?: boolean;
+  releaseReportImpact?: string;
+}
+
+export const AMS_RULE_CONFIG_VERSION = "local-stewardship-2026.04";
+
+export const AMS_RULES: AMSRuleDefinition[] = [
+  {
+    ruleCode: "AMS_RESTRICTED_APPROVAL",
+    ruleCategory: "restricted_approval",
+    governanceStatus: "active",
+    ruleOwner: "AMS",
+    version: "1.0.0",
+    sourceLabel: "Local stewardship configuration",
+    reviewDate: "2026-03-20",
+    lastReviewedBy: "AMS pharmacist",
+    localPolicyRef: "AMS-Restricted-Release-v1",
+    rationale: "Restricted agents require AMS approval before clinician release where configured.",
+    limitation: "Browser-phase visibility only; production editing requires backend audit and permissions.",
+    awareScopes: ["Watch", "Reserve"],
+    recommendationCategory: "restricted_approval_required",
+    approvalRequired: true,
+    releaseReportImpact: "Clinician release may be withheld pending AMS decision.",
+  },
+  {
+    ruleCode: "AMS_RESERVE_REVIEW",
+    ruleCategory: "reserve_review",
+    governanceStatus: "active",
+    ruleOwner: "AMS",
+    version: "1.0.0",
+    sourceLabel: "Local stewardship configuration",
+    reviewDate: "2026-03-20",
+    lastReviewedBy: "AMS pharmacist",
+    localPolicyRef: "AMS-Reserve-Review-v1",
+    rationale: "Reserve agents receive additional AMS review signals.",
+    awareScopes: ["Reserve"],
+    recommendationCategory: "reserve_review",
+    approvalRequired: true,
+    releaseReportImpact: "Reserve rows are highlighted for review and may require approval.",
+  },
+  {
+    ruleCode: "AMS_BUG_DRUG_R",
+    ruleCategory: "bug_drug_mismatch",
+    governanceStatus: "active",
+    ruleOwner: "Joint",
+    version: "1.0.0",
+    sourceLabel: "Local stewardship configuration",
+    reviewDate: "2026-03-20",
+    lastReviewedBy: "AMS pharmacist",
+    rationale: "Therapy under review with resistant result should trigger mismatch review.",
+    recommendationCategory: "bug_drug_mismatch",
+    releaseReportImpact: "No direct report suppression; stewardship review signal.",
+  },
+  {
+    ruleCode: "AMS_BUG_DRUG_SPECTRUM",
+    ruleCategory: "bug_drug_mismatch",
+    governanceStatus: "review_only",
+    ruleOwner: "Joint",
+    version: "1.0.0",
+    sourceLabel: "Local stewardship configuration",
+    reviewDate: "2026-03-20",
+    lastReviewedBy: "Microbiology consultant",
+    rationale: "Spectrum mismatch between organism gram context and selected therapy.",
+    recommendationCategory: "bug_drug_mismatch",
+    releaseReportImpact: "No direct report suppression; stewardship review signal.",
+  },
+  {
+    ruleCode: "AMS_DE_ESCALATION_ACTIVE_NARROW",
+    ruleCategory: "de_escalation",
+    governanceStatus: "active",
+    ruleOwner: "AMS",
+    version: "1.0.0",
+    sourceLabel: "Local stewardship configuration",
+    reviewDate: "2026-03-20",
+    lastReviewedBy: "AMS pharmacist",
+    rationale: "Narrower active options are highlighted where clinically appropriate.",
+    recommendationCategory: "de_escalation_opportunity",
+    releaseReportImpact: "Advisory only; no automatic prescribing changes.",
+  },
+  {
+    ruleCode: "AMS_RESISTANT_REVIEW",
+    ruleCategory: "safety_review",
+    governanceStatus: "active",
+    ruleOwner: "Joint",
+    version: "1.0.0",
+    sourceLabel: "Local stewardship configuration",
+    reviewDate: "2026-03-20",
+    lastReviewedBy: "Microbiology consultant",
+    rationale: "Intermediate or increased-exposure interpretations require review.",
+    recommendationCategory: "resistant_result_review",
+    releaseReportImpact: "No direct report suppression; review signal.",
+  },
+  {
+    ruleCode: "AMS_CONTINUE_OR_NO_ACTION",
+    ruleCategory: "insufficient_data",
+    governanceStatus: "draft",
+    ruleOwner: "AMS",
+    version: "1.0.0-draft",
+    sourceLabel: "Local stewardship configuration",
+    reviewDate: "2026-03-20",
+    lastReviewedBy: "AMS pharmacist",
+    recommendationCategory: "continue_or_no_action",
+    releaseReportImpact: "No additional release impact.",
+  },
+  {
+    ruleCode: "AMS_REVIEW_RULE",
+    ruleCategory: "reportability",
+    governanceStatus: "disabled",
+    ruleOwner: "AMS",
+    version: "0.9.0",
+    sourceLabel: "Legacy fallback",
+    reviewDate: "2026-03-20",
+    lastReviewedBy: "AMS pharmacist",
+    limitation: "Disabled support is metadata only pending engine enforcement.",
+    recommendationCategory: "insufficient_data",
+    releaseReportImpact: "Fallback metadata only.",
+  },
+];
