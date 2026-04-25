@@ -54,7 +54,7 @@ export function IPCLocalOutbreakWatch({
               <p className="text-muted-foreground">Raw case count: {item.rawCaseCount}</p>
               <p className="text-muted-foreground">Window: {item.windowDays} days</p>
               <p className="break-all text-muted-foreground">
-                Related accessions: {item.relatedAccessions.join(", ")}
+                Related loaded cases: {item.relatedAccessions.join(", ")}
               </p>
               <p className="text-muted-foreground">
                 Suggested IPC review action: {item.recommendedAction}
