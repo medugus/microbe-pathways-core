@@ -54,7 +54,7 @@ export function AppShell() {
       <SoundTriggerGate />
       <CaseManager />
 
-      <main className="flex h-screen min-w-0 flex-col overflow-hidden">
+      <main className="flex min-h-screen min-w-0 flex-col overflow-hidden">
         <header className="border-b border-border bg-card px-6 py-3">
           {accession ? (
             <div className="flex items-baseline justify-between gap-4">
