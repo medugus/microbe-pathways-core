@@ -115,56 +115,56 @@
   --popover: var(--bg-panel);
   --popover-foreground: var(--text-main);
 
-  /* Core identity */
-  --primary: #1f4e79;
+  /* Core identity — deeper, more saturated */
+  --primary: #0b3a66;
   --primary-foreground: #ffffff;
   --secondary: var(--bg-muted);
   --secondary-foreground: var(--text-main);
-  --secondary-teal: #0f766e;
+  --secondary-teal: #0a5d56;
   --accent: var(--bg-muted);
   --accent-foreground: var(--text-main);
-  --accent-indigo: #4f46e5;
+  --accent-indigo: #3b30d4;
 
   --muted: var(--bg-muted);
   --muted-foreground: var(--text-muted);
 
-  --destructive: #b42318;
+  --destructive: #971810;
   --destructive-foreground: #ffffff;
-  --border: #d7e0ea;
-  --input: #d7e0ea;
-  --ring: #1f4e79;
+  --border: #b8c5d6;
+  --input: #b8c5d6;
+  --ring: #0b3a66;
 
-  /* Semantic states */
-  --success: #1f7a4c;
-  --success-bg: #eaf7ef;
-  --warning: #b7791f;
-  --warning-bg: #fff6e6;
-  --danger: #b42318;
-  --danger-bg: #fdecec;
-  --info: #2563eb;
-  --info-bg: #eaf2ff;
-  --restricted: #7c3aed;
-  --restricted-bg: #f3ecff;
-  --withheld: #475467;
-  --withheld-bg: #f2f4f7;
-  --ipc-alert: #c2410c;
-  --ipc-alert-bg: #fff1e8;
-  --ams-pending: #a16207;
-  --ams-pending-bg: #fef7e6;
-  --ams-approved: #166534;
-  --ams-approved-bg: #eaf7ef;
-  --ams-denied: #9f1239;
-  --ams-denied-bg: #fce7f3;
-  --draft: #64748b;
-  --released: #1f7a4c;
-  --amended: #0f766e;
+  /* Semantic states — punchier text on cleaner pale fills */
+  --success: #0f5d36;
+  --success-bg: #d8f1e2;
+  --warning: #8a5a10;
+  --warning-bg: #ffe9bf;
+  --danger: #971810;
+  --danger-bg: #fcd7d4;
+  --info: #1547c4;
+  --info-bg: #d8e4ff;
+  --restricted: #5b21b6;
+  --restricted-bg: #e9dcff;
+  --withheld: #2f3b4d;
+  --withheld-bg: #e2e7f0;
+  --ipc-alert: #9a3208;
+  --ipc-alert-bg: #ffdfc7;
+  --ams-pending: #7a4a05;
+  --ams-pending-bg: #ffeec2;
+  --ams-approved: #0f5331;
+  --ams-approved-bg: #d8f1e2;
+  --ams-denied: #831038;
+  --ams-denied-bg: #fcd5e6;
+  --draft: #475569;
+  --released: #0f5d36;
+  --amended: #0a5d56;
 
-  /* Charts — clinical, desaturated */
-  --chart-1: #1f4e79;
-  --chart-2: #0f766e;
-  --chart-3: #b7791f;
-  --chart-4: #7c3aed;
-  --chart-5: #c2410c;
+  /* Charts — more saturated, distinct hues */
+  --chart-1: #0b3a66;
+  --chart-2: #0a5d56;
+  --chart-3: #a8650f;
+  --chart-4: #5b21b6;
+  --chart-5: #9a3208;
 
   /* Sidebar mirrors panel */
   --sidebar: var(--bg-panel);
