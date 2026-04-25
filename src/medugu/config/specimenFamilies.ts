@@ -78,6 +78,8 @@ export const SPECIMEN_FAMILIES: FamilyDef[] = [
       { code: "COL_MRSA_GROIN", display: "MRSA groin screen", tags: ["screen", "mrsa"] },
       { code: "COL_VRE_RECTAL", display: "VRE rectal screen", tags: ["screen", "vre"] },
       { code: "COL_CPE_RECTAL", display: "CPE rectal screen", tags: ["screen", "cpe"] },
+      { code: "COL_CRAB_SCREEN", display: "CRAB screen", tags: ["screen", "crab"] },
+      { code: "COL_CRPA_SCREEN", display: "CRPA screen", tags: ["screen", "crpa"] },
       { code: "COL_CANDIDA_AURIS", display: "C. auris screen", tags: ["screen", "candida_auris"] },
     ],
   },
