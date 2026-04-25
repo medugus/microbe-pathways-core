@@ -98,14 +98,14 @@
 :root {
   --radius: 0.5rem;
 
-  /* Base neutrals */
-  --bg-app: #f6f8fb;
+  /* Base neutrals — higher contrast */
+  --bg-app: #eef2f8;
   --bg-panel: #ffffff;
-  --bg-muted: #eef2f7;
-  --text-main: #102033;
-  --text-secondary: #4b5d73;
-  --text-muted: #6f8197;
-  --border-strong: #b7c4d3;
+  --bg-muted: #dde6f1;
+  --text-main: #06101f;
+  --text-secondary: #2a3b54;
+  --text-muted: #54677e;
+  --border-strong: #8fa1b8;
 
   /* shadcn base bindings */
   --background: var(--bg-app);
