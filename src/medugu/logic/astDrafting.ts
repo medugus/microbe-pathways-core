@@ -54,6 +54,7 @@ function interpretDiskAgainstBreakpoint(
 ): ASTInterpretation | undefined {
   if (!bp) return undefined;
   if (bp.susceptibleMinMm !== undefined && rawValue >= bp.susceptibleMinMm) return "S";
+  if (bp.resistantLessThanMm !== undefined && rawValue < bp.resistantLessThanMm) return "R";
   if (bp.resistantMaxMm !== undefined && rawValue <= bp.resistantMaxMm) return "R";
   return "I";
 }
@@ -64,6 +65,7 @@ function interpretMICAgainstBreakpoint(
 ): ASTInterpretation | undefined {
   if (!bp) return undefined;
   if (bp.susceptibleMaxMgL !== undefined && rawValue <= bp.susceptibleMaxMgL) return "S";
+  if (bp.resistantGreaterThanMgL !== undefined && rawValue > bp.resistantGreaterThanMgL) return "R";
   if (bp.resistantMinMgL !== undefined && rawValue >= bp.resistantMinMgL) return "R";
   return "I";
 }
