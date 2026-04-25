@@ -8,6 +8,7 @@ import { IPCSummaryStrip } from "./ipc/IPCSummaryStrip";
 import { IPCSignalCard } from "./ipc/IPCSignalCard";
 import { IPCColonisationTracker } from "./ipc/IPCColonisationTracker";
 import { IPCLocalOutbreakWatch } from "./ipc/IPCLocalOutbreakWatch";
+import { IPCOfficerQueue } from "./ipc/IPCOfficerQueue";
 
 export function IPCSection() {
   const accession = useActiveAccession();
@@ -73,6 +74,8 @@ export function IPCSection() {
         episodeCounts={episodeCounts}
         localWatchSummary={data.localWatchSummary}
       />
+
+      <IPCOfficerQueue accession={accession} allAccessions={state.accessions} />
 
       {data.decisions.length === 0 ? (
         <div className="space-y-2 rounded-md border border-border bg-card p-4">
