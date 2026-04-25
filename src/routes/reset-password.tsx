@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AuthShell } from "@/auth/AuthHero";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -64,11 +65,9 @@ function ResetPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Set new password
-        </h1>
+    <AuthShell currentPage="reset">
+      <div className="w-full rounded-lg border border-border bg-card p-6 shadow-sm">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Set new password</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {ready
             ? "Choose a new password for your account."
@@ -121,6 +120,6 @@ function ResetPasswordPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

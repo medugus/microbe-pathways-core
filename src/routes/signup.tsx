@@ -52,8 +52,7 @@ function SignupPage() {
     const tenantSlug = labName.trim() ? slugify(labName) : "";
     const tenantName = labName.trim() || undefined;
 
-    const redirectUrl =
-      typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
+    const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
 
     const { error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
@@ -89,11 +88,9 @@ function SignupPage() {
   };
 
   return (
-    <AuthShell>
+    <AuthShell currentPage="signup">
       <div className="rounded-xl border border-border bg-card p-7 shadow-lg">
-        <h1 className="font-serif text-4xl tracking-tight text-foreground">
-          Create account
-        </h1>
+        <h1 className="font-serif text-4xl tracking-tight text-foreground">Create account</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           The first user in a new lab becomes its administrator.
         </p>
@@ -120,9 +117,8 @@ function SignupPage() {
               placeholder="e.g. AMCE Microbiology"
             />
             <p className="text-xs text-muted-foreground">
-              You will be the admin for this workspace. Existing users at the same
-              lab should ask the admin to invite them rather than creating a new
-              workspace.
+              You will be the admin for this workspace. Existing users at the same lab should ask
+              the admin to invite them rather than creating a new workspace.
             </p>
           </div>
           <div className="space-y-2">
@@ -161,13 +157,12 @@ function SignupPage() {
             >
               <p className="font-medium text-foreground">Account created</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Email verification is currently auto-confirmed for this workspace, so
-                you can{" "}
+                Email verification is currently auto-confirmed for this workspace, so you can{" "}
                 <Link to="/login" className="underline font-medium text-primary">
                   sign in now
                 </Link>
-                . If a confirmation email is required, check your inbox (and spam
-                folder) for the link before signing in.
+                . If a confirmation email is required, check your inbox (and spam folder) for the
+                link before signing in.
               </p>
             </div>
           )}

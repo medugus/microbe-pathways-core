@@ -28,29 +28,20 @@ function ForgotPasswordPage() {
     setInfo(null);
     setBusy(true);
     const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/reset-password`
-        : undefined;
-    const { error: err } = await supabase.auth.resetPasswordForEmail(
-      email.trim(),
-      { redirectTo },
-    );
+      typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined;
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
     setBusy(false);
     if (err) {
       setError(err.message);
       return;
     }
-    setInfo(
-      "If an account exists for that email, a reset link has been sent. Check your inbox.",
-    );
+    setInfo("If an account exists for that email, a reset link has been sent. Check your inbox.");
   };
 
   return (
-    <AuthShell>
+    <AuthShell currentPage="forgot">
       <div className="rounded-xl border border-border bg-card p-7 shadow-lg">
-        <h1 className="font-serif text-4xl tracking-tight text-foreground">
-          Reset password
-        </h1>
+        <h1 className="font-serif text-4xl tracking-tight text-foreground">Reset password</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Enter your email and we'll send you a reset link.
         </p>

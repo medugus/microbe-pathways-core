@@ -32,9 +32,7 @@ function LoginPage() {
   // infinite redirect chain when the guard kicks in before the session loads.
   const rawRedirect = search.redirect ?? "/";
   const redirectTo =
-    rawRedirect.startsWith("/login") || rawRedirect.startsWith("/signup")
-      ? "/"
-      : rawRedirect;
+    rawRedirect.startsWith("/login") || rawRedirect.startsWith("/signup") ? "/" : rawRedirect;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -104,19 +102,16 @@ function LoginPage() {
   };
 
   return (
-    <AuthShell>
+    <AuthShell currentPage="login">
       <div className="rounded-xl border border-border bg-card p-7 shadow-lg">
         <h1 className="font-serif text-4xl tracking-tight text-foreground">Sign in</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Medugu microbiology workflow platform
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">Medugu microbiology workflow platform</p>
 
         <div className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
           <p className="font-medium text-foreground">Email verification</p>
           <p className="mt-1">
-            New signups are auto-confirmed — you can sign in immediately after creating
-            your account. If sign-in fails with an "email not confirmed" message, request
-            a{" "}
+            New signups are auto-confirmed — you can sign in immediately after creating your
+            account. If sign-in fails with an "email not confirmed" message, request a{" "}
             <Link to="/forgot-password" className="underline font-medium text-primary">
               password reset link
             </Link>{" "}
@@ -157,8 +152,8 @@ function LoginPage() {
               <p className="font-medium">{error}</p>
               {/email not confirmed|confirm.*email|not.*verified/i.test(error) && (
                 <p className="mt-1 text-xs text-destructive/90">
-                  Your email hasn't been verified yet. Check your inbox (and spam folder)
-                  for the confirmation link, or use{" "}
+                  Your email hasn't been verified yet. Check your inbox (and spam folder) for the
+                  confirmation link, or use{" "}
                   <Link to="/forgot-password" className="underline font-medium">
                     Forgot password
                   </Link>{" "}
@@ -182,10 +177,7 @@ function LoginPage() {
               />
               <span className="font-medium">Remember me</span>
             </label>
-            <Link
-              to="/forgot-password"
-              className="font-medium text-primary hover:underline"
-            >
+            <Link to="/forgot-password" className="font-medium text-primary hover:underline">
               Forgot password?
             </Link>
           </div>
