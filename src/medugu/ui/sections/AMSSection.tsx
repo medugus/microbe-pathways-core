@@ -34,6 +34,14 @@ const STATUS_LABEL: Record<AMSApprovalStatus, string> = {
   expired: "Expired",
 };
 
+function awareChip(aware: string | undefined): { label: string; tone: string } {
+  const normalized = (aware ?? "").trim().toLowerCase();
+  if (normalized === "access") return { label: "Access", tone: "chip chip-square chip-success" };
+  if (normalized === "watch") return { label: "Watch", tone: "chip chip-square chip-warning" };
+  if (normalized === "reserve") return { label: "Reserve", tone: "chip chip-square chip-danger" };
+  return { label: "Unclassified", tone: "chip chip-square chip-neutral" };
+}
+
 export function AMSSection() {
   const accession = useActiveAccession();
   const [actor, setActor] = useState("AMS pharmacist");
@@ -125,6 +133,7 @@ export function AMSSection() {
             const latest = latestApprovalForRow(accession, row.id);
             const sw = getStewardship(row.antibioticCode);
             const ab = getAntibiotic(row.antibioticCode);
+            const aware = awareChip(sw?.aware);
             const overdue =
               latest?.status === "pending" &&
               latest.dueBy !== undefined &&
@@ -138,8 +147,8 @@ export function AMSSection() {
                       <span className="ml-2 text-[10px] text-muted-foreground">
                         {row.antibioticCode}
                       </span>
-                      <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                        {sw?.aware ?? "—"}
+                      <span className={`ml-2 ${aware.tone}`}>
+                        {aware.label}
                       </span>
                     </div>
                     <div className="text-[11px] text-muted-foreground">
