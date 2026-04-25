@@ -1,0 +1,75 @@
+import type { IPCDecision } from "../../../logic/ipcEngine";
+import type { IPCSignal } from "../../../domain/types";
+import { getOrganism } from "../../../config/organisms";
+import { IPCActionChecklist } from "./IPCActionChecklist";
+import { IPCRuleExplanation } from "./IPCRuleExplanation";
+
+interface IPCSignalCardProps {
+  decision: IPCDecision;
+  signal?: IPCSignal;
+  specimenContext: string;
+  ward?: string;
+  ruleVersion?: string;
+}
+
+function severityForDecision(d: IPCDecision): "high" | "review" | "routine" {
+  if (d.timing === "immediate") return "high";
+  if (d.timing === "same_shift" || d.timing === "within_24h") return "review";
+  return "routine";
+}
+
+function statusForSignal(signal?: IPCSignal): "open" | "acknowledged" {
+  if (!signal) return "open";
+  return signal.acknowledgedAt ? "acknowledged" : "open";
+}
+
+const CARD_TONE: Record<string, string> = {
+  high: "border-l-4 border-l-destructive",
+  review: "border-l-4 border-l-amber-500",
+  routine: "border-l-4 border-l-primary/50",
+};
+
+export function IPCSignalCard({ decision, signal, specimenContext, ward, ruleVersion }: IPCSignalCardProps) {
+  const severity = severityForDecision(decision);
+  const status = statusForSignal(signal);
+  const organismLabel = decision.organismCode ? (getOrganism(decision.organismCode)?.display ?? decision.organismCode) : "not available";
+  const episodeStatus = decision.isNewEpisode ? "new episode" : "repeat episode";
+  const triggerReason = [
+    `organism: ${organismLabel}`,
+    `phenotype: ${decision.phenotypes.length ? decision.phenotypes.join(", ") : "not available"}`,
+    `specimen: ${specimenContext}`,
+  ].join(" · ");
+
+  return (
+    <article className={`space-y-2 rounded-md border border-border bg-card p-3 ${CARD_TONE[severity]}`}>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{decision.ruleCode}</code>
+        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">severity: {severity}</span>
+        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">status: {status}</span>
+        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{episodeStatus}</span>
+      </div>
+
+      <p className="text-sm text-foreground">{decision.message}</p>
+      <p className="text-xs text-muted-foreground">Organism / phenotype: {organismLabel}{decision.phenotypes.length ? ` · ${decision.phenotypes.join(", ")}` : ""}</p>
+      <p className="text-xs text-muted-foreground">Specimen context: {specimenContext}</p>
+      <p className="text-xs text-muted-foreground">Ward/location context: {ward || "not available"}</p>
+      <p className="text-xs text-muted-foreground">Trigger reason: {triggerReason}</p>
+      <p className="text-xs text-muted-foreground">Required action summary: {decision.actions.map((a) => a.replaceAll("_", " ")).join(", ") || "not available"}</p>
+      <p className="text-xs text-muted-foreground">Notification targets: {decision.notify.join(", ") || "not available"}</p>
+      <p className="text-xs text-muted-foreground">Escalation timing: {decision.timing.replaceAll("_", " ")}</p>
+      {decision.clearanceProgress && (
+        <p className="text-xs text-muted-foreground">Clearance case context: {decision.clearanceProgress.negativeCount}/{decision.clearanceProgress.required} negative screens</p>
+      )}
+      {decision.priorAccessionIds && decision.priorAccessionIds.length > 0 && (
+        <p className="text-xs text-muted-foreground">Prior episode accessions: {decision.priorAccessionIds.join(", ")}</p>
+      )}
+
+      <IPCActionChecklist
+        actions={decision.actions}
+        acknowledgedAt={signal?.acknowledgedAt}
+        acknowledgedBy={signal?.acknowledgedBy}
+      />
+      <IPCRuleExplanation decision={decision} specimenContext={specimenContext} ward={ward} ruleVersion={ruleVersion} />
+    </article>
+  );
+}
