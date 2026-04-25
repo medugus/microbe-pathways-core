@@ -31,6 +31,38 @@ export interface IPCReport {
   signals: IPCSignal[];
 }
 
+const DEFAULT_SPECIMEN_IPC_ADVICE =
+  "Review IPC implications according to organism, phenotype, clinical syndrome, and local policy.";
+
+const SPECIMEN_IPC_ADVICE_BY_FAMILY: Record<string, string> = {
+  BLOOD:
+    "Bloodstream isolate: review source, line association, placement precautions, and repeat culture pathway according to local policy.",
+  URINE:
+    "Urine isolate: interpret with symptoms and catheter status. Escalate IPC primarily when alert organism, MDRO, CRE/CPE, VRE, MRSA, or outbreak context is present.",
+  LRT:
+    "Respiratory specimen: assess droplet/airborne/contact precautions according to organism, transmissibility, and local respiratory isolation policy.",
+  STERILE_FLUID:
+    "Sterile-site isolate: urgent clinical awareness; escalate IPC if alert organism or transmissible/resistant phenotype is present.",
+  COLONISATION:
+    "Screening specimen: treat as colonisation/surveillance context unless clinical infection is documented; follow local screening and decolonisation pathway where applicable.",
+};
+
+const SPECIMEN_IPC_CONTEXT_BY_FAMILY: Record<string, string> = {
+  BLOOD: "bloodstream isolate",
+  URINE: "urine specimen",
+  LRT: "respiratory specimen",
+  STERILE_FLUID: "sterile-site specimen",
+  COLONISATION: "screening specimen",
+};
+
+export function getSpecimenIPCAdvice(accession: Accession, _decision?: IPCDecision): string {
+  return SPECIMEN_IPC_ADVICE_BY_FAMILY[accession.specimen.familyCode] ?? DEFAULT_SPECIMEN_IPC_ADVICE;
+}
+
+export function getSpecimenIPCContext(accession: Accession): string {
+  return SPECIMEN_IPC_CONTEXT_BY_FAMILY[accession.specimen.familyCode] ?? "other/unknown specimen";
+}
+
 function flagFor(rule: IPCRule): IPCFlag {
   if (["CRE_ALERT", "CRAB_ALERT", "CRPA_ALERT"].includes(rule.ruleCode)) {
     return IPCFlag.CarbapenemResistant;
