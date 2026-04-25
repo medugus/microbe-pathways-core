@@ -35,24 +35,38 @@ export function draftInterpretation(
   input: DraftASTInput,
 ): ASTInterpretation | undefined {
   if (input.rawValue === undefined || !isolate) return undefined;
+
   const group = getOrganism(isolate.organismCode)?.group;
   const standard = input.standard ?? PRIMARY_STANDARD;
 
   if (input.method === "disk_diffusion") {
     const bp = findDiskBreakpoint(group, input.antibioticCode, standard);
-    if (!bp) return undefined;
-    if (bp.susceptibleMinMm !== undefined && input.rawValue >= bp.susceptibleMinMm) return "S";
-    if (bp.resistantMaxMm !== undefined && input.rawValue <= bp.resistantMaxMm) return "R";
-    return "I";
+    return interpretDiskAgainstBreakpoint(input.rawValue, bp);
   }
-  // MIC family
+
   const bp = findMICBreakpoint(group, input.antibioticCode, standard);
+  return interpretMICAgainstBreakpoint(input.rawValue, bp);
+}
+
+function interpretDiskAgainstBreakpoint(
+  rawValue: number,
+  bp: ReturnType<typeof findDiskBreakpoint> | undefined,
+): ASTInterpretation | undefined {
   if (!bp) return undefined;
-  if (bp.susceptibleMaxMgL !== undefined && input.rawValue <= bp.susceptibleMaxMgL) return "S";
-  if (bp.resistantMinMgL !== undefined && input.rawValue >= bp.resistantMinMgL) return "R";
+  if (bp.susceptibleMinMm !== undefined && rawValue >= bp.susceptibleMinMm) return "S";
+  if (bp.resistantMaxMm !== undefined && rawValue <= bp.resistantMaxMm) return "R";
   return "I";
 }
 
+function interpretMICAgainstBreakpoint(
+  rawValue: number,
+  bp: ReturnType<typeof findMICBreakpoint> | undefined,
+): ASTInterpretation | undefined {
+  if (!bp) return undefined;
+  if (bp.susceptibleMaxMgL !== undefined && rawValue <= bp.susceptibleMaxMgL) return "S";
+  if (bp.resistantMinMgL !== undefined && rawValue >= bp.resistantMinMgL) return "R";
+  return "I";
+}
 export function buildASTResult(accession: Accession, input: DraftASTInput): ASTResult {
   const isolate = accession.isolates.find((i) => i.id === input.isolateId);
   const standard: ASTStandard = input.standard ?? PRIMARY_STANDARD;
