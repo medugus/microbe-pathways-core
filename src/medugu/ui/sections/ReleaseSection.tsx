@@ -20,6 +20,7 @@ import { ReleaseGate } from "./ReleaseGate";
 import { ReleaseSealPanel } from "./ReleaseSealPanel";
 import { AmendmentPanel } from "./AmendmentPanel";
 import { ReleaseHistoryEmbed } from "./ReleaseHistoryEmbed";
+import { deriveIPCReleaseContext } from "../../logic/ipcReportGovernance";
 
 export function ReleaseSection() {
   const accession = useActiveAccession();
@@ -71,6 +72,7 @@ export function ReleaseSection() {
   const released =
     accession.release.state === ReleaseState.Released ||
     accession.release.state === ReleaseState.Amended;
+  const ipcReleaseContext = deriveIPCReleaseContext(accession);
 
   function advance(to: WorkflowStage) {
     if (!accession) return;
@@ -223,6 +225,31 @@ export function ReleaseSection() {
       {/* Validation source badge */}
       <ValidationSourceBadge validation={validation} />
 
+
+
+      {ipcReleaseContext && (
+        <section className="rounded-md border border-border bg-card p-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            IPC release context
+          </h4>
+          <div className="mt-2 flex flex-wrap gap-2 text-xs">
+            <span className="rounded bg-muted px-2 py-1 text-muted-foreground">
+              {ipcReleaseContext.signalCount} open signal(s)
+            </span>
+            <span className="rounded bg-muted px-2 py-1 text-muted-foreground">
+              {ipcReleaseContext.highPriorityCount} high-priority
+            </span>
+            <span className="rounded bg-muted px-2 py-1 text-muted-foreground">
+              {ipcReleaseContext.openActionCount} open IPC action(s)
+            </span>
+            {ipcReleaseContext.hasReleaseBlockingRule && (
+              <span className="rounded bg-destructive/15 px-2 py-1 text-destructive">
+                release-blocking IPC rule present
+              </span>
+            )}
+          </div>
+        </section>
+      )}
       <ReleaseGate
         accession={accession}
         validationReport={v}

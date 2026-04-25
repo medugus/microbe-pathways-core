@@ -24,6 +24,9 @@ export type IPCRuleCategory =
   | "notification"
   | "review";
 export type IPCRuleOwner = "IPC" | "Microbiology" | "AMS" | "Joint";
+export type IPCReportVisibility = "internal_only" | "clinician_report" | "export_only" | "none";
+export type IPCReleaseImpact = "none" | "warning" | "blocker";
+export type IPCValidationSeverity = "info" | "warning" | "blocker";
 
 export const IPC_RULES_CONFIG_VERSION = "local-ipc-rules.v1.0.0";
 
@@ -52,6 +55,14 @@ export interface IPCRule {
   localPolicyRef?: string;
   rationale?: string;
   limitation?: string;
+  /** IPC note visibility governance for clinician-facing report surfaces. */
+  reportVisibility?: IPCReportVisibility;
+  /** Release review implication for open signals emitted by this rule. */
+  releaseImpact?: IPCReleaseImpact;
+  /** Validation severity mapping for this rule when a signal is open. */
+  validationSeverity?: IPCValidationSeverity;
+  /** Explicit clinician-facing IPC text. Required when reportVisibility=clinician_report. */
+  clinicianReportText?: string;
 }
 
 export const IPC_RULES: IPCRule[] = [
@@ -264,6 +275,8 @@ export const IPC_RULES: IPCRule[] = [
     version: "1.0.0",
     localPolicyRef: "IPC-CAURIS-ALERT",
     rationale: "Immediate escalation for high-priority organism alert.",
+    releaseImpact: "blocker",
+    validationSeverity: "blocker",
   },
   {
     ruleCode: "MTB_ALERT",

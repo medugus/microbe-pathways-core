@@ -7,6 +7,8 @@ import { resolveSpecimen } from "./specimenResolver";
 import { getAntibiotic } from "../config/antibiotics";
 import { evaluateStewardship, type StewardshipDecision } from "./stewardshipEngine";
 import { evaluateIPC } from "./ipcEngine";
+import { IPC_RULES } from "../config/ipcRules";
+import { deriveIPCInternalReportNotes, getIPCReportVisibility, shouldShowIPCOnClinicianReport } from "./ipcReportGovernance";
 import { evaluateAccession } from "./astEngine";
 import { getOrganism } from "../config/organisms";
 import { findDiskBreakpoint, findMICBreakpoint } from "../config/breakpoints";
@@ -83,7 +85,8 @@ export interface ReportPreviewDoc {
   microscopySummary: string;
   isolates: ReportIsolate[];
   comments: ReportComment[];
-  ipc: { ruleCode: string; message: string; actions: string[]; timing: string }[];
+  ipc: { ruleCode: string; message: string; actions: string[]; timing: string; visibility: string }[];
+  internalNotes: string[];
   versions: {
     rule: string;
     breakpoint: string;
@@ -190,15 +193,9 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
   for (const note of stewardship.notes) {
     comments.push({ source: "stewardship", code: note.flag, text: note.message, governed: true });
   }
-  for (const sig of ipcReport.signals) {
-    comments.push({ source: "ipc", code: sig.ruleCode, text: sig.message, governed: true });
-  }
   // Persisted notes in state too, for amendments etc.
   for (const s of accession.stewardship) {
     comments.push({ source: "stewardship", code: s.flag, text: s.message });
-  }
-  for (const ipc of accession.ipc) {
-    comments.push({ source: "ipc", code: ipc.ruleCode, text: ipc.message });
   }
   // Blood culture isolate-allocation derived comments (contaminant carry,
   // triple-pathogen senior-review) — governed, derived from rules module.
@@ -223,6 +220,24 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
       });
     }
   }
+
+  const clinicianIPC = ipcReport.decisions
+    .map((decision) => {
+      const signal = accession.ipc.find((s) => s.ruleCode === decision.ruleCode);
+      if (!signal) return null;
+      const rule = IPC_RULES.find((r) => r.ruleCode === decision.ruleCode);
+      if (!shouldShowIPCOnClinicianReport(signal, rule)) return null;
+      return {
+        ruleCode: decision.ruleCode,
+        message: rule?.clinicianReportText?.trim() || decision.message,
+        actions: [...decision.actions],
+        timing: decision.timing,
+        visibility: getIPCReportVisibility(signal, rule),
+      };
+    })
+    .filter((entry) => !!entry);
+
+  const internalIpcNotes = deriveIPCInternalReportNotes(accession);
 
   const microscopySummary =
     accession.microscopy.length === 0
@@ -266,12 +281,8 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
     microscopySummary,
     isolates,
     comments,
-    ipc: ipcReport.decisions.map((d) => ({
-      ruleCode: d.ruleCode,
-      message: d.message,
-      actions: d.actions,
-      timing: d.timing,
-    })),
+    ipc: clinicianIPC,
+    internalNotes: internalIpcNotes,
     versions: {
       rule: accession.ruleVersion,
       breakpoint: accession.breakpointVersion,

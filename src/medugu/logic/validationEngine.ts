@@ -12,6 +12,7 @@ import { pendingRestrictedRowCount } from "./amsEngine";
 import { evaluateIPC } from "./ipcEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
 import { validateBloodIsolates } from "./bloodIsolateRules";
+import { deriveIPCValidationIssues } from "./ipcReportGovernance";
 
 /**
  * IPC rule codes that constitute a critical alert. When any of these fires on a
@@ -236,6 +237,10 @@ export function runValidation(accession: Accession): ValidationReport {
       ),
     );
   }
+
+
+  // ---- IPC governance warnings/blockers (non-clinician-facing by default).
+  issues.push(...deriveIPCValidationIssues(accession));
 
   const blockers = issues.filter((i) => i.severity === "block");
   const warnings = issues.filter((i) => i.severity === "warn");
