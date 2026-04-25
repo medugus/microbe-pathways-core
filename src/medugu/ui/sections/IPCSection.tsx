@@ -14,6 +14,7 @@ import { useMemo, useState } from "react";
 import { useActiveAccession, useMeduguState } from "../../store/useAccessionStore";
 import { evaluateIPC, type IPCDecision } from "../../logic/ipcEngine";
 import { rulesFor } from "../../config/ipcRules";
+import { getOrganism } from "../../config/organisms";
 import { detailFromDecision, type IPCEpisodeDetail } from "../../logic/ipcEpisodeDetail";
 import { IPCEpisodeDrawer } from "./IPCEpisodeDrawer";
 
@@ -23,6 +24,33 @@ const TIMING_TONE: Record<string, string> = {
   within_24h: "bg-muted text-foreground",
   next_business_day: "bg-muted text-muted-foreground",
 };
+
+function severityForDecision(d: IPCDecision): "high" | "moderate" | "review" {
+  if (d.timing === "immediate") return "high";
+  if (d.timing === "same_shift") return "moderate";
+  return "review";
+}
+
+function statusForDecision(accessionIpc: { ruleCode: string; organismCode?: string; acknowledgedAt?: string }[], d: IPCDecision) {
+  const matched = accessionIpc.find((s) => s.ruleCode === d.ruleCode && s.organismCode === d.organismCode);
+  if (!matched) return "open";
+  return matched.acknowledgedAt ? "acknowledged" : "open";
+}
+
+function triggerReason(accessionFamilyCode: string | undefined, d: IPCDecision): string {
+  const reasonParts: string[] = [];
+  if (d.organismCode) {
+    const org = getOrganism(d.organismCode);
+    reasonParts.push(org ? `Organism: ${org.display}` : `Organism code: ${d.organismCode}`);
+  }
+  if (d.phenotypes.length > 0) {
+    reasonParts.push(`Phenotype: ${d.phenotypes.join(", ")}`);
+  }
+  if (accessionFamilyCode === "BLOOD") {
+    reasonParts.push("Specimen context: bloodstream isolate");
+  }
+  return reasonParts.join(" · ");
+}
 
 export function IPCSection() {
   const accession = useActiveAccession();
@@ -82,17 +110,7 @@ export function IPCSection() {
   );
 
   if (decisions.length === 0) {
-    return (
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">
-          No IPC signals — no alert organism, phenotype, or ward trigger matched.
-        </p>
-        <p className="text-[10px] text-muted-foreground">
-          Local cohort: {cohortSize} prior accession(s) for this MRN in browser store.
-        </p>
-        {banner}
-      </div>
-    );
+    return <p className="text-sm text-muted-foreground">No IPC signals for this accession.</p>;
   }
 
   return (
@@ -107,66 +125,78 @@ export function IPCSection() {
         </span>
       </header>
       <ul className="space-y-2">
-        {decisions.map((d, idx) => (
-          <li
-            key={`${d.isolateId}-${d.ruleCode}-${idx}`}
-            className="cursor-pointer rounded-md border border-border bg-card p-3 transition hover:border-primary/40 hover:bg-muted/30"
-            onClick={() => openDetail(d)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                openDetail(d);
-              }
-            }}
-          >
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                {d.ruleCode}
-              </code>
-              <span className={`rounded px-1.5 py-0.5 text-[10px] ${TIMING_TONE[d.timing] ?? "bg-muted"}`}>
-                {d.timing.replaceAll("_", " ")}
-              </span>
-              <span
-                className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-                  d.isNewEpisode
-                    ? "bg-primary/15 text-primary"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {d.isNewEpisode ? "new episode" : "repeat episode"}
-              </span>
-              {d.priorAccessionIds && d.priorAccessionIds.length > 0 && (
-                <span className="text-[10px] text-muted-foreground">
-                  · {d.priorAccessionIds.length} prior case(s)
+        {decisions.map((d, idx) => {
+          const isolate = accession.isolates.find((i) => i.id === d.isolateId);
+          const severity = severityForDecision(d);
+          const status = statusForDecision(accession.ipc, d);
+          return (
+            <li
+              key={`${d.isolateId}-${d.ruleCode}-${idx}`}
+              className="cursor-pointer rounded-md border border-border bg-card p-3 transition hover:border-primary/40 hover:bg-muted/30"
+              onClick={() => openDetail(d)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openDetail(d);
+                }
+              }}
+            >
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  {d.ruleCode}
+                </code>
+                <span className={`rounded px-1.5 py-0.5 text-[10px] ${TIMING_TONE[d.timing] ?? "bg-muted"}`}>
+                  {d.timing.replaceAll("_", " ")}
                 </span>
-              )}
-              {d.phenotypes.length > 0 && (
-                <span className="text-[10px] text-muted-foreground">
-                  phenotype: {d.phenotypes.join(", ")}
+                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                  severity: {severity}
                 </span>
-              )}
-              <span className="ml-auto text-[10px] text-muted-foreground">click for detail →</span>
-            </div>
-            <p className="mt-1.5 text-sm text-foreground">{d.message}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
-              {d.actions.map((a) => (
-                <span key={a} className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">
-                  {a.replaceAll("_", " ")}
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  status: {status}
                 </span>
-              ))}
-            </div>
-            <div className="mt-1 text-[10px] text-muted-foreground">
-              Notify: {d.notify.join(", ")}
-            </div>
-            {d.clearanceProgress && (
-              <div className="mt-1 text-[10px] text-muted-foreground">
-                Clearance: {d.clearanceProgress.negativeCount}/{d.clearanceProgress.required} negative screens.
+                <span
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                    d.isNewEpisode
+                      ? "bg-primary/15 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {d.isNewEpisode ? "new episode" : "repeat episode"}
+                </span>
+                {d.priorAccessionIds && d.priorAccessionIds.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    · {d.priorAccessionIds.length} prior case(s)
+                  </span>
+                )}
+                <span className="ml-auto text-[10px] text-muted-foreground">click for detail →</span>
               </div>
-            )}
-          </li>
-        ))}
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Isolate {isolate?.isolateNo ?? "?"}: {isolate?.organismDisplay ?? d.organismCode ?? "Unknown organism"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Trigger reason: {triggerReason(accession.specimen.familyCode, d)}
+              </p>
+              <p className="mt-1.5 text-sm text-foreground">Advice: {d.message}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+                {d.actions.map((a) => (
+                  <span key={a} className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">
+                    {a.replaceAll("_", " ")}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-1 text-[10px] text-muted-foreground">
+                Notify: {d.notify.join(", ")}
+              </div>
+              {d.clearanceProgress && (
+                <div className="mt-1 text-[10px] text-muted-foreground">
+                  Clearance: {d.clearanceProgress.negativeCount}/{d.clearanceProgress.required} negative screens.
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
       {banner}
       <IPCEpisodeDrawer
