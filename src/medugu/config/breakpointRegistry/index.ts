@@ -102,7 +102,11 @@ export function findMICBreakpoint(group: string | undefined, antibioticCode: str
       b.standard === standard &&
       b.method === "mic" &&
       (b.breakpointStatus ?? "active") === "active" &&
-      (b.susceptibleMaxMgL !== undefined || b.resistantMinMgL !== undefined),
+      (
+        b.susceptibleMaxMgL !== undefined ||
+        b.resistantGreaterThanMgL !== undefined ||
+        b.resistantMinMgL !== undefined
+      ),
   );
 }
 
@@ -115,7 +119,11 @@ export function findDiskBreakpoint(group: string | undefined, antibioticCode: st
       b.standard === standard &&
       b.method === "disk_diffusion" &&
       (b.breakpointStatus ?? "active") === "active" &&
-      (b.susceptibleMinMm !== undefined || b.resistantMaxMm !== undefined),
+      (
+        b.susceptibleMinMm !== undefined ||
+        b.resistantLessThanMm !== undefined ||
+        b.resistantMaxMm !== undefined
+      ),
   );
 }
 
