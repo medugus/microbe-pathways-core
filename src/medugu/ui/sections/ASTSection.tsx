@@ -3,11 +3,16 @@
 // performed server-side via applyExpertRulesServer so the browser cannot
 // fabricate phenotype flags.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
-import { ANTIBIOTICS, AST_PANELS, getASTPanel } from "../../config/antibiotics";
+import { ANTIBIOTICS, getASTPanel } from "../../config/antibiotics";
 import { PRIMARY_STANDARD } from "../../config/breakpoints";
 import { buildASTResult } from "../../logic/astDrafting";
+import {
+  getDefaultASTPanelForIsolate,
+  getEligibleASTPanelsForIsolate,
+  isASTPanelEligibleForIsolate,
+} from "../../logic/astPanelSelection";
 import { ASTMethod } from "../../domain/enums";
 import type { Accession, ASTStandard } from "../../domain/types";
 import { applyExpertRulesServer } from "../../store/engines.functions";
@@ -23,17 +28,6 @@ type EntryMode = "panel" | "single";
 
 export function ASTSection() {
   const accession = useActiveAccession();
-  const [entryMode, setEntryMode] = useState<EntryMode>("panel");
-  const [isolateId, setIsolateId] = useState<string>("");
-  const [panelId, setPanelId] = useState<string>(AST_PANELS[0]?.id ?? "");
-  const [antibioticCode, setAntibioticCode] = useState<string>(ANTIBIOTICS[0].code);
-  const [method, setMethod] = useState<ASTMethod>(ASTMethod.DiskDiffusion);
-  const [standard, setStandard] = useState<ASTStandard>(PRIMARY_STANDARD);
-  const [rawValue, setRawValue] = useState<string>("");
-  const [panelSummary, setPanelSummary] = useState<string | null>(null);
-  const [applying, setApplying] = useState(false);
-  const [applyError, setApplyError] = useState<string | null>(null);
-  const [appliedSummary, setAppliedSummary] = useState<string | null>(null);
 
   if (!accession) {
     return (
@@ -43,19 +37,66 @@ export function ASTSection() {
     );
   }
 
+  return <ASTSectionBody accession={accession} />;
+}
+
+function ASTSectionBody({ accession }: { accession: Accession }) {
+  const [entryMode, setEntryMode] = useState<EntryMode>("panel");
+  const [isolateId, setIsolateId] = useState<string>("");
+  const [panelId, setPanelId] = useState<string>("");
+  const [antibioticCode, setAntibioticCode] = useState<string>(ANTIBIOTICS[0].code);
+  const [method, setMethod] = useState<ASTMethod>(ASTMethod.DiskDiffusion);
+  const [standard, setStandard] = useState<ASTStandard>(PRIMARY_STANDARD);
+  const [rawValue, setRawValue] = useState<string>("");
+  const [panelSummary, setPanelSummary] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [appliedSummary, setAppliedSummary] = useState<string | null>(null);
+
   const isolates = accession.isolates;
   const activeIsolateId = isolateId || isolates[0]?.id || "";
-  const selectedPanel = getASTPanel(panelId) ?? AST_PANELS[0];
   const selectedIsolate = isolates.find((i) => i.id === activeIsolateId);
+  const eligiblePanels = useMemo(
+    () => getEligibleASTPanelsForIsolate(accession, selectedIsolate),
+    [accession, selectedIsolate],
+  );
+  const fallbackPanel = useMemo(
+    () => getDefaultASTPanelForIsolate(accession, selectedIsolate),
+    [accession, selectedIsolate],
+  );
+  const selectedPanel =
+    (panelId ? getASTPanel(panelId) : undefined) ?? fallbackPanel ?? eligiblePanels[0];
+  const isSelectedPanelEligible = selectedPanel
+    ? isASTPanelEligibleForIsolate(selectedPanel, selectedIsolate, accession)
+    : false;
+
   const bloodPositiveSources = useMemo(() => {
     if (!isBloodCulture(accession)) return new Set<string>();
     return new Set(listPositiveBottles(accession).map((p) => sourceLinkKey(p.setNo, p.bottleType)));
   }, [accession]);
+
   const selectedIsolateHasPositiveLink =
     !!selectedIsolate?.bloodSourceLinks?.some((l) =>
       bloodPositiveSources.has(sourceLinkKey(l.setNo, l.bottleType)),
     );
+
   const isBloodASTBlocked = isBloodCulture(accession) && !!selectedIsolate && !selectedIsolateHasPositiveLink;
+
+  useEffect(() => {
+    if (!selectedIsolate) return;
+
+    if (!selectedPanel || !isSelectedPanelEligible) {
+      const next = fallbackPanel?.id ?? eligiblePanels[0]?.id ?? "";
+      if (next && next !== panelId) {
+        setPanelId(next);
+      }
+      return;
+    }
+
+    if (!panelId && selectedPanel.id) {
+      setPanelId(selectedPanel.id);
+    }
+  }, [eligiblePanels, fallbackPanel, isSelectedPanelEligible, panelId, selectedIsolate, selectedPanel]);
 
   const panelMeta = useMemo(() => {
     if (!selectedPanel || !activeIsolateId) {
@@ -80,7 +121,8 @@ export function ASTSection() {
   }, [accession.ast, activeIsolateId, selectedPanel]);
 
   function onAdd() {
-    if (!accession || !activeIsolateId || isBloodASTBlocked) return;
+    if (!activeIsolateId || isBloodASTBlocked) return;
+
     const v = rawValue.trim() === "" ? undefined : Number(rawValue);
     const row = buildASTResult(accession, {
       isolateId: activeIsolateId,
@@ -94,7 +136,7 @@ export function ASTSection() {
   }
 
   function onAddPanel() {
-    if (!accession || !activeIsolateId || !selectedPanel || isBloodASTBlocked) return;
+    if (!activeIsolateId || !selectedPanel || isBloodASTBlocked || !isSelectedPanelEligible) return;
 
     let added = 0;
     let duplicates = 0;
@@ -121,16 +163,7 @@ export function ASTSection() {
     setPanelSummary(`Added ${added} AST rows. Skipped ${duplicates} duplicates.`);
   }
 
-  if (isolates.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Add an isolate first — AST entry is bound to a specific isolate.
-      </p>
-    );
-  }
-
   async function applyExpertRules() {
-    if (!accession) return;
     setApplyError(null);
     setAppliedSummary(null);
     setApplying(true);
@@ -158,6 +191,14 @@ export function ASTSection() {
     } finally {
       setApplying(false);
     }
+  }
+
+  if (isolates.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Add an isolate first — AST entry is bound to a specific isolate.
+      </p>
+    );
   }
 
   return (
@@ -193,6 +234,7 @@ export function ASTSection() {
         {entryMode === "panel" ? (
           <ASTPanelEntry
             selectedPanelId={selectedPanel?.id ?? ""}
+            eligiblePanels={eligiblePanels}
             method={method}
             standard={standard}
             panelPendingCount={panelMeta.pendingCodes.length}
@@ -201,6 +243,7 @@ export function ASTSection() {
             selectedPanelMissingRequested={selectedPanel?.missingRequested ?? []}
             panelSummary={panelSummary}
             isBloodASTBlocked={isBloodASTBlocked}
+            isPanelEligible={isSelectedPanelEligible}
             onPanelChange={setPanelId}
             onMethodChange={setMethod}
             onStandardChange={setStandard}

@@ -93,12 +93,16 @@ export interface ASTPanelDef {
   label: string;
   codes: string[];
   missingRequested: string[];
+  allowedOrganismGroups?: Array<
+    "enterobacterales" | "non_fermenter" | "staphylococcus" | "streptococcus" | "enterococcus" | "candida" | "other"
+  >;
 }
 
 function makePanel(
   id: ASTPanelDef["id"],
   label: string,
   requested: string[],
+  allowedOrganismGroups?: ASTPanelDef["allowedOrganismGroups"],
 ): ASTPanelDef {
   const uniqueRequested = Array.from(new Set(requested));
   const codes = uniqueRequested
@@ -110,7 +114,7 @@ function makePanel(
     return !mapped || !CODE_SET.has(mapped);
   });
 
-  return { id, label, codes, missingRequested };
+  return { id, label, codes, missingRequested, allowedOrganismGroups };
 }
 
 export const AST_PANELS: ASTPanelDef[] = [
@@ -118,37 +122,37 @@ export const AST_PANELS: ASTPanelDef[] = [
     "penicillin", "cefoxitin", "oxacillin", "erythromycin", "clindamycin", "gentamicin", "ciprofloxacin",
     "levofloxacin", "trimethoprim-sulfamethoxazole", "tetracycline", "doxycycline", "rifampicin", "fusidic acid",
     "mupirocin", "vancomycin", "teicoplanin", "linezolid", "daptomycin",
-  ]),
+  ], ["staphylococcus"]),
   makePanel("streptococcus", "Streptococcus panel", [
     "penicillin", "ampicillin", "amoxicillin-clavulanate", "ceftriaxone", "cefotaxime", "cefepime", "meropenem",
     "erythromycin", "clindamycin", "levofloxacin", "moxifloxacin", "tetracycline", "trimethoprim-sulfamethoxazole",
     "vancomycin", "linezolid", "chloramphenicol", "rifampicin", "gentamicin",
-  ]),
+  ], ["streptococcus"]),
   makePanel("enterococcus", "Enterococcus panel", [
     "ampicillin", "penicillin", "vancomycin", "teicoplanin", "linezolid", "daptomycin", "tigecycline",
     "nitrofurantoin", "fosfomycin", "ciprofloxacin", "levofloxacin", "tetracycline", "doxycycline", "chloramphenicol",
     "high-level gentamicin", "high-level streptomycin", "quinupristin-dalfopristin", "rifampicin",
-  ]),
+  ], ["enterococcus"]),
   makePanel("enterobacterales", "Enterobacterales panel", [
     "ampicillin", "amoxicillin-clavulanate", "piperacillin-tazobactam", "cefuroxime", "ceftriaxone", "cefotaxime",
     "ceftazidime", "cefepime", "aztreonam", "ertapenem", "meropenem", "imipenem", "amikacin", "gentamicin",
     "ciprofloxacin", "levofloxacin", "trimethoprim-sulfamethoxazole", "tigecycline",
-  ]),
+  ], ["enterobacterales"]),
   makePanel("urine_enterobacterales", "Urine Enterobacterales panel", [
     "ampicillin", "amoxicillin-clavulanate", "cefuroxime", "cefixime", "cefpodoxime", "ceftriaxone", "ceftazidime",
     "cefepime", "piperacillin-tazobactam", "ertapenem", "meropenem", "gentamicin", "amikacin", "ciprofloxacin",
     "levofloxacin", "nitrofurantoin", "fosfomycin", "trimethoprim-sulfamethoxazole",
-  ]),
+  ], ["enterobacterales"]),
   makePanel("nonfermenters", "Non-fermenting Gram-negative bacilli panel", [
     "piperacillin-tazobactam", "ceftazidime", "cefepime", "ceftolozane-tazobactam", "ceftazidime-avibactam", "imipenem",
     "meropenem", "doripenem", "aztreonam", "amikacin", "gentamicin", "tobramycin", "ciprofloxacin", "levofloxacin",
     "colistin", "minocycline", "tigecycline", "trimethoprim-sulfamethoxazole",
-  ]),
+  ], ["non_fermenter"]),
   makePanel("reserve_cre", "Reserve / CRE panel", [
     "meropenem", "imipenem", "ertapenem", "ceftazidime-avibactam", "ceftolozane-tazobactam", "imipenem-relebactam",
     "meropenem-vaborbactam", "cefiderocol", "aztreonam", "aztreonam-avibactam", "amikacin", "gentamicin", "tigecycline",
     "eravacycline", "fosfomycin", "colistin", "trimethoprim-sulfamethoxazole", "ciprofloxacin",
-  ]),
+  ], ["enterobacterales", "non_fermenter"]),
   {
     id: "other",
     label: "Other / custom panel",
