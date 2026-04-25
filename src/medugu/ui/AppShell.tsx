@@ -50,7 +50,7 @@ export function AppShell() {
   const config = useConfigState();
 
   return (
-    <div className="grid h-screen grid-cols-[280px_1fr] bg-background text-foreground">
+    <div className="grid min-h-screen grid-cols-1 md:grid-cols-[minmax(220px,22vw)_1fr] bg-background text-foreground">
       <SoundTriggerGate />
       <CaseManager />
 
