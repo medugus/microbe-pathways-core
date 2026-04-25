@@ -1,4 +1,3 @@
-import { meduguActions } from "../../../store/useAccessionStore";
 import type { OperationalQueueItem as QueueItem } from "../../../logic/operationalDashboard";
 
 const PRIORITY_STYLE: Record<QueueItem["priority"], string> = {
@@ -8,14 +7,16 @@ const PRIORITY_STYLE: Record<QueueItem["priority"], string> = {
   routine: "bg-muted text-muted-foreground",
 };
 
-export function OperationalQueueItem({ item }: { item: QueueItem }) {
+export function OperationalQueueItem({
+  item,
+  onOpen,
+}: {
+  item: QueueItem;
+  onOpen: (item: QueueItem) => void;
+}) {
+  const openLabel = `Open ${item.accessionNumber ?? item.targetAccessionId} in ${item.targetSection}`;
   return (
-    <tr
-      className="cursor-pointer hover:bg-muted/40"
-      onClick={() => {
-        meduguActions.setActive(item.accessionId);
-      }}
-    >
+    <tr className="hover:bg-muted/40">
       <td className="px-2 py-2 align-top">
         <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_STYLE[item.priority]}`}>
           {item.priority}
@@ -35,6 +36,21 @@ export function OperationalQueueItem({ item }: { item: QueueItem }) {
       <td className="px-2 py-2 align-top text-xs text-foreground">{item.recommendedAction}</td>
       <td className="px-2 py-2 align-top text-xs text-muted-foreground">{item.ownerRole.replaceAll("_", " ")}</td>
       <td className="px-2 py-2 align-top text-xs text-muted-foreground">{item.sourceModule}</td>
+      <td className="px-2 py-2 align-top text-xs">
+        <span className="rounded border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-foreground">
+          {item.targetSection}
+        </span>
+      </td>
+      <td className="px-2 py-2 align-top text-xs">
+        <button
+          type="button"
+          onClick={() => onOpen(item)}
+          className="rounded border border-border px-2 py-1 text-[11px] text-foreground hover:bg-muted"
+          aria-label={openLabel}
+        >
+          {openLabel}
+        </button>
+      </td>
     </tr>
   );
 }
