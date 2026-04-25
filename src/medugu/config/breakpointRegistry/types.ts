@@ -58,7 +58,6 @@ export function normalizeDiskRecord(record: EucastBreakpointRecord): DiskBreakpo
   return {
     ...record,
     method: "disk_diffusion",
-    resistantMaxMm: record.resistantMaxMm ?? record.resistantLessThanMm,
   };
 }
 
@@ -66,7 +65,6 @@ export function normalizeMICRecord(record: EucastBreakpointRecord): MICBreakpoin
   return {
     ...record,
     method: "mic",
-    resistantMinMgL: record.resistantMinMgL ?? record.resistantGreaterThanMgL,
   };
 }
 

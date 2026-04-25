@@ -17,9 +17,11 @@ import { newId } from "../domain/ids";
 import { getOrganism } from "../config/organisms";
 import {
   PRIMARY_STANDARD,
+  breakpointSupportsIntermediate,
   findDiskBreakpoint,
   findMICBreakpoint,
 } from "../config/breakpoints";
+import type { DiskBreakpoint, MICBreakpoint } from "../config/breakpointRegistry";
 
 export interface DraftASTInput {
   isolateId: string;
@@ -40,17 +42,35 @@ export function draftInterpretation(
 
   if (input.method === "disk_diffusion") {
     const bp = findDiskBreakpoint(group, input.antibioticCode, standard);
-    if (!bp) return undefined;
-    if (bp.susceptibleMinMm !== undefined && input.rawValue >= bp.susceptibleMinMm) return "S";
-    if (bp.resistantMaxMm !== undefined && input.rawValue <= bp.resistantMaxMm) return "R";
-    return "I";
+    return interpretDiskAgainstBreakpoint(input.rawValue, bp);
   }
   // MIC family
   const bp = findMICBreakpoint(group, input.antibioticCode, standard);
-  if (!bp) return undefined;
-  if (bp.susceptibleMaxMgL !== undefined && input.rawValue <= bp.susceptibleMaxMgL) return "S";
-  if (bp.resistantMinMgL !== undefined && input.rawValue >= bp.resistantMinMgL) return "R";
-  return "I";
+  return interpretMICAgainstBreakpoint(input.rawValue, bp);
+}
+
+export function interpretMICAgainstBreakpoint(
+  value: number,
+  breakpoint: MICBreakpoint | undefined,
+): ASTInterpretation | undefined {
+  if (!breakpoint) return undefined;
+  if (breakpoint.susceptibleMaxMgL !== undefined && value <= breakpoint.susceptibleMaxMgL) return "S";
+  if (breakpoint.resistantGreaterThanMgL !== undefined && value > breakpoint.resistantGreaterThanMgL) return "R";
+  if (breakpoint.resistantMinMgL !== undefined && value >= breakpoint.resistantMinMgL) return "R";
+  if (breakpointSupportsIntermediate(breakpoint)) return "I";
+  return undefined;
+}
+
+export function interpretDiskAgainstBreakpoint(
+  value: number,
+  breakpoint: DiskBreakpoint | undefined,
+): ASTInterpretation | undefined {
+  if (!breakpoint) return undefined;
+  if (breakpoint.susceptibleMinMm !== undefined && value >= breakpoint.susceptibleMinMm) return "S";
+  if (breakpoint.resistantLessThanMm !== undefined && value < breakpoint.resistantLessThanMm) return "R";
+  if (breakpoint.resistantMaxMm !== undefined && value <= breakpoint.resistantMaxMm) return "R";
+  if (breakpointSupportsIntermediate(breakpoint)) return "I";
+  return undefined;
 }
 
 export function buildASTResult(accession: Accession, input: DraftASTInput): ASTResult {
