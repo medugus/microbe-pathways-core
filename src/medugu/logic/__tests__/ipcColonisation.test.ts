@@ -5,6 +5,10 @@ function assert(condition: unknown, message: string): void {
   if (!condition) throw new Error(message);
 }
 
+const fixedNow = Date.parse("2026-04-25T12:00:00.000Z");
+const originalDateNow = Date.now;
+Date.now = () => fixedNow;
+
 const candida = deriveColonisationContext(
   ipcAcceptanceScenarioCases.candidaAurisScreenPositiveCase,
   toAccessionsMap([ipcAcceptanceScenarioCases.candidaAurisScreenPositiveCase]),
@@ -36,6 +40,8 @@ assert(
   missingPrior.limitationNote?.includes("prior positive not found") ?? false,
   "Missing prior positive should include safe limitation wording.",
 );
+
+Date.now = originalDateNow;
 
 // eslint-disable-next-line no-console
 console.log("[ipcColonisation.test] all assertions passed");
