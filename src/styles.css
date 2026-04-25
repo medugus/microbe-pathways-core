@@ -8,17 +8,114 @@
 }
 
 @keyframes organism-pulse {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50% { opacity: 0.9; transform: scale(1.15); }
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes auth-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes auth-float-delayed {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-8px, 12px, 0);
+  }
+}
+
+@keyframes auth-float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(8px, -8px, 0);
+  }
+}
+
+@keyframes auth-pathway-pulse {
+  0%,
+  100% {
+    opacity: 0.32;
+    transform: scaleY(0.92);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes auth-card-glow {
+  0%,
+  100% {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  }
+  50% {
+    border-color: rgba(103, 232, 249, 0.45);
+    box-shadow:
+      0 0 0 1px rgba(34, 211, 238, 0.22),
+      0 10px 28px rgba(8, 47, 73, 0.34);
+  }
 }
 
 .organism-grid {
   background-image:
     radial-gradient(circle at center, rgba(96, 165, 250, 0.55) 1.2px, transparent 1.6px),
     radial-gradient(circle at center, rgba(52, 211, 153, 0.35) 1px, transparent 1.4px);
-  background-size: 38px 38px, 76px 76px;
-  background-position: 0 0, 19px 19px;
+  background-size:
+    38px 38px,
+    76px 76px;
+  background-position:
+    0 0,
+    19px 19px;
   animation: organism-pulse 6s ease-in-out infinite;
+}
+
+.animate-auth-float {
+  animation: auth-float 8s ease-in-out infinite;
+}
+
+.animate-auth-float-delayed {
+  animation: auth-float-delayed 10s ease-in-out infinite;
+}
+
+.animate-auth-float-slow {
+  animation: auth-float-slow 12s ease-in-out infinite;
+}
+
+.auth-pathway-pulse {
+  animation: auth-pathway-pulse 4s ease-in-out infinite;
+}
+
+.auth-story-card {
+  animation: auth-card-glow 12s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-auth-float,
+  .animate-auth-float-delayed,
+  .animate-auth-float-slow,
+  .auth-pathway-pulse,
+  .auth-story-card {
+    animation: none !important;
+  }
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -290,29 +387,108 @@
     border: 1px solid transparent;
     white-space: nowrap;
   }
-  .chip-square { border-radius: 0.25rem; }
+  .chip-square {
+    border-radius: 0.25rem;
+  }
 
-  .chip-neutral    { background: var(--bg-muted);        color: var(--text-secondary); border-color: var(--border); }
-  .chip-success    { background: var(--success-bg);      color: var(--success);        border-color: color-mix(in oklab, var(--success) 30%, transparent); }
-  .chip-warning    { background: var(--warning-bg);      color: var(--warning);        border-color: color-mix(in oklab, var(--warning) 30%, transparent); }
-  .chip-danger     { background: var(--danger-bg);       color: var(--danger);         border-color: color-mix(in oklab, var(--danger) 30%, transparent); }
-  .chip-info       { background: var(--info-bg);         color: var(--info);           border-color: color-mix(in oklab, var(--info) 30%, transparent); }
-  .chip-restricted { background: var(--restricted-bg);   color: var(--restricted);     border-color: color-mix(in oklab, var(--restricted) 30%, transparent); }
-  .chip-withheld   { background: var(--withheld-bg);     color: var(--withheld);       border-color: color-mix(in oklab, var(--withheld) 30%, transparent); }
-  .chip-ipc        { background: var(--ipc-alert-bg);    color: var(--ipc-alert);      border-color: color-mix(in oklab, var(--ipc-alert) 30%, transparent); }
+  .chip-neutral {
+    background: var(--bg-muted);
+    color: var(--text-secondary);
+    border-color: var(--border);
+  }
+  .chip-success {
+    background: var(--success-bg);
+    color: var(--success);
+    border-color: color-mix(in oklab, var(--success) 30%, transparent);
+  }
+  .chip-warning {
+    background: var(--warning-bg);
+    color: var(--warning);
+    border-color: color-mix(in oklab, var(--warning) 30%, transparent);
+  }
+  .chip-danger {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-color: color-mix(in oklab, var(--danger) 30%, transparent);
+  }
+  .chip-info {
+    background: var(--info-bg);
+    color: var(--info);
+    border-color: color-mix(in oklab, var(--info) 30%, transparent);
+  }
+  .chip-restricted {
+    background: var(--restricted-bg);
+    color: var(--restricted);
+    border-color: color-mix(in oklab, var(--restricted) 30%, transparent);
+  }
+  .chip-withheld {
+    background: var(--withheld-bg);
+    color: var(--withheld);
+    border-color: color-mix(in oklab, var(--withheld) 30%, transparent);
+  }
+  .chip-ipc {
+    background: var(--ipc-alert-bg);
+    color: var(--ipc-alert);
+    border-color: color-mix(in oklab, var(--ipc-alert) 30%, transparent);
+  }
 
-  .chip-ams-pending  { background: var(--ams-pending-bg);  color: var(--ams-pending);  border-color: color-mix(in oklab, var(--ams-pending) 30%, transparent); }
-  .chip-ams-approved { background: var(--ams-approved-bg); color: var(--ams-approved); border-color: color-mix(in oklab, var(--ams-approved) 30%, transparent); }
-  .chip-ams-denied   { background: var(--ams-denied-bg);   color: var(--ams-denied);   border-color: color-mix(in oklab, var(--ams-denied) 30%, transparent); }
+  .chip-ams-pending {
+    background: var(--ams-pending-bg);
+    color: var(--ams-pending);
+    border-color: color-mix(in oklab, var(--ams-pending) 30%, transparent);
+  }
+  .chip-ams-approved {
+    background: var(--ams-approved-bg);
+    color: var(--ams-approved);
+    border-color: color-mix(in oklab, var(--ams-approved) 30%, transparent);
+  }
+  .chip-ams-denied {
+    background: var(--ams-denied-bg);
+    color: var(--ams-denied);
+    border-color: color-mix(in oklab, var(--ams-denied) 30%, transparent);
+  }
 
-  .chip-draft    { background: var(--bg-muted);     color: var(--draft);    border-color: var(--border); }
-  .chip-released { background: var(--success-bg);   color: var(--released); border-color: color-mix(in oklab, var(--released) 30%, transparent); }
-  .chip-amended  { background: color-mix(in oklab, var(--amended) 12%, var(--bg-panel)); color: var(--amended); border-color: color-mix(in oklab, var(--amended) 30%, transparent); }
+  .chip-draft {
+    background: var(--bg-muted);
+    color: var(--draft);
+    border-color: var(--border);
+  }
+  .chip-released {
+    background: var(--success-bg);
+    color: var(--released);
+    border-color: color-mix(in oklab, var(--released) 30%, transparent);
+  }
+  .chip-amended {
+    background: color-mix(in oklab, var(--amended) 12%, var(--bg-panel));
+    color: var(--amended);
+    border-color: color-mix(in oklab, var(--amended) 30%, transparent);
+  }
 
   /* Inline callouts (panels) — same palette, larger padding */
-  .callout         { border-radius: 0.5rem; border: 1px solid var(--border); padding: 0.5rem 0.75rem; font-size: 0.75rem; }
-  .callout-warning { background: var(--warning-bg);    color: var(--warning);     border-color: color-mix(in oklab, var(--warning) 30%, transparent); }
-  .callout-danger  { background: var(--danger-bg);     color: var(--danger);      border-color: color-mix(in oklab, var(--danger) 30%, transparent); }
-  .callout-info    { background: var(--info-bg);       color: var(--info);        border-color: color-mix(in oklab, var(--info) 30%, transparent); }
-  .callout-success { background: var(--success-bg);    color: var(--success);     border-color: color-mix(in oklab, var(--success) 30%, transparent); }
+  .callout {
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  .callout-warning {
+    background: var(--warning-bg);
+    color: var(--warning);
+    border-color: color-mix(in oklab, var(--warning) 30%, transparent);
+  }
+  .callout-danger {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-color: color-mix(in oklab, var(--danger) 30%, transparent);
+  }
+  .callout-info {
+    background: var(--info-bg);
+    color: var(--info);
+    border-color: color-mix(in oklab, var(--info) 30%, transparent);
+  }
+  .callout-success {
+    background: var(--success-bg);
+    color: var(--success);
+    border-color: color-mix(in oklab, var(--success) 30%, transparent);
+  }
 }
