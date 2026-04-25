@@ -53,7 +53,7 @@ export function CaseManager() {
               >
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs">{a.id}</span>
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
                     {a.priority}
                   </span>
                 </div>
