@@ -1,17 +1,8 @@
 import { getAntibiotic } from "../../../config/antibiotics";
 import type { AMSApprovalStatus, ASTResult, Isolate } from "../../../domain/types";
-import type { StewardshipDecision } from "../../../logic/stewardshipEngine";
+import type { AMSRecommendationCategory, AMSRecommendationExplanation, StewardshipDecision } from "../../../logic/stewardshipEngine";
 import { AMSApprovalStatusPanel } from "./AMSApprovalStatusPanel";
 import { AMSRuleExplanation } from "./AMSRuleExplanation";
-
-export type RecommendationCategory =
-  | "approve"
-  | "request approval"
-  | "de-escalate"
-  | "escalate/review"
-  | "continue"
-  | "suppress/reporting restricted"
-  | "insufficient data";
 
 function awareTone(aware: string) {
   if (aware === "Access") return "chip chip-square chip-success";
@@ -32,6 +23,7 @@ export function AMSRecommendationCard({
   recommendationText,
   reason,
   releaseImpact,
+  explanation,
 }: {
   row: ASTResult;
   isolate?: Isolate;
@@ -40,10 +32,11 @@ export function AMSRecommendationCard({
   decision: StewardshipDecision;
   approvalStatus: AMSApprovalStatus;
   restriction: string;
-  recommendationCategory: RecommendationCategory;
+  recommendationCategory: AMSRecommendationCategory;
   recommendationText: string;
   reason: string;
   releaseImpact: string;
+  explanation: AMSRecommendationExplanation;
 }) {
   const antibiotic = getAntibiotic(row.antibioticCode);
   const interp = row.finalInterpretation ?? row.interpretedSIR ?? "not available";
@@ -84,11 +77,7 @@ export function AMSRecommendationCard({
       <AMSRuleExplanation
         row={row}
         decision={decision}
-        specimenContext={specimenLabel}
-        syndrome={syndrome}
-        organism={isolate?.organismDisplay}
-        approvalState={decision.approvalRequired ? `${approvalStatus}` : "not required"}
-        releaseImpact={releaseImpact}
+        explanation={explanation}
       />
     </article>
   );
