@@ -3,13 +3,14 @@ import type { OperationalDashboardSummary } from "../../../logic/operationalDash
 export function OperationalSummaryCards({ summary }: { summary: OperationalDashboardSummary }) {
   const cards = [
     { label: "Total loaded cases", value: summary.totalLoadedCases },
-    { label: "Critical / urgent", value: summary.criticalUrgent, tone: "text-destructive" },
+    { label: "Open queue items", value: summary.openQueueItems, tone: "text-destructive" },
+    { label: "Critical / urgent cases", value: summary.criticalUrgentCases, tone: "text-destructive" },
+    { label: "Critical/high queue items", value: summary.criticalOrHighPriorityQueueItems, tone: "text-destructive" },
     { label: "Release blocked", value: summary.releaseBlocked, tone: "text-destructive" },
     { label: "Pending phone-out", value: summary.pendingPhoneOut, tone: "text-destructive" },
     { label: "AMS pending/restricted", value: summary.amsPendingOrRestricted },
     { label: "IPC high priority", value: summary.ipcHighPriority },
-    { label: "Outbreak watch", value: summary.outbreakWatch },
-    { label: "Clearance follow-up", value: summary.clearanceFollowUp },
+    { label: "Follow-up", value: summary.colonisationOrClearanceFollowUp },
   ];
 
   return (

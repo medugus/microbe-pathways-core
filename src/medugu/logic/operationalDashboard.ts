@@ -66,13 +66,18 @@ type OperationalQueueItemDraft = Omit<OperationalQueueItem, "targetAccessionId" 
 
 export type OperationalDashboardSummary = {
   totalLoadedCases: number;
-  criticalUrgent: number;
+  openQueueItems: number;
+  criticalOrHighPriorityQueueItems: number;
+  criticalUrgentCases: number;
   releaseBlocked: number;
   pendingPhoneOut: number;
+  pendingConsultantApproval: number;
   amsPendingOrRestricted: number;
   ipcHighPriority: number;
-  outbreakWatch: number;
-  clearanceFollowUp: number;
+  colonisationOrClearanceFollowUp: number;
+  releasedOrCompletedCases: number;
+  noActionCases: number;
+  medianOpenQueueAgeHours: number | null;
 };
 
 export type OperationalDashboardData = {
@@ -492,24 +497,66 @@ export function getOperationalSummary(
   items: OperationalQueueItem[],
 ): OperationalDashboardSummary {
   const loaded = normaliseAccessions(accessions);
+  const itemsByAccession = new Map<string, OperationalQueueItem[]>();
+  for (const item of items) {
+    const accessionItems = itemsByAccession.get(item.accessionId) ?? [];
+    accessionItems.push(item);
+    itemsByAccession.set(item.accessionId, accessionItems);
+  }
+
+  const openQueueItems = items.length;
+  const criticalOrHighPriorityQueueItems = items.filter(
+    (item) => item.priority === "critical" || item.priority === "high",
+  ).length;
+  const openQueueAgeHours = items.map((item) => item.ageHours).filter((age): age is number => typeof age === "number");
+  const medianOpenQueueAgeHours =
+    openQueueItems === 0 || openQueueAgeHours.length !== openQueueItems ? null : computeMedian(openQueueAgeHours);
+
+  const releasedOrCompletedCases = loaded.filter(
+    (accession) => accession.release.state === "released" || accession.workflowStatus === "released",
+  ).length;
+  const noActionCases = loaded.filter((accession) => {
+    const accessionOpenItems = itemsByAccession.get(accession.id) ?? [];
+    const isReleasedOrCompleted =
+      accession.release.state === "released" || accession.workflowStatus === "released";
+    return accessionOpenItems.length === 0 && !isReleasedOrCompleted;
+  }).length;
 
   return {
     totalLoadedCases: loaded.length,
-    criticalUrgent: uniqueAccessionCount(items, (item) => item.category === "critical_result"),
+    openQueueItems,
+    criticalOrHighPriorityQueueItems,
+    criticalUrgentCases: uniqueAccessionCount(items, (item) => item.category === "critical_result"),
     releaseBlocked: uniqueAccessionCount(items, (item) => item.category === "release_blocker"),
     pendingPhoneOut: uniqueAccessionCount(items, (item) => item.category === "phone_out"),
+    pendingConsultantApproval: uniqueAccessionCount(items, (item) => item.category === "consultant_approval"),
     amsPendingOrRestricted: uniqueAccessionCount(
       items,
       (item) => item.category === "ams_pending_approval" || item.category === "ams_restricted",
     ),
     ipcHighPriority: uniqueAccessionCount(items, (item) => item.category === "ipc_high_priority"),
-    outbreakWatch: items.filter((item) => item.category === "ipc_outbreak_watch").length,
-    clearanceFollowUp: uniqueAccessionCount(items, (item) => item.category === "colonisation_follow_up"),
+    colonisationOrClearanceFollowUp: uniqueAccessionCount(
+      items,
+      (item) => item.category === "colonisation_follow_up",
+    ),
+    releasedOrCompletedCases,
+    noActionCases,
+    medianOpenQueueAgeHours,
   };
 }
 
+function computeMedian(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return Math.round(((sorted[middle - 1] + sorted[middle]) / 2) * 10) / 10;
+  }
+  return sorted[middle];
+}
+
 export function describeOperationalDashboardLimitations(): string {
-  return "Browser-local dashboard for currently loaded cases; requires backend persistence for hospital-wide operations and durable task management.";
+  return "Metrics use only cases currently loaded in this browser.";
 }
 
 export function deriveOperationalDashboard(
