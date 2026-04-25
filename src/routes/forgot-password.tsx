@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AuthShell } from "@/auth/AuthHero";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
@@ -45,9 +46,9 @@ function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+    <AuthShell>
+      <div className="rounded-xl border border-border bg-card p-7 shadow-lg">
+        <h1 className="font-serif text-4xl tracking-tight text-foreground">
           Reset password
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -85,6 +86,6 @@ function ForgotPasswordPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }
