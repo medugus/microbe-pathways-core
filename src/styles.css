@@ -61,6 +61,105 @@
   }
 }
 
+
+@keyframes story-stage-cycle {
+  0%,
+  18% {
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  }
+  28%,
+  46% {
+    border-color: rgba(103, 232, 249, 0.5);
+    box-shadow:
+      0 0 0 1px rgba(34, 211, 238, 0.25),
+      0 14px 28px rgba(6, 24, 38, 0.5);
+  }
+  100% {
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  }
+}
+
+@keyframes story-accent-sweep {
+  0%,
+  18% {
+    opacity: 0.3;
+    transform: scaleX(0.35);
+    transform-origin: left;
+  }
+  28%,
+  46% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0.3;
+    transform: scaleX(0.35);
+  }
+}
+
+@keyframes story-path-dash {
+  0% {
+    stroke-dashoffset: 240;
+    opacity: 0.25;
+  }
+  35% {
+    opacity: 0.9;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.25;
+  }
+}
+
+@keyframes story-node-ping {
+  0%,
+  20% {
+    opacity: 0.45;
+    transform: scale(0.88);
+  }
+  30%,
+  46% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  100% {
+    opacity: 0.45;
+    transform: scale(0.88);
+  }
+}
+
+@keyframes petri-colony-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes ast-cell-cycle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  45% {
+    opacity: 1;
+  }
+}
+
+@keyframes report-tick-in {
+  0%,
+  45% {
+    opacity: 0;
+  }
+  52%,
+  100% {
+    opacity: 1;
+  }
+}
 @keyframes auth-card-glow {
   0%,
   100% {
@@ -108,12 +207,48 @@
   animation: auth-card-glow 12s ease-in-out infinite;
 }
 
+.story-stage {
+  animation: story-stage-cycle 12s ease-in-out infinite;
+}
+
+.story-stage-accent {
+  animation: story-accent-sweep 12s ease-in-out infinite;
+}
+
+.story-path-pulse {
+  animation: story-path-dash 12s linear infinite;
+}
+
+.story-node-dot {
+  animation: story-node-ping 12s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.petri-colony {
+  animation: petri-colony-pulse 3s ease-in-out infinite;
+}
+
+.ast-cell {
+  animation: ast-cell-cycle 3.4s ease-in-out infinite;
+}
+
+.report-tick {
+  animation: report-tick-in 12s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-auth-float,
   .animate-auth-float-delayed,
   .animate-auth-float-slow,
   .auth-pathway-pulse,
-  .auth-story-card {
+  .auth-story-card,
+  .story-stage,
+  .story-stage-accent,
+  .story-path-pulse,
+  .story-node-dot,
+  .petri-colony,
+  .ast-cell,
+  .report-tick {
     animation: none !important;
   }
 }
