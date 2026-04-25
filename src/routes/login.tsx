@@ -38,8 +38,25 @@ function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Hydrate "remember me" preference + last email from localStorage.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem("medugu.rememberMe");
+      const remembered = stored === null ? true : stored === "1";
+      setRememberMe(remembered);
+      if (remembered) {
+        const lastEmail = window.localStorage.getItem("medugu.lastEmail");
+        if (lastEmail) setEmail(lastEmail);
+      }
+    } catch {
+      /* storage unavailable — non-fatal */
+    }
+  }, []);
 
   // If already authenticated, leave the login page.
   useEffect(() => {
@@ -52,12 +69,26 @@ function LoginPage() {
     e.preventDefault();
     setError(null);
     setBusy(true);
+    const trimmedEmail = email.trim();
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: trimmedEmail,
       password,
     });
     setBusy(false);
-    if (signInError) setError(signInError.message);
+    if (signInError) {
+      setError(signInError.message);
+      return;
+    }
+    try {
+      window.localStorage.setItem("medugu.rememberMe", rememberMe ? "1" : "0");
+      if (rememberMe) {
+        window.localStorage.setItem("medugu.lastEmail", trimmedEmail);
+      } else {
+        window.localStorage.removeItem("medugu.lastEmail");
+      }
+    } catch {
+      /* ignore */
+    }
   };
 
   const onGoogle = async () => {
@@ -141,14 +172,23 @@ function LoginPage() {
             {busy ? "Signing in…" : "Sign in"}
           </Button>
 
-          <p className="text-right text-sm">
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex cursor-pointer items-center gap-2 text-foreground">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 cursor-pointer rounded border-border accent-primary"
+              />
+              <span className="font-medium">Remember me</span>
+            </label>
             <Link
               to="/forgot-password"
               className="font-medium text-primary hover:underline"
             >
               Forgot password?
             </Link>
-          </p>
+          </div>
         </form>
 
         <div className="my-4 flex items-center gap-2">
