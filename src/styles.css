@@ -1,6 +1,25 @@
 @import "tailwindcss" source(none);
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap");
 @source "../src";
 @import "tw-animate-css";
+
+@theme {
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+}
+
+@keyframes organism-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.15); }
+}
+
+.organism-grid {
+  background-image:
+    radial-gradient(circle at center, rgba(96, 165, 250, 0.55) 1.2px, transparent 1.6px),
+    radial-gradient(circle at center, rgba(52, 211, 153, 0.35) 1px, transparent 1.4px);
+  background-size: 38px 38px, 76px 76px;
+  background-position: 0 0, 19px 19px;
+  animation: organism-pulse 6s ease-in-out infinite;
+}
 
 @custom-variant dark (&:is(.dark *));
 

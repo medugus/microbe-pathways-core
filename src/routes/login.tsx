@@ -7,6 +7,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AuthShell } from "@/auth/AuthHero";
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
@@ -72,9 +73,9 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Sign in</h1>
+    <AuthShell>
+      <div className="rounded-xl border border-border bg-card p-7 shadow-lg">
+        <h1 className="font-serif text-4xl tracking-tight text-foreground">Sign in</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Medugu microbiology workflow platform
         </p>
@@ -173,6 +174,6 @@ function LoginPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }
