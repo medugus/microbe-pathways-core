@@ -1,10 +1,12 @@
 import { useMemo } from "react";
 import { useActiveAccession, useMeduguState } from "../../store/useAccessionStore";
 import { evaluateIPC, getSpecimenIPCContext } from "../../logic/ipcEngine";
+import { deriveColonisationContext } from "../../logic/ipcColonisation";
 import type { IPCSignal } from "../../domain/types";
 import { IPCSummaryStrip } from "./ipc/IPCSummaryStrip";
 import { IPCSignalCard } from "./ipc/IPCSignalCard";
 import { IPCLocalWatchPanel } from "./ipc/IPCLocalWatchPanel";
+import { IPCColonisationTracker } from "./ipc/IPCColonisationTracker";
 
 export function IPCSection() {
   const accession = useActiveAccession();
@@ -20,6 +22,7 @@ export function IPCSection() {
         comparableSignals: [] as Array<{ ruleCode: string; count: number }>,
         wardGrouping: [] as Array<{ ward: string; count: number }>,
         localWatchSummary: undefined as string | undefined,
+        colonisationContext: undefined as ReturnType<typeof deriveColonisationContext> | undefined,
       };
     }
 
@@ -67,6 +70,7 @@ export function IPCSection() {
       comparableSignals,
       wardGrouping,
       localWatchSummary,
+      colonisationContext: deriveColonisationContext(accession, state.accessions),
     };
   }, [accession, state.accessions]);
 
@@ -97,6 +101,8 @@ export function IPCSection() {
         episodeCounts={episodeCounts}
         localWatchSummary={data.localWatchSummary}
       />
+
+      <IPCColonisationTracker context={data.colonisationContext} />
 
       {data.decisions.length === 0 ? (
         <div className="space-y-2 rounded-md border border-border bg-card p-4">
