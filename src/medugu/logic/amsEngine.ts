@@ -15,15 +15,8 @@ import type {
   AMSApprovalStatus,
   ASTResult,
 } from "../domain/types";
+import { AMS_POLICY } from "../config/amsConfig";
 import { getStewardship } from "../config/stewardshipRules";
-
-/** Browser-phase SLA policy. Restricted agents get 24h; reserve agents 4h. */
-export const AMS_POLICY = {
-  defaultSlaHours: 24,
-  reserveSlaHours: 4,
-  /** Hours after dueBy at which a pending request is considered expired. */
-  expiryGraceHours: 48,
-} as const;
 
 /** True when this AST row is governed by AMS approval (restricted release class). */
 export function isRestrictedRow(row: ASTResult): boolean {
