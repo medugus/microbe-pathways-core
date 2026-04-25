@@ -1,4 +1,5 @@
 import { useActiveAccession } from "../../store/useAccessionStore";
+import { MicroHistoryPanel } from "./MicroHistoryPanel";
 
 export function PatientSection() {
   const accession = useActiveAccession();
@@ -37,6 +38,8 @@ export function PatientSection() {
           <Field label="Release state" value={accession.release.state.replace(/_/g, " ")} capitalize />
         </div>
       </div>
+
+      <MicroHistoryPanel />
     </div>
   );
 }
