@@ -50,9 +50,7 @@ export function draftInterpretation(
 
 function interpretDiskAgainstBreakpoint(
   rawValue: number,
-  bp:
-    | ReturnType<typeof findDiskBreakpoint>
-    | undefined,
+  bp: ReturnType<typeof findDiskBreakpoint> | undefined,
 ): ASTInterpretation | undefined {
   if (!bp) return undefined;
   if (bp.susceptibleMinMm !== undefined && rawValue >= bp.susceptibleMinMm) return "S";
@@ -62,16 +60,13 @@ function interpretDiskAgainstBreakpoint(
 
 function interpretMICAgainstBreakpoint(
   rawValue: number,
-  bp:
-    | ReturnType<typeof findMICBreakpoint>
-    | undefined,
+  bp: ReturnType<typeof findMICBreakpoint> | undefined,
 ): ASTInterpretation | undefined {
   if (!bp) return undefined;
   if (bp.susceptibleMaxMgL !== undefined && rawValue <= bp.susceptibleMaxMgL) return "S";
   if (bp.resistantMinMgL !== undefined && rawValue >= bp.resistantMinMgL) return "R";
   return "I";
 }
-
 export function buildASTResult(accession: Accession, input: DraftASTInput): ASTResult {
   const isolate = accession.isolates.find((i) => i.id === input.isolateId);
   const standard: ASTStandard = input.standard ?? PRIMARY_STANDARD;
