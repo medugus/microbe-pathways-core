@@ -93,6 +93,10 @@ function buildComparableCases(accessions: Accession[]): ComparableCase[] {
   });
 }
 
+function uniqueAccessions(cases: ComparableCase[]): string[] {
+  return [...new Set(cases.map((item) => item.accessionId))];
+}
+
 export function deduplicateByPatientEpisode(cases: ComparableCase[]): ComparableCase[] {
   const latestByMrn = new Map<string, ComparableCase>();
 
@@ -180,7 +184,7 @@ export function groupComparableCases(
         windowDays,
         rawCaseCount: groupedCases.length,
         patientAdjustedCount,
-        relatedAccessions: groupedCases.map((item) => item.accessionId),
+        relatedAccessions: uniqueAccessions(groupedCases),
         severity,
         triggerSummary: `${patientAdjustedCount} patient-adjusted comparable case(s) ${locationLabel} for ${sample.organismLabel ?? sample.organismCode ?? "organism"}${phenotypeLabel} in ${windowDays}-day window.`,
         recommendedAction: actionForSeverity(severity),
