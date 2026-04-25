@@ -1,5 +1,5 @@
 import type { ASTResult } from "../../../domain/types";
-import type { StewardshipDecision } from "../../../logic/stewardshipEngine";
+import type { AMSRecommendationExplanation, StewardshipDecision } from "../../../logic/stewardshipEngine";
 
 function Item({ label, value }: { label: string; value?: string }) {
   return (
@@ -11,41 +11,26 @@ function Item({ label, value }: { label: string; value?: string }) {
 }
 
 export function AMSRuleExplanation({
-  row,
-  decision,
-  specimenContext,
-  syndrome,
-  organism,
-  approvalState,
-  releaseImpact,
+  explanation,
 }: {
   row: ASTResult;
   decision: StewardshipDecision;
-  specimenContext?: string;
-  syndrome?: string;
-  organism?: string;
-  approvalState: string;
-  releaseImpact: string;
+  explanation: AMSRecommendationExplanation;
 }) {
-  const firstRule = row.expertRulesFired?.[0]?.ruleCode ?? row.ruleAppliedCode;
-  const phenotype = row.phenotypeFlags?.join(", ") ?? row.cascadeDecision;
-  const missing: string[] = [];
-  if (!row.finalInterpretation && !row.interpretedSIR) missing.push("AST interpretation");
-  if (!row.governance) missing.push("governance state");
-
   return (
     <details className="rounded-md border border-border bg-background p-2 text-xs">
       <summary className="cursor-pointer font-medium text-foreground">Why this recommendation?</summary>
       <ul className="mt-2 space-y-1.5">
-        <Item label="Matched rule" value={firstRule} />
-        <Item label="Antibiotic/AWaRe" value={`${row.antibioticCode} · ${decision.aware}`} />
-        <Item label="Organism trigger" value={organism} />
-        <Item label="Phenotype/AST trigger" value={phenotype} />
-        <Item label="Specimen/syndrome trigger" value={[specimenContext, syndrome].filter(Boolean).join(" · ")} />
-        <Item label="Governance/reportability" value={`${row.governance} · ${decision.visibleToClinician ? "reportable" : "withheld"}`} />
-        <Item label="Approval requirement" value={approvalState} />
-        <Item label="Release impact" value={releaseImpact} />
-        <Item label="Missing data" value={missing.join(", ")} />
+        <Item label="Matched rule" value={explanation.matchedRuleCode} />
+        <Item label="Antibiotic under review" value={explanation.antibioticUnderReview} />
+        <Item label="AWaRe category" value={explanation.awareCategory} />
+        <Item label="Restriction status" value={explanation.restrictionStatus} />
+        <Item label="AST interpretation" value={explanation.astInterpretation} />
+        <Item label="Organism context" value={explanation.organismContext} />
+        <Item label="Specimen/syndrome context" value={explanation.specimenOrSyndromeContext} />
+        <Item label="Governance/reportability" value={explanation.reportabilityGovernanceState} />
+        <Item label="Missing data" value={explanation.missingData.join(", ")} />
+        <Item label="Safety note" value={explanation.safetyNote} />
       </ul>
     </details>
   );

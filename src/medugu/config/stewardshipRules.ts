@@ -15,32 +15,36 @@ export interface AntibioticStewardship {
   defaultReleaseClass: ReleaseClass;
   /** Preferred route hints used by the engine for IV→PO suggestions. */
   oralAvailable?: boolean;
+  /** Coarse stewardship spectrum hint for mismatch checks. */
+  spectrum?: "gram_positive_only" | "gram_negative_only" | "broad" | "mixed";
+  /** Conservative narrower options to consider when this agent is under review. */
+  narrowerPreferred?: string[];
 }
 
 export const AB_STEWARDSHIP: AntibioticStewardship[] = [
-  { code: "AMP",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true },
-  { code: "AMC",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true },
-  { code: "TZP",  aware: "Watch",   defaultReleaseClass: "restricted" },
-  { code: "CXM",  aware: "Watch",   defaultReleaseClass: "first_line_preferred", oralAvailable: true },
-  { code: "CRO",  aware: "Watch",   defaultReleaseClass: "restricted" },
-  { code: "CAZ",  aware: "Watch",   defaultReleaseClass: "restricted" },
-  { code: "FEP",  aware: "Watch",   defaultReleaseClass: "restricted" },
-  { code: "MEM",  aware: "Watch",   defaultReleaseClass: "restricted" },
-  { code: "ETP",  aware: "Watch",   defaultReleaseClass: "restricted" },
-  { code: "GEN",  aware: "Access",  defaultReleaseClass: "unrestricted" },
-  { code: "AMK",  aware: "Access",  defaultReleaseClass: "restricted" },
-  { code: "CIP",  aware: "Watch",   defaultReleaseClass: "cascade_suppressed", oralAvailable: true },
-  { code: "LVX",  aware: "Watch",   defaultReleaseClass: "cascade_suppressed", oralAvailable: true },
-  { code: "VAN",  aware: "Watch",   defaultReleaseClass: "restricted" },
-  { code: "TEC",  aware: "Watch",   defaultReleaseClass: "restricted" },
-  { code: "LZD",  aware: "Reserve", defaultReleaseClass: "restricted", oralAvailable: true },
-  { code: "CLI",  aware: "Access",  defaultReleaseClass: "unrestricted", oralAvailable: true },
-  { code: "ERY",  aware: "Watch",   defaultReleaseClass: "unrestricted", oralAvailable: true },
-  { code: "TET",  aware: "Access",  defaultReleaseClass: "unrestricted", oralAvailable: true },
-  { code: "SXT",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true },
-  { code: "CST",  aware: "Reserve", defaultReleaseClass: "restricted" },
-  { code: "NIT",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true },
-  { code: "FOS",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true },
+  { code: "AMP",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "gram_positive_only" },
+  { code: "AMC",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "mixed" },
+  { code: "TZP",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "broad", narrowerPreferred: ["AMC", "CXM", "SXT"] },
+  { code: "CXM",  aware: "Watch",   defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "gram_negative_only" },
+  { code: "CRO",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "broad", narrowerPreferred: ["CXM", "AMC", "SXT"] },
+  { code: "CAZ",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "gram_negative_only", narrowerPreferred: ["CIP", "SXT"] },
+  { code: "FEP",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "broad", narrowerPreferred: ["CRO", "CXM", "SXT"] },
+  { code: "MEM",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "broad", narrowerPreferred: ["TZP", "CRO", "CXM", "SXT"] },
+  { code: "ETP",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "broad", narrowerPreferred: ["CRO", "CXM", "SXT"] },
+  { code: "GEN",  aware: "Access",  defaultReleaseClass: "unrestricted", spectrum: "gram_negative_only" },
+  { code: "AMK",  aware: "Access",  defaultReleaseClass: "restricted", spectrum: "gram_negative_only" },
+  { code: "CIP",  aware: "Watch",   defaultReleaseClass: "cascade_suppressed", oralAvailable: true, spectrum: "mixed" },
+  { code: "LVX",  aware: "Watch",   defaultReleaseClass: "cascade_suppressed", oralAvailable: true, spectrum: "mixed" },
+  { code: "VAN",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "gram_positive_only" },
+  { code: "TEC",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "gram_positive_only" },
+  { code: "LZD",  aware: "Reserve", defaultReleaseClass: "restricted", oralAvailable: true, spectrum: "gram_positive_only" },
+  { code: "CLI",  aware: "Access",  defaultReleaseClass: "unrestricted", oralAvailable: true, spectrum: "gram_positive_only" },
+  { code: "ERY",  aware: "Watch",   defaultReleaseClass: "unrestricted", oralAvailable: true, spectrum: "gram_positive_only" },
+  { code: "TET",  aware: "Access",  defaultReleaseClass: "unrestricted", oralAvailable: true, spectrum: "mixed" },
+  { code: "SXT",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "mixed" },
+  { code: "CST",  aware: "Reserve", defaultReleaseClass: "restricted", spectrum: "gram_negative_only" },
+  { code: "NIT",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "gram_negative_only" },
+  { code: "FOS",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "mixed" },
 ];
 
 export function getStewardship(code: string): AntibioticStewardship | undefined {
