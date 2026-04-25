@@ -1,4 +1,4 @@
-import { AST_PANELS, getAntibiotic } from "../../config/antibiotics";
+import { getAntibiotic, type ASTPanelDef } from "../../config/antibiotics";
 import { PRIMARY_STANDARD, SECONDARY_STANDARD } from "../../config/breakpoints";
 import { ASTMethod } from "../../domain/enums";
 import type { ASTStandard } from "../../domain/types";
@@ -13,6 +13,7 @@ const METHOD_OPTIONS: { code: ASTMethod; label: string }[] = [
 
 type ASTPanelEntryProps = {
   selectedPanelId: string;
+  eligiblePanels: ASTPanelDef[];
   method: ASTMethod;
   standard: ASTStandard;
   panelPendingCount: number;
@@ -21,6 +22,7 @@ type ASTPanelEntryProps = {
   selectedPanelMissingRequested: string[];
   panelSummary: string | null;
   isBloodASTBlocked: boolean;
+  isPanelEligible: boolean;
   onPanelChange: (value: string) => void;
   onMethodChange: (value: ASTMethod) => void;
   onStandardChange: (value: ASTStandard) => void;
@@ -29,6 +31,7 @@ type ASTPanelEntryProps = {
 
 export function ASTPanelEntry({
   selectedPanelId,
+  eligiblePanels,
   method,
   standard,
   panelPendingCount,
@@ -37,11 +40,14 @@ export function ASTPanelEntry({
   selectedPanelMissingRequested,
   panelSummary,
   isBloodASTBlocked,
+  isPanelEligible,
   onPanelChange,
   onMethodChange,
   onStandardChange,
   onAddPanel,
 }: ASTPanelEntryProps) {
+  const isAddPanelBlocked = isBloodASTBlocked || !isPanelEligible;
+
   return (
     <>
       <label className="text-xs md:col-span-2">
@@ -51,10 +57,11 @@ export function ASTPanelEntry({
           onChange={(e) => onPanelChange(e.target.value)}
           className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
         >
-          {AST_PANELS.map((panel) => (
+          {eligiblePanels.map((panel) => (
             <option key={panel.id} value={panel.id}>{panel.label}</option>
           ))}
         </select>
+        <p className="mt-1 text-[11px] text-muted-foreground">Panels are filtered by organism group.</p>
       </label>
       <label className="text-xs">
         <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Method</span>
@@ -83,7 +90,7 @@ export function ASTPanelEntry({
         <button
           type="button"
           onClick={onAddPanel}
-          disabled={isBloodASTBlocked}
+          disabled={isAddPanelBlocked}
           className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
         >
           Add panel
@@ -91,6 +98,11 @@ export function ASTPanelEntry({
         {isBloodASTBlocked && (
           <span className="ml-2 text-[11px] text-destructive">
             Blood culture AST requires organism linkage to a positive bottle.
+          </span>
+        )}
+        {!isPanelEligible && (
+          <span className="ml-2 text-[11px] text-destructive">
+            This AST panel is not appropriate for the selected organism group.
           </span>
         )}
       </div>
