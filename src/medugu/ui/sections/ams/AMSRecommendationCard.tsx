@@ -1,0 +1,95 @@
+import { getAntibiotic } from "../../../config/antibiotics";
+import type { AMSApprovalStatus, ASTResult, Isolate } from "../../../domain/types";
+import type { StewardshipDecision } from "../../../logic/stewardshipEngine";
+import { AMSApprovalStatusPanel } from "./AMSApprovalStatusPanel";
+import { AMSRuleExplanation } from "./AMSRuleExplanation";
+
+export type RecommendationCategory =
+  | "approve"
+  | "request approval"
+  | "de-escalate"
+  | "escalate/review"
+  | "continue"
+  | "suppress/reporting restricted"
+  | "insufficient data";
+
+function awareTone(aware: string) {
+  if (aware === "Access") return "chip chip-square chip-success";
+  if (aware === "Watch") return "chip chip-square chip-warning";
+  if (aware === "Reserve") return "chip chip-square chip-danger";
+  return "chip chip-square chip-neutral";
+}
+
+export function AMSRecommendationCard({
+  row,
+  isolate,
+  specimenLabel,
+  syndrome,
+  decision,
+  approvalStatus,
+  restriction,
+  recommendationCategory,
+  recommendationText,
+  reason,
+  releaseImpact,
+}: {
+  row: ASTResult;
+  isolate?: Isolate;
+  specimenLabel?: string;
+  syndrome?: string;
+  decision: StewardshipDecision;
+  approvalStatus: AMSApprovalStatus;
+  restriction: string;
+  recommendationCategory: RecommendationCategory;
+  recommendationText: string;
+  reason: string;
+  releaseImpact: string;
+}) {
+  const antibiotic = getAntibiotic(row.antibioticCode);
+  const interp = row.finalInterpretation ?? row.interpretedSIR ?? "not available";
+  const ruleCode = row.expertRulesFired?.[0]?.ruleCode ?? row.ruleAppliedCode ?? "not available";
+
+  return (
+    <article className="space-y-2 rounded-md border border-border bg-card p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <div className="text-sm font-medium text-foreground">
+            {row.antibioticCode} · {antibiotic?.display ?? row.antibioticCode}
+          </div>
+          <div className="mt-1 flex flex-wrap gap-1 text-[10px]">
+            <span className={awareTone(decision.aware)}>{decision.aware}</span>
+            <span className="chip chip-square chip-restricted">{restriction}</span>
+            <span className="chip chip-square chip-neutral">AST {interp}</span>
+            <span className="chip chip-square chip-neutral">Governance {row.governance}</span>
+            <span className="chip chip-square chip-neutral">Breakpoint {row.standard}</span>
+          </div>
+        </div>
+        <AMSApprovalStatusPanel status={approvalStatus} required={decision.approvalRequired} />
+      </div>
+
+      <div className="text-xs text-muted-foreground">
+        <span className="text-foreground">Isolate:</span> {isolate ? `#${isolate.isolateNo} ${isolate.organismDisplay}` : "not available"}
+        {specimenLabel ? <span> · <span className="text-foreground">Specimen:</span> {specimenLabel}</span> : null}
+        {syndrome ? <span> · <span className="text-foreground">Syndrome:</span> {syndrome}</span> : null}
+      </div>
+
+      <div className="rounded-md border border-border bg-background p-2 text-xs">
+        <div><span className="font-medium text-foreground">Recommendation category:</span> {recommendationCategory}</div>
+        <div className="mt-1"><span className="font-medium text-foreground">Recommendation:</span> {recommendationText}</div>
+        <div className="mt-1"><span className="font-medium text-foreground">Reason:</span> {reason}</div>
+        <div className="mt-1"><span className="font-medium text-foreground">Rule code:</span> {ruleCode}</div>
+        <div className="mt-1"><span className="font-medium text-foreground">Release impact:</span> {releaseImpact}</div>
+      </div>
+
+      <AMSRuleExplanation
+        row={row}
+        decision={decision}
+        specimenContext={specimenLabel}
+        syndrome={syndrome}
+        organism={isolate?.organismDisplay}
+        approvalState={decision.approvalRequired ? `${approvalStatus}` : "not required"}
+        releaseImpact={releaseImpact}
+      />
+    </article>
+  );
+}
