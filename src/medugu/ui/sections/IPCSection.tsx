@@ -12,7 +12,12 @@
 
 import { useMemo, useState } from "react";
 import { useActiveAccession, useMeduguState } from "../../store/useAccessionStore";
-import { evaluateIPC, type IPCDecision } from "../../logic/ipcEngine";
+import {
+  evaluateIPC,
+  getSpecimenIPCAdvice,
+  getSpecimenIPCContext,
+  type IPCDecision,
+} from "../../logic/ipcEngine";
 import { rulesFor } from "../../config/ipcRules";
 import { getOrganism } from "../../config/organisms";
 import { detailFromDecision, type IPCEpisodeDetail } from "../../logic/ipcEpisodeDetail";
@@ -37,7 +42,7 @@ function statusForDecision(accessionIpc: { ruleCode: string; organismCode?: stri
   return matched.acknowledgedAt ? "acknowledged" : "open";
 }
 
-function triggerReason(accessionFamilyCode: string | undefined, d: IPCDecision): string {
+function triggerReason(specimenContext: string, d: IPCDecision): string {
   const reasonParts: string[] = [];
   if (d.organismCode) {
     const org = getOrganism(d.organismCode);
@@ -46,9 +51,7 @@ function triggerReason(accessionFamilyCode: string | undefined, d: IPCDecision):
   if (d.phenotypes.length > 0) {
     reasonParts.push(`Phenotype: ${d.phenotypes.join(", ")}`);
   }
-  if (accessionFamilyCode === "BLOOD") {
-    reasonParts.push("Specimen context: bloodstream isolate");
-  }
+  reasonParts.push(`Specimen context: ${specimenContext}`);
   return reasonParts.join(" · ");
 }
 
@@ -129,6 +132,8 @@ export function IPCSection() {
           const isolate = accession.isolates.find((i) => i.id === d.isolateId);
           const severity = severityForDecision(d);
           const status = statusForDecision(accession.ipc, d);
+          const specimenAdvice = getSpecimenIPCAdvice(accession, d);
+          const specimenContext = getSpecimenIPCContext(accession);
           return (
             <li
               key={`${d.isolateId}-${d.ruleCode}-${idx}`}
@@ -176,9 +181,10 @@ export function IPCSection() {
                 Isolate {isolate?.isolateNo ?? "?"}: {isolate?.organismDisplay ?? d.organismCode ?? "Unknown organism"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Trigger reason: {triggerReason(accession.specimen.familyCode, d)}
+                Trigger reason: {triggerReason(specimenContext, d)}
               </p>
               <p className="mt-1.5 text-sm text-foreground">Advice: {d.message}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Specimen advice: {specimenAdvice}</p>
               <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
                 {d.actions.map((a) => (
                   <span key={a} className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">
