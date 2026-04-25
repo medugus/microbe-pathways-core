@@ -5,6 +5,10 @@ function assert(condition: unknown, message: string): void {
   if (!condition) throw new Error(message);
 }
 
+const fixedNow = Date.parse("2026-04-25T12:00:00.000Z");
+const originalDateNow = Date.now;
+Date.now = () => fixedNow;
+
 const clusterMap = toAccessionsMap(ipcAcceptanceScenarioCases.creClusterIcuCases);
 const clusterReport = deriveLocalOutbreakWatch(ipcAcceptanceScenarioCases.creClusterIcuCases[0], clusterMap, 7);
 assert(clusterReport.summary === "outbreak watch", "Three ICU cases in 7 days should produce outbreak watch summary.");
@@ -23,6 +27,8 @@ assert(noneReport.summary === "no local cluster", "No comparable IPC cases shoul
 
 const summaryWords = `${clusterReport.summary} ${repeatedReport.summary} ${noneReport.summary}`;
 assert(!summaryWords.includes("confirmed outbreak"), "Watch output must not claim confirmed outbreak.");
+
+Date.now = originalDateNow;
 
 // eslint-disable-next-line no-console
 console.log("[ipcLocalWatch.test] all assertions passed");

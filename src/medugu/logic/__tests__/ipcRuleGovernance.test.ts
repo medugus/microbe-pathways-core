@@ -10,6 +10,10 @@ function assert(condition: unknown, message: string): void {
   if (!condition) throw new Error(message);
 }
 
+const fixedNow = Date.parse("2026-04-25T12:00:00.000Z");
+const originalDateNow = Date.now;
+Date.now = () => fixedNow;
+
 const summary = getIPCRuleGovernanceSummary(IPC_RULES);
 assert(summary.totalRules === IPC_RULES.length, "Governance summary should count all configured IPC rules.");
 assert(
@@ -39,6 +43,8 @@ const unlinkedSignal: IPCSignal = {
   raisedAt: "2026-04-25T10:00:00.000Z",
 };
 assert(getRuleForSignal(unlinkedSignal, IPC_RULES) === undefined, "Unknown signal rule codes should not be force-matched.");
+
+Date.now = originalDateNow;
 
 // eslint-disable-next-line no-console
 console.log("[ipcRuleGovernance.test] all assertions passed");
