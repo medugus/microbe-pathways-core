@@ -32,11 +32,14 @@ export interface IPCReport {
 }
 
 function flagFor(rule: IPCRule): IPCFlag {
-  if (rule.ruleCode === "CRE_ALERT" || rule.ruleCode === "CRAB_ALERT" || rule.ruleCode === "CRPA_ALERT") {
+  if (["CRE_ALERT", "CRAB_ALERT", "CRPA_ALERT"].includes(rule.ruleCode)) {
     return IPCFlag.CarbapenemResistant;
   }
-  if (rule.ruleCode === "CAURIS_ALERT" || rule.ruleCode === "MRSA_ALERT" || rule.ruleCode === "VRE_ALERT") {
-    return IPCFlag.AlertOrganism;
+  if (["CAURIS_ALERT"].includes(rule.ruleCode)) {
+    return IPCFlag.XDR;
+  }
+  if (["MRSA_ALERT", "VRE_ALERT"].includes(rule.ruleCode)) {
+    return IPCFlag.MDRO;
   }
   return IPCFlag.AlertOrganism;
 }
@@ -46,12 +49,13 @@ function withinWindow(thenIso: string, days: number): boolean {
   return Date.now() - t <= days * 86_400_000;
 }
 
-export function evaluateIPC(
+export function deriveIPCSignals(
   accession: Accession,
   allAccessions?: MeduguState["accessions"],
 ): IPCReport {
   const decisions: IPCDecision[] = [];
   const signals: IPCSignal[] = [];
+  const seenDecisionKeys = new Set<string>();
 
   for (const iso of accession.isolates) {
     const ruleOut = evaluateIsolate(accession, iso);
@@ -60,6 +64,10 @@ export function evaluateIPC(
     const matched = rulesFor(iso.organismCode, phenotypes as string[], ward);
 
     for (const rule of matched) {
+      const decisionKey = `${iso.id}|${rule.ruleCode}`;
+      if (seenDecisionKeys.has(decisionKey)) continue;
+      seenDecisionKeys.add(decisionKey);
+
       // Dedup against prior accessions for the same patient/MRN within window
       let isNewEpisode = true;
       let priorAccessionIds: string[] = [];
@@ -121,6 +129,13 @@ export function evaluateIPC(
   }
 
   return { decisions, signals };
+}
+
+export function evaluateIPC(
+  accession: Accession,
+  allAccessions?: MeduguState["accessions"],
+): IPCReport {
+  return deriveIPCSignals(accession, allAccessions);
 }
 
 export type { Isolate };
