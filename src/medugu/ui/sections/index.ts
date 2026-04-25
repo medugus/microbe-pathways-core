@@ -25,7 +25,7 @@ export const SECTION_ORDER = [
   { key: "release", label: "Release" },
   { key: "report", label: "Report" },
   { key: "export", label: "Export" },
-  { key: "benchmark", label: "Benchmark" },
+  { key: "benchmark", label: "Command Centre" },
 ] as const;
 
 export type SectionKey = (typeof SECTION_ORDER)[number]["key"];
