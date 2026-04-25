@@ -23,6 +23,14 @@ const CLASS_TONE: Record<string, string> = {
   screening_only: "chip chip-square chip-withheld",
 };
 
+function awareChip(aware: string | undefined): { label: string; tone: string } {
+  const normalized = (aware ?? "").trim().toLowerCase();
+  if (normalized === "access") return { label: "Access", tone: "chip chip-square chip-success" };
+  if (normalized === "watch") return { label: "Watch", tone: "chip chip-square chip-warning" };
+  if (normalized === "reserve") return { label: "Reserve", tone: "chip chip-square chip-danger" };
+  return { label: "Unclassified", tone: "chip chip-square chip-neutral" };
+}
+
 export function StewardshipSection() {
   const accession = useActiveAccession();
   if (!accession) {
@@ -70,7 +78,9 @@ export function StewardshipSection() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((d) => (
+                  {rows.map((d) => {
+                    const aware = awareChip(d.aware);
+                    return (
                     <tr key={d.astId} className="border-t border-border align-top">
                       <td className="px-3 py-2">
                         <div className="font-medium text-foreground">
@@ -79,8 +89,8 @@ export function StewardshipSection() {
                         <div className="text-[10px] text-muted-foreground">{d.antibioticCode}</div>
                       </td>
                       <td className="px-3 py-2">
-                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                          {d.aware}
+                        <span className={aware.tone}>
+                          {aware.label}
                         </span>
                       </td>
                       <td className="px-3 py-2">
@@ -113,7 +123,7 @@ export function StewardshipSection() {
                         {d.suppressionReason ?? d.advisory ?? "—"}
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

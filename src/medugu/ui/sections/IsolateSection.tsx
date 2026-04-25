@@ -252,7 +252,9 @@ export function IsolateSection() {
                         Source linkage (positive set / bottle)
                       </span>
                       {srcMissing && (
-                        <span className="text-[11px] text-destructive">link at least one positive bottle</span>
+                        <span className="text-[11px] text-destructive">
+                          Link this organism to at least one positive blood culture bottle before AST entry.
+                        </span>
                       )}
                     </div>
                     {positiveBottles.length === 0 ? (
