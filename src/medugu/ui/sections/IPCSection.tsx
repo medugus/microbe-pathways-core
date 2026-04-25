@@ -2,11 +2,12 @@ import { useMemo } from "react";
 import { useActiveAccession, useMeduguState } from "../../store/useAccessionStore";
 import { evaluateIPC, getSpecimenIPCContext } from "../../logic/ipcEngine";
 import { deriveColonisationContext } from "../../logic/ipcColonisation";
+import { deriveLocalOutbreakWatch } from "../../logic/ipcLocalWatch";
 import type { IPCSignal } from "../../domain/types";
 import { IPCSummaryStrip } from "./ipc/IPCSummaryStrip";
 import { IPCSignalCard } from "./ipc/IPCSignalCard";
-import { IPCLocalWatchPanel } from "./ipc/IPCLocalWatchPanel";
 import { IPCColonisationTracker } from "./ipc/IPCColonisationTracker";
+import { IPCLocalOutbreakWatch } from "./ipc/IPCLocalOutbreakWatch";
 
 export function IPCSection() {
   const accession = useActiveAccession();
@@ -18,10 +19,8 @@ export function IPCSection() {
         decisions: [],
         specimenContext: "not available",
         signalMap: new Map<string, IPCSignal>(),
-        priorAccessions: [] as string[],
-        comparableSignals: [] as Array<{ ruleCode: string; count: number }>,
-        wardGrouping: [] as Array<{ ward: string; count: number }>,
         localWatchSummary: undefined as string | undefined,
+        localWatch: undefined as ReturnType<typeof deriveLocalOutbreakWatch> | undefined,
         colonisationContext: undefined as ReturnType<typeof deriveColonisationContext> | undefined,
       };
     }
@@ -30,46 +29,19 @@ export function IPCSection() {
     const signalMap = new Map(
       accession.ipc.map((s) => [`${s.ruleCode}|${s.organismCode ?? ""}`, s]),
     );
+    const localWatch = deriveLocalOutbreakWatch(accession, state.accessions);
 
-    const prior = Object.values(state.accessions).filter(
-      (a) => a.id !== accession.id && a.patient.mrn === accession.patient.mrn,
-    );
-
-    const comparableByRule: Record<string, number> = {};
-    const wardCounts: Record<string, number> = {};
-    for (const candidate of Object.values(state.accessions)) {
-      const candidateReport = evaluateIPC(candidate, state.accessions);
-      for (const d of candidateReport.decisions) {
-        comparableByRule[d.ruleCode] = (comparableByRule[d.ruleCode] ?? 0) + 1;
-      }
-      const ward = candidate.patient.ward ?? "unknown";
-      wardCounts[ward] = (wardCounts[ward] ?? 0) + 1;
-    }
-
-    const comparableSignals = Object.entries(comparableByRule)
-      .map(([ruleCode, count]) => ({ ruleCode, count }))
-      .sort((a, b) => b.count - a.count);
-
-    const wardGrouping = Object.entries(wardCounts)
-      .map(([ward, count]) => ({ ward, count }))
-      .sort((a, b) => b.count - a.count);
-
-    const wardWatch = accession.patient.ward
-      ? wardGrouping.find((w) => w.ward === accession.patient.ward)
-      : undefined;
-
-    const localWatchSummary = wardWatch
-      ? `Outbreak watch: ${wardWatch.count} comparable loaded cases in ${wardWatch.ward}`
-      : undefined;
+    const localWatchSummary =
+      localWatch.signalItems.length > 0
+        ? `Local outbreak watch: ${localWatch.signalItems[0].patientAdjustedCount} patient-adjusted comparable loaded cases`
+        : undefined;
 
     return {
       decisions: report.decisions,
       specimenContext: getSpecimenIPCContext(accession),
       signalMap,
-      priorAccessions: prior.map((a) => a.id),
-      comparableSignals,
-      wardGrouping,
       localWatchSummary,
+      localWatch,
       colonisationContext: deriveColonisationContext(accession, state.accessions),
     };
   }, [accession, state.accessions]);
@@ -102,18 +74,19 @@ export function IPCSection() {
         localWatchSummary={data.localWatchSummary}
       />
 
-      <IPCColonisationTracker context={data.colonisationContext} />
-
       {data.decisions.length === 0 ? (
         <div className="space-y-2 rounded-md border border-border bg-card p-4">
           <p className="text-sm text-muted-foreground">
-            No IPC signals — no alert organism, phenotype, ward trigger, repeat-case trigger or clearance trigger matched.
+            No IPC signals — no alert organism, phenotype, ward trigger, repeat-case trigger or
+            clearance trigger matched.
           </p>
-          <p className="text-xs text-muted-foreground">Local cohort count: {data.priorAccessions.length}</p>
           <p className="text-xs text-muted-foreground">
-            Local browser watch evaluates only cases currently loaded in this browser. Hospital-wide rolling-window surveillance requires backend persistence.
+            Local outbreak watch evaluates only currently loaded cases in this browser.
+            Browser-local only and requires backend persistence for hospital-wide surveillance.
           </p>
-          <p className="text-xs text-muted-foreground">Rule version: {accession.ruleVersion || "not available"}</p>
+          <p className="text-xs text-muted-foreground">
+            Rule version: {accession.ruleVersion || "not available"}
+          </p>
         </div>
       ) : (
         <ul className="space-y-2">
@@ -131,11 +104,12 @@ export function IPCSection() {
         </ul>
       )}
 
-      <IPCLocalWatchPanel
-        priorAccessions={data.priorAccessions}
-        comparableSignals={data.comparableSignals.slice(0, 5)}
-        wardGrouping={data.wardGrouping.slice(0, 5)}
-        repeatAdjustedCount={new Set(data.priorAccessions).size}
+      <IPCColonisationTracker context={data.colonisationContext} />
+
+      <IPCLocalOutbreakWatch
+        summary={data.localWatch?.summary ?? "no local cluster"}
+        limitationNote={data.localWatch?.limitationNote ?? "Browser-local only"}
+        items={data.localWatch?.signalItems ?? []}
       />
     </div>
   );
