@@ -1,0 +1,40 @@
+import { meduguActions } from "../../../store/useAccessionStore";
+import type { OperationalQueueItem as QueueItem } from "../../../logic/operationalDashboard";
+
+const PRIORITY_STYLE: Record<QueueItem["priority"], string> = {
+  critical: "bg-destructive text-white",
+  high: "bg-destructive/15 text-destructive",
+  review: "bg-amber-100 text-amber-800",
+  routine: "bg-muted text-muted-foreground",
+};
+
+export function OperationalQueueItem({ item }: { item: QueueItem }) {
+  return (
+    <tr
+      className="cursor-pointer hover:bg-muted/40"
+      onClick={() => {
+        meduguActions.setActive(item.accessionId);
+      }}
+    >
+      <td className="px-2 py-2 align-top">
+        <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_STYLE[item.priority]}`}>
+          {item.priority}
+        </span>
+      </td>
+      <td className="px-2 py-2 align-top text-xs text-foreground">{item.category.replaceAll("_", " ")}</td>
+      <td className="px-2 py-2 align-top text-xs">
+        <div className="font-mono text-[11px]">{item.accessionNumber ?? item.accessionId}</div>
+        <div className="text-muted-foreground">{item.patientLabel ?? "Unknown patient"}</div>
+      </td>
+      <td className="px-2 py-2 align-top text-xs text-muted-foreground">
+        <div>{item.ward ?? "Ward n/a"}</div>
+        <div>{item.specimenLabel ?? "Specimen n/a"}</div>
+      </td>
+      <td className="px-2 py-2 align-top text-xs text-foreground">{item.organismOrPhenotype ?? "—"}</td>
+      <td className="px-2 py-2 align-top text-xs text-foreground">{item.reason}</td>
+      <td className="px-2 py-2 align-top text-xs text-foreground">{item.recommendedAction}</td>
+      <td className="px-2 py-2 align-top text-xs text-muted-foreground">{item.ownerRole.replaceAll("_", " ")}</td>
+      <td className="px-2 py-2 align-top text-xs text-muted-foreground">{item.sourceModule}</td>
+    </tr>
+  );
+}

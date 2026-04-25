@@ -1,3 +1,4 @@
+export { OperationalDashboardSection } from "./OperationalDashboardSection";
 export { PatientSection } from "./PatientSection";
 export { SpecimenSection } from "./SpecimenSection";
 export { MicroscopySection } from "./MicroscopySection";
@@ -13,6 +14,7 @@ export { ExportSection } from "./ExportSection";
 export { BenchmarkSection } from "./BenchmarkSection";
 
 export const SECTION_ORDER = [
+  { key: "operations", label: "Operations" },
   { key: "patient", label: "Patient" },
   { key: "specimen", label: "Specimen" },
   { key: "microscopy", label: "Microscopy" },
