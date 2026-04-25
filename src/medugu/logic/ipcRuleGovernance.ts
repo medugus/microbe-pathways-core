@@ -32,6 +32,7 @@ const CATEGORY_ORDER: IPCRuleCategory[] = [
   "colonisation_screen",
   "clearance",
   "outbreak_watch",
+  "notification",
   "review",
 ];
 
@@ -61,7 +62,7 @@ export function getRulesByCategory(rules: IPCRule[]): Record<string, IPCRule[]> 
 export function getRulesNeedingReview(rules: IPCRule[]): IPCRule[] {
   return rules.filter((rule) => {
     if (!rule.reviewDate) return true;
-    const reviewAt = new Date(rule.reviewDate).getTime();
+    const reviewAt = new Date(`${rule.reviewDate}T23:59:59.999Z`).getTime();
     if (Number.isNaN(reviewAt)) return true;
     return reviewAt < Date.now();
   });

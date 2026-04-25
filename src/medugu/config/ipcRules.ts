@@ -61,7 +61,8 @@ export const IPC_RULES: IPCRule[] = [
     actions: ["notify_ipc_team"],
     notify: ["ipc_nurse"],
     timing: "within_24h",
-    message: "IPC review advised: Staphylococcus aureus isolated. Confirm MRSA status when AST or expert rules are available.",
+    message:
+      "IPC review advised: Staphylococcus aureus isolated. Confirm MRSA status when AST or expert rules are available.",
     governanceStatus: "review_only",
     ruleCategory: "review",
     ruleOwner: "Joint",
@@ -78,7 +79,8 @@ export const IPC_RULES: IPCRule[] = [
     actions: ["notify_ipc_team"],
     notify: ["ipc_nurse"],
     timing: "within_24h",
-    message: "IPC review advised: Enterococcus isolated. Confirm VRE status when AST or expert rules are available.",
+    message:
+      "IPC review advised: Enterococcus isolated. Confirm VRE status when AST or expert rules are available.",
     governanceStatus: "review_only",
     ruleCategory: "review",
     ruleOwner: "Joint",
@@ -95,7 +97,8 @@ export const IPC_RULES: IPCRule[] = [
     actions: ["notify_ipc_team"],
     notify: ["ipc_nurse"],
     timing: "within_24h",
-    message: "IPC review advised: Enterobacterales isolated. Monitor for ESBL/CRE phenotype and escalate if carbapenem resistance is detected.",
+    message:
+      "IPC review advised: Enterobacterales isolated. Monitor for ESBL/CRE phenotype and escalate if carbapenem resistance is detected.",
     governanceStatus: "review_only",
     ruleCategory: "review",
     ruleOwner: "Joint",
@@ -112,7 +115,8 @@ export const IPC_RULES: IPCRule[] = [
     actions: ["notify_ipc_team"],
     notify: ["ipc_nurse"],
     timing: "within_24h",
-    message: "IPC review advised: high-risk non-fermenter isolated. Monitor MDR/carbapenem resistance and apply local placement precautions if resistance emerges.",
+    message:
+      "IPC review advised: high-risk non-fermenter isolated. Monitor MDR/carbapenem resistance and apply local placement precautions if resistance emerges.",
     governanceStatus: "review_only",
     ruleCategory: "review",
     ruleOwner: "Joint",
@@ -131,7 +135,8 @@ export const IPC_RULES: IPCRule[] = [
     actions: ["contact_precautions", "single_room", "notify_ipc_team"],
     notify: ["ipc_nurse", "attending"],
     timing: "same_shift",
-    message: "IPC alert: MRSA phenotype detected. Apply local MRSA isolation, screening, and notification pathway.",
+    message:
+      "IPC alert: MRSA phenotype detected. Apply local MRSA isolation, screening, and notification pathway.",
     governanceStatus: "active",
     ruleCategory: "phenotype_alert",
     ruleOwner: "IPC",
@@ -147,10 +152,16 @@ export const IPC_RULES: IPCRule[] = [
     phenotypeFlags: ["VRE"],
     rollingWindowDays: 90,
     clearanceCount: 3,
-    actions: ["contact_plus_precautions", "single_room", "enhanced_environmental_cleaning", "notify_ipc_team"],
+    actions: [
+      "contact_plus_precautions",
+      "single_room",
+      "enhanced_environmental_cleaning",
+      "notify_ipc_team",
+    ],
     notify: ["ipc_nurse", "attending"],
     timing: "same_shift",
-    message: "IPC alert: VRE phenotype detected. Apply local VRE contact-plus precautions and notification pathway.",
+    message:
+      "IPC alert: VRE phenotype detected. Apply local VRE contact-plus precautions and notification pathway.",
     governanceStatus: "active",
     ruleCategory: "phenotype_alert",
     ruleOwner: "IPC",
@@ -165,10 +176,17 @@ export const IPC_RULES: IPCRule[] = [
     ruleCode: "CRE_ALERT",
     phenotypeFlags: ["CRE", "carbapenemase_suspected"],
     rollingWindowDays: 180,
-    actions: ["contact_plus_precautions", "single_room", "notify_ipc_team", "notify_public_health", "screen_contacts"],
+    actions: [
+      "contact_plus_precautions",
+      "single_room",
+      "notify_ipc_team",
+      "notify_public_health",
+      "screen_contacts",
+    ],
     notify: ["ipc_nurse", "attending", "public_health_unit"],
     timing: "immediate",
-    message: "IPC alert: carbapenemase/CRE signal detected. Notify IPC and apply local MDRO precautions.",
+    message:
+      "IPC alert: carbapenemase/CRE signal detected. Notify IPC and apply local MDRO precautions.",
     governanceStatus: "active",
     ruleCategory: "phenotype_alert",
     ruleOwner: "Joint",
@@ -183,10 +201,16 @@ export const IPC_RULES: IPCRule[] = [
     ruleCode: "CRAB_ALERT",
     organismCodes: ["ABAU"],
     phenotypeFlags: ["carbapenemase_suspected"],
-    actions: ["contact_plus_precautions", "single_room", "enhanced_environmental_cleaning", "notify_ipc_team"],
+    actions: [
+      "contact_plus_precautions",
+      "single_room",
+      "enhanced_environmental_cleaning",
+      "notify_ipc_team",
+    ],
     notify: ["ipc_nurse"],
     timing: "immediate",
-    message: "IPC alert: carbapenem-resistant Acinetobacter signal detected. Apply local MDRO precautions.",
+    message:
+      "IPC alert: carbapenem-resistant Acinetobacter signal detected. Apply local MDRO precautions.",
     governanceStatus: "active",
     ruleCategory: "phenotype_alert",
     ruleOwner: "Joint",
@@ -204,7 +228,8 @@ export const IPC_RULES: IPCRule[] = [
     actions: ["contact_precautions", "single_room", "notify_ipc_team"],
     notify: ["ipc_nurse"],
     timing: "same_shift",
-    message: "IPC alert: carbapenem-resistant Pseudomonas signal detected. Apply local placement and water-source review policy.",
+    message:
+      "IPC alert: carbapenem-resistant Pseudomonas signal detected. Apply local placement and water-source review policy.",
     governanceStatus: "active",
     ruleCategory: "phenotype_alert",
     ruleOwner: "Joint",
@@ -218,10 +243,18 @@ export const IPC_RULES: IPCRule[] = [
   {
     ruleCode: "CAURIS_ALERT",
     organismCodes: ["CAUR"],
-    actions: ["contact_plus_precautions", "single_room", "enhanced_environmental_cleaning", "notify_ipc_team", "notify_public_health", "screen_contacts"],
+    actions: [
+      "contact_plus_precautions",
+      "single_room",
+      "enhanced_environmental_cleaning",
+      "notify_ipc_team",
+      "notify_public_health",
+      "screen_contacts",
+    ],
     notify: ["ipc_nurse", "public_health_unit"],
     timing: "immediate",
-    message: "IPC alert: Candida auris isolated. Urgent IPC notification and isolation/environmental cleaning according to local policy.",
+    message:
+      "IPC alert: Candida auris isolated. Urgent IPC notification and isolation/environmental cleaning according to local policy.",
     governanceStatus: "active",
     ruleCategory: "organism_alert",
     ruleOwner: "IPC",
@@ -238,7 +271,8 @@ export const IPC_RULES: IPCRule[] = [
     actions: ["airborne_precautions", "single_room", "notify_ipc_team", "notify_public_health"],
     notify: ["ipc_nurse", "public_health_unit"],
     timing: "immediate",
-    message: "IPC alert: Mycobacterium tuberculosis complex isolated. Apply local airborne precautions and notification policy.",
+    message:
+      "IPC alert: Mycobacterium tuberculosis complex isolated. Apply local airborne precautions and notification policy.",
     governanceStatus: "active",
     ruleCategory: "organism_alert",
     ruleOwner: "IPC",
@@ -266,12 +300,18 @@ export const IPC_RULES: IPCRule[] = [
     version: "1.0.0",
     localPolicyRef: "IPC-ESBL-HIGHRISK",
     rationale: "Ward-scoped ESBL escalation in high-risk units.",
-    limitation: "Browser-phase visibility only; production editing requires backend audit and permissions.",
+    limitation:
+      "Browser-phase visibility only; production editing requires backend audit and permissions.",
   },
 ];
 
-export function rulesFor(organismCode: string | undefined, phenotypes: string[], ward?: string): IPCRule[] {
+export function rulesFor(
+  organismCode: string | undefined,
+  phenotypes: string[],
+  ward?: string,
+): IPCRule[] {
   return IPC_RULES.filter((r) => {
+    if (r.governanceStatus === "disabled") return false;
     const orgMatch = !r.organismCodes || (organismCode && r.organismCodes.includes(organismCode));
     const phenMatch = !r.phenotypeFlags || r.phenotypeFlags.some((f) => phenotypes.includes(f));
     const wardMatch = !r.wardScopes || (ward && r.wardScopes.includes(ward));
