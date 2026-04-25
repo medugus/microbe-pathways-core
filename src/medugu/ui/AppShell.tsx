@@ -10,6 +10,7 @@ import { SoundTriggerGate } from "./SoundTriggerGate";
 import { SoundAckChip } from "./SoundAckChip";
 import { Link } from "@tanstack/react-router";
 import {
+  OperationalDashboardSection,
   PatientSection,
   SpecimenSection,
   MicroscopySection,
@@ -29,6 +30,7 @@ import { useActiveAccession, useMeduguState } from "../store/useAccessionStore";
 import { useConfigState } from "../store/configStore";
 
 const SECTION_COMPONENTS = {
+  operations: OperationalDashboardSection,
   patient: PatientSection,
   specimen: SpecimenSection,
   microscopy: MicroscopySection,
@@ -117,6 +119,7 @@ export function AppShell() {
                       id={`sec-${s.key}`}
                       title={s.label}
                       defaultOpen={
+                        s.key === "operations" ||
                         s.key === "patient" ||
                         s.key === "specimen" ||
                         s.key === "isolate" ||
