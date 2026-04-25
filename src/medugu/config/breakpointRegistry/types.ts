@@ -59,6 +59,7 @@ export function normalizeDiskRecord(record: EucastBreakpointRecord): DiskBreakpo
     ...record,
     method: "disk_diffusion",
     resistantMaxMm: record.resistantMaxMm ?? record.resistantLessThanMm,
+    resistantLessThanMm: record.resistantLessThanMm,
   };
 }
 
@@ -67,6 +68,7 @@ export function normalizeMICRecord(record: EucastBreakpointRecord): MICBreakpoin
     ...record,
     method: "mic",
     resistantMinMgL: record.resistantMinMgL ?? record.resistantGreaterThanMgL,
+    resistantGreaterThanMgL: record.resistantGreaterThanMgL,
   };
 }
 
