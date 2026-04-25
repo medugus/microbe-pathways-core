@@ -1,6 +1,7 @@
-import type { Accession, ASTResult, AMSApprovalStatus } from "../../domain/types";
+import type { Accession, AMSApprovalStatus } from "../../domain/types";
 import { getAntibiotic } from "../../config/antibiotics";
-import { approvalStatusForRow, isRestrictedRow } from "../../logic/amsEngine";
+import { approvalStatusForRow } from "../../logic/amsEngine";
+import { evaluateASTReportability } from "../../logic/reportability";
 
 const AMS_TONE: Record<AMSApprovalStatus, string> = {
   not_requested: "chip chip-square chip-neutral",
@@ -9,66 +10,6 @@ const AMS_TONE: Record<AMSApprovalStatus, string> = {
   denied: "chip chip-square chip-ams-denied",
   expired: "chip chip-square chip-danger",
 };
-
-function normalize(value: string | undefined): string {
-  return (value ?? "").trim().toLowerCase();
-}
-
-function hasPhenotypeFlags(row: ASTResult): boolean {
-  return Array.isArray(row.phenotypeFlags) && row.phenotypeFlags.length > 0;
-}
-
-type Visibility = "Suppressed" | "Needs approval" | "Lab-only" | "Will report" | "Unknown";
-
-function evaluateVisibility(row: ASTResult): { visibility: Visibility; explanation: string } {
-  const governance = normalize(row.governance);
-  const cascadeDecision = normalize(row.cascadeDecision);
-
-  const cascadeSuppresses =
-    cascadeDecision.includes("suppress") ||
-    cascadeDecision.includes("withheld") ||
-    cascadeDecision.includes("hidden");
-
-  if (cascadeSuppresses) {
-    return {
-      visibility: "Suppressed",
-      explanation: "Suppressed by cascade",
-    };
-  }
-
-  if (governance.includes("approval required") || governance === "approval_required") {
-    return {
-      visibility: "Needs approval",
-      explanation: "Approval required before release",
-    };
-  }
-
-  if (governance === "lab-only" || governance === "lab_only") {
-    return {
-      visibility: "Lab-only",
-      explanation: "Lab-only result",
-    };
-  }
-
-  const reportableGovernance = new Set([
-    "reportable",
-    "report",
-    "interpreted",
-    "approved",
-    "released",
-  ]);
-  if (reportableGovernance.has(governance)) {
-    return {
-      visibility: "Will report",
-      explanation: "Reportable",
-    };
-  }
-
-  return {
-    visibility: "Unknown",
-    explanation: "No rule reason available",
-  };
-}
 
 export function ASTReportabilityBoard({ accession }: { accession: Accession }) {
   if (accession.ast.length === 0) {
@@ -82,24 +23,17 @@ export function ASTReportabilityBoard({ accession }: { accession: Accession }) {
   const isolateById = new Map(accession.isolates.map((iso) => [iso.id, iso]));
 
   const evaluatedRows = accession.ast.map((row) => {
-    const visibilityEval = evaluateVisibility(row);
-    const restricted = isRestrictedRow(row);
-    const phenotypePresent = hasPhenotypeFlags(row);
-    const explanationExtras: string[] = [];
-
-    if (restricted) explanationExtras.push("Restricted antimicrobial");
-    if (phenotypePresent) explanationExtras.push("Phenotype flag present");
+    const reportability = evaluateASTReportability(row, accession);
+    const isRestricted = reportability.isRestricted;
 
     return {
       row,
-      restricted,
-      phenotypePresent,
-      visibility: visibilityEval.visibility,
-      explanation:
-        explanationExtras.length > 0
-          ? `${visibilityEval.explanation}; ${explanationExtras.join("; ")}`
-          : visibilityEval.explanation,
-      amsStatus: restricted ? approvalStatusForRow(accession, row.id) : null,
+      restricted: isRestricted,
+      phenotypePresent: reportability.hasPhenotypeFlags,
+      visibility: reportability.clinicianVisibility,
+      explanation: reportability.explanation,
+      amsStatus: isRestricted ? approvalStatusForRow(accession, row.id) : null,
+      missingGovernance: reportability.missingGovernance,
     };
   });
 
@@ -110,7 +44,7 @@ export function ASTReportabilityBoard({ accession }: { accession: Accession }) {
     approvalRequired: evaluatedRows.filter((r) => r.visibility === "Needs approval").length,
     restricted: evaluatedRows.filter((r) => r.restricted).length,
     phenotypeFlags: evaluatedRows.filter((r) => r.phenotypePresent).length,
-    missingGovernance: evaluatedRows.filter((r) => normalize(r.row.governance) === "").length,
+    missingGovernance: evaluatedRows.filter((r) => r.missingGovernance).length,
   };
 
   return (
