@@ -27,9 +27,9 @@ export function CaseManager() {
       <div className="border-b border-sidebar-border px-3 py-2">
         <button
           onClick={() => setIntakeOpen(true)}
-          className="w-full rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          className="w-full rounded-md bg-primary px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-primary/90"
         >
-          <span style={{color:"#f472b6"}}>+</span> New accession
+          <span className="text-white font-bold">+</span> New accession
         </button>
       </div>
 
