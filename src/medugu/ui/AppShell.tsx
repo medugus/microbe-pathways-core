@@ -50,11 +50,11 @@ export function AppShell() {
   const config = useConfigState();
 
   return (
-    <div className="grid h-screen grid-cols-[280px_1fr] bg-background text-foreground">
+    <div className="grid min-h-screen grid-cols-1 md:grid-cols-[minmax(220px,22vw)_1fr] bg-background text-foreground">
       <SoundTriggerGate />
       <CaseManager />
 
-      <main className="flex h-screen min-w-0 flex-col overflow-hidden">
+      <main className="flex min-h-screen min-w-0 flex-col overflow-hidden">
         <header className="border-b border-border bg-card px-6 py-3">
           {accession ? (
             <div className="flex items-baseline justify-between gap-4">
