@@ -4,11 +4,14 @@ import { evaluateIPC, getSpecimenIPCContext } from "../../logic/ipcEngine";
 import { deriveColonisationContext } from "../../logic/ipcColonisation";
 import { deriveLocalOutbreakWatch } from "../../logic/ipcLocalWatch";
 import type { IPCSignal } from "../../domain/types";
+import { IPC_RULES } from "../../config/ipcRules";
+import { getRuleForSignal } from "../../logic/ipcRuleGovernance";
 import { IPCSummaryStrip } from "./ipc/IPCSummaryStrip";
 import { IPCSignalCard } from "./ipc/IPCSignalCard";
 import { IPCColonisationTracker } from "./ipc/IPCColonisationTracker";
 import { IPCLocalOutbreakWatch } from "./ipc/IPCLocalOutbreakWatch";
 import { IPCOfficerQueue } from "./ipc/IPCOfficerQueue";
+import { IPCRuleGovernancePanel } from "./ipc/IPCRuleGovernancePanel";
 
 export function IPCSection() {
   const accession = useActiveAccession();
@@ -20,6 +23,7 @@ export function IPCSection() {
         decisions: [],
         specimenContext: "not available",
         signalMap: new Map<string, IPCSignal>(),
+        signalRuleMap: new Map<string, string>(),
         localWatchSummary: undefined as string | undefined,
         localWatch: undefined as ReturnType<typeof deriveLocalOutbreakWatch> | undefined,
         colonisationContext: undefined as ReturnType<typeof deriveColonisationContext> | undefined,
@@ -29,6 +33,12 @@ export function IPCSection() {
     const report = evaluateIPC(accession, state.accessions);
     const signalMap = new Map(
       accession.ipc.map((s) => [`${s.ruleCode}|${s.organismCode ?? ""}`, s]),
+    );
+    const signalRuleMap = new Map(
+      accession.ipc.map((s) => {
+        const matchedRule = getRuleForSignal(s, IPC_RULES);
+        return [`${s.ruleCode}|${s.organismCode ?? ""}`, matchedRule?.ruleCode ?? s.ruleCode];
+      }),
     );
     const localWatch = deriveLocalOutbreakWatch(accession, state.accessions);
 
@@ -41,6 +51,7 @@ export function IPCSection() {
       decisions: report.decisions,
       specimenContext: getSpecimenIPCContext(accession),
       signalMap,
+      signalRuleMap,
       localWatchSummary,
       localWatch,
       colonisationContext: deriveColonisationContext(accession, state.accessions),
@@ -77,6 +88,8 @@ export function IPCSection() {
 
       <IPCOfficerQueue accession={accession} allAccessions={state.accessions} />
 
+      <IPCRuleGovernancePanel />
+
       {data.decisions.length === 0 ? (
         <div className="space-y-2 rounded-md border border-border bg-card p-4">
           <p className="text-sm text-muted-foreground">
@@ -101,6 +114,7 @@ export function IPCSection() {
                 specimenContext={data.specimenContext}
                 ward={accession.patient.ward}
                 ruleVersion={accession.ruleVersion}
+                generatedByRuleCode={data.signalRuleMap.get(`${d.ruleCode}|${d.organismCode ?? ""}`)}
               />
             </li>
           ))}
