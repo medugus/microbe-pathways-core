@@ -568,7 +568,7 @@ export interface NormalisedExport {
     phenotypeFlags?: string[];
   }[];
   stewardship: { source: string; code: string; text: string }[];
-  ipc: { ruleCode: string; message: string; actions: string[]; timing: string }[];
+  ipc: { ruleCode: string; message: string; actions: string[]; timing: string; visibility: string }[];
   validation: { code: string; severity: string; message: string; section: string }[];
   release: {
     state: string;

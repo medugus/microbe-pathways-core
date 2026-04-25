@@ -181,14 +181,27 @@ export function ReportSection() {
           )}
         </section>
 
+        {doc.internalNotes.length > 0 && (
+          <section className="mt-3">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Internal IPC notes</div>
+            <ul className="mt-1 space-y-1">
+              {doc.internalNotes.map((note, idx) => (
+                <li key={idx} className="text-sm text-muted-foreground">
+                  {note}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {doc.ipc.length > 0 && (
           <section className="mt-3">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">IPC actions</div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">IPC clinician-facing notes</div>
             <ul className="mt-1 space-y-1">
               {doc.ipc.map((i, idx) => (
                 <li key={idx} className="text-sm">
                   <code className="mr-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                    {i.ruleCode} · {i.timing}
+                    {i.ruleCode} · {i.timing} · {i.visibility}
                   </code>
                   <span className="text-foreground">{i.message}</span>
                   <div className="mt-0.5 text-[10px] text-muted-foreground">
