@@ -2,11 +2,17 @@
 // Pure UI: writes captured values into accession.specimen.details and persists
 // via meduguActions.upsertAccession. No clinical rule logic lives here.
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { meduguActions } from "../../store/useAccessionStore";
 import type { Accession } from "../../domain/types";
 import type { FieldKey } from "../../logic/specimenResolver";
 import { BloodSetsForm } from "./BloodSetsForm";
+import {
+  getAllowedCollectionMethodsForSpecimen,
+  getCollectionMethodGuidanceForSpecimen,
+  getDefaultCollectionMethodForSpecimen,
+  isCollectionMethodCompatibleWithSpecimen,
+} from "../../logic/specimenCompatibility";
 
 const FIELD_LABELS: Record<string, string> = {
   setCount: "Number of sets",
@@ -71,9 +77,25 @@ const IMAGE_GUIDANCE = [
 
 const COLLECTION_METHOD_NOTES_URINE = [
   { code: "MIDSTREAM_CLEAN_CATCH", display: "Midstream — clean catch" },
+  { code: "MIDSTREAM", display: "Midstream" },
+  { code: "SELF_COLLECTED_CLEAN_CATCH", display: "Self-collected clean catch" },
   { code: "IN_OUT_CATHETER", display: "In-out catheter" },
+  { code: "INTERMITTENT_CATHETERISATION", display: "Intermittent catheterisation" },
   { code: "INDWELLING_CATHETER", display: "Indwelling catheter" },
+  { code: "CATHETER_SAMPLING_PORT", display: "Catheter sampling port" },
+  { code: "NEWLY_INSERTED_CATHETER", display: "Newly inserted catheter" },
+  { code: "CLEANED_STOMA_CONDUIT_COLLECTION", display: "Cleaned stoma/conduit collection" },
+  { code: "CATHETERISED_CONDUIT_SPECIMEN", display: "Catheterised conduit specimen" },
+  { code: "FRESHLY_APPLIED_UROSTOMY_APPLIANCE", display: "Freshly applied urostomy appliance" },
+  { code: "NEPHROSTOMY_TUBE_SAMPLING", display: "Nephrostomy tube sampling" },
+  { code: "FRESHLY_ACCESSED_NEPHROSTOMY_PORT", display: "Freshly accessed nephrostomy port" },
+  { code: "SUPRAPUBIC_NEEDLE_ASPIRATE", display: "Suprapubic needle aspirate" },
   { code: "SPA", display: "Suprapubic aspirate" },
+  { code: "FIRST_VOID", display: "First-void urine" },
+  { code: "FIRST_CATCH", display: "First-catch urine" },
+  { code: "RANDOM_VOIDED", display: "Random voided urine" },
+  { code: "CLEAN_CATCH", display: "Clean catch urine" },
+  { code: "PAEDIATRIC_URINE_BAG", display: "Paediatric urine bag" },
   { code: "PAEDIATRIC_BAG", display: "Paediatric collection bag" },
 ];
 
@@ -102,6 +124,7 @@ interface Props {
 
 export function SpecimenFieldsForm({ accession, required, optional }: Props) {
   const details = accession.specimen.details ?? {};
+  const [collectionResetWarning, setCollectionResetWarning] = useState(false);
 
   function update(field: string, value: unknown) {
     const nextDetails: Record<string, unknown> = { ...details };
@@ -117,6 +140,46 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
   }
 
   const familyCode = accession.specimen.familyCode;
+  const subtypeCode = accession.specimen.subtypeCode;
+  const collectionMethodCode =
+    typeof details.collectionMethodNote === "string" ? details.collectionMethodNote : "";
+  const allowedCollectionMethods = useMemo(
+    () => getAllowedCollectionMethodsForSpecimen(familyCode, subtypeCode),
+    [familyCode, subtypeCode],
+  );
+  const urineCollectionMethodOptions = useMemo(() => {
+    if (familyCode !== "URINE") return COLLECTION_METHOD_NOTES_URINE;
+    if (!allowedCollectionMethods) return COLLECTION_METHOD_NOTES_URINE;
+    return COLLECTION_METHOD_NOTES_URINE.filter((o) => allowedCollectionMethods.includes(o.code));
+  }, [allowedCollectionMethods, familyCode]);
+  const collectionGuidance = useMemo(
+    () => getCollectionMethodGuidanceForSpecimen(familyCode, subtypeCode),
+    [familyCode, subtypeCode],
+  );
+
+  useEffect(() => {
+    if (familyCode !== "URINE") {
+      setCollectionResetWarning(false);
+      return;
+    }
+    if (!collectionMethodCode) {
+      setCollectionResetWarning(false);
+      return;
+    }
+    if (isCollectionMethodCompatibleWithSpecimen(familyCode, subtypeCode, collectionMethodCode)) {
+      return;
+    }
+
+    const fallback = getDefaultCollectionMethodForSpecimen(familyCode, subtypeCode) ?? "";
+    const nextDetails: Record<string, unknown> = { ...details };
+    if (fallback) nextDetails.collectionMethodNote = fallback;
+    else delete nextDetails.collectionMethodNote;
+    meduguActions.upsertAccession({
+      ...accession,
+      specimen: { ...accession.specimen, details: nextDetails },
+    });
+    setCollectionResetWarning(true);
+  }, [accession, collectionMethodCode, details, familyCode, subtypeCode]);
 
   const renderField = (field: FieldKey) => {
     const label = FIELD_LABELS[field] ?? field;
@@ -200,19 +263,33 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
         );
       case "collectionMethodNote":
         return (
-          <CodedSelect
-            label={label}
-            value={String(value)}
-            options={
-              familyCode === "URINE"
-                ? COLLECTION_METHOD_NOTES_URINE
-                : familyCode === "LRT"
-                ? COLLECTION_METHOD_NOTES_LRT
-                : []
-            }
-            onChange={(v) => update(field, v)}
-            allowFreeText
-          />
+          <div className="space-y-1">
+            <CodedSelect
+              label={label}
+              value={String(value)}
+              options={
+                familyCode === "URINE"
+                  ? urineCollectionMethodOptions
+                  : familyCode === "LRT"
+                  ? COLLECTION_METHOD_NOTES_LRT
+                  : []
+              }
+              onChange={(v) => {
+                setCollectionResetWarning(false);
+                update(field, v);
+              }}
+              allowFreeText
+            />
+            {collectionResetWarning && (
+              <p className="text-[11px] text-amber-700 dark:text-amber-500">
+                Collection method reset because it is not compatible with the selected specimen
+                type.
+              </p>
+            )}
+            {collectionGuidance && (
+              <p className="text-[11px] text-muted-foreground">{collectionGuidance}</p>
+            )}
+          </div>
         );
       case "anatomicSite":
         return (
