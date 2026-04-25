@@ -1,4 +1,5 @@
 import { ANTIBIOTICS } from "../../config/antibiotics";
+import { getInterpretationLabel } from "../../config/breakpoints";
 import { meduguActions } from "../../store/useAccessionStore";
 import { approvalStatusForRow, isRestrictedRow } from "../../logic/amsEngine";
 import type { Accession, ASTGovernanceState } from "../../domain/types";
@@ -147,7 +148,12 @@ export function AntibiogramGrid({ accession }: { accession: Accession }) {
                       />
                       {hasNoBreakpoint && (
                         <span className="text-center text-[9px] text-amber-700 dark:text-amber-300">
-                          No breakpoint
+                          No breakpoint (No defined breakpoint)
+                        </span>
+                      )}
+                      {cell.standard === "EUCAST" && ["S", "I", "R"].includes(sir) && (
+                        <span className="text-center text-[9px] text-muted-foreground">
+                          {sir}: {getInterpretationLabel(cell.standard, sir as "S" | "I" | "R")}
                         </span>
                       )}
                       <div className="flex items-center justify-between gap-1">
