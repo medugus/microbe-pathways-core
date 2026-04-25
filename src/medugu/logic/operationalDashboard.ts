@@ -31,10 +31,21 @@ export type OperationalQueueOwnerRole =
   | "mixed";
 
 export type OperationalQueueSourceModule = "IPC" | "AMS" | "Validation" | "Release" | "AST" | "Specimen";
+export type OperationalQueueTargetSection =
+  | "IPC"
+  | "AMS"
+  | "Validation"
+  | "Release"
+  | "AST"
+  | "Specimen"
+  | "Report"
+  | "Dashboard";
 
 export type OperationalQueueItem = {
   id: string;
   accessionId: string;
+  targetAccessionId: string;
+  targetSection: OperationalQueueTargetSection;
   accessionNumber?: string;
   patientLabel?: string;
   ward?: string;
@@ -50,6 +61,8 @@ export type OperationalQueueItem = {
   sourceModule: OperationalQueueSourceModule;
   limitationNote?: string;
 };
+
+type OperationalQueueItemDraft = Omit<OperationalQueueItem, "targetAccessionId" | "targetSection">;
 
 export type OperationalDashboardSummary = {
   totalLoadedCases: number;
@@ -123,8 +136,36 @@ function hasSignificantResult(accession: Accession): boolean {
   return accession.isolates.some((iso) => iso.significance === "significant" && iso.organismCode !== "NOGRO");
 }
 
-function pushItem(queue: OperationalQueueItem[], item: OperationalQueueItem) {
-  queue.push({ ...item, reason: item.reason.trim() || "Operational review required." });
+function targetSectionForItem(item: OperationalQueueItemDraft): OperationalQueueTargetSection {
+  if (item.category === "ipc_high_priority" || item.category === "ipc_action" || item.category === "ipc_outbreak_watch") {
+    return "IPC";
+  }
+  if (item.category === "colonisation_follow_up") return "IPC";
+  if (item.category === "ams_restricted" || item.category === "ams_pending_approval") return "AMS";
+  if (item.category === "validation_warning") return "Validation";
+  if (item.category === "release_blocker" || item.category === "consultant_approval" || item.category === "phone_out") {
+    return "Release";
+  }
+  if (item.category === "critical_result") return "Validation";
+  if (item.category === "routine_review") {
+    if (item.sourceModule === "IPC") return "IPC";
+    if (item.sourceModule === "AMS") return "AMS";
+    if (item.sourceModule === "Validation") return "Validation";
+    if (item.sourceModule === "Release") return "Release";
+    if (item.sourceModule === "AST") return "AST";
+    if (item.sourceModule === "Specimen") return "Specimen";
+    return "Dashboard";
+  }
+  return "Dashboard";
+}
+
+function pushItem(queue: OperationalQueueItem[], item: OperationalQueueItemDraft) {
+  queue.push({
+    ...item,
+    targetAccessionId: item.accessionId,
+    targetSection: targetSectionForItem(item),
+    reason: item.reason.trim() || "Operational review required.",
+  });
 }
 
 export function getOperationalPriority(item: OperationalQueueItem): number {

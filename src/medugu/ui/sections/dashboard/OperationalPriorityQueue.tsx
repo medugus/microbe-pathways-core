@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { OperationalQueueItem as QueueItem } from "../../../logic/operationalDashboard";
+import { meduguActions } from "../../../store/useAccessionStore";
 import { OperationalFilters, type OperationalQueueFilter } from "./OperationalFilters";
 import { OperationalQueueItem } from "./OperationalQueueItem";
 
@@ -15,8 +16,40 @@ function matchesFilter(item: QueueItem, filter: OperationalQueueFilter): boolean
 
 export function OperationalPriorityQueue({ items }: { items: QueueItem[] }) {
   const [filter, setFilter] = useState<OperationalQueueFilter>("all");
+  const [navHint, setNavHint] = useState<string | null>(null);
 
   const filtered = useMemo(() => items.filter((item) => matchesFilter(item, filter)), [items, filter]);
+
+  function targetSectionId(item: QueueItem): string | null {
+    if (item.targetSection === "IPC") return "sec-ipc";
+    if (item.targetSection === "AMS") return "sec-ams";
+    if (item.targetSection === "Validation") return "sec-validation";
+    if (item.targetSection === "Release") return "sec-release";
+    if (item.targetSection === "AST") return "sec-ast";
+    if (item.targetSection === "Specimen") return "sec-specimen";
+    if (item.targetSection === "Report") return "sec-report";
+    if (item.targetSection === "Dashboard") return "sec-operations";
+    return null;
+  }
+
+  function handleOpen(item: QueueItem) {
+    meduguActions.setActive(item.targetAccessionId);
+    setNavHint(null);
+    const sectionId = targetSectionId(item);
+    if (!sectionId || typeof window === "undefined" || typeof document === "undefined") {
+      setNavHint(`Open the ${item.targetSection} panel to continue.`);
+      return;
+    }
+    window.setTimeout(() => {
+      const target = document.getElementById(sectionId);
+      if (!target) {
+        setNavHint(`Open the ${item.targetSection} panel to continue.`);
+        return;
+      }
+      window.location.hash = sectionId;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }
 
   return (
     <section className="space-y-2 rounded-md border border-border bg-card p-3">
@@ -26,6 +59,7 @@ export function OperationalPriorityQueue({ items }: { items: QueueItem[] }) {
       </div>
 
       <OperationalFilters filter={filter} onChange={setFilter} />
+      {navHint && <p className="text-xs text-muted-foreground">{navHint}</p>}
 
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-border text-xs">
@@ -40,11 +74,13 @@ export function OperationalPriorityQueue({ items }: { items: QueueItem[] }) {
               <th className="px-2 py-2 text-left text-[10px] uppercase tracking-wide">Recommended action</th>
               <th className="px-2 py-2 text-left text-[10px] uppercase tracking-wide">Owner role</th>
               <th className="px-2 py-2 text-left text-[10px] uppercase tracking-wide">Source</th>
+              <th className="px-2 py-2 text-left text-[10px] uppercase tracking-wide">Destination</th>
+              <th className="px-2 py-2 text-left text-[10px] uppercase tracking-wide">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {filtered.map((item) => (
-              <OperationalQueueItem key={item.id} item={item} />
+              <OperationalQueueItem key={item.id} item={item} onOpen={handleOpen} />
             ))}
           </tbody>
         </table>
