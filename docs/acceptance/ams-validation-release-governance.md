@@ -18,6 +18,7 @@ Expose unresolved AMS decision-support items at validation and release governanc
 ## 4. AMS items that create validation blockers
 - `restricted_approval_required` when approval is not documented **and** the AST row is release-relevant.
 - `reserve_review` where approval-required governance remains unresolved on a release-relevant AST row.
+- Once AMS approval status is `approved`, `AMS_RESTRICTED_APPROVAL_REQUIRED` must clear from validation and release contexts.
 
 ### 4.1 Release-relevant AST row definition (AMS gating)
 An AST row is AMS release-relevant only when all are true:
@@ -74,3 +75,8 @@ Current implementation remains validation/release-facing only.
 - Any automatic prescribing or dosing recommendation.
 - Any automatic therapy switching/stopping behaviour.
 - AST interpretation, breakpoint, IPC, specimen, auth, server-call, or package configuration changes.
+
+## 9. Approval state source-of-truth alignment
+- AMS section, validation/release governance, and dashboard queue all read row approval state from `approvalStatusForRow(accession, astId)`.
+- `approved` state clears approval-required blockers.
+- `not_requested`, `pending`, `denied`, and `expired` keep approval-required blockers for release-relevant restricted/Reserve rows.
