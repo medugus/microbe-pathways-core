@@ -13,6 +13,7 @@ import { evaluateIPC } from "./ipcEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
 import { validateBloodIsolates } from "./bloodIsolateRules";
 import { deriveIPCValidationIssues } from "./ipcReportGovernance";
+import { deriveAMSValidationIssues } from "./amsReleaseGovernance";
 
 /**
  * IPC rule codes that constitute a critical alert. When any of these fires on a
@@ -224,19 +225,20 @@ export function runValidation(accession: Accession): ValidationReport {
     }
   }
 
-  // ---- Stage 6: AMS restricted-drug approvals (warning surface).
-  // Restricted rows are hidden from the clinician report by stewardship until
-  // approved, so this is informational/warn — not a release blocker.
-  const amsPendingRestrictedCount = pendingRestrictedRowCount(accession);
-  if (amsPendingRestrictedCount > 0) {
-    issues.push(
-      warn(
-        "AMS_PENDING_RESTRICTED",
-        "release",
-        `${amsPendingRestrictedCount} restricted antimicrobial row(s) hidden from clinician report pending AMS approval.`,
-      ),
-    );
+  // ---- AMS governance hooks for validation/release review.
+  // Signals stay decision-support only and do not auto-generate prescribing changes.
+  for (const amsIssue of deriveAMSValidationIssues(accession)) {
+    if (amsIssue.severity === "blocker") {
+      issues.push(block(amsIssue.code, "release", amsIssue.message));
+    } else if (amsIssue.severity === "warning") {
+      issues.push(warn(amsIssue.code, "release", amsIssue.message));
+    } else {
+      issues.push(info(amsIssue.code, "release", amsIssue.message));
+    }
   }
+
+  // Keep count surfaced in Validation/Release chips for pending restricted approvals.
+  const amsPendingRestrictedCount = pendingRestrictedRowCount(accession);
 
 
   // ---- IPC governance warnings/blockers (non-clinician-facing by default).
