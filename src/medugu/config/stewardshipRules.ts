@@ -127,6 +127,10 @@ export type AMSRuleCategory =
   | "insufficient_data";
 export type AMSRuleOwner = "AMS" | "Microbiology" | "IPC" | "Joint";
 
+export type AMSReleaseImpact = "none" | "warning" | "blocker";
+export type AMSValidationSeverity = "info" | "warning" | "blocker";
+export type AMSReportVisibility = "internal_only" | "clinician_report" | "none";
+
 export interface AMSRuleDefinition {
   ruleCode: string;
   ruleCategory?: AMSRuleCategory;
@@ -149,6 +153,10 @@ export interface AMSRuleDefinition {
   recommendationCategory?: string;
   approvalRequired?: boolean;
   releaseReportImpact?: string;
+  releaseImpact?: AMSReleaseImpact;
+  validationSeverity?: AMSValidationSeverity;
+  reportVisibility?: AMSReportVisibility;
+  clinicianReportText?: string;
 }
 
 export const AMS_RULE_CONFIG_VERSION = "local-stewardship-2026.04";
@@ -170,6 +178,9 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     recommendationCategory: "restricted_approval_required",
     approvalRequired: true,
     releaseReportImpact: "Clinician release may be withheld pending AMS decision.",
+    releaseImpact: "blocker",
+    validationSeverity: "blocker",
+    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_RESERVE_REVIEW",
@@ -186,6 +197,9 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     recommendationCategory: "reserve_review",
     approvalRequired: true,
     releaseReportImpact: "Reserve rows are highlighted for review and may require approval.",
+    releaseImpact: "blocker",
+    validationSeverity: "blocker",
+    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_BUG_DRUG_R",
@@ -199,6 +213,9 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     rationale: "Therapy under review with resistant result should trigger mismatch review.",
     recommendationCategory: "bug_drug_mismatch",
     releaseReportImpact: "No direct report suppression; stewardship review signal.",
+    releaseImpact: "warning",
+    validationSeverity: "warning",
+    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_BUG_DRUG_SPECTRUM",
@@ -212,6 +229,9 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     rationale: "Spectrum mismatch between organism gram context and selected therapy.",
     recommendationCategory: "bug_drug_mismatch",
     releaseReportImpact: "No direct report suppression; stewardship review signal.",
+    releaseImpact: "warning",
+    validationSeverity: "warning",
+    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_DE_ESCALATION_ACTIVE_NARROW",
@@ -225,6 +245,9 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     rationale: "Narrower active options are highlighted where clinically appropriate.",
     recommendationCategory: "de_escalation_opportunity",
     releaseReportImpact: "Advisory only; no automatic prescribing changes.",
+    releaseImpact: "warning",
+    validationSeverity: "info",
+    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_RESISTANT_REVIEW",
@@ -238,6 +261,9 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     rationale: "Intermediate or increased-exposure interpretations require review.",
     recommendationCategory: "resistant_result_review",
     releaseReportImpact: "No direct report suppression; review signal.",
+    releaseImpact: "warning",
+    validationSeverity: "warning",
+    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_CONTINUE_OR_NO_ACTION",
@@ -250,6 +276,9 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     lastReviewedBy: "AMS pharmacist",
     recommendationCategory: "continue_or_no_action",
     releaseReportImpact: "No additional release impact.",
+    releaseImpact: "none",
+    validationSeverity: "info",
+    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_REVIEW_RULE",
@@ -263,5 +292,8 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     limitation: "Disabled support is metadata only pending engine enforcement.",
     recommendationCategory: "insufficient_data",
     releaseReportImpact: "Fallback metadata only.",
+    releaseImpact: "none",
+    validationSeverity: "info",
+    reportVisibility: "internal_only",
   },
 ];
