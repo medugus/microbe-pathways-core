@@ -157,6 +157,12 @@ export function deriveAMSValidationIssues(accession: Accession): AMSGovernanceIs
   const assessments = deriveAssessments(accession);
   return assessments
     .filter((item) => item.category !== "continue_or_no_action")
+    .filter((item) => {
+      if ((item.category === "restricted_approval_required" || item.category === "reserve_review") && !item.approvalPending) {
+        return false;
+      }
+      return true;
+    })
     .filter((item) => item.validationSeverity !== "info" || item.category === "insufficient_data" || item.category === "de_escalation_opportunity")
     .map((item) => ({
       code: `AMS_${item.category.toUpperCase()}`,

@@ -25,13 +25,15 @@ export function AMSApprovalStatusPanel({
   status: AMSApprovalStatus;
   required: boolean;
 }) {
-  const effective = required ? status : "not_required";
+  const effective = !required && status === "approved" ? "approved" : (required ? status : "not_required");
   return (
     <div className="rounded-md border border-border bg-background px-2 py-1.5 text-[11px]">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Approval state</div>
       <span className={STATUS_TONE[effective]}>{STATUS_LABEL[effective]}</span>
       {required ? (
         <p className="mt-1 text-muted-foreground">Browser phase workflow; approval persistence is local to this session/store.</p>
+      ) : status === "approved" ? (
+        <p className="mt-1 text-muted-foreground">Approved — no further action required.</p>
       ) : (
         <p className="mt-1 text-muted-foreground">No AMS approval requirement for this item.</p>
       )}

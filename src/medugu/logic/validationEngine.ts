@@ -13,6 +13,7 @@ import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
 import { validateBloodIsolates } from "./bloodIsolateRules";
 import { deriveIPCValidationIssues } from "./ipcReportGovernance";
 import { deriveAMSReleaseContext, deriveAMSValidationIssues } from "./amsReleaseGovernance";
+import { isReleaseRelevantASTRow } from "./stewardshipEngine";
 
 /**
  * IPC rule codes that constitute a critical alert. When any of these fires on a
@@ -97,6 +98,8 @@ export function runValidation(accession: Accession): ValidationReport {
   }
 
   for (const a of accession.ast) {
+    if (!isReleaseRelevantASTRow(a)) continue;
+
     if (!a.finalInterpretation) {
       issues.push(
         block("AST_INCOMPLETE", "ast", `AST row ${a.antibioticCode} has no final S/I/R interpretation.`),

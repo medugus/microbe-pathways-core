@@ -71,19 +71,27 @@ export interface AMSRecommendationResult {
 
 const nowIso = () => new Date().toISOString();
 
-function hasClinicalResultEvidence(row: ASTResult): boolean {
+export function isResultedASTRow(row: ASTResult): boolean {
   return row.rawValue !== undefined
+    || row.zoneMm !== undefined
+    || row.micMgL !== undefined
     || !!row.interpretedSIR
     || !!row.rawInterpretation
     || !!row.finalInterpretation
     || !!row.consultantOverride
-    || !!row.expertRulesFired?.length;
+    || !!row.expertRulesFired?.length
+    || (row.governance !== "draft" && row.governance !== undefined);
+}
+
+export function isReleaseRelevantASTRow(row: ASTResult): boolean {
+  if (isResultedASTRow(row)) return true;
+  return row.governance === "interpreted" || row.governance === "approved" || row.governance === "released";
 }
 
 export function isAMSReleaseRelevantASTResult(accession: Accession, row: ASTResult): boolean {
   const isolateLinked = accession.isolates.some((iso) => iso.id === row.isolateId);
   if (!isolateLinked) return false;
-  if (!hasClinicalResultEvidence(row)) return false;
+  if (!isReleaseRelevantASTRow(row)) return false;
 
   const reportability = evaluateASTReportability(row, accession);
   if (reportability.isSuppressed) return false;
@@ -348,7 +356,7 @@ export function evaluateAMSRecommendation(
     };
   }
 
-  if (decision.approvalRequired || isRestrictedRow(row)) {
+  if (decision.approvalRequired || (isRestrictedRow(row) && approvalState !== "approved")) {
     return {
       category: "restricted_approval_required",
       recommendation: "Restricted antimicrobial requires AMS review and approval before release where configured.",
