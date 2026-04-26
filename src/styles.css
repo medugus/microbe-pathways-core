@@ -160,6 +160,45 @@
     opacity: 1;
   }
 }
+@keyframes bacteria-drift {
+  0% {
+    transform: translateX(-8%) translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(50%) translateY(-3px) rotate(8deg);
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(108%) translateY(2px) rotate(-6deg);
+    opacity: 0;
+  }
+}
+
+@keyframes bacteria-wiggle {
+  0%, 100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+.bacteria-drift {
+  animation: bacteria-drift 14s linear infinite;
+  transform-origin: center;
+}
+
+.bacteria-wiggle {
+  animation: bacteria-wiggle 1.6s ease-in-out infinite;
+  transform-origin: center;
+}
+
 @keyframes auth-card-glow {
   0%,
   100% {
