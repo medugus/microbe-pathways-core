@@ -131,6 +131,12 @@ export function AuthStoryPanel() {
           one governed, audit-traceable workflow.
         </p>
 
+        {/* Lab bench: petri dish + gram stain microscopy */}
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <PetriDishHero />
+          <GramStainHero />
+        </div>
+
         <div className="mt-4 flex flex-wrap gap-2">
           {chips.map((chip) => (
             <span
