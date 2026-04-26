@@ -74,35 +74,116 @@ const stages = [
   { title: "AMS", caption: "The right antibiotic — sooner.", tone: "action" as const, icon: <AmsIcon /> },
 ];
 
-function StoryFlowPath() {
+type Bacterium = {
+  kind: "coccus" | "diplococcus" | "rod" | "chain" | "spirochete" | "cluster";
+  color: string;
+  top: string;
+  delay: string;
+  duration: string;
+  scale: number;
+};
+
+const bacteria: Bacterium[] = [
+  { kind: "rod", color: "rgba(52,211,153,0.95)", top: "30%", delay: "0s", duration: "13s", scale: 1 },
+  { kind: "cluster", color: "rgba(251,191,36,0.95)", top: "65%", delay: "2.2s", duration: "16s", scale: 1.1 },
+  { kind: "diplococcus", color: "rgba(96,165,250,0.95)", top: "45%", delay: "4.5s", duration: "12s", scale: 0.9 },
+  { kind: "spirochete", color: "rgba(167,243,208,0.9)", top: "20%", delay: "6.8s", duration: "18s", scale: 1 },
+  { kind: "chain", color: "rgba(248,113,113,0.9)", top: "78%", delay: "9s", duration: "14s", scale: 0.95 },
+  { kind: "coccus", color: "rgba(125,211,252,0.95)", top: "55%", delay: "11.5s", duration: "11s", scale: 0.85 },
+];
+
+function BacteriumShape({ kind, color }: { kind: Bacterium["kind"]; color: string }) {
+  switch (kind) {
+    case "coccus":
+      return (
+        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="none">
+          <circle cx="10" cy="10" r="7" fill={color} />
+          <circle cx="8" cy="8" r="2" fill="rgba(255,255,255,0.35)" />
+        </svg>
+      );
+    case "diplococcus":
+      return (
+        <svg viewBox="0 0 32 18" className="h-3.5 w-6" fill="none">
+          <circle cx="9" cy="9" r="7" fill={color} />
+          <circle cx="23" cy="9" r="7" fill={color} />
+          <circle cx="7" cy="7" r="1.6" fill="rgba(255,255,255,0.4)" />
+          <circle cx="21" cy="7" r="1.6" fill="rgba(255,255,255,0.4)" />
+        </svg>
+      );
+    case "rod":
+      return (
+        <svg viewBox="0 0 36 14" className="h-3 w-8" fill="none">
+          <rect x="2" y="2" width="32" height="10" rx="5" fill={color} />
+          <rect x="6" y="3.5" width="10" height="2" rx="1" fill="rgba(255,255,255,0.4)" />
+        </svg>
+      );
+    case "chain":
+      return (
+        <svg viewBox="0 0 60 14" className="h-3 w-12" fill="none">
+          {[7, 19, 31, 43, 55].map((cx) => (
+            <circle key={cx} cx={cx} cy="7" r="5" fill={color} />
+          ))}
+        </svg>
+      );
+    case "spirochete":
+      return (
+        <svg viewBox="0 0 56 16" className="h-3 w-12" fill="none">
+          <path
+            d="M2 8 Q9 1 16 8 T30 8 T44 8 T54 8"
+            stroke={color}
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            fill="none"
+          />
+        </svg>
+      );
+    case "cluster":
+      return (
+        <svg viewBox="0 0 28 22" className="h-4 w-5" fill="none">
+          <circle cx="9" cy="9" r="5" fill={color} />
+          <circle cx="18" cy="8" r="4.5" fill={color} />
+          <circle cx="13" cy="15" r="4.5" fill={color} />
+          <circle cx="20" cy="16" r="3.5" fill={color} />
+        </svg>
+      );
+  }
+}
+
+function BacteriaFlow() {
   return (
-    <div className="pointer-events-none absolute inset-x-6 top-[72px] hidden md:block" aria-hidden>
-      <svg className="h-3 w-full" viewBox="0 0 1000 12" preserveAspectRatio="none" fill="none">
-        <defs>
-          <linearGradient id="flowBase" x1="0" y1="6" x2="1000" y2="6" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="rgba(34,211,238,0.5)" />
-            <stop offset="0.5" stopColor="rgba(96,165,250,0.6)" />
-            <stop offset="1" stopColor="rgba(16,185,129,0.55)" />
-          </linearGradient>
-          <linearGradient id="flowPulse" x1="0" y1="6" x2="1000" y2="6" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="rgba(125,211,252,0)" />
-            <stop offset="0.5" stopColor="rgba(125,211,252,1)" />
-            <stop offset="1" stopColor="rgba(52,211,153,0)" />
-          </linearGradient>
-        </defs>
-        <line x1="0" y1="6" x2="1000" y2="6" stroke="url(#flowBase)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="4 8" />
+    <div
+      className="pointer-events-none absolute inset-x-0 top-[60px] hidden h-12 overflow-hidden md:block"
+      aria-hidden
+    >
+      {/* Faint guideline */}
+      <svg className="absolute inset-x-0 top-1/2 h-1 w-full -translate-y-1/2" viewBox="0 0 1000 4" preserveAspectRatio="none" fill="none">
         <line
-          className="story-path-pulse"
           x1="0"
-          y1="6"
+          y1="2"
           x2="1000"
-          y2="6"
-          stroke="url(#flowPulse)"
-          strokeWidth="3.5"
+          y2="2"
+          stroke="rgba(125,211,252,0.25)"
+          strokeWidth="1.2"
+          strokeDasharray="3 9"
           strokeLinecap="round"
-          strokeDasharray="80 920"
         />
       </svg>
+      {bacteria.map((b, i) => (
+        <div
+          key={i}
+          className="bacteria-drift absolute left-0"
+          style={{
+            top: b.top,
+            animationDelay: b.delay,
+            animationDuration: b.duration,
+            transform: `scale(${b.scale})`,
+          }}
+        >
+          <div className="bacteria-wiggle drop-shadow-[0_0_6px_rgba(125,211,252,0.5)]">
+            <BacteriumShape kind={b.kind} color={b.color} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
