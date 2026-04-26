@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 
-type StoryStageTone = "culture" | "interpret" | "report" | "action";
+type StoryStageTone = "specimen" | "culture" | "interpret" | "report" | "action";
 
 const toneClasses: Record<StoryStageTone, string> = {
+  specimen: "border-sky-200/30 bg-sky-400/10",
   culture: "border-cyan-200/30 bg-cyan-400/10",
   interpret: "border-teal-200/30 bg-teal-400/10",
   report: "border-blue-200/30 bg-blue-400/10",
