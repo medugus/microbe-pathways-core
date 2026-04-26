@@ -244,7 +244,7 @@ export function AuthStoryPanel() {
           </div>
 
           <div className="relative mt-6">
-            <StoryFlowPath />
+            <BacteriaFlow />
             <ol className="grid grid-cols-2 gap-3 md:grid-cols-5">
               {stages.map((s, i) => (
                 <li key={s.title} className="relative">
