@@ -287,7 +287,9 @@
   .story-node-dot,
   .petri-colony,
   .ast-cell,
-  .report-tick {
+  .report-tick,
+  .bacteria-drift,
+  .bacteria-wiggle {
     animation: none !important;
   }
 }
