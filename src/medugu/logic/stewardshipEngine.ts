@@ -14,6 +14,7 @@ import {
 import { newId } from "../domain/ids";
 import { approvalStatusForRow, isRestrictedRow } from "./amsEngine";
 import { getOrganism } from "../config/organisms";
+import { evaluateASTReportability } from "./reportability";
 
 export interface StewardshipDecision {
   astId: string;
@@ -70,6 +71,26 @@ export interface AMSRecommendationResult {
 
 const nowIso = () => new Date().toISOString();
 
+function hasClinicalResultEvidence(row: ASTResult): boolean {
+  return row.rawValue !== undefined
+    || !!row.interpretedSIR
+    || !!row.rawInterpretation
+    || !!row.finalInterpretation
+    || !!row.consultantOverride
+    || !!row.expertRulesFired?.length;
+}
+
+export function isAMSReleaseRelevantASTResult(accession: Accession, row: ASTResult): boolean {
+  const isolateLinked = accession.isolates.some((iso) => iso.id === row.isolateId);
+  if (!isolateLinked) return false;
+  if (!hasClinicalResultEvidence(row)) return false;
+
+  const reportability = evaluateASTReportability(row, accession);
+  if (reportability.isSuppressed) return false;
+
+  return reportability.isReportable || reportability.needsApproval || reportability.isRestricted;
+}
+
 export function evaluateStewardship(accession: Accession): StewardshipReport {
   const r = resolveSpecimen(accession.specimen.familyCode, accession.specimen.subtypeCode);
   const profile = r.ok ? r.profile : null;
@@ -102,7 +123,7 @@ export function evaluateStewardship(accession: Accession): StewardshipReport {
 
     // Restricted agents require AMS approval before clinician release.
     // Browser-phase Stage 6: consult amsApprovals on the accession.
-    if (releaseClass === "restricted" || isRestrictedRow(row)) {
+    if ((releaseClass === "restricted" || isRestrictedRow(row)) && isAMSReleaseRelevantASTResult(accession, row)) {
       const amsStatus = approvalStatusForRow(accession, row.id);
       if (amsStatus === "approved") {
         approvalRequired = false;

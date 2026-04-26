@@ -7,7 +7,7 @@ Expose unresolved AMS decision-support items at validation and release governanc
 - Adds AMS governance helper logic for validation/release context.
 - Surfaces AMS items in validation issues and Release section context panel.
 - Keeps AMS clinician-report visibility conservative by default.
-- Leaves dashboard behaviour unchanged unless it already consumes validation/release outputs.
+- Aligns dashboard AMS pending/restricted queue counts to release-relevant AST rows only.
 
 ## 3. Safety defaults
 - AMS recommendations remain decision support only.
@@ -16,8 +16,16 @@ Expose unresolved AMS decision-support items at validation and release governanc
 - Restricted/Reserve approval gating maps to blocker only where approval-required governance already exists.
 
 ## 4. AMS items that create validation blockers
-- `restricted_approval_required` when approval is not documented.
-- `reserve_review` where approval-required governance remains unresolved.
+- `restricted_approval_required` when approval is not documented **and** the AST row is release-relevant.
+- `reserve_review` where approval-required governance remains unresolved on a release-relevant AST row.
+
+### 4.1 Release-relevant AST row definition (AMS gating)
+An AST row is AMS release-relevant only when all are true:
+1. Row is linked to an existing isolate on the accession.
+2. Row has clinical-result evidence (`rawValue`, interpreted/final/raw interpretation, or explicit review evidence).
+3. Row is not cascade-suppressed/hidden.
+4. Row is not a blank panel/template placeholder with no entered result.
+5. Row is clinician-reportable or requires AMS approval under governance/reportability.
 
 ## 5. AMS items that create validation warnings
 - `bug_drug_mismatch`.
@@ -53,7 +61,13 @@ Current implementation remains validation/release-facing only.
 6. **No AMS action case**
    - No AMS validation issue.
    - Release behaviour unchanged.
-7. **Report preview check**
+7. **Template panel restricted rows with no entered result**
+   - Unentered restricted panel rows do not create AMS blockers.
+   - Dashboard AMS pending/restricted count remains clear for these placeholders.
+8. **Entered restricted result**
+   - Restricted row appears in AMS pending/restricted dashboard queue when result is truly entered.
+   - Approval clears blocker as expected.
+9. **Report preview check**
    - No AMS recommendation text leaks into clinician-facing report unless explicitly configured.
 
 ## 8. Out of scope
