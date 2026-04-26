@@ -8,12 +8,11 @@
 import type { Accession, ValidationIssue } from "../domain/types";
 import { resolveSpecimen } from "./specimenResolver";
 import { newId } from "../domain/ids";
-import { pendingRestrictedRowCount } from "./amsEngine";
 import { evaluateIPC } from "./ipcEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
 import { validateBloodIsolates } from "./bloodIsolateRules";
 import { deriveIPCValidationIssues } from "./ipcReportGovernance";
-import { deriveAMSValidationIssues } from "./amsReleaseGovernance";
+import { deriveAMSReleaseContext, deriveAMSValidationIssues } from "./amsReleaseGovernance";
 
 /**
  * IPC rule codes that constitute a critical alert. When any of these fires on a
@@ -238,7 +237,7 @@ export function runValidation(accession: Accession): ValidationReport {
   }
 
   // Keep count surfaced in Validation/Release chips for pending restricted approvals.
-  const amsPendingRestrictedCount = pendingRestrictedRowCount(accession);
+  const amsPendingRestrictedCount = deriveAMSReleaseContext(accession).pendingApprovalCount;
 
 
   // ---- IPC governance warnings/blockers (non-clinician-facing by default).

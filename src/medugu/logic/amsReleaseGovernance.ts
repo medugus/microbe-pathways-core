@@ -1,6 +1,11 @@
 import type { Accession } from "../domain/types";
 import { AMS_RULES, type AMSRuleDefinition } from "../config/stewardshipRules";
-import { evaluateStewardship, evaluateAMSRecommendation, type AMSRecommendationResult } from "./stewardshipEngine";
+import {
+  evaluateStewardship,
+  evaluateAMSRecommendation,
+  isAMSReleaseRelevantASTResult,
+  type AMSRecommendationResult,
+} from "./stewardshipEngine";
 import { approvalStatusForRow } from "./amsEngine";
 
 export type AMSReleaseImpact = "none" | "warning" | "blocker";
@@ -112,12 +117,14 @@ function deriveAssessments(accession: Accession): AMSGovernanceAssessment[] {
   return accession.ast.map((row) => {
     const decision = stewardship.byAst[row.id];
     const recommendation = evaluateAMSRecommendation(accession, row, decision, stewardship.byAst);
-    const releaseImpact = getAMSReleaseImpact(recommendation);
-    const validationSeverity = getValidationSeverity(recommendation);
-    const reportVisibility = getReportVisibility(recommendation);
-    const approvalState = approvalStatusForRow(accession, row.id);
+    const releaseRelevant = isAMSReleaseRelevantASTResult(accession, row);
     const isRestrictedOrReserve =
       decision.releaseClass === "restricted" || decision.aware === "Reserve" || decision.approvalRequired;
+    const releaseImpact = releaseRelevant ? getAMSReleaseImpact(recommendation) : "none";
+    const validationSeverity = releaseRelevant ? getValidationSeverity(recommendation) : "info";
+    const reportVisibility = getReportVisibility(recommendation);
+    const approvalState = approvalStatusForRow(accession, row.id);
+    const approvalPending = releaseRelevant && decision.approvalRequired && approvalState !== "approved";
 
     return {
       astId: row.id,
@@ -129,8 +136,8 @@ function deriveAssessments(accession: Accession): AMSGovernanceAssessment[] {
       reportVisibility,
       clinicianReportText: findRule(recommendation)?.clinicianReportText,
       isRestrictedOrReserve,
-      requiresApproval: decision.approvalRequired,
-      approvalPending: decision.approvalRequired && approvalState !== "approved",
+      requiresApproval: releaseRelevant && decision.approvalRequired,
+      approvalPending,
     };
   });
 }

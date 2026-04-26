@@ -5,6 +5,7 @@ import { deriveColonisationContext, isColonisationScreen } from "./ipcColonisati
 import { deriveLocalOutbreakWatch } from "./ipcLocalWatch";
 import { approvalStatusForRow, isRestrictedRow, latestApprovalForRow } from "./amsEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
+import { isAMSReleaseRelevantASTResult } from "./stewardshipEngine";
 
 export type OperationalQueueCategory =
   | "critical_result"
@@ -375,7 +376,9 @@ export function deriveOperationalQueueItems(
       });
     }
 
-    const restrictedRows = accession.ast.filter((row) => isRestrictedRow(row));
+    const restrictedRows = accession.ast.filter(
+      (row) => isRestrictedRow(row) && isAMSReleaseRelevantASTResult(accession, row),
+    );
     for (const row of restrictedRows) {
       const status = approvalStatusForRow(accession, row.id);
       if (status === "approved") continue;
