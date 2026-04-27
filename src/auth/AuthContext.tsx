@@ -9,7 +9,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { installServerFnAuth } from "./installServerFnAuth";
 
 export type AppRole =
@@ -63,6 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setSession(null);
+      setProfile(null);
+      setRoles([]);
+      setLoading(false);
+      return;
+    }
+
     installServerFnAuth();
     // 1) Subscribe FIRST (Supabase guidance) — never miss an event.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
