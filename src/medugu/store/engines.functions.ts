@@ -64,7 +64,12 @@ export const validateAccessionServer = createServerFn({ method: "POST" })
       .eq("id", data.accessionRowId)
       .maybeSingle();
     if (loadErr) throw new Error(`Load failed: ${loadErr.message}`);
-    if (!row) return { ok: false, serverAuthoritative: true, reason: "Accession not found or not visible." };
+    if (!row)
+      return {
+        ok: false,
+        serverAuthoritative: true,
+        reason: "Accession not found or not visible.",
+      };
 
     const accession = row.data as unknown as Accession;
     // runValidation re-runs the same DEF-001 sterile-site + IPC-critical
@@ -115,9 +120,7 @@ export const applyExpertRulesServer = createServerFn({ method: "POST" })
       }
     }
 
-    const nextAst = accession.ast.map((r) =>
-      merged[r.id] ? { ...r, ...merged[r.id] } : r,
-    );
+    const nextAst = accession.ast.map((r) => (merged[r.id] ? { ...r, ...merged[r.id] } : r));
     const patchedCount = Object.keys(merged).length;
     const updatedAt = new Date().toISOString();
     const next: Accession = {
@@ -231,12 +234,11 @@ export const evaluateIPCServer = createServerFn({ method: "POST" })
           ward,
           raised_by: context.userId,
         }));
-        const { error: insErr, count } = await (supabase.from("ipc_signals") as any)
-          .upsert(rows, {
-            onConflict: "accession_id,isolate_id,rule_code",
-            ignoreDuplicates: true,
-            count: "exact",
-          });
+        const { error: insErr, count } = await (supabase.from("ipc_signals") as any).upsert(rows, {
+          onConflict: "accession_id,isolate_id,rule_code",
+          ignoreDuplicates: true,
+          count: "exact",
+        });
         if (insErr) {
           // Don't fail the whole scan — surface in reason but still return decisions.
           return {

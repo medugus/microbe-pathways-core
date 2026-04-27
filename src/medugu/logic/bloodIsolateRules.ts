@@ -66,14 +66,14 @@ export function listPositiveBottles(accession: Accession): BloodSourceLink[] {
       }
     }
   }
-  return [...seen.values()].sort((a, b) => a.setNo - b.setNo || a.bottleType.localeCompare(b.bottleType));
+  return [...seen.values()].sort(
+    (a, b) => a.setNo - b.setNo || a.bottleType.localeCompare(b.bottleType),
+  );
 }
 
 /** True when the accession has any positive bottle recorded on any isolate. */
 export function hasAnyPositiveBottle(accession: Accession): boolean {
-  return accession.isolates.some((i) =>
-    (i.bottleResults ?? []).some((r) => r.growth === "growth"),
-  );
+  return accession.isolates.some((i) => (i.bottleResults ?? []).some((r) => r.growth === "growth"));
 }
 
 export interface BloodIsolateValidationIssue {
@@ -175,7 +175,10 @@ export function toggleSourceLink(
 }
 
 /** Per-isolate display tag derived from significance. */
-export function significanceTag(iso: Isolate): { label: string; tone: "danger" | "warn" | "info" | "muted" } {
+export function significanceTag(iso: Isolate): {
+  label: string;
+  tone: "danger" | "warn" | "info" | "muted";
+} {
   switch (iso.significance) {
     case "significant":
       return { label: "true pathogen", tone: "danger" };

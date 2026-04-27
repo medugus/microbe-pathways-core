@@ -36,10 +36,16 @@ function find(rows: ASTResult[], code: string): ASTResult | undefined {
   return rows.find((r) => r.antibioticCode === code);
 }
 function isR(r?: ASTResult): boolean {
-  return !!r && (r.finalInterpretation === "R" || r.interpretedSIR === "R" || r.rawInterpretation === "R");
+  return (
+    !!r &&
+    (r.finalInterpretation === "R" || r.interpretedSIR === "R" || r.rawInterpretation === "R")
+  );
 }
 function isS(r?: ASTResult): boolean {
-  return !!r && (r.finalInterpretation === "S" || r.interpretedSIR === "S" || r.rawInterpretation === "S");
+  return (
+    !!r &&
+    (r.finalInterpretation === "S" || r.interpretedSIR === "S" || r.rawInterpretation === "S")
+  );
 }
 
 export function evaluateIsolate(accession: Accession, isolate: Isolate): IsolateRuleOutput {
@@ -75,7 +81,12 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
       if (isR(fox)) {
         flags.add("MRSA");
         addFlag(fox.id, "MRSA");
-        fired.push(fire("STA_MRSA", "Cefoxitin/Oxacillin R → MRSA: report all β-lactams as R (except anti-MRSA agents)."));
+        fired.push(
+          fire(
+            "STA_MRSA",
+            "Cefoxitin/Oxacillin R → MRSA: report all β-lactams as R (except anti-MRSA agents).",
+          ),
+        );
         // Suppress beta-lactams except anti-MRSA agents
         for (const r of rows) {
           const cls = getAntibiotic(r.antibioticCode)?.class;
@@ -98,7 +109,12 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
     if (ery && cli && isR(ery) && isS(cli)) {
       flags.add("inducible_clindamycin_R");
       addFlag(cli.id, "inducible_clindamycin_R");
-      fired.push(fire("STA_ICR", "Erythromycin R + Clindamycin S → suspect inducible clindamycin resistance (D-test). Report Clindamycin as R."));
+      fired.push(
+        fire(
+          "STA_ICR",
+          "Erythromycin R + Clindamycin S → suspect inducible clindamycin resistance (D-test). Report Clindamycin as R.",
+        ),
+      );
       suppress(cli, "inducible_clindamycin_R", "R");
     }
   }
@@ -110,7 +126,12 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
       if (isR(van)) {
         flags.add("VRE");
         addFlag(van.id, "VRE");
-        fired.push(fire("ENT_VRE", "Vancomycin R Enterococcus → VRE; consider Linezolid/Daptomycin per stewardship."));
+        fired.push(
+          fire(
+            "ENT_VRE",
+            "Vancomycin R Enterococcus → VRE; consider Linezolid/Daptomycin per stewardship.",
+          ),
+        );
       } else if (isS(van)) {
         flags.add("VSE");
       }
@@ -121,7 +142,12 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
         flags.add("intrinsic_R");
         addFlag(r.id, "intrinsic_R");
         suppress(r, "intrinsic_R", "R");
-        fired.push(fire("ENT_INTRINSIC_CEPH", `Enterococci are intrinsically resistant to cephalosporins — ${r.antibioticCode} reported R.`));
+        fired.push(
+          fire(
+            "ENT_INTRINSIC_CEPH",
+            `Enterococci are intrinsically resistant to cephalosporins — ${r.antibioticCode} reported R.`,
+          ),
+        );
       }
     }
   }
@@ -139,7 +165,12 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
       flags.add("ESBL");
       const target = cro ?? caz!;
       addFlag(target.id, "ESBL");
-      fired.push(fire("ENB_ESBL", "3rd-generation cephalosporin R, carbapenem S → ESBL phenotype suspected. Report all penicillins/cephalosporins as R."));
+      fired.push(
+        fire(
+          "ENB_ESBL",
+          "3rd-generation cephalosporin R, carbapenem S → ESBL phenotype suspected. Report all penicillins/cephalosporins as R.",
+        ),
+      );
       for (const r of rows) {
         const cls = getAntibiotic(r.antibioticCode)?.class;
         if (cls === "penicillin" || cls === "cephalosporin") suppress(r, "ESBL", "R");
@@ -150,7 +181,12 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
     if (isR(cro) && isS(fep) && !flags.has("ESBL")) {
       flags.add("AmpC_suspected");
       addFlag(cro!.id, "AmpC_suspected");
-      fired.push(fire("ENB_AMPC", "Ceftriaxone R, Cefepime S → AmpC β-lactamase suspected. Avoid 3rd-generation cephalosporins clinically."));
+      fired.push(
+        fire(
+          "ENB_AMPC",
+          "Ceftriaxone R, Cefepime S → AmpC β-lactamase suspected. Avoid 3rd-generation cephalosporins clinically.",
+        ),
+      );
     }
 
     // CRE / carbapenemase suspicion
@@ -160,7 +196,12 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
       const t = (mem ?? etp)!;
       addFlag(t.id, "CRE");
       addFlag(t.id, "carbapenemase_suspected");
-      fired.push(fire("ENB_CRE", "Carbapenem R Enterobacterales → CRE; carbapenemase production suspected. IPC notification + stewardship review required."));
+      fired.push(
+        fire(
+          "ENB_CRE",
+          "Carbapenem R Enterobacterales → CRE; carbapenemase production suspected. IPC notification + stewardship review required.",
+        ),
+      );
     }
   }
 
@@ -170,7 +211,9 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
     if (isR(mem)) {
       flags.add("CRE"); // generalised carbapenem-R alert; specific code surfaces in IPC engine
       addFlag(mem!.id, "carbapenemase_suspected");
-      fired.push(fire("NF_CARB_R", `${org.display} carbapenem-resistant — IPC alert + stewardship review.`));
+      fired.push(
+        fire("NF_CARB_R", `${org.display} carbapenem-resistant — IPC alert + stewardship review.`),
+      );
     }
   }
 
@@ -181,7 +224,12 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
     if (van && isS(van)) {
       flags.add("unusual_antibiogram");
       addFlag(van.id, "unusual_antibiogram");
-      fired.push(fire("UNUSUAL_GLYCO_GN", "Glycopeptide reported S against gram-negative — biologically implausible; verify ID/AST."));
+      fired.push(
+        fire(
+          "UNUSUAL_GLYCO_GN",
+          "Glycopeptide reported S against gram-negative — biologically implausible; verify ID/AST.",
+        ),
+      );
     }
   }
 
@@ -196,7 +244,9 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
     }
     // Attach fired rules to row patches that map to it
     const rowFired = fired.filter((f) =>
-      Object.entries(patches).some(([rid, p]) => rid === r.id && (p.phenotypeFlags ?? []).length > 0 && f.ruleCode.length > 0),
+      Object.entries(patches).some(
+        ([rid, p]) => rid === r.id && (p.phenotypeFlags ?? []).length > 0 && f.ruleCode.length > 0,
+      ),
     );
     if (rowFired.length > 0) {
       patch(r.id, { expertRulesFired: [...(r.expertRulesFired ?? []), ...rowFired] });

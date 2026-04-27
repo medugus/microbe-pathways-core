@@ -15,7 +15,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Ampicillin iv`,
-    notes: "Candidate record. EUCAST row: Ampicillin iv. No I category because S and R breakpoints are equal.",
+    notes:
+      "Candidate record. EUCAST row: Ampicillin iv. No I category because S and R breakpoints are equal.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -39,7 +40,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Amoxicillin-clavulanic acid iv`,
-    notes: "Candidate record for IV/systemic row only. Oral and UTI-specific rows differ and are not modelled here. Clavulanic acid fixed at 2 mg/L.",
+    notes:
+      "Candidate record for IV/systemic row only. Oral and UTI-specific rows differ and are not modelled here. Clavulanic acid fixed at 2 mg/L.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -51,7 +53,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Amoxicillin-clavulanic acid iv`,
-    notes: "Candidate record for IV/systemic row only. Disk content 20-10 µg. ATU 19-20 mm requires later ATU support.",
+    notes:
+      "Candidate record for IV/systemic row only. Disk content 20-10 µg. ATU 19-20 mm requires later ATU support.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -63,7 +66,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Piperacillin-tazobactam`,
-    notes: "Candidate record. Tazobactam fixed at 4 mg/L. MIC ATU 16 mg/L requires later ATU support.",
+    notes:
+      "Candidate record. Tazobactam fixed at 4 mg/L. MIC ATU 16 mg/L requires later ATU support.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -211,7 +215,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "I", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Imipenem, Enterobacterales except Morganellaceae`,
-    notes: "Candidate record. Requires subgroup handling before activation because Morganellaceae have separate breakpoints.",
+    notes:
+      "Candidate record. Requires subgroup handling before activation because Morganellaceae have separate breakpoints.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -261,7 +266,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "I", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Aztreonam`,
-    notes: "Candidate record. Verify project antibiotic code is ATM; do not activate if dictionary uses another code.",
+    notes:
+      "Candidate record. Verify project antibiotic code is ATM; do not activate if dictionary uses another code.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -287,7 +293,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "I", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Ciprofloxacin, indications other than meningitis`,
-    notes: "Candidate record. Salmonella-specific and meningitis-specific rows excluded. MIC ATU 0.5 mg/L requires later ATU support.",
+    notes:
+      "Candidate record. Salmonella-specific and meningitis-specific rows excluded. MIC ATU 0.5 mg/L requires later ATU support.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -337,7 +344,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Amikacin, infections originating from the urinary tract`,
-    notes: "Candidate record for infections originating from the urinary tract. Systemic bracketed breakpoint excluded. Requires specimen/indication handling before activation.",
+    notes:
+      "Candidate record for infections originating from the urinary tract. Systemic bracketed breakpoint excluded. Requires specimen/indication handling before activation.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -349,7 +357,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Amikacin, infections originating from the urinary tract`,
-    notes: "Candidate record. Disk content 30 µg. Requires specimen/indication handling before activation.",
+    notes:
+      "Candidate record. Disk content 30 µg. Requires specimen/indication handling before activation.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -361,7 +370,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Gentamicin, infections originating from the urinary tract`,
-    notes: "Candidate record for infections originating from the urinary tract. Systemic bracketed breakpoint excluded. Requires specimen/indication handling before activation.",
+    notes:
+      "Candidate record for infections originating from the urinary tract. Systemic bracketed breakpoint excluded. Requires specimen/indication handling before activation.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -373,7 +383,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Gentamicin, infections originating from the urinary tract`,
-    notes: "Candidate record. Disk content 10 µg. Requires specimen/indication handling before activation.",
+    notes:
+      "Candidate record. Disk content 10 µg. Requires specimen/indication handling before activation.",
   },
 
   // UTI and miscellaneous agents
@@ -387,7 +398,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Nitrofurantoin, uncomplicated UTI only, E. coli`,
-    notes: "Candidate record. Applies to uncomplicated UTI only and E. coli only. Requires specimen and species handling before activation.",
+    notes:
+      "Candidate record. Applies to uncomplicated UTI only and E. coli only. Requires specimen and species handling before activation.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -399,7 +411,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Nitrofurantoin, uncomplicated UTI only, E. coli`,
-    notes: "Candidate record. Disk content 100 µg. Applies to uncomplicated UTI only and E. coli only.",
+    notes:
+      "Candidate record. Disk content 100 µg. Applies to uncomplicated UTI only and E. coli only.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -411,7 +424,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Fosfomycin oral, uncomplicated UTI only, E. coli`,
-    notes: "Candidate record. Applies to uncomplicated UTI only and E. coli only. Agar dilution with glucose-6-phosphate requirements apply.",
+    notes:
+      "Candidate record. Applies to uncomplicated UTI only and E. coli only. Agar dilution with glucose-6-phosphate requirements apply.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -423,7 +437,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Fosfomycin oral, uncomplicated UTI only, E. coli`,
-    notes: "Candidate record. Disk content 200 µg with glucose-6-phosphate. Specific reading instructions apply: ignore isolated colonies and read outer zone edge.",
+    notes:
+      "Candidate record. Disk content 200 µg with glucose-6-phosphate. Specific reading instructions apply: ignore isolated colonies and read outer zone edge.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -435,7 +450,8 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Trimethoprim-sulfamethoxazole, Enterobacterales except Serratia spp.`,
-    notes: "Candidate record. Breakpoints expressed as trimethoprim concentration. Serratia spp. have separate breakpoints and require subgroup handling before activation.",
+    notes:
+      "Candidate record. Breakpoints expressed as trimethoprim concentration. Serratia spp. have separate breakpoints and require subgroup handling before activation.",
   },
   {
     ...EUCAST_2026_METADATA,
@@ -447,6 +463,7 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     interpretationCategories: ["S", "R", "ND"],
     breakpointStatus: "needs_validation",
     sourceTableRef: `${ENTEROBACTERALES_SOURCE}, Trimethoprim-sulfamethoxazole, Enterobacterales except Serratia spp.`,
-    notes: "Candidate record. Disk content 1.25-23.75 µg. Serratia spp. have separate breakpoints and require subgroup handling before activation.",
+    notes:
+      "Candidate record. Disk content 1.25-23.75 µg. Serratia spp. have separate breakpoints and require subgroup handling before activation.",
   },
 ];

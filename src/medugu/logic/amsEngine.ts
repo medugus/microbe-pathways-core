@@ -9,12 +9,7 @@
 // Contract: derive per-AST approval status, integrate with stewardship
 // visibility, and surface a tenant-wide queue of pending requests.
 
-import type {
-  Accession,
-  AMSApprovalRequest,
-  AMSApprovalStatus,
-  ASTResult,
-} from "../domain/types";
+import type { Accession, AMSApprovalRequest, AMSApprovalStatus, ASTResult } from "../domain/types";
 import { AMS_POLICY } from "../config/amsConfig";
 import { getStewardship } from "../config/stewardshipRules";
 
@@ -28,16 +23,12 @@ export function isRestrictedRow(row: ASTResult): boolean {
 /** Compute SLA dueBy for an antibiotic at the moment of request. */
 export function computeDueBy(antibioticCode: string, requestedAtIso: string): string {
   const sw = getStewardship(antibioticCode);
-  const hours =
-    sw?.aware === "Reserve" ? AMS_POLICY.reserveSlaHours : AMS_POLICY.defaultSlaHours;
+  const hours = sw?.aware === "Reserve" ? AMS_POLICY.reserveSlaHours : AMS_POLICY.defaultSlaHours;
   return new Date(new Date(requestedAtIso).getTime() + hours * 3_600_000).toISOString();
 }
 
 /** Status of a row given the latest matching approval, or 'not_requested'. */
-export function approvalStatusForRow(
-  accession: Accession,
-  astId: string,
-): AMSApprovalStatus {
+export function approvalStatusForRow(accession: Accession, astId: string): AMSApprovalStatus {
   const reqs = (accession.amsApprovals ?? []).filter((r) => r.astId === astId);
   if (reqs.length === 0) return "not_requested";
   // Newest by requested.at, falling back to id ordering.
@@ -54,9 +45,7 @@ export function latestApprovalForRow(
 ): AMSApprovalRequest | undefined {
   const reqs = (accession.amsApprovals ?? []).filter((r) => r.astId === astId);
   if (reqs.length === 0) return undefined;
-  return [...reqs].sort((a, b) =>
-    (b.requested?.at ?? "").localeCompare(a.requested?.at ?? ""),
-  )[0];
+  return [...reqs].sort((a, b) => (b.requested?.at ?? "").localeCompare(a.requested?.at ?? ""))[0];
 }
 
 /**
@@ -68,10 +57,7 @@ export function latestApprovalForRow(
  *   - Restricted rows: visible only when the latest approval is 'approved'.
  *   - 'denied' / 'expired' / 'pending' / 'not_requested' → hidden.
  */
-export function restrictedRowReleaseAllowed(
-  accession: Accession,
-  row: ASTResult,
-): boolean {
+export function restrictedRowReleaseAllowed(accession: Accession, row: ASTResult): boolean {
   if (!isRestrictedRow(row)) return true;
   return approvalStatusForRow(accession, row.id) === "approved";
 }
@@ -101,17 +87,14 @@ export function buildAMSQueue(
       if (r.status !== "pending") continue;
       const ast = a.ast.find((x) => x.id === r.astId);
       const iso = ast ? a.isolates.find((i) => i.id === ast.isolateId) : undefined;
-      const hoursToDue = r.dueBy
-        ? (new Date(r.dueBy).getTime() - now.getTime()) / 3_600_000
-        : null;
+      const hoursToDue = r.dueBy ? (new Date(r.dueBy).getTime() - now.getTime()) / 3_600_000 : null;
       const overdue = hoursToDue !== null && hoursToDue < 0;
       out.push({
         request: r,
         accessionId: a.id,
         accessionNumber: a.accessionNumber,
         patientLabel:
-          [a.patient.givenName, a.patient.familyName].filter(Boolean).join(" ") ||
-          a.patient.mrn,
+          [a.patient.givenName, a.patient.familyName].filter(Boolean).join(" ") || a.patient.mrn,
         ward: a.patient.ward,
         organismDisplay: iso?.organismDisplay,
         overdue,
@@ -133,10 +116,7 @@ export function buildAMSQueue(
  * Return ids of pending requests that have crossed the expiry grace window.
  * UI calls this on demand; nothing runs on a server timer in this stage.
  */
-export function findExpirableRequestIds(
-  accession: Accession,
-  now: Date = new Date(),
-): string[] {
+export function findExpirableRequestIds(accession: Accession, now: Date = new Date()): string[] {
   const out: string[] = [];
   for (const r of accession.amsApprovals ?? []) {
     if (r.status !== "pending" || !r.dueBy) continue;

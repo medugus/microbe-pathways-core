@@ -203,7 +203,10 @@ export const retryDispatch = createServerFn({ method: "POST" })
       .eq("id", original.release_package_id as string)
       .maybeSingle();
     if (pkgErr || !pkgRow) {
-      return { ok: false, reason: `Release package lookup failed: ${pkgErr?.message ?? "missing"}` };
+      return {
+        ok: false,
+        reason: `Release package lookup failed: ${pkgErr?.message ?? "missing"}`,
+      };
     }
     const { data: accRow, error: accErr } = await supabase
       .from("accessions")
@@ -285,12 +288,7 @@ async function runAttempt(
   }
 
   // 2. Decide outcome.
-  const fail =
-    a.forceFail === true
-      ? true
-      : a.forceFail === false
-        ? false
-        : Math.random() < 0.5; // 50/50 when unspecified
+  const fail = a.forceFail === true ? true : a.forceFail === false ? false : Math.random() < 0.5; // 50/50 when unspecified
 
   const completedAt = new Date().toISOString();
   const errorMessage = fail ? pickError(inserted.id as string) : null;

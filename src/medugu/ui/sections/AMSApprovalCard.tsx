@@ -1,9 +1,6 @@
 import { getAntibiotic } from "../../config/antibiotics";
 import { getStewardship } from "../../config/stewardshipRules";
-import {
-  approvalStatusForRow,
-  latestApprovalForRow,
-} from "../../logic/amsEngine";
+import { approvalStatusForRow, latestApprovalForRow } from "../../logic/amsEngine";
 import type { Accession, ASTResult } from "../../domain/types";
 import { AMSSLAChip } from "./AMSSLAChip";
 import { AMSStatusChip } from "./AMSStatusChip";
@@ -43,7 +40,9 @@ export function AMSApprovalCard({
   const ab = getAntibiotic(row.antibioticCode);
   const aware = awareChip(sw?.aware);
   const overdue =
-    latest?.status === "pending" && latest.dueBy !== undefined && new Date(latest.dueBy).getTime() < Date.now();
+    latest?.status === "pending" &&
+    latest.dueBy !== undefined &&
+    new Date(latest.dueBy).getTime() < Date.now();
 
   return (
     <li className="rounded-md border border-border bg-card p-3">
@@ -65,22 +64,28 @@ export function AMSApprovalCard({
         <div className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-muted-foreground md:grid-cols-3">
           {latest.requested ? (
             <div>
-              Requested by <span className="text-foreground">{latest.requested.actor}</span> · {new Date(latest.requested.at).toLocaleString()}
-              {latest.requested.note ? <div className="italic">"{latest.requested.note}"</div> : null}
+              Requested by <span className="text-foreground">{latest.requested.actor}</span> ·{" "}
+              {new Date(latest.requested.at).toLocaleString()}
+              {latest.requested.note ? (
+                <div className="italic">"{latest.requested.note}"</div>
+              ) : null}
             </div>
           ) : null}
           <AMSSLAChip dueBy={latest.dueBy} escalated={latest.escalated} />
           {latest.decided ? (
             <div>
-              Decided by <span className="text-foreground">{latest.decided.actor}</span> · {new Date(latest.decided.at).toLocaleString()}
+              Decided by <span className="text-foreground">{latest.decided.actor}</span> ·{" "}
+              {new Date(latest.decided.at).toLocaleString()}
               {latest.decided.note ? <div className="italic">"{latest.decided.note}"</div> : null}
             </div>
           ) : null}
-          {latest.expired ? <div>Expired @ {new Date(latest.expired.at).toLocaleString()}</div> : null}
+          {latest.expired ? (
+            <div>Expired @ {new Date(latest.expired.at).toLocaleString()}</div>
+          ) : null}
         </div>
       ) : null}
 
-      {(status === "not_requested" || status === "denied" || status === "expired") ? (
+      {status === "not_requested" || status === "denied" || status === "expired" ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <input
             value={requestNote}

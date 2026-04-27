@@ -93,9 +93,5 @@ export const configStore = {
 };
 
 export function useConfigState(): ConfigState {
-  return useSyncExternalStore(
-    configStore.subscribe,
-    configStore.getState,
-    configStore.getState,
-  );
+  return useSyncExternalStore(configStore.subscribe, configStore.getState, configStore.getState);
 }

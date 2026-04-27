@@ -135,11 +135,7 @@ function IPCDashboardPage() {
     void load();
   }, [filter]);
 
-  async function setStatus(
-    id: string,
-    next: "acknowledged" | "resolved",
-    note?: string,
-  ) {
+  async function setStatus(id: string, next: "acknowledged" | "resolved", note?: string) {
     setBusyId(id);
     const patch: Record<string, unknown> = { status: next };
     if (next === "acknowledged") {
@@ -150,9 +146,7 @@ function IPCDashboardPage() {
       patch.resolved_by = (await supabase.auth.getUser()).data.user?.id ?? null;
       if (note) patch.resolution_note = note;
     }
-    const { error } = await (supabase.from("ipc_signals") as any)
-      .update(patch)
-      .eq("id", id);
+    const { error } = await (supabase.from("ipc_signals") as any).update(patch).eq("id", id);
     setBusyId(null);
     if (error) {
       setErr(error.message);
@@ -172,8 +166,8 @@ function IPCDashboardPage() {
           <div>
             <h1 className="text-2xl font-semibold">IPC episodes</h1>
             <p className="text-sm text-muted-foreground">
-              Tenant-wide open infection-prevention episodes raised by the
-              server. {openCount} open · {ackCount} acknowledged.
+              Tenant-wide open infection-prevention episodes raised by the server. {openCount} open
+              · {ackCount} acknowledged.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -215,10 +209,7 @@ function IPCDashboardPage() {
         ) : (
           <ul className="space-y-3">
             {rows.map((r) => (
-              <li
-                key={r.id}
-                className="rounded-lg border border-border bg-card p-4"
-              >
+              <li key={r.id} className="rounded-lg border border-border bg-card p-4">
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <span
                     className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${STATUS_TONE[r.status]}`}
@@ -247,9 +238,7 @@ function IPCDashboardPage() {
                   <div>MRN: {r.mrn ?? "—"}</div>
                   <div>Ward: {r.ward ?? "—"}</div>
                   <div>Raised: {new Date(r.raised_at).toLocaleString()}</div>
-                  <div>
-                    Notify: {r.notify.length > 0 ? r.notify.join(", ") : "—"}
-                  </div>
+                  <div>Notify: {r.notify.length > 0 ? r.notify.join(", ") : "—"}</div>
                 </div>
                 {r.resolution_note && (
                   <p className="mt-2 rounded bg-muted/50 p-2 text-xs text-muted-foreground">
@@ -281,10 +270,7 @@ function IPCDashboardPage() {
                         size="sm"
                         disabled={busyId === r.id}
                         onClick={() => {
-                          const note = window.prompt(
-                            "Resolution note (optional):",
-                            "",
-                          );
+                          const note = window.prompt("Resolution note (optional):", "");
                           if (note === null) return; // cancelled
                           void setStatus(r.id, "resolved", note || undefined);
                         }}
@@ -301,7 +287,9 @@ function IPCDashboardPage() {
       </main>
       <IPCEpisodeDrawer
         open={drawerDetail !== null}
-        onOpenChange={(o) => { if (!o) setDrawerDetail(null); }}
+        onOpenChange={(o) => {
+          if (!o) setDrawerDetail(null);
+        }}
         detail={drawerDetail}
         onOpenAccession={openLinkedAccession}
       />

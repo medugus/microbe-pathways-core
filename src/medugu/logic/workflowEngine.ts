@@ -21,16 +21,16 @@ export const WORKFLOW_TRACK: WorkflowStage[] = [
 ];
 
 const FORWARD: Record<string, WorkflowStage[]> = {
-  [WorkflowStage.Registered]:        [WorkflowStage.SpecimenReceived],
-  [WorkflowStage.SpecimenReceived]:  [WorkflowStage.Microscopy, WorkflowStage.Culture],
-  [WorkflowStage.Microscopy]:        [WorkflowStage.Culture, WorkflowStage.Isolate],
-  [WorkflowStage.Culture]:           [WorkflowStage.Isolate, WorkflowStage.Validation],
-  [WorkflowStage.Isolate]:           [WorkflowStage.AST, WorkflowStage.Validation],
-  [WorkflowStage.AST]:               [WorkflowStage.Stewardship, WorkflowStage.Validation],
-  [WorkflowStage.Stewardship]:       [WorkflowStage.IPC, WorkflowStage.Validation],
-  [WorkflowStage.IPC]:               [WorkflowStage.Validation],
-  [WorkflowStage.Validation]:        [WorkflowStage.Released],
-  [WorkflowStage.Released]:          [],
+  [WorkflowStage.Registered]: [WorkflowStage.SpecimenReceived],
+  [WorkflowStage.SpecimenReceived]: [WorkflowStage.Microscopy, WorkflowStage.Culture],
+  [WorkflowStage.Microscopy]: [WorkflowStage.Culture, WorkflowStage.Isolate],
+  [WorkflowStage.Culture]: [WorkflowStage.Isolate, WorkflowStage.Validation],
+  [WorkflowStage.Isolate]: [WorkflowStage.AST, WorkflowStage.Validation],
+  [WorkflowStage.AST]: [WorkflowStage.Stewardship, WorkflowStage.Validation],
+  [WorkflowStage.Stewardship]: [WorkflowStage.IPC, WorkflowStage.Validation],
+  [WorkflowStage.IPC]: [WorkflowStage.Validation],
+  [WorkflowStage.Validation]: [WorkflowStage.Released],
+  [WorkflowStage.Released]: [],
 };
 
 export interface TransitionResult {

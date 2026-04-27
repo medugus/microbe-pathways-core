@@ -15,13 +15,18 @@ function priorityTone(priority: IPCQueueItem["priority"]): string {
 }
 
 export function IPCOfficerQueue({ accession, allAccessions }: IPCOfficerQueueProps) {
-  const items = useMemo(() => deriveIPCOfficerQueue(accession, allAccessions), [accession, allAccessions]);
+  const items = useMemo(
+    () => deriveIPCOfficerQueue(accession, allAccessions),
+    [accession, allAccessions],
+  );
 
   const counts = useMemo(
     () => ({
-      criticalHigh: items.filter((item) => item.priority === "critical" || item.priority === "high").length,
+      criticalHigh: items.filter((item) => item.priority === "critical" || item.priority === "high")
+        .length,
       openActions: items.filter((item) => item.queueType === "open_action").length,
-      colonisationPositives: items.filter((item) => item.queueType === "colonisation_positive").length,
+      colonisationPositives: items.filter((item) => item.queueType === "colonisation_positive")
+        .length,
       clearanceFollowUp: items.filter((item) => item.queueType === "clearance_incomplete").length,
       outbreakWatch: items.filter((item) => item.queueType === "possible_cluster").length,
     }),
@@ -39,7 +44,8 @@ export function IPCOfficerQueue({ accession, allAccessions }: IPCOfficerQueuePro
             </span>
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Queue derived from currently loaded cases; requires backend persistence for hospital-wide task management.
+            Queue derived from currently loaded cases; requires backend persistence for
+            hospital-wide task management.
           </p>
         </summary>
 
@@ -69,9 +75,14 @@ export function IPCOfficerQueue({ accession, allAccessions }: IPCOfficerQueuePro
           ) : (
             <ul className="space-y-2">
               {items.map((item) => (
-                <li key={item.id} className="space-y-1 rounded border border-border bg-muted/20 p-2 text-xs">
+                <li
+                  key={item.id}
+                  className="space-y-1 rounded border border-border bg-muted/20 p-2 text-xs"
+                >
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${priorityTone(item.priority)}`}>
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${priorityTone(item.priority)}`}
+                    >
                       {item.priority}
                     </span>
                     <span className="rounded bg-background px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -93,10 +104,14 @@ export function IPCOfficerQueue({ accession, allAccessions }: IPCOfficerQueuePro
                     Organism/phenotype: {item.organismOrPhenotype ?? "not available"}
                   </p>
                   <p className="text-muted-foreground">Reason: {item.reason}</p>
-                  <p className="text-muted-foreground">Recommended action: {item.recommendedAction}</p>
+                  <p className="text-muted-foreground">
+                    Recommended action: {item.recommendedAction}
+                  </p>
                   <p className="text-muted-foreground">
                     Due/age: {item.dueLabel ?? "not available"}
-                    {typeof item.ageHours === "number" ? ` · ${item.ageHours}h since collection` : ""}
+                    {typeof item.ageHours === "number"
+                      ? ` · ${item.ageHours}h since collection`
+                      : ""}
                   </p>
                   <p className="text-[10px] text-muted-foreground">{item.limitationNote}</p>
                 </li>

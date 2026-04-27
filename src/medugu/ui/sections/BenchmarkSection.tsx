@@ -85,9 +85,17 @@ export function BenchmarkSection() {
       </header>
 
       <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <SummaryCard label="Positive blood cultures" value={summary.positiveBlood} tone="text-destructive" />
+        <SummaryCard
+          label="Positive blood cultures"
+          value={summary.positiveBlood}
+          tone="text-destructive"
+        />
         <SummaryCard label="AST pending" value={summary.astPending} />
-        <SummaryCard label="Release blocked" value={summary.releaseBlocked} tone="text-destructive" />
+        <SummaryCard
+          label="Release blocked"
+          value={summary.releaseBlocked}
+          tone="text-destructive"
+        />
         <SummaryCard label="AMS pending" value={summary.amsPending} />
         <SummaryCard label="IPC alerts" value={summary.ipcAlerts} tone="text-destructive" />
         <SummaryCard label="Ready for review" value={summary.readyForReview} tone="text-primary" />
@@ -132,7 +140,9 @@ export function BenchmarkSection() {
                 onClick={() => openRow(item)}
               >
                 <Td>
-                  <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_STYLE[item.priority]}`}>
+                  <span
+                    className={`rounded px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_STYLE[item.priority]}`}
+                  >
                     {item.priority}
                   </span>
                 </Td>
@@ -158,14 +168,24 @@ export function BenchmarkSection() {
         </table>
 
         {filteredItems.length === 0 && (
-          <div className="p-6 text-center text-sm text-muted-foreground">No matching worklist items.</div>
+          <div className="p-6 text-center text-sm text-muted-foreground">
+            No matching worklist items.
+          </div>
         )}
       </section>
     </div>
   );
 }
 
-function SummaryCard({ label, value, tone = "text-foreground" }: { label: string; value: number; tone?: string }) {
+function SummaryCard({
+  label,
+  value,
+  tone = "text-foreground",
+}: {
+  label: string;
+  value: number;
+  tone?: string;
+}) {
   return (
     <div className="rounded border border-border bg-card p-3">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>

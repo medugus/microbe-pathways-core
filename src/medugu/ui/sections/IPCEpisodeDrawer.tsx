@@ -153,9 +153,7 @@ export function IPCEpisodeDrawer({ open, onOpenChange, detail, onOpenAccession }
                 </Field>
               )}
               {detail.raisedAt && (
-                <Field label="Raised at">
-                  {new Date(detail.raisedAt).toLocaleString()}
-                </Field>
+                <Field label="Raised at">{new Date(detail.raisedAt).toLocaleString()}</Field>
               )}
               {detail.windowBasis && (
                 <Field label="Window">
@@ -195,9 +193,8 @@ export function IPCEpisodeDrawer({ open, onOpenChange, detail, onOpenAccession }
                     ))}
                   </ul>
                   <p className="mt-1 text-[10px] text-muted-foreground">
-                    Repeat episode — these prior accessions for this MRN already
-                    carried the same rule + organism within the rolling window
-                    (local cohort only).
+                    Repeat episode — these prior accessions for this MRN already carried the same
+                    rule + organism within the rolling window (local cohort only).
                   </p>
                 </Field>
               )}

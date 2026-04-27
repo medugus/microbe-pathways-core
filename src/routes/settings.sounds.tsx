@@ -4,11 +4,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { RequireAuth } from "@/auth/RequireAuth";
-import {
-  loadSoundPrefs,
-  saveSoundPrefs,
-  type SoundPrefs,
-} from "@/medugu/store/soundPrefs";
+import { loadSoundPrefs, saveSoundPrefs, type SoundPrefs } from "@/medugu/store/soundPrefs";
 import { soundEngine } from "@/medugu/logic/soundEngine";
 
 export const Route = createFileRoute("/settings/sounds")({
@@ -51,9 +47,9 @@ function SoundsSettings() {
 
       <main className="mx-auto max-w-2xl space-y-4 p-6">
         <div className="callout callout-warning text-[11px]">
-          Browser-phase only — preferences are stored in this browser's
-          localStorage. Sound is an alert affordance, never the sole signal.
-          Visible chips, banners, and blocker text remain authoritative.
+          Browser-phase only — preferences are stored in this browser's localStorage. Sound is an
+          alert affordance, never the sole signal. Visible chips, banners, and blocker text remain
+          authoritative.
         </div>
 
         <section className="rounded-md border border-border bg-panel p-4">
@@ -92,8 +88,8 @@ function SoundsSettings() {
         <section className="rounded-md border border-border bg-panel p-4">
           <h2 className="text-sm font-semibold">Critical alerts</h2>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Triggered for: PHONE_OUT_REQUIRED, SEAL_MISMATCH (and other
-            release-blocking events explicitly classified as critical).
+            Triggered for: PHONE_OUT_REQUIRED, SEAL_MISMATCH (and other release-blocking events
+            explicitly classified as critical).
           </p>
           <div className="mt-3 space-y-3">
             <label className="flex items-center justify-between gap-3 text-sm">
@@ -148,9 +144,9 @@ function SoundsSettings() {
         <section className="rounded-md border border-border bg-panel p-4">
           <h2 className="text-sm font-semibold">Urgent workflow warnings</h2>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Triggered for: CONSULTANT_APPROVAL_REQUIRED, new high-priority IPC
-            alerts (CRE/CRAB/CRPA/CAURIS/MRSA/VRE), and dispatch failures.
-            These play once per transition and never loop.
+            Triggered for: CONSULTANT_APPROVAL_REQUIRED, new high-priority IPC alerts
+            (CRE/CRAB/CRPA/CAURIS/MRSA/VRE), and dispatch failures. These play once per transition
+            and never loop.
           </p>
           <div className="mt-3">
             <button
@@ -164,15 +160,21 @@ function SoundsSettings() {
         </section>
 
         <section className="rounded-md border border-border bg-panel p-4 text-[11px] text-muted-foreground">
-          <h2 className="mb-1 text-sm font-semibold text-foreground">
-            Accessibility &amp; safety
-          </h2>
+          <h2 className="mb-1 text-sm font-semibold text-foreground">Accessibility &amp; safety</h2>
           <ul className="list-disc space-y-1 pl-5">
-            <li>Sound is never the sole signal — visible chips, banners, and blocker text remain authoritative.</li>
+            <li>
+              Sound is never the sole signal — visible chips, banners, and blocker text remain
+              authoritative.
+            </li>
             <li>Sounds fire only on observed state transitions, never on rerender.</li>
             <li>Routine warnings (missing microscopy, AMS pending, draft AST) are silent.</li>
-            <li>No autoplay on page load; the audio context activates on the first user-driven trigger.</li>
-            <li>Repeating critical alerts can be silenced from this page or from the header chip.</li>
+            <li>
+              No autoplay on page load; the audio context activates on the first user-driven
+              trigger.
+            </li>
+            <li>
+              Repeating critical alerts can be silenced from this page or from the header chip.
+            </li>
           </ul>
         </section>
       </main>

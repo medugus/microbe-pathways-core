@@ -1,8 +1,5 @@
 import { AMS_RULES } from "../../config/stewardshipRules";
-import {
-  getAMSRuleGovernanceSummary,
-  getRuleForAMSRecommendation,
-} from "../amsRuleGovernance";
+import { getAMSRuleGovernanceSummary, getRuleForAMSRecommendation } from "../amsRuleGovernance";
 import type { AMSRecommendationResult } from "../stewardshipEngine";
 
 function assert(condition: unknown, message: string): void {
@@ -24,7 +21,9 @@ assert(
   "Governance summary should flag rules missing source.",
 );
 assert(
-  summary.limitationNote.toLowerCase().includes("production editing requires backend audit and permissions"),
+  summary.limitationNote
+    .toLowerCase()
+    .includes("production editing requires backend audit and permissions"),
   "Governance panel summary should explicitly communicate read-only browser-phase limitations.",
 );
 

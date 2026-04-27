@@ -1,4 +1,10 @@
-import type { Accession, AMSApprovalRequest, ASTResult, Isolate, MeduguState } from "../domain/types";
+import type {
+  Accession,
+  AMSApprovalRequest,
+  ASTResult,
+  Isolate,
+  MeduguState,
+} from "../domain/types";
 import { ASTMethod, Priority, ReleaseState, Sex, WorkflowStage } from "../domain/enums";
 
 function deepClone<T>(value: T): T {

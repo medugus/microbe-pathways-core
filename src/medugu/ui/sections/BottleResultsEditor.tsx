@@ -64,7 +64,8 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
   if (sets.length === 0) {
     return (
       <p className="text-[11px] text-muted-foreground">
-        No blood culture sets defined yet — record sets in the Specimen section to enable per-bottle growth tracking.
+        No blood culture sets defined yet — record sets in the Specimen section to enable per-bottle
+        growth tracking.
       </p>
     );
   }
@@ -79,7 +80,11 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
 
   function upsert(setNo: number, bottleType: string, patch: Partial<BloodBottleResult>) {
     const set = sets.find((s) => s.setNo === setNo);
-    const current = findRow(setNo, bottleType) ?? { setNo, bottleType, growth: "pending" as BottleGrowthState };
+    const current = findRow(setNo, bottleType) ?? {
+      setNo,
+      bottleType,
+      growth: "pending" as BottleGrowthState,
+    };
     const merged: BloodBottleResult = { ...current, ...patch };
     if (merged.growth !== "growth") {
       merged.positiveAt = undefined;
@@ -108,8 +113,12 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
   // same isolate suggests CLABSI workup. We expose the gap so downstream rules
   // can act on it later.
   const ttpHint = useMemo(() => {
-    const linePositives = existing.filter((r) => r.growth === "growth" && r.ttpHours !== undefined && isLineSet(sets, r.setNo));
-    const periphPositives = existing.filter((r) => r.growth === "growth" && r.ttpHours !== undefined && !isLineSet(sets, r.setNo));
+    const linePositives = existing.filter(
+      (r) => r.growth === "growth" && r.ttpHours !== undefined && isLineSet(sets, r.setNo),
+    );
+    const periphPositives = existing.filter(
+      (r) => r.growth === "growth" && r.ttpHours !== undefined && !isLineSet(sets, r.setNo),
+    );
     if (linePositives.length === 0 || periphPositives.length === 0) return null;
     const minLine = Math.min(...linePositives.map((r) => r.ttpHours!));
     const minPeriph = Math.min(...periphPositives.map((r) => r.ttpHours!));
@@ -139,7 +148,10 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
                 const growth = row?.growth ?? "pending";
                 const linked = linkedOrganisms(set.setNo, bottle);
                 return (
-                  <tr key={`${set.setNo}-${bottle}`} className="border-t border-border align-middle">
+                  <tr
+                    key={`${set.setNo}-${bottle}`}
+                    className="border-t border-border align-middle"
+                  >
                     <td className="p-1.5 font-mono text-foreground">
                       #{set.setNo}
                       <span className="ml-1 text-[10px] text-muted-foreground">
@@ -171,7 +183,11 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
                       <input
                         type="datetime-local"
                         disabled={growth !== "growth"}
-                        value={row?.positiveAt && row.positiveAt.length >= 16 ? row.positiveAt.slice(0, 16) : row?.positiveAt ?? ""}
+                        value={
+                          row?.positiveAt && row.positiveAt.length >= 16
+                            ? row.positiveAt.slice(0, 16)
+                            : (row?.positiveAt ?? "")
+                        }
                         onChange={(e) => upsert(set.setNo, bottle, { positiveAt: e.target.value })}
                         className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs disabled:opacity-50"
                       />
@@ -196,8 +212,9 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
 
       {ttpHint && (
         <p className="text-[11px] text-muted-foreground">
-          Differential TTP: line bottle first positive at {ttpHint.minLine} h, peripheral at {ttpHint.minPeriph} h
-          {" "}(Δ {ttpHint.delta} h){ttpHint.delta >= 2 ? " — meets ≥2 h threshold for CLABSI workup." : "."}
+          Differential TTP: line bottle first positive at {ttpHint.minLine} h, peripheral at{" "}
+          {ttpHint.minPeriph} h (Δ {ttpHint.delta} h)
+          {ttpHint.delta >= 2 ? " — meets ≥2 h threshold for CLABSI workup." : "."}
         </p>
       )}
     </div>
@@ -207,5 +224,7 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
 function isLineSet(sets: SetRow[], setNo: number): boolean {
   const s = sets.find((x) => x.setNo === setNo);
   if (!s) return false;
-  return s.drawSite === "CENTRAL_LINE" || s.drawSite === "PORTACATH" || s.drawSite === "ARTERIAL_LINE";
+  return (
+    s.drawSite === "CENTRAL_LINE" || s.drawSite === "PORTACATH" || s.drawSite === "ARTERIAL_LINE"
+  );
 }

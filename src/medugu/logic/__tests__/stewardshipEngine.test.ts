@@ -22,8 +22,8 @@ const restrictedRecommendation = evaluateAMSRecommendation(
   restrictedDecision.byAst,
 );
 assert(
-  restrictedRecommendation.category === "restricted_approval_required"
-    || restrictedRecommendation.category === "reserve_review",
+  restrictedRecommendation.category === "restricted_approval_required" ||
+    restrictedRecommendation.category === "reserve_review",
   "Restricted/review case should produce approval-required or reserve-review recommendation.",
 );
 assert(
@@ -31,7 +31,9 @@ assert(
   "Restricted/review recommendation should clearly include approval required wording.",
 );
 assert(
-  restrictedRecommendation.explanation.safetyNote.toLowerCase().includes("no automatic prescribing"),
+  restrictedRecommendation.explanation.safetyNote
+    .toLowerCase()
+    .includes("no automatic prescribing"),
   "Safety note should explicitly state no automatic prescribing.",
 );
 
@@ -44,7 +46,10 @@ const noTherapyRecommendation = evaluateAMSRecommendation(
   noTherapyDecision.byAst[noTherapyRow.id],
   noTherapyDecision.byAst,
 );
-assert(noTherapyRecommendation.category === "insufficient_data", "Missing therapy context should return insufficient_data.");
+assert(
+  noTherapyRecommendation.category === "insufficient_data",
+  "Missing therapy context should return insufficient_data.",
+);
 assert(
   noTherapyRecommendation.recommendation.toLowerCase().includes("insufficient data"),
   "Missing therapy context should provide explicit insufficient data wording.",
@@ -75,7 +80,9 @@ assert(
 const suppressedNarrowOptionCase = {
   ...deEscalationOpportunityCase,
   ast: deEscalationOpportunityCase.ast.map((row) =>
-    row.antibioticCode === "CXM" ? { ...row, cascadeDecision: "suppressed_by_phenotype" as const } : row,
+    row.antibioticCode === "CXM"
+      ? { ...row, cascadeDecision: "suppressed_by_phenotype" as const }
+      : row,
   ),
 };
 const suppressedDecision = evaluateStewardship(suppressedNarrowOptionCase);

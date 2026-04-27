@@ -20,17 +20,17 @@ import { ReleaseState } from "../domain/enums";
 // ---------- Portable input contract ----------
 
 export interface AuditRowLite {
-  at: string;            // ISO
-  action: string;        // dotted, e.g. "ast.entered"
-  entity: string;        // accession | isolate | ast | release_package | ...
+  at: string; // ISO
+  action: string; // dotted, e.g. "ast.entered"
+  entity: string; // accession | isolate | ast | release_package | ...
   entityId: string | null;
 }
 
 export interface DispatchRowLite {
-  requestedAt: string;       // ISO
+  requestedAt: string; // ISO
   completedAt: string | null;
-  status: string;            // sent | failed | retried | skipped | ...
-  format: string;            // FHIR | HL7 | CSV | JSON | ...
+  status: string; // sent | failed | retried | skipped | ...
+  format: string; // FHIR | HL7 | CSV | JSON | ...
   receiverName: string;
   attemptNo: number;
   parentDispatchId: string | null;
@@ -254,9 +254,10 @@ export function computeAnalytics(
   const denom = sent + failed;
   const dispatchSuccessRate = denom === 0 ? 0 : sent / denom;
 
-  const exportsByFormat = bucketBy(scopedDispatches, (d) => d.format || "UNKNOWN").map(
-    (b) => ({ format: b.k, count: b.n }),
-  );
+  const exportsByFormat = bucketBy(scopedDispatches, (d) => d.format || "UNKNOWN").map((b) => ({
+    format: b.k,
+    count: b.n,
+  }));
 
   const byFamily = bucketBy(scoped, (a) => a.specimen.familyCode).map((b) => ({
     family: b.k,

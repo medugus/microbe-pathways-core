@@ -51,32 +51,44 @@ export function ASTPanelEntry({
   return (
     <>
       <label className="text-xs md:col-span-2">
-        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Panel</span>
+        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+          Panel
+        </span>
         <select
           value={selectedPanelId}
           onChange={(e) => onPanelChange(e.target.value)}
           className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
         >
           {eligiblePanels.map((panel) => (
-            <option key={panel.id} value={panel.id}>{panel.label}</option>
+            <option key={panel.id} value={panel.id}>
+              {panel.label}
+            </option>
           ))}
         </select>
-        <p className="mt-1 text-[11px] text-muted-foreground">Panels are filtered by organism group.</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Panels are filtered by organism group.
+        </p>
       </label>
       <label className="text-xs">
-        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Method</span>
+        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+          Method
+        </span>
         <select
           value={method}
           onChange={(e) => onMethodChange(e.target.value as ASTMethod)}
           className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
         >
           {METHOD_OPTIONS.map((m) => (
-            <option key={m.code} value={m.code}>{m.label}</option>
+            <option key={m.code} value={m.code}>
+              {m.label}
+            </option>
           ))}
         </select>
       </label>
       <label className="text-xs">
-        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Standard</span>
+        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+          Standard
+        </span>
         <select
           value={standard}
           onChange={(e) => onStandardChange(e.target.value as ASTStandard)}
@@ -109,7 +121,8 @@ export function ASTPanelEntry({
       <div className="md:col-span-6 rounded border border-border bg-card px-2 py-2 text-[11px] text-muted-foreground">
         <div className="font-medium text-foreground">Panel preview</div>
         <div className="mt-1">
-          Will add {panelPendingCount} row(s); {panelDuplicateCount} duplicate(s) detected for isolate.
+          Will add {panelPendingCount} row(s); {panelDuplicateCount} duplicate(s) detected for
+          isolate.
         </div>
         <div className="mt-1 flex flex-wrap gap-1">
           {selectedPanelCodes.map((code) => (
@@ -126,9 +139,7 @@ export function ASTPanelEntry({
         )}
       </div>
       {panelSummary && (
-        <p className="md:col-span-6 text-[11px] text-muted-foreground">
-          {panelSummary}
-        </p>
+        <p className="md:col-span-6 text-[11px] text-muted-foreground">{panelSummary}</p>
       )}
     </>
   );

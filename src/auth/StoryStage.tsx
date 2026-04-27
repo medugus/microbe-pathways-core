@@ -30,7 +30,9 @@ export function StoryStage({
       className={`story-stage relative overflow-hidden rounded-2xl border border-white/15 bg-slate-950/45 p-3 backdrop-blur-sm ${className}`}
       style={{ animationDelay: `${delay}s` }}
     >
-      <div className={`absolute inset-x-3 top-3 h-1 rounded-full ${toneClasses[tone]} story-stage-accent`} />
+      <div
+        className={`absolute inset-x-3 top-3 h-1 rounded-full ${toneClasses[tone]} story-stage-accent`}
+      />
       <div className="mt-3 flex items-start gap-3">
         <div
           className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${toneClasses[tone]}`}

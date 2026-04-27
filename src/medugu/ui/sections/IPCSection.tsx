@@ -114,7 +114,9 @@ export function IPCSection() {
                 specimenContext={data.specimenContext}
                 ward={accession.patient.ward}
                 ruleVersion={accession.ruleVersion}
-                generatedByRuleCode={data.signalRuleMap.get(`${d.ruleCode}|${d.organismCode ?? ""}`)}
+                generatedByRuleCode={data.signalRuleMap.get(
+                  `${d.ruleCode}|${d.organismCode ?? ""}`,
+                )}
               />
             </li>
           ))}

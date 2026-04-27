@@ -35,7 +35,11 @@ export function PatientSection() {
           <Field label="Accession" value={accession.id} mono />
           <Field label="Stage" value={accession.stage.replace(/_/g, " ")} capitalize />
           <Field label="Priority" value={accession.priority} capitalize />
-          <Field label="Release state" value={accession.release.state.replace(/_/g, " ")} capitalize />
+          <Field
+            label="Release state"
+            value={accession.release.state.replace(/_/g, " ")}
+            capitalize
+          />
         </div>
       </div>
 

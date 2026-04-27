@@ -149,7 +149,9 @@ export function BloodSetsForm({ accession }: Props) {
     const sites = sets.map((s) => `${s.drawSite}${s.lumenLabel ? `|${s.lumenLabel}` : ""}`);
     const dupSites = sites.filter((s, i) => s && sites.indexOf(s) !== i);
     if (dupSites.length > 0) {
-      hints.push("Two or more sets share the same draw site/lumen — each set should normally come from a distinct site.");
+      hints.push(
+        "Two or more sets share the same draw site/lumen — each set should normally come from a distinct site.",
+      );
     }
     if (sets.some((s) => !s.drawSite)) {
       hints.push("One or more sets have no draw site selected.");
@@ -197,13 +199,17 @@ export function BloodSetsForm({ accession }: Props) {
                 : "border-dashed border-border text-muted-foreground"
             }`}
           >
-            {noSetsBlocker ? noSetsBlocker.message : "No sets yet. Add a set manually, or apply a preset above."}
+            {noSetsBlocker
+              ? noSetsBlocker.message
+              : "No sets yet. Add a set manually, or apply a preset above."}
           </div>
         )}
 
         {sets.map((s, idx) => {
           const isLine =
-            s.drawSite === "CENTRAL_LINE" || s.drawSite === "PORTACATH" || s.drawSite === "ARTERIAL_LINE";
+            s.drawSite === "CENTRAL_LINE" ||
+            s.drawSite === "PORTACATH" ||
+            s.drawSite === "ARTERIAL_LINE";
           const setNo = idx + 1;
           const errs = setErrorMap[setNo] ?? {};
           const hasError = !!(errs.drawSite || errs.bottles || errs.drawTime);
@@ -280,7 +286,11 @@ export function BloodSetsForm({ accession }: Props) {
                   </label>
                   <input
                     type="datetime-local"
-                    value={s.drawTime && s.drawTime.length >= 16 ? s.drawTime.slice(0, 16) : s.drawTime ?? ""}
+                    value={
+                      s.drawTime && s.drawTime.length >= 16
+                        ? s.drawTime.slice(0, 16)
+                        : (s.drawTime ?? "")
+                    }
                     onChange={(e) => updateSet(s.id, { drawTime: e.target.value })}
                     aria-invalid={!!errs.drawTime}
                     className={`w-full rounded border bg-background px-2 py-1.5 text-sm ${

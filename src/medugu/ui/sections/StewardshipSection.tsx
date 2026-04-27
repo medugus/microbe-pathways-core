@@ -81,49 +81,54 @@ export function StewardshipSection() {
                   {rows.map((d) => {
                     const aware = awareChip(d.aware);
                     return (
-                    <tr key={d.astId} className="border-t border-border align-top">
-                      <td className="px-3 py-2">
-                        <div className="font-medium text-foreground">
-                          {getAntibiotic(d.antibioticCode)?.display ?? d.antibioticCode}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">{d.antibioticCode}</div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className={aware.tone}>
-                          {aware.label}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className={`rounded px-1.5 py-0.5 text-[10px] ${CLASS_TONE[d.releaseClass] ?? "bg-muted text-muted-foreground"}`}>
-                          {d.releaseClass}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        {d.visibleToClinician ? (
-                          <span className="text-foreground">visible</span>
-                        ) : (
-                          <span className="text-destructive">
-                            hidden{d.approvalRequired ? " · approval needed" : ""}
+                      <tr key={d.astId} className="border-t border-border align-top">
+                        <td className="px-3 py-2">
+                          <div className="font-medium text-foreground">
+                            {getAntibiotic(d.antibioticCode)?.display ?? d.antibioticCode}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {d.antibioticCode}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className={aware.tone}>{aware.label}</span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-[10px] ${CLASS_TONE[d.releaseClass] ?? "bg-muted text-muted-foreground"}`}
+                          >
+                            {d.releaseClass}
                           </span>
-                        )}
-                        {(() => {
-                          const row = accession.ast.find((a) => a.id === d.astId);
-                          if (!row || !isRestrictedRow(row)) return null;
-                          const status = approvalStatusForRow(accession, row.id);
-                          return (
-                            <div className="mt-0.5">
-                              <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${AMS_TONE[status]}`}>
-                                AMS · {status.replace("_", " ")}
-                              </span>
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-3 py-2 text-muted-foreground">
-                        {d.suppressionReason ?? d.advisory ?? "—"}
-                      </td>
-                    </tr>
-                  )})}
+                        </td>
+                        <td className="px-3 py-2">
+                          {d.visibleToClinician ? (
+                            <span className="text-foreground">visible</span>
+                          ) : (
+                            <span className="text-destructive">
+                              hidden{d.approvalRequired ? " · approval needed" : ""}
+                            </span>
+                          )}
+                          {(() => {
+                            const row = accession.ast.find((a) => a.id === d.astId);
+                            if (!row || !isRestrictedRow(row)) return null;
+                            const status = approvalStatusForRow(accession, row.id);
+                            return (
+                              <div className="mt-0.5">
+                                <span
+                                  className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${AMS_TONE[status]}`}
+                                >
+                                  AMS · {status.replace("_", " ")}
+                                </span>
+                              </div>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {d.suppressionReason ?? d.advisory ?? "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -138,7 +143,10 @@ export function StewardshipSection() {
           </h4>
           <ul className="space-y-1.5">
             {sw.notes.map((n) => (
-              <li key={n.id} className="rounded border border-border bg-background px-3 py-2 text-xs">
+              <li
+                key={n.id}
+                className="rounded border border-border bg-background px-3 py-2 text-xs"
+              >
                 <code className="text-[10px] text-muted-foreground">{n.flag}</code>
                 <div className="mt-0.5 text-foreground">{n.message}</div>
               </li>

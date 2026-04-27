@@ -8,7 +8,12 @@ import { AMS_BROWSER_PHASE_WARNING, AMS_POLICY } from "../../config/amsConfig";
 import { AMS_RULES } from "../../config/stewardshipRules";
 import { newId } from "../../domain/ids";
 import type { AMSApprovalRequest, ASTResult } from "../../domain/types";
-import { approvalStatusForRow, computeDueBy, findExpirableRequestIds, isRestrictedRow } from "../../logic/amsEngine";
+import {
+  approvalStatusForRow,
+  computeDueBy,
+  findExpirableRequestIds,
+  isRestrictedRow,
+} from "../../logic/amsEngine";
 import { getRuleForAMSRecommendation } from "../../logic/amsRuleGovernance";
 import { resolveSpecimen } from "../../logic/specimenResolver";
 import { evaluateAMSRecommendation, evaluateStewardship } from "../../logic/stewardshipEngine";
@@ -34,8 +39,13 @@ export function AMSSection() {
 
   const currentAccession = accession;
   const stewardship = evaluateStewardship(currentAccession);
-  const specimenResolved = resolveSpecimen(currentAccession.specimen.familyCode, currentAccession.specimen.subtypeCode);
-  const syndrome = specimenResolved.ok ? specimenResolved.profile.syndrome ?? undefined : undefined;
+  const specimenResolved = resolveSpecimen(
+    currentAccession.specimen.familyCode,
+    currentAccession.specimen.subtypeCode,
+  );
+  const syndrome = specimenResolved.ok
+    ? (specimenResolved.profile.syndrome ?? undefined)
+    : undefined;
   const specimenLabel = specimenResolved.ok ? specimenResolved.profile.displayName : undefined;
 
   const restrictedRows = currentAccession.ast.filter((r) => isRestrictedRow(r));
@@ -46,7 +56,12 @@ export function AMSSection() {
         const decision = stewardship.byAst[row.id];
         if (!decision) return null;
         const approval = approvalStatusForRow(currentAccession, row.id);
-        const recommendation = evaluateAMSRecommendation(currentAccession, row, decision, stewardship.byAst);
+        const recommendation = evaluateAMSRecommendation(
+          currentAccession,
+          row,
+          decision,
+          stewardship.byAst,
+        );
         const governanceRule = getRuleForAMSRecommendation(recommendation, AMS_RULES);
         const isolate = currentAccession.isolates.find((i) => i.id === row.isolateId);
         return {
@@ -55,8 +70,12 @@ export function AMSSection() {
           decision,
           approval,
           recommendation,
-          governanceRuleCode: governanceRule?.ruleCode ?? recommendation.explanation.matchedRuleCode,
-          restriction: decision.releaseClass === "restricted" ? "locally restricted" : "not locally restricted",
+          governanceRuleCode:
+            governanceRule?.ruleCode ?? recommendation.explanation.matchedRuleCode,
+          restriction:
+            decision.releaseClass === "restricted"
+              ? "locally restricted"
+              : "not locally restricted",
         };
       })
       .filter((item): item is NonNullable<typeof item> => Boolean(item))
@@ -75,10 +94,15 @@ export function AMSSection() {
 
   const summary = {
     reviewItems: recommendationRows.length,
-    restrictedOrReserve: recommendationRows.filter((r) => r.decision.releaseClass === "restricted" || r.decision.aware === "Reserve").length,
+    restrictedOrReserve: recommendationRows.filter(
+      (r) => r.decision.releaseClass === "restricted" || r.decision.aware === "Reserve",
+    ).length,
     pendingApproval: recommendationRows.filter((r) => r.approval === "pending").length,
-    deEscalation: recommendationRows.filter((r) => r.recommendation.category === "de_escalation_opportunity").length,
-    mismatch: recommendationRows.filter((r) => r.recommendation.category === "bug_drug_mismatch").length,
+    deEscalation: recommendationRows.filter(
+      (r) => r.recommendation.category === "de_escalation_opportunity",
+    ).length,
+    mismatch: recommendationRows.filter((r) => r.recommendation.category === "bug_drug_mismatch")
+      .length,
     withheld: recommendationRows.filter((r) => !r.decision.visibleToClinician).length,
   };
 
@@ -117,7 +141,9 @@ export function AMSSection() {
 
       <AMSSummaryStrip counts={summary} />
 
-      <AMSRuleGovernancePanel linkedRuleCodes={recommendationRows.map((entry) => entry.governanceRuleCode)} />
+      <AMSRuleGovernancePanel
+        linkedRuleCodes={recommendationRows.map((entry) => entry.governanceRuleCode)}
+      />
 
       <div className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-background p-3">
         <label className="text-xs">
@@ -175,7 +201,9 @@ export function AMSSection() {
         requestNote={requestNote}
         decisionNote={decisionNote}
         onRequestNoteChange={(rowId, value) => setRequestNote((s) => ({ ...s, [rowId]: value }))}
-        onDecisionNoteChange={(requestId, value) => setDecisionNote((s) => ({ ...s, [requestId]: value }))}
+        onDecisionNoteChange={(requestId, value) =>
+          setDecisionNote((s) => ({ ...s, [requestId]: value }))
+        }
         onRequest={request}
         onDecide={decide}
       />

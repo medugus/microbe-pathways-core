@@ -95,7 +95,10 @@ export function bandForWeight(weightKg: number | undefined): PaedBloodBand | und
 }
 
 /** Years between dob and now. Returns undefined if dob missing/invalid. */
-export function ageYearsFromDob(dob: string | undefined, now: Date = new Date()): number | undefined {
+export function ageYearsFromDob(
+  dob: string | undefined,
+  now: Date = new Date(),
+): number | undefined {
   if (!dob) return undefined;
   const d = new Date(dob);
   if (isNaN(d.getTime())) return undefined;

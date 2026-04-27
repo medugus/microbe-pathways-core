@@ -60,7 +60,8 @@ function toPatientLabel(accession: Accession): string {
 }
 
 function toAgeHours(accession: Accession): number | undefined {
-  const timestamp = accession.specimen.collectedAt ?? accession.specimen.receivedAt ?? accession.createdAt;
+  const timestamp =
+    accession.specimen.collectedAt ?? accession.specimen.receivedAt ?? accession.createdAt;
   const ms = Date.parse(timestamp);
   if (!Number.isFinite(ms)) return undefined;
   const age = (Date.now() - ms) / 3_600_000;
@@ -80,7 +81,8 @@ function actionSummary(actions: string[]): string {
 }
 
 function decisionPriority(decision: IPCDecision): IPCQueuePriorityLevel {
-  if (HIGH_PRIORITY_RULE_CODES.has(decision.ruleCode) || decision.timing === "immediate") return "critical";
+  if (HIGH_PRIORITY_RULE_CODES.has(decision.ruleCode) || decision.timing === "immediate")
+    return "critical";
   if (REVIEW_RULE_CODES.has(decision.ruleCode) || decision.timing === "same_shift") return "high";
   if (decision.timing === "within_24h") return "review";
   return "routine";
@@ -96,11 +98,16 @@ function queueTypeForDecision(decision: IPCDecision): IPCQueueType {
 export function getIPCQueueReason(item: IPCQueueItem): string {
   if (item.reason.trim().length > 0) return item.reason;
 
-  if (item.queueType === "open_action") return "Open IPC action inferred from signal metadata in browser phase.";
-  if (item.queueType === "colonisation_positive") return "Positive colonisation screen requires IPC review.";
-  if (item.queueType === "clearance_incomplete") return "Clearance attempt is incomplete and needs follow-up.";
-  if (item.queueType === "possible_cluster") return "Local outbreak watch flagged a possible cluster among currently loaded cases.";
-  if (item.queueType === "high_priority_signal") return "High-priority IPC signal requires rapid escalation.";
+  if (item.queueType === "open_action")
+    return "Open IPC action inferred from signal metadata in browser phase.";
+  if (item.queueType === "colonisation_positive")
+    return "Positive colonisation screen requires IPC review.";
+  if (item.queueType === "clearance_incomplete")
+    return "Clearance attempt is incomplete and needs follow-up.";
+  if (item.queueType === "possible_cluster")
+    return "Local outbreak watch flagged a possible cluster among currently loaded cases.";
+  if (item.queueType === "high_priority_signal")
+    return "High-priority IPC signal requires rapid escalation.";
   return "Review-level IPC signal among currently loaded cases.";
 }
 
@@ -148,16 +155,20 @@ export function deriveIPCOfficerQueue(
 
   for (const accession of loaded) {
     const report = evaluateIPC(accession, allAccessions);
-    const signalMap = new Map(accession.ipc.map((signal) => [`${signal.ruleCode}|${signal.organismCode ?? ""}`, signal]));
+    const signalMap = new Map(
+      accession.ipc.map((signal) => [`${signal.ruleCode}|${signal.organismCode ?? ""}`, signal]),
+    );
 
     for (const decision of report.decisions) {
       const signalKey = `${decision.ruleCode}|${decision.organismCode ?? ""}`;
       const signal = signalMap.get(signalKey);
       const organismLabel = decision.organismCode
-        ? getOrganism(decision.organismCode)?.display ?? decision.organismCode
+        ? (getOrganism(decision.organismCode)?.display ?? decision.organismCode)
         : undefined;
-      const phenotypeLabel = decision.phenotypes.length > 0 ? decision.phenotypes.join(", ") : undefined;
-      const organismOrPhenotype = [organismLabel, phenotypeLabel].filter(Boolean).join(" · ") || undefined;
+      const phenotypeLabel =
+        decision.phenotypes.length > 0 ? decision.phenotypes.join(", ") : undefined;
+      const organismOrPhenotype =
+        [organismLabel, phenotypeLabel].filter(Boolean).join(" · ") || undefined;
 
       queue.push({
         id: `${accession.id}:${decision.ruleCode}:signal`,
@@ -206,7 +217,9 @@ export function deriveIPCOfficerQueue(
         specimenLabel: accession.specimen.freeTextLabel ?? accession.specimen.subtypeCode,
         organismOrPhenotype: colonisation.targetOrganism,
         queueType: "colonisation_positive",
-        priority: colonisation.targetOrganism?.toLowerCase().includes("auris") ? "critical" : "high",
+        priority: colonisation.targetOrganism?.toLowerCase().includes("auris")
+          ? "critical"
+          : "high",
         reason: `Positive colonisation screen (${colonisation.screenPurpose ?? "unknown"}) with carrier status ${colonisation.episodeStatus ?? "not available"}.`,
         recommendedAction:
           colonisation.nextAction ??
@@ -248,9 +261,11 @@ export function deriveIPCOfficerQueue(
     queue.push({
       id: `local-watch:${watch.id}`,
       ward: watch.ward,
-      organismOrPhenotype: [watch.organismLabel, watch.phenotypeLabel].filter(Boolean).join(" / ") || undefined,
+      organismOrPhenotype:
+        [watch.organismLabel, watch.phenotypeLabel].filter(Boolean).join(" / ") || undefined,
       queueType: "possible_cluster",
-      priority: watch.severity === "high" ? "critical" : watch.severity === "watch" ? "high" : "review",
+      priority:
+        watch.severity === "high" ? "critical" : watch.severity === "watch" ? "high" : "review",
       reason: watch.triggerSummary,
       recommendedAction: watch.recommendedAction,
       dueLabel: watch.severity === "high" ? "Immediate IPC huddle" : "Review cluster linkage",
