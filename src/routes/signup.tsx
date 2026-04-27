@@ -96,7 +96,7 @@ function SignupPage() {
           The first user in a new lab becomes its administrator.
         </p>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <form onSubmit={onSubmit} className="mt-6 space-y-4" suppressHydrationWarning>
           <div className="space-y-2">
             <Label htmlFor="display_name">Your name</Label>
             <Input
