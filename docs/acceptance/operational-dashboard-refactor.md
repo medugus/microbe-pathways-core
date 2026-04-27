@@ -14,12 +14,6 @@
 - `src/medugu/logic/dashboard/dashboardSummary.ts`
 - `src/medugu/logic/dashboard/dashboardLimitations.ts`
 
-## Old/new structure and size snapshot
-
-- Previous monolithic `operationalDashboard.ts` size at the pre-refactor parent commit (`8867c54^`): **618 lines**.
-- Current `operationalDashboard.ts` façade size: **36 lines**.
-- Current façade role: re-export public types/functions and compose `deriveOperationalDashboard` from focused modules.
-
 ## Public API preserved
 
 `src/medugu/logic/operationalDashboard.ts` remains the public façade and continues to export:
@@ -37,8 +31,6 @@
 This refactor moved logic only. It does not alter AST interpretation, breakpoint logic, AMS logic, IPC logic, validation/release rules, report/export logic, auth, server calls, or UI behavior.
 
 ## Manual validation checklist
-
-Status: **Not executed in this CLI-only run** (checklist preserved for manual browser verification).
 
 - [ ] Open dashboard.
 - [ ] Confirm summary cards match previous values for loaded demo data.
