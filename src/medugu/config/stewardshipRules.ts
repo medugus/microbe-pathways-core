@@ -21,9 +21,6 @@ export interface AntibioticStewardship {
   narrowerPreferred?: string[];
 }
 
-export const STEWARDSHIP_RULES_CONFIG_VERSION = "local-ams-rules.v1.0.0";
-export const STEWARDSHIP_RULES_SOURCE_LABEL = "Local AMS stewardship baseline ruleset";
-
 export const AB_STEWARDSHIP: AntibioticStewardship[] = [
   {
     code: "AMP",

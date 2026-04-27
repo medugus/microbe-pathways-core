@@ -20,8 +20,6 @@ import { EUCAST_2026_METADATA } from "./eucast2026/notes";
 
 export const PRIMARY_STANDARD: ASTStandard = "CLSI";
 export const SECONDARY_STANDARD: ASTStandard = "EUCAST";
-export const BREAKPOINT_GOVERNANCE_NOTE =
-  "EUCAST 2026 candidate records present; not active unless breakpointStatus is active.";
 
 const CLSI_ED36_STAPH_META = {
   standard: "CLSI" as const,
@@ -206,13 +204,6 @@ export const EUCAST_2026_BREAKPOINT_REGISTRY: EucastBreakpointRecord[] = [
   ...EUCAST_2026_PSEUDOMONAS_BREAKPOINTS,
   ...EUCAST_2026_ACINETOBACTER_BREAKPOINTS,
 ];
-
-export const BREAKPOINT_CONFIGURATION_STATUS = {
-  activeDefaultStandard: PRIMARY_STANDARD,
-  secondaryStandard: SECONDARY_STANDARD,
-  candidateDatasets: ["EUCAST 2026"],
-  note: BREAKPOINT_GOVERNANCE_NOTE,
-} as const;
 
 const EUCAST_MIC_BREAKPOINTS: MICBreakpoint[] = EUCAST_2026_BREAKPOINT_REGISTRY.filter(
   (r) => r.method === "mic",
