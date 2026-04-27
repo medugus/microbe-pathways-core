@@ -79,8 +79,10 @@ export function ASTEntryControls({
           onChange={(e) => onStandardChange(e.target.value as ASTStandard)}
           className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
         >
-          <option value={PRIMARY_STANDARD}>{PRIMARY_STANDARD} (primary)</option>
-          <option value={SECONDARY_STANDARD}>{SECONDARY_STANDARD} (secondary)</option>
+          <option value={PRIMARY_STANDARD}>{PRIMARY_STANDARD} (primary default)</option>
+          <option value={SECONDARY_STANDARD}>
+            {SECONDARY_STANDARD} (secondary, active rows only)
+          </option>
         </select>
       </label>
       <label className="text-xs">
