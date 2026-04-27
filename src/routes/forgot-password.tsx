@@ -47,7 +47,7 @@ function ForgotPasswordPage() {
           Enter your email and we'll send you a reset link.
         </p>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <form onSubmit={onSubmit} className="mt-6 space-y-4" suppressHydrationWarning>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
