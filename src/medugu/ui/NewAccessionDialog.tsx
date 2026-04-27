@@ -12,11 +12,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { meduguActions, useMeduguState } from "../store/useAccessionStore";
 import { newAccessionId } from "../domain/ids";
 import { Priority, ReleaseState, Sex, WorkflowStage } from "../domain/enums";
 import { SPECIMEN_FAMILIES, getFamily } from "../config/specimenFamilies";
+import { BLOOD_WORKUP_PRESETS } from "../config/bloodCulturePresets";
+import { cn } from "@/lib/utils";
 import {
   BREAKPOINT_VERSION,
   BUILD_VERSION,
@@ -24,18 +35,6 @@ import {
   RULE_VERSION,
 } from "../domain/versions";
 import type { Accession, Patient } from "../domain/types";
-import { NewPatientFields } from "./accession/NewPatientFields";
-import { ExistingPatientSelector } from "./accession/ExistingPatientSelector";
-import { AccessionMetadataFields } from "./accession/AccessionMetadataFields";
-import { NewAccessionSpecimenFields } from "./accession/NewAccessionSpecimenFields";
-import { NewAccessionBloodSetup } from "./accession/NewAccessionBloodSetup";
-import { AccessionTimestamps } from "./accession/AccessionTimestamps";
-import { SubmitBlockedReason } from "./accession/SubmitBlockedReason";
-import {
-  canSubmitNewAccessionForm,
-  getFirstSubtypeForFamily,
-  getNewAccessionSubmitBlockedReason,
-} from "./accession/newAccessionFormLogic";
 
 interface Props {
   open: boolean;
@@ -81,8 +80,26 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
   const [bloodSources, setBloodSources] = useState<string[]>([]);
 
   const isBlood = familyCode === "BLOOD";
+  // Compact source chips for blood culture (subset shown inline; full editor in Collection Details)
+  const BLOOD_SOURCE_CHIPS: Array<{ code: string; label: string }> = [
+    { code: "BC_PERIPHERAL", label: "Peripheral venepuncture" },
+    { code: "BC_CENTRAL_LINE", label: "Central line" },
+    { code: "BC_ARTERIAL", label: "Arterial line" },
+    { code: "BC_PERIPHERAL_CANNULA", label: "Peripheral cannula" },
+    { code: "BC_PORTACATH", label: "Portacath" },
+    { code: "BC_NEONATAL", label: "Neonatal" },
+  ];
+  const BLOOD_PRESET_CHIPS = BLOOD_WORKUP_PRESETS.filter((p) =>
+    [
+      "STANDARD_ADULT",
+      "PAEDIATRIC_WORKUP",
+      "CLABSI_WORKUP",
+      "ENDOCARDITIS_WORKUP",
+      "FUNGAEMIA_WORKUP",
+    ].includes(p.code),
+  );
+
   const subtypes = getFamily(familyCode)?.subtypes ?? [];
-  const accessionExists = !!state.accessions[accessionNumber];
 
   useEffect(() => {
     if (isBlood) return;
@@ -110,51 +127,24 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
     setBloodSources([]);
   }
 
-  const canSubmit = canSubmitNewAccessionForm({
-    accessionNumber,
-    accessionExists,
-    familyCode,
-    subtypeCode,
-    isBlood,
-    bloodSourcesCount: bloodSources.length,
-    mode,
-    existingMrn,
-    givenName,
-    familyName,
-    mrn,
-  });
+  const canSubmit =
+    accessionNumber.trim().length > 0 &&
+    !state.accessions[accessionNumber] &&
+    familyCode &&
+    (isBlood ? bloodSources.length > 0 : !!subtypeCode) &&
+    (mode === "existing"
+      ? !!existingMrn
+      : givenName.trim().length > 0 && familyName.trim().length > 0 && mrn.trim().length > 0);
   const mrnMissing = mode === "new" && mrn.trim().length === 0;
   const existingMrnMissing = mode === "existing" && existingMrn.trim().length === 0;
-  const submitBlockedReason = getNewAccessionSubmitBlockedReason({
-    accessionNumber,
-    accessionExists,
-    familyCode,
-    subtypeCode,
-    isBlood,
-    bloodSourcesCount: bloodSources.length,
-    mode,
-    existingMrn,
-    givenName,
-    familyName,
-    mrn,
-  });
-
-  function handleFamilyChange(nextFamilyCode: string) {
-    const wasBlood = familyCode === "BLOOD";
-    setFamilyCode(nextFamilyCode);
-    const first = getFirstSubtypeForFamily(nextFamilyCode);
-    if (first) setSubtypeCode(first);
-    if (wasBlood && nextFamilyCode !== "BLOOD") {
-      setBloodSources([]);
-      setBloodPreset("STANDARD_ADULT");
-    }
-  }
-
-  function handleToggleBloodSource(code: string) {
-    setBloodSources((prev) =>
-      prev.includes(code) ? prev.filter((currentCode) => currentCode !== code) : [...prev, code],
-    );
-  }
+  const bloodSourceMissing = isBlood && bloodSources.length === 0;
+  const submitBlockedReason = state.accessions[accessionNumber]
+    ? "Accession number already exists."
+    : mrnMissing || existingMrnMissing
+      ? "MRN / Identifier is required."
+      : bloodSourceMissing
+        ? "Select at least one blood-culture source."
+        : null;
 
   function handleSubmit() {
     if (!canSubmit) return;
@@ -256,69 +246,280 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
           </TabsList>
 
           <TabsContent value="new" className="space-y-3 pt-3">
-            <NewPatientFields
-              givenName={givenName}
-              familyName={familyName}
-              mrn={mrn}
-              sex={sex}
-              mrnMissing={mrnMissing}
-              onGivenNameChange={setGivenName}
-              onFamilyNameChange={setFamilyName}
-              onMrnChange={setMrn}
-              onSexChange={setSex}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="given">Given name</Label>
+                <Input
+                  id="given"
+                  value={givenName}
+                  onChange={(e) => setGivenName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="family">Family name</Label>
+                <Input
+                  id="family"
+                  value={familyName}
+                  onChange={(e) => setFamilyName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="mrn">
+                  MRN / Identifier <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="mrn"
+                  value={mrn}
+                  onChange={(e) => setMrn(e.target.value)}
+                  aria-invalid={mrnMissing}
+                  aria-describedby={mrnMissing ? "mrn-required" : undefined}
+                />
+                {mrnMissing ? (
+                  <p id="mrn-required" className="text-[11px] text-destructive">
+                    MRN / Identifier is required to create a new accession.
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    Required for patient identity and release validation.
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label>Sex</Label>
+                <Select value={sex} onValueChange={(v) => setSex(v as Sex)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(Sex).map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="existing" className="space-y-3 pt-3">
-            <ExistingPatientSelector
-              existingMrn={existingMrn}
-              existingMrnMissing={existingMrnMissing}
-              existingPatients={existingPatients}
-              onExistingMrnChange={setExistingMrn}
-            />
+            <div className="space-y-1">
+              <Label>
+                Patient / MRN <span className="text-destructive">*</span>
+              </Label>
+              <Select value={existingMrn} onValueChange={setExistingMrn}>
+                <SelectTrigger
+                  aria-invalid={existingMrnMissing}
+                  aria-describedby={existingMrnMissing ? "existing-mrn-required" : undefined}
+                >
+                  <SelectValue placeholder="Select an existing patient" />
+                </SelectTrigger>
+                <SelectContent>
+                  {existingPatients.map((p) => (
+                    <SelectItem key={p.mrn} value={p.mrn}>
+                      {p.familyName}, {p.givenName} — MRN {p.mrn}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {existingMrnMissing ? (
+                <p id="existing-mrn-required" className="text-[11px] text-destructive">
+                  Select a patient/MRN to create an accession for an existing record.
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  Required to link this accession to an existing patient identifier.
+                </p>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
 
         <div className="grid grid-cols-2 gap-3 border-t border-border pt-3">
-          <AccessionMetadataFields
-            ward={ward}
-            accessionNumber={accessionNumber}
-            accessionExists={accessionExists}
-            priority={priority}
-            onWardChange={setWard}
-            onAccessionNumberChange={setAccessionNumber}
-            onAutoAccessionNumber={() => setAccessionNumber(newAccessionId())}
-            onPriorityChange={setPriority}
-          />
-
-          <NewAccessionSpecimenFields
-            familyCode={familyCode}
-            subtypeCode={subtypeCode}
-            subtypes={subtypes}
-            showSubtype={!isBlood}
-            onFamilyChange={handleFamilyChange}
-            onSubtypeChange={setSubtypeCode}
-          />
-
-          {isBlood && (
-            <NewAccessionBloodSetup
-              bloodPreset={bloodPreset}
-              bloodSources={bloodSources}
-              onBloodPresetChange={setBloodPreset}
-              onToggleBloodSource={handleToggleBloodSource}
+          <div className="space-y-1">
+            <Label htmlFor="ward">Ward / location</Label>
+            <Input
+              id="ward"
+              value={ward}
+              onChange={(e) => setWard(e.target.value)}
+              placeholder="e.g. ICU-3"
             />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="acc">Accession number</Label>
+            <div className="flex gap-2">
+              <Input
+                id="acc"
+                value={accessionNumber}
+                onChange={(e) => setAccessionNumber(e.target.value.trim())}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setAccessionNumber(newAccessionId())}
+              >
+                Auto
+              </Button>
+            </div>
+            {state.accessions[accessionNumber] && (
+              <p className="text-[11px] text-destructive">Number already in use.</p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <Label>Priority</Label>
+            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(Priority).map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Specimen family</Label>
+            <Select
+              value={familyCode}
+              onValueChange={(v) => {
+                const wasBlood = familyCode === "BLOOD";
+                setFamilyCode(v);
+                const first = getFamily(v)?.subtypes[0]?.code;
+                if (first) setSubtypeCode(first);
+                if (wasBlood && v !== "BLOOD") {
+                  setBloodSources([]);
+                  setBloodPreset("STANDARD_ADULT");
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SPECIMEN_FAMILIES.map((f) => (
+                  <SelectItem key={f.code} value={f.code}>
+                    {f.display}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isBlood ? (
+            <>
+              <div className="space-y-2 col-span-2">
+                <Label>Workup preset</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {BLOOD_PRESET_CHIPS.map((p) => {
+                    const active = bloodPreset === p.code;
+                    return (
+                      <button
+                        key={p.code}
+                        type="button"
+                        onClick={() => setBloodPreset(p.code)}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-xs transition-colors",
+                          active
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-background hover:bg-accent",
+                        )}
+                      >
+                        {p.display.split(" (")[0]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Detailed set/site editing available in Collection Details after creation.
+                </p>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label>
+                  Source(s){" "}
+                  <span className="text-muted-foreground font-normal">— select one or more</span>
+                </Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {BLOOD_SOURCE_CHIPS.map((s) => {
+                    const active = bloodSources.includes(s.code);
+                    return (
+                      <button
+                        key={s.code}
+                        type="button"
+                        onClick={() => {
+                          setBloodSources((prev) =>
+                            prev.includes(s.code)
+                              ? prev.filter((c) => c !== s.code)
+                              : [...prev, s.code],
+                          );
+                        }}
+                        aria-pressed={active}
+                        className={cn(
+                          "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                          active
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-background hover:bg-accent",
+                        )}
+                      >
+                        {active ? "✓ " : ""}
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {bloodSources.length === 0 && (
+                  <p className="text-[11px] text-destructive">Select at least one source.</p>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="space-y-1 col-span-2">
+              <Label>Specimen subtype</Label>
+              <Select value={subtypeCode} onValueChange={setSubtypeCode}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {subtypes.map((s) => (
+                    <SelectItem key={s.code} value={s.code}>
+                      {s.display}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
-          <AccessionTimestamps
-            collectedAt={collectedAt}
-            receivedAt={receivedAt}
-            onCollectedAtChange={setCollectedAt}
-            onReceivedAtChange={setReceivedAt}
-          />
+          <div className="space-y-1">
+            <Label htmlFor="collected">Collection datetime</Label>
+            <Input
+              id="collected"
+              type="datetime-local"
+              value={collectedAt}
+              onChange={(e) => setCollectedAt(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="received">Received datetime</Label>
+            <Input
+              id="received"
+              type="datetime-local"
+              value={receivedAt}
+              onChange={(e) => setReceivedAt(e.target.value)}
+            />
+          </div>
         </div>
 
         <DialogFooter>
-          <SubmitBlockedReason canSubmit={canSubmit} submitBlockedReason={submitBlockedReason} />
+          {!canSubmit && submitBlockedReason && (
+            <p className="mr-auto text-[11px] text-destructive">{submitBlockedReason}</p>
+          )}
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
