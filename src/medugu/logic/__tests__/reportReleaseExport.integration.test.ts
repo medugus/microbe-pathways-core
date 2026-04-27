@@ -200,7 +200,10 @@ const urineAstIncomplete = urineValidation.blockers.filter(
 );
 assert(
   !urineAstIncomplete.some(
-    (issue) => issue.message.includes("MEM") || issue.message.includes("ETP"),
+    (issue) =>
+      issue.message.includes("MEM") ||
+      issue.message.includes("ETP") ||
+      issue.message.includes("TZP"),
   ),
   "Blank AST placeholders must not create AST_INCOMPLETE blockers.",
 );
@@ -298,6 +301,11 @@ const bloodFhir = buildExport(releasedBlood, "fhir");
 assert(
   bloodFhir.content.includes("Blood culture set 1") || bloodFhir.content.includes("set-1"),
   "Blood culture export must include blood set details in FHIR output.",
+);
+const bloodHl7 = buildExport(releasedBlood, "hl7");
+assert(
+  bloodHl7.content.includes("Blood culture set 1") || bloodHl7.content.includes("Bottle"),
+  "Blood culture export must include blood set/bottle details in HL7 output.",
 );
 
 const bloodJson = buildExport(releasedBlood, "json");

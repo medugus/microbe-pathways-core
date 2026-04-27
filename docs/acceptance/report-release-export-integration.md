@@ -11,6 +11,16 @@ These integration tests verify the end-to-end microbiology result chain remains 
 
 The scope is regression safety for **AST → report preview → release package/frozen source → export**.
 
+## Pre-implementation inspection summary
+
+1. Existing logic tests under `src/medugu/logic/__tests__` already covered export, governance, and dashboard modules, but did not include one integrated AST→report→release-source→export regression file with all target scenarios together.
+2. Existing demo/fixture accessions include released and unreleased candidates (`MB25-COL003P`, `MB25-AB12CD`) plus blood culture (`MB25-EF34GH`) in `src/medugu/seed/demoAccessions.ts`.
+3. Release package creation is handled by `attemptRelease()` in `src/medugu/logic/releaseEngine.ts`, which builds report preview then deep-clones to immutable `releasePackage.body` and pins versions.
+4. `reportPreview` is built by `buildReportPreview()` in `src/medugu/logic/reportPreview.ts` from specimen resolution, AST engine outputs, stewardship, IPC visibility rules, and accession state.
+5. Post-refactor `buildExport()` in `src/medugu/logic/exportEngine.ts` routes to format-specific builders and resolves source through `sourceDoc()` so released exports use frozen package content.
+6. Released demo accessions suitable for export tests already exist (`MB25-COL003P`, plus other released colonisation follow-ups).
+7. Urine M/C/S and blood culture fixtures exist (urine `MB25-AB12CD`, blood `MB25-EF34GH`) and can be enriched in-test without changing clinical logic.
+
 ## Fixtures used
 
 - Seeded demo accessions from `src/medugu/seed/demoAccessions.ts`:
