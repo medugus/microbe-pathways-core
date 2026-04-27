@@ -94,10 +94,8 @@ export function ASTPanelEntry({
           onChange={(e) => onStandardChange(e.target.value as ASTStandard)}
           className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
         >
-          <option value={PRIMARY_STANDARD}>{PRIMARY_STANDARD} (primary default)</option>
-          <option value={SECONDARY_STANDARD}>
-            {SECONDARY_STANDARD} (secondary, active rows only)
-          </option>
+          <option value={PRIMARY_STANDARD}>{PRIMARY_STANDARD} (primary)</option>
+          <option value={SECONDARY_STANDARD}>{SECONDARY_STANDARD} (secondary)</option>
         </select>
       </label>
       <div className="md:col-span-4 flex items-end">

@@ -29,7 +29,6 @@ export type IPCReleaseImpact = "none" | "warning" | "blocker";
 export type IPCValidationSeverity = "info" | "warning" | "blocker";
 
 export const IPC_RULES_CONFIG_VERSION = "local-ipc-rules.v1.0.0";
-export const IPC_RULES_SOURCE_LABEL = "Local IPC baseline ruleset";
 
 export interface IPCRule {
   ruleCode: string;
