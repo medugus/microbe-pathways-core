@@ -50,7 +50,9 @@ export function getEligibleASTPanelsForIsolate(
   accession?: Accession,
   isolate?: Isolate,
 ): ASTPanelDef[] {
-  const eligible = AST_PANELS.filter((panel) => isASTPanelEligibleForIsolate(panel, isolate, accession));
+  const eligible = AST_PANELS.filter((panel) =>
+    isASTPanelEligibleForIsolate(panel, isolate, accession),
+  );
 
   return eligible
     .map((panel, index) => ({ panel, index }))

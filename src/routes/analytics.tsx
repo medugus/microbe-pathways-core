@@ -32,7 +32,10 @@ export const Route = createFileRoute("/analytics")({
   head: () => ({
     meta: [
       { title: "Analytics — Medugu" },
-      { name: "description", content: "Browser-phase analytics over locally available workflow data." },
+      {
+        name: "description",
+        content: "Browser-phase analytics over locally available workflow data.",
+      },
     ],
   }),
   component: AnalyticsPage,
@@ -96,8 +99,8 @@ function AnalyticsDashboard() {
         <div>
           <h1 className="text-2xl font-semibold">Analytics</h1>
           <p className="text-xs text-muted-foreground">
-            Browser-phase only — computed from data available in this session.
-            No warehouse, no historical backfill.
+            Browser-phase only — computed from data available in this session. No warehouse, no
+            historical backfill.
           </p>
         </div>
         <div className="flex gap-2">
@@ -113,12 +116,7 @@ function AnalyticsDashboard() {
         </div>
       </div>
 
-      <FilterBar
-        filters={filters}
-        onChange={setFilters}
-        scenarios={scenarios}
-        disabled={loading}
-      />
+      <FilterBar filters={filters} onChange={setFilters} scenarios={scenarios} disabled={loading} />
 
       {loading && <div className="text-sm text-muted-foreground">Loading…</div>}
       {error && <div className="text-sm text-destructive">Error: {error}</div>}
@@ -238,15 +236,7 @@ function FilterBar({
   );
 }
 
-function Kpi({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-}) {
+function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-md border border-border bg-card p-4">
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
@@ -383,12 +373,11 @@ function DispatchCard({ m }: { m: AnalyticsMetrics }) {
 function ScopeNote() {
   return (
     <div className="rounded-md border border-dashed border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
-      <strong className="text-foreground">Browser-phase scope.</strong>{" "}
-      Metrics are computed in this browser tab over the accessions hydrated for
-      the current tenant plus the most recent audit and dispatch rows visible
-      under RLS. There is no warehouse pipeline, no historical backfill, and
-      no production observability claim. A future backend-owned analytics
-      service can replace the source adapter without changing the dashboard.
+      <strong className="text-foreground">Browser-phase scope.</strong> Metrics are computed in this
+      browser tab over the accessions hydrated for the current tenant plus the most recent audit and
+      dispatch rows visible under RLS. There is no warehouse pipeline, no historical backfill, and
+      no production observability claim. A future backend-owned analytics service can replace the
+      source adapter without changing the dashboard.
     </div>
   );
 }

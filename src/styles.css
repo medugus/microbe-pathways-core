@@ -61,7 +61,6 @@
   }
 }
 
-
 @keyframes story-stage-cycle {
   0%,
   18% {
@@ -181,7 +180,8 @@
 }
 
 @keyframes bacteria-wiggle {
-  0%, 100% {
+  0%,
+  100% {
     transform: rotate(-4deg);
   }
   50% {

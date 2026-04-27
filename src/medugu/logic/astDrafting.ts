@@ -15,11 +15,7 @@ import type {
 import { ASTMethod, type ASTInterpretation } from "../domain/enums";
 import { newId } from "../domain/ids";
 import { getOrganism } from "../config/organisms";
-import {
-  PRIMARY_STANDARD,
-  findDiskBreakpoint,
-  findMICBreakpoint,
-} from "../config/breakpoints";
+import { PRIMARY_STANDARD, findDiskBreakpoint, findMICBreakpoint } from "../config/breakpoints";
 
 export interface DraftASTInput {
   isolateId: string;
@@ -117,13 +113,16 @@ export function rebuildASTFromRawEdit(
   const standard = patch.standard ?? row.standard;
   const rawValue = patch.rawValue;
   const rawUnit = patch.rawUnit ?? resolvedRawUnit(method);
-  const draft = draftInterpretation(accession.isolates.find((i) => i.id === row.isolateId), {
-    isolateId: row.isolateId,
-    antibioticCode: row.antibioticCode,
-    method,
-    standard,
-    rawValue,
-  });
+  const draft = draftInterpretation(
+    accession.isolates.find((i) => i.id === row.isolateId),
+    {
+      isolateId: row.isolateId,
+      antibioticCode: row.antibioticCode,
+      method,
+      standard,
+      rawValue,
+    },
+  );
 
   const patchOut: Partial<ASTResult> = {
     method,

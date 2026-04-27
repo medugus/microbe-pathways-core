@@ -32,7 +32,9 @@ export async function loadAnalyticsInputs(): Promise<AnalyticsInputs> {
       .limit(AUDIT_LIMIT),
     supabase
       .from("dispatch_history")
-      .select("requested_at, completed_at, status, format, receiver_name, attempt_no, parent_dispatch_id")
+      .select(
+        "requested_at, completed_at, status, format, receiver_name, attempt_no, parent_dispatch_id",
+      )
       .order("requested_at", { ascending: false })
       .limit(DISPATCH_LIMIT),
   ]);

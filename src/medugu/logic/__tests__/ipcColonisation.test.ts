@@ -20,12 +20,24 @@ const diagnostic = deriveColonisationContext(
   ipcAcceptanceScenarioCases.mrsaBloodstreamCase,
   toAccessionsMap([ipcAcceptanceScenarioCases.mrsaBloodstreamCase]),
 );
-assert(!diagnostic.isScreen, "Diagnostic blood culture should not be treated as colonisation screen.");
+assert(
+  !diagnostic.isScreen,
+  "Diagnostic blood culture should not be treated as colonisation screen.",
+);
 
 const clearanceMap = toAccessionsMap(ipcAcceptanceScenarioCases.creClearanceSeries);
-const clearanceContext = deriveColonisationContext(ipcAcceptanceScenarioCases.creClearanceSeries[1], clearanceMap);
-assert(clearanceContext.episodeStatus === "clearance_attempt", "Negative follow-up after prior positive should be clearance_attempt.");
-assert(clearanceContext.clearanceCount === 1, "Clearance counter should use currently loaded cases and count one negative.");
+const clearanceContext = deriveColonisationContext(
+  ipcAcceptanceScenarioCases.creClearanceSeries[1],
+  clearanceMap,
+);
+assert(
+  clearanceContext.episodeStatus === "clearance_attempt",
+  "Negative follow-up after prior positive should be clearance_attempt.",
+);
+assert(
+  clearanceContext.clearanceCount === 1,
+  "Clearance counter should use currently loaded cases and count one negative.",
+);
 assert(
   clearanceContext.limitationNote?.includes("currently loaded") ?? false,
   "Clearance context should include browser-local/currently loaded limitation wording.",
@@ -35,7 +47,10 @@ const missingPrior = deriveColonisationContext(
   ipcAcceptanceScenarioCases.creClearanceSeries[1],
   toAccessionsMap([ipcAcceptanceScenarioCases.creClearanceSeries[1]]),
 );
-assert(missingPrior.clearanceCount === 0, "Without prior positive in loaded data, clearance count should safely be 0.");
+assert(
+  missingPrior.clearanceCount === 0,
+  "Without prior positive in loaded data, clearance count should safely be 0.",
+);
 assert(
   missingPrior.limitationNote?.includes("prior positive not found") ?? false,
   "Missing prior positive should include safe limitation wording.",

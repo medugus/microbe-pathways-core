@@ -46,7 +46,10 @@ export function getIPCReportVisibility(signal: IPCSignal, rule?: IPCRule): IPCRe
 }
 
 export function shouldShowIPCOnClinicianReport(signal: IPCSignal, rule?: IPCRule): boolean {
-  return getIPCReportVisibility(signal, rule) === "clinician_report" && !!rule?.clinicianReportText?.trim();
+  return (
+    getIPCReportVisibility(signal, rule) === "clinician_report" &&
+    !!rule?.clinicianReportText?.trim()
+  );
 }
 
 export function deriveIPCValidationIssues(accession: Accession): ValidationIssue[] {
@@ -57,8 +60,9 @@ export function deriveIPCValidationIssues(accession: Accession): ValidationIssue
 
     const rule = getRuleForSignal(signal);
     const releaseImpact = defaultReleaseImpact(signal, rule);
-    const severity = rule?.validationSeverity
-      ?? (releaseImpact === "blocker" ? "blocker" : releaseImpact === "warning" ? "warning" : "info");
+    const severity =
+      rule?.validationSeverity ??
+      (releaseImpact === "blocker" ? "blocker" : releaseImpact === "warning" ? "warning" : "info");
 
     if (severity === "info" && releaseImpact === "none") continue;
 
@@ -110,7 +114,8 @@ export function deriveIPCReleaseContext(accession: Accession): IPCReleaseContext
     if (isHighPrioritySignal(signal, rule)) highPriorityCount += 1;
     if (isReviewSignal(rule)) reviewSignalCount += 1;
     openActionCount += rule?.actions.length ?? 0;
-    hasReleaseBlockingRule = hasReleaseBlockingRule || defaultReleaseImpact(signal, rule) === "blocker";
+    hasReleaseBlockingRule =
+      hasReleaseBlockingRule || defaultReleaseImpact(signal, rule) === "blocker";
   }
 
   if (highPriorityCount === 0 && reviewSignalCount === 0) return null;

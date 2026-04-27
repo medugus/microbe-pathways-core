@@ -33,11 +33,7 @@ function AMSQueueInner() {
 
   const queue = useMemo(() => buildAMSQueue(state.accessions), [state.accessions]);
 
-  function decide(
-    accessionId: string,
-    requestId: string,
-    status: "approved" | "denied",
-  ) {
+  function decide(accessionId: string, requestId: string, status: "approved" | "denied") {
     meduguActions.decideAMSApproval(accessionId, requestId, {
       status,
       actor,
@@ -71,9 +67,9 @@ function AMSQueueInner() {
 
       <main className="mx-auto max-w-5xl space-y-4 p-6">
         <div className="callout callout-warning text-[11px]">
-          Browser-phase AMS workflow — actor is a manual placeholder, no external
-          notifications are delivered, SLA values are informational only, and
-          production role enforcement is out of scope for this stage.
+          Browser-phase AMS workflow — actor is a manual placeholder, no external notifications are
+          delivered, SLA values are informational only, and production role enforcement is out of
+          scope for this stage.
         </div>
 
         <div className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-card p-3">
@@ -120,13 +116,9 @@ function AMSQueueInner() {
                     </div>
                     <div className="flex items-center gap-2">
                       {item.overdue ? (
-                        <span className="chip chip-square chip-danger uppercase">
-                          OVERDUE
-                        </span>
+                        <span className="chip chip-square chip-danger uppercase">OVERDUE</span>
                       ) : (
-                        <span className="chip chip-square chip-ams-pending uppercase">
-                          PENDING
-                        </span>
+                        <span className="chip chip-square chip-ams-pending uppercase">PENDING</span>
                       )}
                       <button
                         type="button"
@@ -158,9 +150,11 @@ function AMSQueueInner() {
                         </span>
                         {item.hoursToDue !== null && (
                           <span className="ml-1 text-muted-foreground">
-                            ({item.hoursToDue >= 0
+                            (
+                            {item.hoursToDue >= 0
                               ? `${item.hoursToDue.toFixed(1)}h left`
-                              : `${Math.abs(item.hoursToDue).toFixed(1)}h overdue`})
+                              : `${Math.abs(item.hoursToDue).toFixed(1)}h overdue`}
+                            )
                           </span>
                         )}
                       </div>

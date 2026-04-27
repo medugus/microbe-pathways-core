@@ -18,12 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  grantRole,
-  inviteUser,
-  listTenantMembers,
-  revokeRole,
-} from "@/auth/admin.functions";
+import { grantRole, inviteUser, listTenantMembers, revokeRole } from "@/auth/admin.functions";
 
 export const Route = createFileRoute("/admin/users")({
   head: () => ({
@@ -74,9 +69,7 @@ function AdminGate() {
     }
   }, [loading, hasRole, navigate]);
   if (loading || !tenantId || !hasRole("admin")) {
-    return (
-      <div className="p-6 text-sm text-muted-foreground">Checking permissions…</div>
-    );
+    return <div className="p-6 text-sm text-muted-foreground">Checking permissions…</div>;
   }
   return <AdminUsersInner tenantId={tenantId} />;
 }

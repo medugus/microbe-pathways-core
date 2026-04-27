@@ -78,7 +78,8 @@ export function PaediatricBottleGuide({ accession }: Props) {
             {ageY != null && (
               <>
                 {" "}
-                Age from DOB: <span className="font-medium text-foreground">{ageY.toFixed(1)} y</span>.
+                Age from DOB:{" "}
+                <span className="font-medium text-foreground">{ageY.toFixed(1)} y</span>.
               </>
             )}
           </p>

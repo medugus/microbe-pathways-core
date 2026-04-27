@@ -29,7 +29,12 @@ function astRow(
   };
 }
 
-function isolateRow(id: string, organismCode: string, organismDisplay: string, significance: Isolate["significance"] = "significant"): Isolate {
+function isolateRow(
+  id: string,
+  organismCode: string,
+  organismDisplay: string,
+  significance: Isolate["significance"] = "significant",
+): Isolate {
   return {
     id,
     isolateNo: 1,
@@ -168,15 +173,69 @@ export const creClearanceSeries: Accession[] = [
 ];
 
 export const creClusterIcuCases: Accession[] = [
-  { ...deepClone(creSterileSiteCase), id: "IPC-CRE-ICU-1", accessionNumber: "IPC-CRE-ICU-1", patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-ICU-1", ward: "ICU" }, specimen: { ...deepClone(creSterileSiteCase.specimen), collectedAt: "2026-04-21T08:00:00.000Z" } },
-  { ...deepClone(creSterileSiteCase), id: "IPC-CRE-ICU-2", accessionNumber: "IPC-CRE-ICU-2", patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-ICU-2", ward: "ICU" }, specimen: { ...deepClone(creSterileSiteCase.specimen), collectedAt: "2026-04-22T08:00:00.000Z" } },
-  { ...deepClone(creSterileSiteCase), id: "IPC-CRE-ICU-3", accessionNumber: "IPC-CRE-ICU-3", patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-ICU-3", ward: "ICU" }, specimen: { ...deepClone(creSterileSiteCase.specimen), collectedAt: "2026-04-23T08:00:00.000Z" } },
+  {
+    ...deepClone(creSterileSiteCase),
+    id: "IPC-CRE-ICU-1",
+    accessionNumber: "IPC-CRE-ICU-1",
+    patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-ICU-1", ward: "ICU" },
+    specimen: {
+      ...deepClone(creSterileSiteCase.specimen),
+      collectedAt: "2026-04-21T08:00:00.000Z",
+    },
+  },
+  {
+    ...deepClone(creSterileSiteCase),
+    id: "IPC-CRE-ICU-2",
+    accessionNumber: "IPC-CRE-ICU-2",
+    patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-ICU-2", ward: "ICU" },
+    specimen: {
+      ...deepClone(creSterileSiteCase.specimen),
+      collectedAt: "2026-04-22T08:00:00.000Z",
+    },
+  },
+  {
+    ...deepClone(creSterileSiteCase),
+    id: "IPC-CRE-ICU-3",
+    accessionNumber: "IPC-CRE-ICU-3",
+    patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-ICU-3", ward: "ICU" },
+    specimen: {
+      ...deepClone(creSterileSiteCase.specimen),
+      collectedAt: "2026-04-23T08:00:00.000Z",
+    },
+  },
 ];
 
 export const repeatedSamePatientCreCases: Accession[] = [
-  { ...deepClone(creSterileSiteCase), id: "IPC-CRE-REP-1", accessionNumber: "IPC-CRE-REP-1", patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-REP", ward: "ICU" }, specimen: { ...deepClone(creSterileSiteCase.specimen), collectedAt: "2026-04-21T08:00:00.000Z" } },
-  { ...deepClone(creSterileSiteCase), id: "IPC-CRE-REP-2", accessionNumber: "IPC-CRE-REP-2", patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-REP", ward: "ICU" }, specimen: { ...deepClone(creSterileSiteCase.specimen), collectedAt: "2026-04-22T08:00:00.000Z" } },
-  { ...deepClone(creSterileSiteCase), id: "IPC-CRE-REP-3", accessionNumber: "IPC-CRE-REP-3", patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-REP", ward: "ICU" }, specimen: { ...deepClone(creSterileSiteCase.specimen), collectedAt: "2026-04-23T08:00:00.000Z" } },
+  {
+    ...deepClone(creSterileSiteCase),
+    id: "IPC-CRE-REP-1",
+    accessionNumber: "IPC-CRE-REP-1",
+    patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-REP", ward: "ICU" },
+    specimen: {
+      ...deepClone(creSterileSiteCase.specimen),
+      collectedAt: "2026-04-21T08:00:00.000Z",
+    },
+  },
+  {
+    ...deepClone(creSterileSiteCase),
+    id: "IPC-CRE-REP-2",
+    accessionNumber: "IPC-CRE-REP-2",
+    patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-REP", ward: "ICU" },
+    specimen: {
+      ...deepClone(creSterileSiteCase.specimen),
+      collectedAt: "2026-04-22T08:00:00.000Z",
+    },
+  },
+  {
+    ...deepClone(creSterileSiteCase),
+    id: "IPC-CRE-REP-3",
+    accessionNumber: "IPC-CRE-REP-3",
+    patient: { ...deepClone(creSterileSiteCase.patient), mrn: "IPC-MRN-REP", ward: "ICU" },
+    specimen: {
+      ...deepClone(creSterileSiteCase.specimen),
+      collectedAt: "2026-04-23T08:00:00.000Z",
+    },
+  },
 ];
 
 export const negativeNoSignalCase: Accession = (() => {

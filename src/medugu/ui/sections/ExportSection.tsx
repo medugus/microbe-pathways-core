@@ -7,11 +7,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useActiveAccession } from "../../store/useAccessionStore";
-import {
-  buildExport,
-  evaluateExportGate,
-  type ExportFormat,
-} from "../../logic/exportEngine";
+import { buildExport, evaluateExportGate, type ExportFormat } from "../../logic/exportEngine";
 import { copyText, downloadText } from "../../utils/exportHelpers";
 import { dispatchExport } from "../../store/export.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +32,11 @@ interface DeliveryRow {
 }
 
 const FORMATS: { code: ExportFormat; label: string; hint: string }[] = [
-  { code: "fhir", label: "FHIR R4 Bundle (JSON)", hint: "DiagnosticReport + Patient + Specimen + Observations" },
+  {
+    code: "fhir",
+    label: "FHIR R4 Bundle (JSON)",
+    hint: "DiagnosticReport + Patient + Specimen + Observations",
+  },
   { code: "hl7", label: "HL7 v2.5 ORU^R01", hint: "MSH / PID / PV1 / OBR / OBX / NTE" },
   { code: "json", label: "Normalised JSON", hint: "Stable schema for downstream pipelines" },
 ];
@@ -67,10 +67,7 @@ export function ExportSection() {
     if (!accession) return;
     void (async () => {
       const [{ data: rcvs }, { data: row }] = await Promise.all([
-        supabase
-          .from("receivers")
-          .select("id, name, format, enabled, endpoint_url")
-          .order("name"),
+        supabase.from("receivers").select("id, name, format, enabled, endpoint_url").order("name"),
         supabase
           .from("accessions")
           .select("id")
@@ -145,8 +142,12 @@ export function ExportSection() {
       <section className="rounded-md border border-border bg-background p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Export status</div>
-            <div className={`text-sm font-medium ${gate?.available ? "text-foreground" : "text-destructive"}`}>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              Export status
+            </div>
+            <div
+              className={`text-sm font-medium ${gate?.available ? "text-foreground" : "text-destructive"}`}
+            >
               {gate?.available ? "Export available" : "Export blocked"}
             </div>
             {!gate?.available && gate?.reason && (
@@ -162,10 +163,18 @@ export function ExportSection() {
             )}
           </div>
           <div className="text-[10px] text-muted-foreground">
-            <div>rules: <span className="font-mono">{gate?.versions.rule}</span></div>
-            <div>breakpoints: <span className="font-mono">{gate?.versions.breakpoint}</span></div>
-            <div>export: <span className="font-mono">{gate?.versions.export}</span></div>
-            <div>build: <span className="font-mono">{gate?.versions.build}</span></div>
+            <div>
+              rules: <span className="font-mono">{gate?.versions.rule}</span>
+            </div>
+            <div>
+              breakpoints: <span className="font-mono">{gate?.versions.breakpoint}</span>
+            </div>
+            <div>
+              export: <span className="font-mono">{gate?.versions.export}</span>
+            </div>
+            <div>
+              build: <span className="font-mono">{gate?.versions.build}</span>
+            </div>
           </div>
         </div>
       </section>
@@ -228,13 +237,14 @@ export function ExportSection() {
         </section>
       ) : (
         <p className="rounded-md border border-dashed border-border bg-card p-4 text-xs text-muted-foreground">
-          Export payload will appear here once the report is released (or has zero validation blockers).
+          Export payload will appear here once the report is released (or has zero validation
+          blockers).
         </p>
       )}
 
       <p className="text-[10px] text-muted-foreground">
-        Local copy/download is client-side. Server dispatch (below) regenerates
-        the payload from the immutable release package and records the delivery.
+        Local copy/download is client-side. Server dispatch (below) regenerates the payload from the
+        immutable release package and records the delivery.
       </p>
 
       {isReleased && (
@@ -271,9 +281,7 @@ export function ExportSection() {
               </button>
               {dispatchMsg && (
                 <span
-                  className={`text-[11px] ${
-                    dispatchOk ? "text-foreground" : "text-destructive"
-                  }`}
+                  className={`text-[11px] ${dispatchOk ? "text-foreground" : "text-destructive"}`}
                 >
                   {dispatchMsg}
                 </span>
@@ -288,10 +296,7 @@ export function ExportSection() {
               </div>
               <ul className="mt-1 space-y-1">
                 {deliveries.map((d) => {
-                  const ok =
-                    d.http_status !== null &&
-                    d.http_status >= 200 &&
-                    d.http_status < 300;
+                  const ok = d.http_status !== null && d.http_status >= 200 && d.http_status < 300;
                   const rcvName =
                     receivers.find((r) => r.id === d.receiver_id)?.name ?? d.receiver_id;
                   return (
@@ -300,12 +305,9 @@ export function ExportSection() {
                       className="flex items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1 text-[11px]"
                     >
                       <span className="truncate">
-                        <span className="font-mono">{d.format.toUpperCase()}</span> →{" "}
-                        {rcvName}
+                        <span className="font-mono">{d.format.toUpperCase()}</span> → {rcvName}
                       </span>
-                      <span
-                        className={`font-mono ${ok ? "text-foreground" : "text-destructive"}`}
-                      >
+                      <span className={`font-mono ${ok ? "text-foreground" : "text-destructive"}`}>
                         {d.http_status ?? "ERR"}
                         {d.error_message ? ` · ${d.error_message.slice(0, 40)}` : ""}
                       </span>

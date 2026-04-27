@@ -59,10 +59,18 @@ export function ASTReportabilityBoard({ accession }: { accession: Accession }) {
         <span className="chip chip-square chip-success">Reportable · {summary.reportable}</span>
         <span className="chip chip-square chip-withheld">Suppressed · {summary.suppressed}</span>
         <span className="chip chip-square chip-neutral">Lab-only · {summary.labOnly}</span>
-        <span className="chip chip-square chip-ams-pending">Approval required · {summary.approvalRequired}</span>
-        <span className="chip chip-square chip-restricted">Restricted/AMS review · {summary.restricted}</span>
-        <span className="chip chip-square chip-danger">Phenotype flags · {summary.phenotypeFlags}</span>
-        <span className="chip chip-square chip-warning">Missing governance · {summary.missingGovernance}</span>
+        <span className="chip chip-square chip-ams-pending">
+          Approval required · {summary.approvalRequired}
+        </span>
+        <span className="chip chip-square chip-restricted">
+          Restricted/AMS review · {summary.restricted}
+        </span>
+        <span className="chip chip-square chip-danger">
+          Phenotype flags · {summary.phenotypeFlags}
+        </span>
+        <span className="chip chip-square chip-warning">
+          Missing governance · {summary.missingGovernance}
+        </span>
       </div>
 
       <div className="overflow-x-auto">
@@ -86,16 +94,25 @@ export function ASTReportabilityBoard({ accession }: { accession: Accession }) {
               const isolate = isolateById.get(row.isolateId);
               const antibiotic = getAntibiotic(row.antibioticCode);
               const sir = row.finalInterpretation ?? row.interpretedSIR ?? "—";
-              const rawValue = row.rawValue !== undefined ? `${row.rawValue}${row.rawUnit ? ` ${row.rawUnit}` : ""}` : "—";
+              const rawValue =
+                row.rawValue !== undefined
+                  ? `${row.rawValue}${row.rawUnit ? ` ${row.rawUnit}` : ""}`
+                  : "—";
               const flags = row.phenotypeFlags?.length ? row.phenotypeFlags.join(", ") : "—";
               return (
                 <tr key={row.id} className="border-t border-border align-top">
                   <td className="px-2 py-2">
-                    <div className="font-mono text-[10px] text-muted-foreground">#{isolate?.isolateNo ?? "—"}</div>
-                    <div className="text-foreground">{isolate?.organismDisplay ?? row.isolateId}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground">
+                      #{isolate?.isolateNo ?? "—"}
+                    </div>
+                    <div className="text-foreground">
+                      {isolate?.organismDisplay ?? row.isolateId}
+                    </div>
                   </td>
                   <td className="px-2 py-2">
-                    <div className="text-foreground">{antibiotic?.display ?? row.antibioticCode}</div>
+                    <div className="text-foreground">
+                      {antibiotic?.display ?? row.antibioticCode}
+                    </div>
                     <div className="text-[10px] text-muted-foreground">{row.antibioticCode}</div>
                   </td>
                   <td className="px-2 py-2 text-muted-foreground">{rawValue}</td>
@@ -104,7 +121,9 @@ export function ASTReportabilityBoard({ accession }: { accession: Accession }) {
                   <td className="px-2 py-2">{row.cascadeDecision ?? "—"}</td>
                   <td className="px-2 py-2">
                     {restricted && amsStatus ? (
-                      <span className={AMS_TONE[amsStatus]}>AMS · {amsStatus.replace("_", " ")}</span>
+                      <span className={AMS_TONE[amsStatus]}>
+                        AMS · {amsStatus.replace("_", " ")}
+                      </span>
                     ) : (
                       <span className="text-muted-foreground">unrestricted</span>
                     )}

@@ -18,11 +18,15 @@ export function OperationalQueueItem({
   return (
     <tr className="hover:bg-muted/40">
       <td className="px-2 py-2 align-top">
-        <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_STYLE[item.priority]}`}>
+        <span
+          className={`rounded px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_STYLE[item.priority]}`}
+        >
           {item.priority}
         </span>
       </td>
-      <td className="px-2 py-2 align-top text-xs text-foreground">{item.category.replaceAll("_", " ")}</td>
+      <td className="px-2 py-2 align-top text-xs text-foreground">
+        {item.category.replaceAll("_", " ")}
+      </td>
       <td className="px-2 py-2 align-top text-xs">
         <div className="font-mono text-[11px]">{item.accessionNumber ?? item.accessionId}</div>
         <div className="text-muted-foreground">{item.patientLabel ?? "Unknown patient"}</div>
@@ -31,10 +35,14 @@ export function OperationalQueueItem({
         <div>{item.ward ?? "Ward n/a"}</div>
         <div>{item.specimenLabel ?? "Specimen n/a"}</div>
       </td>
-      <td className="px-2 py-2 align-top text-xs text-foreground">{item.organismOrPhenotype ?? "—"}</td>
+      <td className="px-2 py-2 align-top text-xs text-foreground">
+        {item.organismOrPhenotype ?? "—"}
+      </td>
       <td className="px-2 py-2 align-top text-xs text-foreground">{item.reason}</td>
       <td className="px-2 py-2 align-top text-xs text-foreground">{item.recommendedAction}</td>
-      <td className="px-2 py-2 align-top text-xs text-muted-foreground">{item.ownerRole.replaceAll("_", " ")}</td>
+      <td className="px-2 py-2 align-top text-xs text-muted-foreground">
+        {item.ownerRole.replaceAll("_", " ")}
+      </td>
       <td className="px-2 py-2 align-top text-xs text-muted-foreground">{item.sourceModule}</td>
       <td className="px-2 py-2 align-top text-xs">
         <span className="rounded border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-foreground">

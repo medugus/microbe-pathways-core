@@ -38,7 +38,7 @@ export function AntibiogramGrid({ accession }: { accession: Accession }) {
     );
   }
 
-  const cellLookup = new Map<string, Map<string, typeof accession.ast[number]>>();
+  const cellLookup = new Map<string, Map<string, (typeof accession.ast)[number]>>();
   for (const r of accession.ast) {
     let inner = cellLookup.get(r.antibioticCode);
     if (!inner) {
@@ -58,13 +58,17 @@ export function AntibiogramGrid({ accession }: { accession: Accession }) {
             </th>
             {isolates.map((iso) => {
               const isoRows = accession.ast.filter((r) => r.isolateId === iso.id);
-              const phenotypes = Array.from(new Set(isoRows.flatMap((r) => r.phenotypeFlags ?? [])));
+              const phenotypes = Array.from(
+                new Set(isoRows.flatMap((r) => r.phenotypeFlags ?? [])),
+              );
               return (
                 <th
                   key={iso.id}
                   className="min-w-[140px] border-l border-border px-3 py-2 text-left align-top"
                 >
-                  <div className="text-[10px] font-mono text-muted-foreground">#{iso.isolateNo}</div>
+                  <div className="text-[10px] font-mono text-muted-foreground">
+                    #{iso.isolateNo}
+                  </div>
                   <div className="text-xs font-semibold text-foreground">{iso.organismDisplay}</div>
                   {phenotypes.length > 0 && (
                     <div className="mt-1 flex flex-wrap gap-1">
@@ -105,7 +109,8 @@ export function AntibiogramGrid({ accession }: { accession: Accession }) {
 
                 const sir = cell.finalInterpretation ?? cell.interpretedSIR ?? "";
                 const tone = SIR_TONE[sir] ?? "bg-muted text-muted-foreground border-border";
-                const hasNoBreakpoint = cell.rawValue !== undefined && cell.rawInterpretation === undefined;
+                const hasNoBreakpoint =
+                  cell.rawValue !== undefined && cell.rawInterpretation === undefined;
 
                 return (
                   <td key={iso.id} className="border-l border-border px-2 py-2 align-top">

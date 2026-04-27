@@ -26,11 +26,13 @@ export function AmendmentPanel({
 
   return (
     <section className="rounded-md border border-border bg-muted/30 p-3">
-      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Amend released report</h4>
+      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Amend released report
+      </h4>
       <p className="mt-1 text-[11px] text-muted-foreground">
         Amendments do not overwrite history. A new immutable release package will be sealed at v
-        {(accession.release.reportVersion ?? 1) + 1} (HL7 result-status equivalent: corrected). Validation is re-run
-        on the server.
+        {(accession.release.reportVersion ?? 1) + 1} (HL7 result-status equivalent: corrected).
+        Validation is re-run on the server.
       </p>
       {accession.release.amendmentReason && (
         <p className="mt-2 text-[11px] text-foreground">

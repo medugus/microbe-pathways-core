@@ -36,7 +36,12 @@ export interface IPCEpisodeDetail {
   /** Raw prior accession ids (domain ids, e.g. MB25-…). Kept for back-compat. */
   priorAccessionIds: string[];
   /** Resolved prior cases — populated when an accession lookup is supplied. */
-  priorCases: Array<{ id: string; accessionDisplayId?: string; patientLabel?: string; ward?: string }>;
+  priorCases: Array<{
+    id: string;
+    accessionDisplayId?: string;
+    patientLabel?: string;
+    ward?: string;
+  }>;
   /** Human-readable basis for the rolling window, e.g. "MRSA_ALERT · 90d window · same MRN". */
   windowBasis?: string;
   raisedAt?: string;

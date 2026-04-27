@@ -36,7 +36,8 @@ export function ReleaseSealPanel({
             </div>
             {accession.releasedAt && (
               <div className="mt-0.5 text-[10px] text-muted-foreground">
-                released by {accession.releasingActor} @ {new Date(accession.releasedAt).toLocaleString()}
+                released by {accession.releasingActor} @{" "}
+                {new Date(accession.releasedAt).toLocaleString()}
               </div>
             )}
           </div>
@@ -57,7 +58,9 @@ export function ReleaseSealPanel({
                     : "Release blocked"}
           </button>
         </div>
-        {sealError && <p className="mt-2 text-[11px] text-destructive">Server rejected release: {sealError}</p>}
+        {sealError && (
+          <p className="mt-2 text-[11px] text-destructive">Server rejected release: {sealError}</p>
+        )}
         {!validationReport.releaseAllowed && !released && (
           <ul className="mt-2 space-y-1 text-[11px] text-destructive">
             {validationReport.blockers.map((b) => (
@@ -74,8 +77,8 @@ export function ReleaseSealPanel({
           </h4>
           {autoDispatch.length === 0 ? (
             <p className="mt-1 text-[11px] text-muted-foreground">
-              No enabled receivers configured for this tenant — nothing to dispatch. Configure receivers in
-              /admin/receivers.
+              No enabled receivers configured for this tenant — nothing to dispatch. Configure
+              receivers in /admin/receivers.
             </p>
           ) : (
             <ul className="mt-2 space-y-1.5">
@@ -90,7 +93,9 @@ export function ReleaseSealPanel({
                   </span>
                   <span className="font-medium text-foreground">{d.receiverName}</span>
                   <span className="text-muted-foreground">[{d.format}]</span>
-                  {d.httpStatus !== undefined && <span className="text-muted-foreground">HTTP {d.httpStatus}</span>}
+                  {d.httpStatus !== undefined && (
+                    <span className="text-muted-foreground">HTTP {d.httpStatus}</span>
+                  )}
                   {!d.ok && d.reason && <span className="text-destructive">— {d.reason}</span>}
                 </li>
               ))}
@@ -120,8 +125,8 @@ export function ReleaseSealPanel({
             )}
           </pre>
           <p className="mt-1 text-[10px] text-muted-foreground">
-            Snapshot is immutable; the SHA-256 seal is server-issued and stored in the append-only release_packages
-            table.
+            Snapshot is immutable; the SHA-256 seal is server-issued and stored in the append-only
+            release_packages table.
           </p>
         </section>
       )}

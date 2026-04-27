@@ -17,7 +17,10 @@ const queueCases = [
   ipcAcceptanceScenarioCases.mrsaAdmissionScreenPositiveCase,
 ];
 const queueMap = toAccessionsMap(queueCases);
-const queue = deriveIPCOfficerQueue(ipcAcceptanceScenarioCases.candidaAurisScreenPositiveCase, queueMap);
+const queue = deriveIPCOfficerQueue(
+  ipcAcceptanceScenarioCases.candidaAurisScreenPositiveCase,
+  queueMap,
+);
 
 const firstRoutineIndex = queue.findIndex((item) => item.priority === "routine");
 const candidaHighIndex = queue.findIndex(
@@ -45,7 +48,11 @@ assert(
   "Clearance incomplete scenario should appear in the IPC officer queue.",
 );
 assert(
-  queue.every((item) => item.limitationNote.toLowerCase().includes("browser-local") || item.limitationNote.toLowerCase().includes("currently loaded")),
+  queue.every(
+    (item) =>
+      item.limitationNote.toLowerCase().includes("browser-local") ||
+      item.limitationNote.toLowerCase().includes("currently loaded"),
+  ),
   "Queue items should include browser-local limitation note wording.",
 );
 

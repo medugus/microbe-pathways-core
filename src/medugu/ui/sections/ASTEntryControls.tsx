@@ -39,31 +39,41 @@ export function ASTEntryControls({
   return (
     <>
       <label className="text-xs">
-        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Antibiotic</span>
+        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+          Antibiotic
+        </span>
         <select
           value={antibioticCode}
           onChange={(e) => onAntibioticCodeChange(e.target.value)}
           className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
         >
           {ANTIBIOTICS.map((a) => (
-            <option key={a.code} value={a.code}>{a.display} ({a.code})</option>
+            <option key={a.code} value={a.code}>
+              {a.display} ({a.code})
+            </option>
           ))}
         </select>
       </label>
       <label className="text-xs">
-        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Method</span>
+        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+          Method
+        </span>
         <select
           value={method}
           onChange={(e) => onMethodChange(e.target.value as ASTMethod)}
           className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
         >
           {METHOD_OPTIONS.map((m) => (
-            <option key={m.code} value={m.code}>{m.label}</option>
+            <option key={m.code} value={m.code}>
+              {m.label}
+            </option>
           ))}
         </select>
       </label>
       <label className="text-xs">
-        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Standard</span>
+        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+          Standard
+        </span>
         <select
           value={standard}
           onChange={(e) => onStandardChange(e.target.value as ASTStandard)}

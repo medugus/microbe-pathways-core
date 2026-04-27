@@ -33,16 +33,15 @@ export function AllRolesPopover() {
         <div className="border-b border-border px-3 py-2">
           <div className="text-xs font-semibold text-foreground">Role inspector</div>
           <div className="text-[11px] text-muted-foreground">
-            Shows every role the UI knows about. Assignment and authority remain
-            server-enforced via RLS.
+            Shows every role the UI knows about. Assignment and authority remain server-enforced via
+            RLS.
           </div>
         </div>
 
         <ul className="max-h-[60vh] overflow-y-auto divide-y divide-border">
           {ROLE_CATALOG.map((entry) => {
             const assigned = assignedCodes.has(entry.code);
-            const isActiveView =
-              activeView === entry.code || (activeView === null && assigned);
+            const isActiveView = activeView === entry.code || (activeView === null && assigned);
             return (
               <li key={entry.code} className="px-3 py-2">
                 <div className="flex items-start justify-between gap-2">
@@ -93,9 +92,7 @@ export function AllRolesPopover() {
                     size="sm"
                     variant={activeView === entry.code ? "default" : "outline"}
                     disabled={entry.status === "planned"}
-                    onClick={() =>
-                      setActiveView(activeView === entry.code ? null : entry.code)
-                    }
+                    onClick={() => setActiveView(activeView === entry.code ? null : entry.code)}
                     className="h-6 shrink-0 px-2 text-[11px]"
                     title={
                       entry.status === "planned"
@@ -113,8 +110,8 @@ export function AllRolesPopover() {
 
         <div className="border-t border-border bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
           <div>
-            <span className="font-medium text-foreground">Demo switcher:</span>{" "}
-            UI-only. Does not change DB roles, RLS, or release/AMS/IPC rules.
+            <span className="font-medium text-foreground">Demo switcher:</span> UI-only. Does not
+            change DB roles, RLS, or release/AMS/IPC rules.
           </div>
           {activeView && (
             <button

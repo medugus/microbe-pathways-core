@@ -4,7 +4,7 @@
 
 export interface SoundPrefs {
   enabled: boolean;
-  volume: number;          // 0..1
+  volume: number; // 0..1
   repeatCritical: boolean; // re-play unacknowledged critical at interval
   repeatIntervalSec: number;
 }
@@ -28,7 +28,10 @@ export function loadSoundPrefs(): SoundPrefs {
       ...DEFAULT_SOUND_PREFS,
       ...parsed,
       volume: clamp(parsed.volume ?? DEFAULT_SOUND_PREFS.volume, 0, 1),
-      repeatIntervalSec: Math.max(5, parsed.repeatIntervalSec ?? DEFAULT_SOUND_PREFS.repeatIntervalSec),
+      repeatIntervalSec: Math.max(
+        5,
+        parsed.repeatIntervalSec ?? DEFAULT_SOUND_PREFS.repeatIntervalSec,
+      ),
     };
   } catch {
     return DEFAULT_SOUND_PREFS;

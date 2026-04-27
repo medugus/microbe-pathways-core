@@ -80,8 +80,7 @@ function AdminConfigInner() {
   const [diffTarget, setDiffTarget] = useState<number | null>(null);
 
   const draftDiff = useMemo(
-    () =>
-      diffPayloads(config.active.payload, config.draft, config.active.meta.version, "draft"),
+    () => diffPayloads(config.active.payload, config.draft, config.active.meta.version, "draft"),
     [config.active, config.draft],
   );
   const dirty = hasDraftChanges(config);
@@ -97,8 +96,8 @@ function AdminConfigInner() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Config promotion</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage the organism, antibiotic, breakpoint, stewardship, and IPC rule sets that
-            drive the engines. Active version pins propagate into every release package.
+            Manage the organism, antibiotic, breakpoint, stewardship, and IPC rule sets that drive
+            the engines. Active version pins propagate into every release package.
           </p>
         </div>
         <div className="flex flex-col items-end gap-2 text-right">
@@ -120,10 +119,10 @@ function AdminConfigInner() {
       </header>
 
       <div className="callout callout-warning text-xs">
-        <strong>Browser-phase scope:</strong> changes persist locally in this browser only.
-        There is no multi-user editing, no server-side approval workflow, and no enterprise
-        change-control. The same engine contract will later back onto a server-owned config
-        service without changing this UI.
+        <strong>Browser-phase scope:</strong> changes persist locally in this browser only. There is
+        no multi-user editing, no server-side approval workflow, and no enterprise change-control.
+        The same engine contract will later back onto a server-owned config service without changing
+        this UI.
       </div>
 
       <ActiveSummaryCard />
@@ -287,12 +286,18 @@ function SectionEditor({ section }: { section: ConfigSection }) {
         <div>
           <h3 className="text-sm font-semibold">{sectionLabel}</h3>
           <p className="text-xs text-muted-foreground">
-            Edit the draft JSON below, then apply. Promotion gates the change into the active
-            set.
+            Edit the draft JSON below, then apply. Promotion gates the change into the active set.
           </p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => { setText(draftJson); setError(null); }}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setText(draftJson);
+              setError(null);
+            }}
+          >
             Revert editor
           </Button>
           <Button size="sm" onClick={applyEdit}>
@@ -467,11 +472,7 @@ function HistoryList({
                   <p className="text-xs">{h.meta.note}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onSelectDiff(h.meta.version)}
-                  >
+                  <Button size="sm" variant="outline" onClick={() => onSelectDiff(h.meta.version)}>
                     {expanded ? "Hide diff" : `Diff vs active (${d.totalChanges})`}
                   </Button>
                   <RollbackButton toVersion={h.meta.version} />
@@ -507,13 +508,9 @@ function DiffSummary({ diff }: { diff: ReturnType<typeof diffPayloads> }) {
           {diff.sections.map((s) => (
             <tr key={s.section} className="border-t border-border/40">
               <td className="py-1 font-mono">{s.section}</td>
-              <td className="py-1 text-right text-success">
-                {s.added || ""}
-              </td>
+              <td className="py-1 text-right text-success">{s.added || ""}</td>
               <td className="py-1 text-right text-destructive">{s.removed || ""}</td>
-              <td className="py-1 text-right text-warning">
-                {s.changed || ""}
-              </td>
+              <td className="py-1 text-right text-warning">{s.changed || ""}</td>
               <td className="py-1 text-right text-muted-foreground">{s.unchanged}</td>
             </tr>
           ))}
@@ -553,8 +550,8 @@ function RollbackButton({ toVersion }: { toVersion: number }) {
   return (
     <div className="w-full space-y-2 callout callout-warning">
       <p className="text-xs">
-        Restore <strong>v{toVersion}</strong> as a new active version. The current active
-        version stays in history; nothing is destroyed.
+        Restore <strong>v{toVersion}</strong> as a new active version. The current active version
+        stays in history; nothing is destroyed.
       </p>
       <Input
         placeholder="Actor (placeholder)"

@@ -1,6 +1,11 @@
 import type { Accession, MeduguState } from "../domain/types";
 
-export type ColonisationScreenPurpose = "admission" | "contact" | "weekly" | "clearance" | "unknown";
+export type ColonisationScreenPurpose =
+  | "admission"
+  | "contact"
+  | "weekly"
+  | "clearance"
+  | "unknown";
 export type ColonisationScreenResult = "positive" | "negative" | "pending" | "not_applicable";
 export type ColonisationEpisodeStatus =
   | "new_carrier"
@@ -8,7 +13,12 @@ export type ColonisationEpisodeStatus =
   | "clearance_attempt"
   | "cleared"
   | "not_applicable";
-export type ColonisationIsolationStatus = "required" | "continue" | "review" | "not_required" | "unknown";
+export type ColonisationIsolationStatus =
+  | "required"
+  | "continue"
+  | "review"
+  | "not_required"
+  | "unknown";
 export type ColonisationDecolonisationStatus =
   | "not_applicable"
   | "recommended"
@@ -82,7 +92,8 @@ function getScreenResult(accession: Accession): ColonisationScreenResult {
 
 function inferPurpose(accession: Accession): ColonisationScreenPurpose {
   if (!isColonisationScreen(accession)) return "unknown";
-  const descriptor = `${accession.specimen.freeTextLabel ?? ""} ${accession.specimen.subtypeCode}`.toLowerCase();
+  const descriptor =
+    `${accession.specimen.freeTextLabel ?? ""} ${accession.specimen.subtypeCode}`.toLowerCase();
   if (descriptor.includes("clearance")) return "clearance";
   if (descriptor.includes("contact")) return "contact";
   if (descriptor.includes("weekly")) return "weekly";
@@ -91,7 +102,10 @@ function inferPurpose(accession: Accession): ColonisationScreenPurpose {
 }
 
 export function isColonisationScreen(accession: Accession): boolean {
-  return accession.specimen.familyCode === "COLONISATION" || accession.specimen.subtypeCode.startsWith("COL_");
+  return (
+    accession.specimen.familyCode === "COLONISATION" ||
+    accession.specimen.subtypeCode.startsWith("COL_")
+  );
 }
 
 export function getTargetOrganismForScreen(accession: Accession): string | undefined {
@@ -103,7 +117,8 @@ export function getTargetOrganismForScreen(accession: Accession): string | undef
   const label = `${accession.specimen.freeTextLabel ?? ""}`.toLowerCase();
   if (label.includes("mrsa")) return "MRSA";
   if (label.includes("vre")) return "VRE";
-  if (label.includes("cpe") || label.includes("cre")) return "CRE / carbapenemase-producing Enterobacterales";
+  if (label.includes("cpe") || label.includes("cre"))
+    return "CRE / carbapenemase-producing Enterobacterales";
   if (label.includes("crab")) return "CRAB";
   if (label.includes("crpa")) return "CRPA";
   if (label.includes("auris")) return "Candida auris";
@@ -157,7 +172,8 @@ export function calculateClearanceCounter(
   const lastPositiveTime = accessionDateMs(lastPositive);
   const currentTime = accessionDateMs(accession);
   const attempts = all.filter(
-    (candidate) => accessionDateMs(candidate) > lastPositiveTime && accessionDateMs(candidate) <= currentTime,
+    (candidate) =>
+      accessionDateMs(candidate) > lastPositiveTime && accessionDateMs(candidate) <= currentTime,
   );
 
   let sequentialNegativeCount = 0;
@@ -216,7 +232,10 @@ export function deriveColonisationContext(
   const screenResult = getScreenResult(accession);
   const targetOrganism = getTargetOrganismForScreen(accession);
   const screenPurpose = inferPurpose(accession);
-  const { count, required, priorPositiveFound } = calculateClearanceCounter(accession, allAccessions);
+  const { count, required, priorPositiveFound } = calculateClearanceCounter(
+    accession,
+    allAccessions,
+  );
   const lastPositive = getLastPositiveScreen(accession, allAccessions);
 
   let episodeStatus: ColonisationEpisodeStatus = "not_applicable";

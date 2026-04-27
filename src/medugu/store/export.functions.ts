@@ -151,7 +151,7 @@ export async function dispatchToReceiver(
 
   return {
     ok,
-    reason: ok ? undefined : errorMessage ?? `Receiver returned HTTP ${httpStatus ?? "n/a"}`,
+    reason: ok ? undefined : (errorMessage ?? `Receiver returned HTTP ${httpStatus ?? "n/a"}`),
     httpStatus: httpStatus ?? undefined,
     responseSnippet: responseBody?.slice(0, 240),
     deliveryId: delivery?.id as string | undefined,
@@ -193,14 +193,7 @@ export async function autoDispatchRelease(
       });
       continue;
     }
-    const out = await dispatchToReceiver(
-      supabase,
-      userId,
-      r,
-      accession,
-      accessionRowId,
-      pkgRow,
-    );
+    const out = await dispatchToReceiver(supabase, userId, r, accession, accessionRowId, pkgRow);
     results.push({
       receiverId: r.id,
       receiverName: r.name,
@@ -248,17 +241,16 @@ export const dispatchExport = createServerFn({ method: "POST" })
     if (acc.tenant_id !== receiver.tenant_id) {
       return { ok: false, reason: "Receiver and accession belong to different tenants." };
     }
-    if (
-      acc.release_state !== ReleaseState.Released &&
-      acc.release_state !== ReleaseState.Amended
-    ) {
+    if (acc.release_state !== ReleaseState.Released && acc.release_state !== ReleaseState.Amended) {
       return { ok: false, reason: "Accession has not been released — nothing to dispatch." };
     }
 
     // 3. Load most recent release package (immutable, append-only).
     const { data: pkgRow, error: pkgErr } = await supabase
       .from("release_packages")
-      .select("id, version, body, rule_version, breakpoint_version, export_version, build_version, built_at")
+      .select(
+        "id, version, body, rule_version, breakpoint_version, export_version, build_version, built_at",
+      )
       .eq("accession_id", acc.id)
       .order("version", { ascending: false })
       .limit(1)

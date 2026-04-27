@@ -32,6 +32,5 @@ jobs:
       - name: Logic tests
         run: npm test
 
-      - name: Lint (non-blocking baseline)
+      - name: Lint
         run: npm run lint
-        continue-on-error: true

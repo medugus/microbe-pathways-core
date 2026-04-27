@@ -27,15 +27,15 @@ export function SectionPlaceholder({ title, accession, description, children }: 
           Phase scaffold — detailed rules pending
         </p>
         <pre className="mt-3 overflow-auto rounded-md bg-muted p-3 font-mono text-xs text-foreground">
-{JSON.stringify(
-  {
-    accessionId: accession.id,
-    stage: accession.stage,
-    releaseState: accession.release.state,
-  },
-  null,
-  2,
-)}
+          {JSON.stringify(
+            {
+              accessionId: accession.id,
+              stage: accession.stage,
+              releaseState: accession.release.state,
+            },
+            null,
+            2,
+          )}
         </pre>
         {children}
       </div>

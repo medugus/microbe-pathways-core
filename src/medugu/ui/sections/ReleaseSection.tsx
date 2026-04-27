@@ -228,8 +228,6 @@ export function ReleaseSection() {
       {/* Validation source badge */}
       <ValidationSourceBadge validation={validation} />
 
-
-
       {ipcReleaseContext && (
         <section className="rounded-md border border-border bg-card p-3">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -319,7 +317,8 @@ function ValidationSourceBadge({ validation }: { validation: AuthoritativeValida
     default:
       label = "client engine";
       toneClass = "border-border bg-muted text-muted-foreground";
-      title = fallbackReason ?? "PHASE5_SERVER_VALIDATION is disabled; local engine is the contract.";
+      title =
+        fallbackReason ?? "PHASE5_SERVER_VALIDATION is disabled; local engine is the contract.";
       break;
   }
 

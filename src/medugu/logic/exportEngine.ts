@@ -97,12 +97,18 @@ interface FhirResource {
 
 function sirToFhirInterp(s?: string): string {
   switch (s) {
-    case "S": return "S";
-    case "I": return "I";
-    case "R": return "R";
-    case "SDD": return "SDD";
-    case "NS": return "NS";
-    default: return "IND";
+    case "S":
+      return "S";
+    case "I":
+      return "I";
+    case "R":
+      return "R";
+    case "SDD":
+      return "SDD";
+    case "NS":
+      return "NS";
+    default:
+      return "IND";
   }
 }
 
@@ -136,15 +142,18 @@ export function buildFhirBundle(accession: Accession): unknown {
     },
     receivedTime: accession.specimen.receivedAt,
     collection: { collectedDateTime: accession.specimen.collectedAt },
-    extension: doc.bloodSets && doc.bloodSets.length > 0
-      ? [{
-          url: "urn:medugu:blood-culture-sets",
-          extension: doc.bloodSets.map((s) => ({
-            url: `set-${s.setNo}`,
-            valueString: `Set ${s.setNo} | site=${s.drawSite || "—"}${s.lumenLabel ? ` | lumen=${s.lumenLabel}` : ""} | bottles=${s.bottleTypes.join(",") || "—"}${s.drawTime ? ` | drawn=${s.drawTime}` : ""}`,
-          })),
-        }]
-      : undefined,
+    extension:
+      doc.bloodSets && doc.bloodSets.length > 0
+        ? [
+            {
+              url: "urn:medugu:blood-culture-sets",
+              extension: doc.bloodSets.map((s) => ({
+                url: `set-${s.setNo}`,
+                valueString: `Set ${s.setNo} | site=${s.drawSite || "—"}${s.lumenLabel ? ` | lumen=${s.lumenLabel}` : ""} | bottles=${s.bottleTypes.join(",") || "—"}${s.drawTime ? ` | drawn=${s.drawTime}` : ""}`,
+              })),
+            },
+          ]
+        : undefined,
   });
 
   const observationRefs: { reference: string }[] = [];
@@ -155,13 +164,27 @@ export function buildFhirBundle(accession: Accession): unknown {
       resourceType: "Observation",
       id: isoObsId,
       status: "final",
-      category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/observation-category", code: "laboratory" }] }],
+      category: [
+        {
+          coding: [
+            {
+              system: "http://terminology.hl7.org/CodeSystem/observation-category",
+              code: "laboratory",
+            },
+          ],
+        },
+      ],
       code: { text: "Organism identified" },
       subject: { reference: `Patient/${patientId}` },
       specimen: { reference: `Specimen/${specimenId}` },
       valueCodeableConcept: {
         text: iso.organismDisplay,
-        coding: [{ system: "urn:medugu:organism", code: accession.isolates[iso.isolateNo - 1]?.organismCode ?? "UNK" }],
+        coding: [
+          {
+            system: "urn:medugu:organism",
+            code: accession.isolates[iso.isolateNo - 1]?.organismCode ?? "UNK",
+          },
+        ],
       },
       component: [
         { code: { text: "Significance" }, valueString: iso.significance ?? "indeterminate" },
@@ -170,12 +193,14 @@ export function buildFhirBundle(accession: Accession): unknown {
           ? [{ code: { text: "Phenotypes" }, valueString: iso.phenotypeFlags.join(",") }]
           : []),
         ...(iso.bloodSourceLinks && iso.bloodSourceLinks.length > 0
-          ? [{
-              code: { text: "Blood source linkage" },
-              valueString: iso.bloodSourceLinks
-                .map((l) => `set${l.setNo}/${l.bottleType}`)
-                .join(", "),
-            }]
+          ? [
+              {
+                code: { text: "Blood source linkage" },
+                valueString: iso.bloodSourceLinks
+                  .map((l) => `set${l.setNo}/${l.bottleType}`)
+                  .join(", "),
+              },
+            ]
           : []),
       ],
     });
@@ -189,7 +214,16 @@ export function buildFhirBundle(accession: Accession): unknown {
         resourceType: "Observation",
         id: astObsId,
         status: "final",
-        category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/observation-category", code: "laboratory" }] }],
+        category: [
+          {
+            coding: [
+              {
+                system: "http://terminology.hl7.org/CodeSystem/observation-category",
+                code: "laboratory",
+              },
+            ],
+          },
+        ],
         code: {
           text: `${a.antibioticDisplay} susceptibility`,
           coding: [{ system: "urn:medugu:antibiotic", code: a.antibioticCode }],
@@ -202,7 +236,11 @@ export function buildFhirBundle(accession: Accession): unknown {
           ? { text: sirToFhirInterp(a.interpretation) }
           : { text: "WITHHELD" },
         ...(a.rawValue !== undefined
-          ? { component: [{ code: { text: "Raw" }, valueQuantity: { value: a.rawValue, unit: a.rawUnit } }] }
+          ? {
+              component: [
+                { code: { text: "Raw" }, valueQuantity: { value: a.rawValue, unit: a.rawUnit } },
+              ],
+            }
           : {}),
         note: !visible
           ? [{ text: a.suppressionReason ?? "Suppressed by stewardship/cascade rule." }]
@@ -236,7 +274,9 @@ export function buildFhirBundle(accession: Accession): unknown {
       ? { tag: [{ system: "urn:medugu:report-tag", code: "amended", display: "Amended report" }] }
       : undefined,
     status: isAmendment ? "amended" : "final",
-    category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/v2-0074", code: "MB" }] }],
+    category: [
+      { coding: [{ system: "http://terminology.hl7.org/CodeSystem/v2-0074", code: "MB" }] },
+    ],
     code: { text: `Microbiology report v${doc.reportVersion}${isAmendment ? " (amended)" : ""}` },
     subject: { reference: `Patient/${patientId}` },
     specimen: [{ reference: `Specimen/${specimenId}` }],
@@ -423,11 +463,7 @@ export function buildHL7(accession: Accession): string {
     }
     if (iso.significance) {
       segments.push(
-        hl7Segment("NTE", [
-          String(setId),
-          "L",
-          hl7Escape(`Significance: ${iso.significance}`),
-        ]),
+        hl7Segment("NTE", [String(setId), "L", hl7Escape(`Significance: ${iso.significance}`)]),
       );
     }
     for (const a of iso.ast) {
@@ -468,9 +504,7 @@ export function buildHL7(accession: Accession): string {
   }
 
   for (const c of doc.comments) {
-    segments.push(
-      hl7Segment("NTE", [String(setId), "L", hl7Escape(`[${c.source}] ${c.text}`)]),
-    );
+    segments.push(hl7Segment("NTE", [String(setId), "L", hl7Escape(`[${c.source}] ${c.text}`)]));
   }
 
   segments.push(
@@ -568,7 +602,13 @@ export interface NormalisedExport {
     phenotypeFlags?: string[];
   }[];
   stewardship: { source: string; code: string; text: string }[];
-  ipc: { ruleCode: string; message: string; actions: string[]; timing: string; visibility: string }[];
+  ipc: {
+    ruleCode: string;
+    message: string;
+    actions: string[];
+    timing: string;
+    visibility: string;
+  }[];
   validation: { code: string; severity: string; message: string; section: string }[];
   release: {
     state: string;
@@ -700,9 +740,7 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
     }
     isolateLinks.sort(
       (a, b) =>
-        a.setNo - b.setNo ||
-        a.bottleType.localeCompare(b.bottleType) ||
-        a.isolateNo - b.isolateNo,
+        a.setNo - b.setNo || a.bottleType.localeCompare(b.bottleType) || a.isolateNo - b.isolateNo,
     );
 
     bloodLinkage = { bottles, isolateLinks };
@@ -739,9 +777,16 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
     isolates: doc.isolates,
     bloodLinkage,
     ast: flatAst,
-    stewardship: doc.comments.filter((c) => c.source === "stewardship").map((c) => ({ source: c.source, code: c.code, text: c.text })),
+    stewardship: doc.comments
+      .filter((c) => c.source === "stewardship")
+      .map((c) => ({ source: c.source, code: c.code, text: c.text })),
     ipc: doc.ipc,
-    validation: v.issues.map((i) => ({ code: i.code, severity: i.severity, message: i.message, section: i.section })),
+    validation: v.issues.map((i) => ({
+      code: i.code,
+      severity: i.severity,
+      message: i.message,
+      section: i.section,
+    })),
     release: {
       state: accession.release.state,
       reportVersion: accession.release.reportVersion,

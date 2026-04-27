@@ -8,7 +8,11 @@ import { getAntibiotic } from "../config/antibiotics";
 import { evaluateStewardship, type StewardshipDecision } from "./stewardshipEngine";
 import { evaluateIPC } from "./ipcEngine";
 import { IPC_RULES } from "../config/ipcRules";
-import { deriveIPCInternalReportNotes, getIPCReportVisibility, shouldShowIPCOnClinicianReport } from "./ipcReportGovernance";
+import {
+  deriveIPCInternalReportNotes,
+  getIPCReportVisibility,
+  shouldShowIPCOnClinicianReport,
+} from "./ipcReportGovernance";
 import { evaluateAccession } from "./astEngine";
 import { getOrganism } from "../config/organisms";
 import { findDiskBreakpoint, findMICBreakpoint } from "../config/breakpoints";
@@ -85,7 +89,13 @@ export interface ReportPreviewDoc {
   microscopySummary: string;
   isolates: ReportIsolate[];
   comments: ReportComment[];
-  ipc: { ruleCode: string; message: string; actions: string[]; timing: string; visibility: string }[];
+  ipc: {
+    ruleCode: string;
+    message: string;
+    actions: string[];
+    timing: string;
+    visibility: string;
+  }[];
   internalNotes: string[];
   versions: {
     rule: string;
@@ -118,7 +128,8 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
           ? `${i.colonyCountCfuPerMl.toExponential(0)} CFU/mL`
           : i.growthQuantifierCode,
       phenotypeFlags: phenotypesByIsolate[i.id] ?? [],
-      bloodSourceLinks: i.bloodSourceLinks && i.bloodSourceLinks.length > 0 ? i.bloodSourceLinks : undefined,
+      bloodSourceLinks:
+        i.bloodSourceLinks && i.bloodSourceLinks.length > 0 ? i.bloodSourceLinks : undefined,
       bottleResults:
         i.bottleResults && i.bottleResults.length > 0
           ? i.bottleResults.map((r) => ({
@@ -134,7 +145,11 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
         .map<ReportASTRow>((a) => {
           const dec: StewardshipDecision | undefined = stewardship.byAst[a.id];
           const enginePatch = rowOutputs?.rowPatches[a.id];
-          const interp = a.finalInterpretation ?? enginePatch?.interpretedSIR ?? a.interpretedSIR ?? a.rawInterpretation;
+          const interp =
+            a.finalInterpretation ??
+            enginePatch?.interpretedSIR ??
+            a.interpretedSIR ??
+            a.rawInterpretation;
           let breakpoint: ReportASTRow["breakpoint"];
           if (a.method === "disk_diffusion") {
             const bp = findDiskBreakpoint(orgGroup, a.antibioticCode, a.standard);
@@ -150,7 +165,12 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
                 unit: "mm",
               };
             }
-          } else if (a.method === "mic_broth" || a.method === "mic_etest" || a.method === "automated_phoenix" || a.method === "automated_vitek") {
+          } else if (
+            a.method === "mic_broth" ||
+            a.method === "mic_etest" ||
+            a.method === "automated_phoenix" ||
+            a.method === "automated_vitek"
+          ) {
             const bp = findMICBreakpoint(orgGroup, a.antibioticCode, a.standard);
             if (bp) {
               const parts: string[] = [];
@@ -255,7 +275,8 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
       return {
         setNo: idx + 1,
         drawSite: typeof set.drawSite === "string" ? set.drawSite : "",
-        lumenLabel: typeof set.lumenLabel === "string" && set.lumenLabel ? set.lumenLabel : undefined,
+        lumenLabel:
+          typeof set.lumenLabel === "string" && set.lumenLabel ? set.lumenLabel : undefined,
         bottleTypes: Array.isArray(set.bottleTypes) ? (set.bottleTypes as string[]) : [],
         drawTime: typeof set.drawTime === "string" && set.drawTime ? set.drawTime : undefined,
       };

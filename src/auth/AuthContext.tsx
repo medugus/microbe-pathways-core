@@ -7,14 +7,7 @@
 //  - All gating (tenant scope, RLS) is enforced server-side; this context is
 //    only for UI and route-guard use.
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { installServerFnAuth } from "./installServerFnAuth";
