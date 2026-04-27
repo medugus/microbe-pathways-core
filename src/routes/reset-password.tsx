@@ -75,7 +75,7 @@ function ResetPasswordPage() {
             : "Open this page from the reset link in your email."}
         </p>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4" suppressHydrationWarning>
+        <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">New password</Label>
             <Input

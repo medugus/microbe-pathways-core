@@ -1,738 +1,717 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
+    PostgrestVersion: "14.5";
+  };
   public: {
     Tables: {
       accessions: {
         Row: {
-          accession_code: string
-          created_at: string
-          created_by: string | null
-          data: Json
-          id: string
-          mrn: string | null
-          patient_name: string | null
-          release_state: string
-          report_version: number
-          stage: string
-          tenant_id: string
-          updated_at: string
-          updated_by: string | null
-          version: number
-        }
+          accession_code: string;
+          created_at: string;
+          created_by: string | null;
+          data: Json;
+          id: string;
+          mrn: string | null;
+          patient_name: string | null;
+          release_state: string;
+          report_version: number;
+          stage: string;
+          tenant_id: string;
+          updated_at: string;
+          updated_by: string | null;
+          version: number;
+        };
         Insert: {
-          accession_code: string
-          created_at?: string
-          created_by?: string | null
-          data: Json
-          id?: string
-          mrn?: string | null
-          patient_name?: string | null
-          release_state: string
-          report_version?: number
-          stage: string
-          tenant_id: string
-          updated_at?: string
-          updated_by?: string | null
-          version?: number
-        }
+          accession_code: string;
+          created_at?: string;
+          created_by?: string | null;
+          data: Json;
+          id?: string;
+          mrn?: string | null;
+          patient_name?: string | null;
+          release_state: string;
+          report_version?: number;
+          stage: string;
+          tenant_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+        };
         Update: {
-          accession_code?: string
-          created_at?: string
-          created_by?: string | null
-          data?: Json
-          id?: string
-          mrn?: string | null
-          patient_name?: string | null
-          release_state?: string
-          report_version?: number
-          stage?: string
-          tenant_id?: string
-          updated_at?: string
-          updated_by?: string | null
-          version?: number
-        }
+          accession_code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          data?: Json;
+          id?: string;
+          mrn?: string | null;
+          patient_name?: string | null;
+          release_state?: string;
+          report_version?: number;
+          stage?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "accessions_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
+            foreignKeyName: "accessions_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       audit_event: {
         Row: {
-          action: string
-          actor_label: string | null
-          actor_user_id: string | null
-          at: string
-          entity: string
-          entity_id: string | null
-          field: string | null
-          id: string
-          new_value: Json | null
-          old_value: Json | null
-          reason: string | null
-          tenant_id: string
-        }
+          action: string;
+          actor_label: string | null;
+          actor_user_id: string | null;
+          at: string;
+          entity: string;
+          entity_id: string | null;
+          field: string | null;
+          id: string;
+          new_value: Json | null;
+          old_value: Json | null;
+          reason: string | null;
+          tenant_id: string;
+        };
         Insert: {
-          action: string
-          actor_label?: string | null
-          actor_user_id?: string | null
-          at?: string
-          entity: string
-          entity_id?: string | null
-          field?: string | null
-          id?: string
-          new_value?: Json | null
-          old_value?: Json | null
-          reason?: string | null
-          tenant_id: string
-        }
+          action: string;
+          actor_label?: string | null;
+          actor_user_id?: string | null;
+          at?: string;
+          entity: string;
+          entity_id?: string | null;
+          field?: string | null;
+          id?: string;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          reason?: string | null;
+          tenant_id: string;
+        };
         Update: {
-          action?: string
-          actor_label?: string | null
-          actor_user_id?: string | null
-          at?: string
-          entity?: string
-          entity_id?: string | null
-          field?: string | null
-          id?: string
-          new_value?: Json | null
-          old_value?: Json | null
-          reason?: string | null
-          tenant_id?: string
-        }
+          action?: string;
+          actor_label?: string | null;
+          actor_user_id?: string | null;
+          at?: string;
+          entity?: string;
+          entity_id?: string | null;
+          field?: string | null;
+          id?: string;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          reason?: string | null;
+          tenant_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "audit_event_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
+            foreignKeyName: "audit_event_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       dispatch_history: {
         Row: {
-          accession_id: string
-          attempt_no: number
-          completed_at: string | null
-          error_message: string | null
-          format: string
-          id: string
-          parent_dispatch_id: string | null
-          payload_bytes: number | null
-          receiver_name: string
-          release_package_id: string
-          release_version: number
-          requested_at: string
-          requested_by: string | null
-          simulated_failure: boolean
-          status: string
-          tenant_id: string
-        }
+          accession_id: string;
+          attempt_no: number;
+          completed_at: string | null;
+          error_message: string | null;
+          format: string;
+          id: string;
+          parent_dispatch_id: string | null;
+          payload_bytes: number | null;
+          receiver_name: string;
+          release_package_id: string;
+          release_version: number;
+          requested_at: string;
+          requested_by: string | null;
+          simulated_failure: boolean;
+          status: string;
+          tenant_id: string;
+        };
         Insert: {
-          accession_id: string
-          attempt_no?: number
-          completed_at?: string | null
-          error_message?: string | null
-          format: string
-          id?: string
-          parent_dispatch_id?: string | null
-          payload_bytes?: number | null
-          receiver_name?: string
-          release_package_id: string
-          release_version: number
-          requested_at?: string
-          requested_by?: string | null
-          simulated_failure?: boolean
-          status: string
-          tenant_id: string
-        }
+          accession_id: string;
+          attempt_no?: number;
+          completed_at?: string | null;
+          error_message?: string | null;
+          format: string;
+          id?: string;
+          parent_dispatch_id?: string | null;
+          payload_bytes?: number | null;
+          receiver_name?: string;
+          release_package_id: string;
+          release_version: number;
+          requested_at?: string;
+          requested_by?: string | null;
+          simulated_failure?: boolean;
+          status: string;
+          tenant_id: string;
+        };
         Update: {
-          accession_id?: string
-          attempt_no?: number
-          completed_at?: string | null
-          error_message?: string | null
-          format?: string
-          id?: string
-          parent_dispatch_id?: string | null
-          payload_bytes?: number | null
-          receiver_name?: string
-          release_package_id?: string
-          release_version?: number
-          requested_at?: string
-          requested_by?: string | null
-          simulated_failure?: boolean
-          status?: string
-          tenant_id?: string
-        }
+          accession_id?: string;
+          attempt_no?: number;
+          completed_at?: string | null;
+          error_message?: string | null;
+          format?: string;
+          id?: string;
+          parent_dispatch_id?: string | null;
+          payload_bytes?: number | null;
+          receiver_name?: string;
+          release_package_id?: string;
+          release_version?: number;
+          requested_at?: string;
+          requested_by?: string | null;
+          simulated_failure?: boolean;
+          status?: string;
+          tenant_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "dispatch_history_accession_id_fkey"
-            columns: ["accession_id"]
-            isOneToOne: false
-            referencedRelation: "accessions"
-            referencedColumns: ["id"]
+            foreignKeyName: "dispatch_history_accession_id_fkey";
+            columns: ["accession_id"];
+            isOneToOne: false;
+            referencedRelation: "accessions";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "dispatch_history_parent_dispatch_id_fkey"
-            columns: ["parent_dispatch_id"]
-            isOneToOne: false
-            referencedRelation: "dispatch_history"
-            referencedColumns: ["id"]
+            foreignKeyName: "dispatch_history_parent_dispatch_id_fkey";
+            columns: ["parent_dispatch_id"];
+            isOneToOne: false;
+            referencedRelation: "dispatch_history";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "dispatch_history_release_package_id_fkey"
-            columns: ["release_package_id"]
-            isOneToOne: false
-            referencedRelation: "release_packages"
-            referencedColumns: ["id"]
+            foreignKeyName: "dispatch_history_release_package_id_fkey";
+            columns: ["release_package_id"];
+            isOneToOne: false;
+            referencedRelation: "release_packages";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "dispatch_history_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
+            foreignKeyName: "dispatch_history_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       export_deliveries: {
         Row: {
-          accession_id: string
-          dispatched_at: string
-          dispatched_by: string | null
-          error_message: string | null
-          format: string
-          http_status: number | null
-          id: string
-          receiver_id: string
-          release_package_id: string
-          response_body: string | null
-          tenant_id: string
-        }
+          accession_id: string;
+          dispatched_at: string;
+          dispatched_by: string | null;
+          error_message: string | null;
+          format: string;
+          http_status: number | null;
+          id: string;
+          receiver_id: string;
+          release_package_id: string;
+          response_body: string | null;
+          tenant_id: string;
+        };
         Insert: {
-          accession_id: string
-          dispatched_at?: string
-          dispatched_by?: string | null
-          error_message?: string | null
-          format: string
-          http_status?: number | null
-          id?: string
-          receiver_id: string
-          release_package_id: string
-          response_body?: string | null
-          tenant_id: string
-        }
+          accession_id: string;
+          dispatched_at?: string;
+          dispatched_by?: string | null;
+          error_message?: string | null;
+          format: string;
+          http_status?: number | null;
+          id?: string;
+          receiver_id: string;
+          release_package_id: string;
+          response_body?: string | null;
+          tenant_id: string;
+        };
         Update: {
-          accession_id?: string
-          dispatched_at?: string
-          dispatched_by?: string | null
-          error_message?: string | null
-          format?: string
-          http_status?: number | null
-          id?: string
-          receiver_id?: string
-          release_package_id?: string
-          response_body?: string | null
-          tenant_id?: string
-        }
+          accession_id?: string;
+          dispatched_at?: string;
+          dispatched_by?: string | null;
+          error_message?: string | null;
+          format?: string;
+          http_status?: number | null;
+          id?: string;
+          receiver_id?: string;
+          release_package_id?: string;
+          response_body?: string | null;
+          tenant_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "export_deliveries_accession_id_fkey"
-            columns: ["accession_id"]
-            isOneToOne: false
-            referencedRelation: "accessions"
-            referencedColumns: ["id"]
+            foreignKeyName: "export_deliveries_accession_id_fkey";
+            columns: ["accession_id"];
+            isOneToOne: false;
+            referencedRelation: "accessions";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "export_deliveries_receiver_id_fkey"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "receivers"
-            referencedColumns: ["id"]
+            foreignKeyName: "export_deliveries_receiver_id_fkey";
+            columns: ["receiver_id"];
+            isOneToOne: false;
+            referencedRelation: "receivers";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "export_deliveries_release_package_id_fkey"
-            columns: ["release_package_id"]
-            isOneToOne: false
-            referencedRelation: "release_packages"
-            referencedColumns: ["id"]
+            foreignKeyName: "export_deliveries_release_package_id_fkey";
+            columns: ["release_package_id"];
+            isOneToOne: false;
+            referencedRelation: "release_packages";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "export_deliveries_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
+            foreignKeyName: "export_deliveries_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       ipc_signals: {
         Row: {
-          accession_id: string
-          acknowledged_at: string | null
-          acknowledged_by: string | null
-          actions: Json
-          id: string
-          isolate_id: string
-          message: string
-          mrn: string | null
-          notify: Json
-          organism_code: string | null
-          phenotypes: Json
-          raised_at: string
-          raised_by: string | null
-          resolution_note: string | null
-          resolved_at: string | null
-          resolved_by: string | null
-          rule_code: string
-          status: string
-          tenant_id: string
-          timing: string
-          ward: string | null
-        }
+          accession_id: string;
+          acknowledged_at: string | null;
+          acknowledged_by: string | null;
+          actions: Json;
+          id: string;
+          isolate_id: string;
+          message: string;
+          mrn: string | null;
+          notify: Json;
+          organism_code: string | null;
+          phenotypes: Json;
+          raised_at: string;
+          raised_by: string | null;
+          resolution_note: string | null;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          rule_code: string;
+          status: string;
+          tenant_id: string;
+          timing: string;
+          ward: string | null;
+        };
         Insert: {
-          accession_id: string
-          acknowledged_at?: string | null
-          acknowledged_by?: string | null
-          actions?: Json
-          id?: string
-          isolate_id: string
-          message: string
-          mrn?: string | null
-          notify?: Json
-          organism_code?: string | null
-          phenotypes?: Json
-          raised_at?: string
-          raised_by?: string | null
-          resolution_note?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          rule_code: string
-          status?: string
-          tenant_id: string
-          timing: string
-          ward?: string | null
-        }
+          accession_id: string;
+          acknowledged_at?: string | null;
+          acknowledged_by?: string | null;
+          actions?: Json;
+          id?: string;
+          isolate_id: string;
+          message: string;
+          mrn?: string | null;
+          notify?: Json;
+          organism_code?: string | null;
+          phenotypes?: Json;
+          raised_at?: string;
+          raised_by?: string | null;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          rule_code: string;
+          status?: string;
+          tenant_id: string;
+          timing: string;
+          ward?: string | null;
+        };
         Update: {
-          accession_id?: string
-          acknowledged_at?: string | null
-          acknowledged_by?: string | null
-          actions?: Json
-          id?: string
-          isolate_id?: string
-          message?: string
-          mrn?: string | null
-          notify?: Json
-          organism_code?: string | null
-          phenotypes?: Json
-          raised_at?: string
-          raised_by?: string | null
-          resolution_note?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          rule_code?: string
-          status?: string
-          tenant_id?: string
-          timing?: string
-          ward?: string | null
-        }
+          accession_id?: string;
+          acknowledged_at?: string | null;
+          acknowledged_by?: string | null;
+          actions?: Json;
+          id?: string;
+          isolate_id?: string;
+          message?: string;
+          mrn?: string | null;
+          notify?: Json;
+          organism_code?: string | null;
+          phenotypes?: Json;
+          raised_at?: string;
+          raised_by?: string | null;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          rule_code?: string;
+          status?: string;
+          tenant_id?: string;
+          timing?: string;
+          ward?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "ipc_signals_accession_id_fkey"
-            columns: ["accession_id"]
-            isOneToOne: false
-            referencedRelation: "accessions"
-            referencedColumns: ["id"]
+            foreignKeyName: "ipc_signals_accession_id_fkey";
+            columns: ["accession_id"];
+            isOneToOne: false;
+            referencedRelation: "accessions";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "ipc_signals_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
+            foreignKeyName: "ipc_signals_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       profiles: {
         Row: {
-          created_at: string
-          display_name: string | null
-          email: string | null
-          id: string
-          tenant_id: string
-          updated_at: string
-        }
+          created_at: string;
+          display_name: string | null;
+          email: string | null;
+          id: string;
+          tenant_id: string;
+          updated_at: string;
+        };
         Insert: {
-          created_at?: string
-          display_name?: string | null
-          email?: string | null
-          id: string
-          tenant_id: string
-          updated_at?: string
-        }
+          created_at?: string;
+          display_name?: string | null;
+          email?: string | null;
+          id: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          display_name?: string | null
-          email?: string | null
-          id?: string
-          tenant_id?: string
-          updated_at?: string
-        }
+          created_at?: string;
+          display_name?: string | null;
+          email?: string | null;
+          id?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "profiles_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
+            foreignKeyName: "profiles_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       receivers: {
         Row: {
-          bearer_token: string | null
-          created_at: string
-          created_by: string | null
-          enabled: boolean
-          endpoint_url: string
-          format: string
-          id: string
-          name: string
-          tenant_id: string
-          updated_at: string
-        }
+          bearer_token: string | null;
+          created_at: string;
+          created_by: string | null;
+          enabled: boolean;
+          endpoint_url: string;
+          format: string;
+          id: string;
+          name: string;
+          tenant_id: string;
+          updated_at: string;
+        };
         Insert: {
-          bearer_token?: string | null
-          created_at?: string
-          created_by?: string | null
-          enabled?: boolean
-          endpoint_url: string
-          format: string
-          id?: string
-          name: string
-          tenant_id: string
-          updated_at?: string
-        }
+          bearer_token?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          enabled?: boolean;
+          endpoint_url: string;
+          format: string;
+          id?: string;
+          name: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
         Update: {
-          bearer_token?: string | null
-          created_at?: string
-          created_by?: string | null
-          enabled?: boolean
-          endpoint_url?: string
-          format?: string
-          id?: string
-          name?: string
-          tenant_id?: string
-          updated_at?: string
-        }
+          bearer_token?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          enabled?: boolean;
+          endpoint_url?: string;
+          format?: string;
+          id?: string;
+          name?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "receivers_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
+            foreignKeyName: "receivers_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       release_packages: {
         Row: {
-          accession_id: string
-          body: Json
-          body_sha256: string
-          breakpoint_version: string
-          build_version: string
-          built_at: string
-          built_by: string | null
-          export_version: string
-          id: string
-          rule_version: Json
-          tenant_id: string
-          version: number
-        }
+          accession_id: string;
+          body: Json;
+          body_sha256: string;
+          breakpoint_version: string;
+          build_version: string;
+          built_at: string;
+          built_by: string | null;
+          export_version: string;
+          id: string;
+          rule_version: Json;
+          tenant_id: string;
+          version: number;
+        };
         Insert: {
-          accession_id: string
-          body: Json
-          body_sha256: string
-          breakpoint_version: string
-          build_version: string
-          built_at?: string
-          built_by?: string | null
-          export_version: string
-          id?: string
-          rule_version: Json
-          tenant_id: string
-          version: number
-        }
+          accession_id: string;
+          body: Json;
+          body_sha256: string;
+          breakpoint_version: string;
+          build_version: string;
+          built_at?: string;
+          built_by?: string | null;
+          export_version: string;
+          id?: string;
+          rule_version: Json;
+          tenant_id: string;
+          version: number;
+        };
         Update: {
-          accession_id?: string
-          body?: Json
-          body_sha256?: string
-          breakpoint_version?: string
-          build_version?: string
-          built_at?: string
-          built_by?: string | null
-          export_version?: string
-          id?: string
-          rule_version?: Json
-          tenant_id?: string
-          version?: number
-        }
+          accession_id?: string;
+          body?: Json;
+          body_sha256?: string;
+          breakpoint_version?: string;
+          build_version?: string;
+          built_at?: string;
+          built_by?: string | null;
+          export_version?: string;
+          id?: string;
+          rule_version?: Json;
+          tenant_id?: string;
+          version?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "release_packages_accession_id_fkey"
-            columns: ["accession_id"]
-            isOneToOne: false
-            referencedRelation: "accessions"
-            referencedColumns: ["id"]
+            foreignKeyName: "release_packages_accession_id_fkey";
+            columns: ["accession_id"];
+            isOneToOne: false;
+            referencedRelation: "accessions";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "release_packages_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
+            foreignKeyName: "release_packages_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       tenants: {
         Row: {
-          created_at: string
-          id: string
-          name: string
-          slug: string
-          updated_at: string
-        }
+          created_at: string;
+          id: string;
+          name: string;
+          slug: string;
+          updated_at: string;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          slug: string
-          updated_at?: string
-        }
+          created_at?: string;
+          id?: string;
+          name: string;
+          slug: string;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          slug?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          id?: string;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       user_roles: {
         Row: {
-          granted_at: string
-          granted_by: string | null
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          tenant_id: string
-          user_id: string
-        }
+          granted_at: string;
+          granted_by: string | null;
+          id: string;
+          role: Database["public"]["Enums"]["app_role"];
+          tenant_id: string;
+          user_id: string;
+        };
         Insert: {
-          granted_at?: string
-          granted_by?: string | null
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          tenant_id: string
-          user_id: string
-        }
+          granted_at?: string;
+          granted_by?: string | null;
+          id?: string;
+          role: Database["public"]["Enums"]["app_role"];
+          tenant_id: string;
+          user_id: string;
+        };
         Update: {
-          granted_at?: string
-          granted_by?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          tenant_id?: string
-          user_id?: string
-        }
+          granted_at?: string;
+          granted_by?: string | null;
+          id?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          tenant_id?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_roles_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_roles_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
-    }
+        ];
+      };
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
-      current_tenant_id: { Args: never; Returns: string }
+      current_tenant_id: { Args: never; Returns: string };
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _tenant_id: string
-          _user_id: string
-        }
-        Returns: boolean
-      }
+          _role: Database["public"]["Enums"]["app_role"];
+          _tenant_id: string;
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
       is_tenant_member: {
-        Args: { _tenant_id: string; _user_id: string }
-        Returns: boolean
-      }
-    }
+        Args: { _tenant_id: string; _user_id: string };
+        Returns: boolean;
+      };
+    };
     Enums: {
-      app_role:
-        | "lab_tech"
-        | "microbiologist"
-        | "consultant"
-        | "ams_pharmacist"
-        | "ipc"
-        | "admin"
-    }
+      app_role: "lab_tech" | "microbiologist" | "consultant" | "ams_pharmacist" | "ipc" | "admin";
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
       }
       ? R
       : never
-    : never
+    : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
+        Insert: infer I;
       }
       ? I
       : never
-    : never
+    : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
+        Update: infer U;
       }
       ? U
       : never
-    : never
+    : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+    : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+    : never;
 
 export const Constants = {
   public: {
     Enums: {
-      app_role: [
-        "lab_tech",
-        "microbiologist",
-        "consultant",
-        "ams_pharmacist",
-        "ipc",
-        "admin",
-      ],
+      app_role: ["lab_tech", "microbiologist", "consultant", "ams_pharmacist", "ipc", "admin"],
     },
   },
-} as const
+} as const;

@@ -120,8 +120,8 @@ function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={onEmailSignIn} className="mt-6 space-y-4" suppressHydrationWarning>
-          <div className="space-y-2" suppressHydrationWarning>
+        <form onSubmit={onEmailSignIn} className="mt-6 space-y-4">
+          <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -130,10 +130,9 @@ function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              suppressHydrationWarning
             />
           </div>
-          <div className="space-y-2" suppressHydrationWarning>
+          <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
@@ -143,7 +142,6 @@ function LoginPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              suppressHydrationWarning
             />
           </div>
 
