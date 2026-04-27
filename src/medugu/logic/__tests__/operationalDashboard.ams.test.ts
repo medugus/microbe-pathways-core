@@ -1,4 +1,5 @@
 import { amsAcceptanceScenarioCases, toAccessionsMap } from "../../fixtures/amsAcceptanceCases";
+import { ipcAcceptanceScenarioCases } from "../../fixtures/ipcAcceptanceCases";
 import type { Accession, ASTResult } from "../../domain/types";
 import { deriveOperationalDashboard } from "../operationalDashboard";
 import { deriveAMSReleaseContext, deriveAMSValidationIssues } from "../amsReleaseGovernance";
@@ -37,6 +38,29 @@ const approvedPendingItem = dashboard.items.find(
 assert(
   !approvedPendingItem,
   "Approved restricted AMS item should not be incorrectly prioritised as pending.",
+);
+
+const releaseBlockerItem = dashboard.items.find(
+  (item) =>
+    item.accessionId === amsAcceptanceScenarioCases.restrictedMeropenemPendingApprovalCase.id &&
+    item.category === "release_blocker",
+);
+assert(!!releaseBlockerItem, "Expected release blocker item for pending restricted AMS case.");
+assert(
+  releaseBlockerItem!.targetSection === "Release",
+  "Release blocker dashboard queue item should keep Release target section.",
+);
+
+const ipcDashboard = deriveOperationalDashboard(
+  toAccessionsMap([ipcAcceptanceScenarioCases.creSterileSiteCase]),
+);
+const ipcHighPriorityItem = ipcDashboard.items.find(
+  (item) => item.category === "ipc_high_priority",
+);
+assert(!!ipcHighPriorityItem, "Expected high-priority IPC item for CRE sterile-site case.");
+assert(
+  ipcHighPriorityItem!.targetSection === "IPC",
+  "IPC high-priority dashboard queue item should keep IPC target section.",
 );
 
 const noActionAmsItems = dashboard.items.filter(
