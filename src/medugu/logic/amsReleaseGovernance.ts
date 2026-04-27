@@ -24,6 +24,7 @@ export interface AMSGovernanceAssessment {
   isRestrictedOrReserve: boolean;
   requiresApproval: boolean;
   approvalPending: boolean;
+  approvalStatus: ReturnType<typeof approvalStatusForRow>;
 }
 
 export interface AMSGovernanceIssue {
@@ -45,8 +46,10 @@ export interface AMSReleaseContext {
 
 function findRule(rec: AMSRecommendationResult): AMSRuleDefinition | undefined {
   const ruleCode = rec.explanation.matchedRuleCode;
-  return AMS_RULES.find((rule) => rule.ruleCode === ruleCode)
-    ?? AMS_RULES.find((rule) => rule.recommendationCategory === rec.category);
+  return (
+    AMS_RULES.find((rule) => rule.ruleCode === ruleCode) ??
+    AMS_RULES.find((rule) => rule.recommendationCategory === rec.category)
+  );
 }
 
 export function getAMSReleaseImpact(recommendation: AMSRecommendationResult): AMSReleaseImpact {
@@ -56,14 +59,18 @@ export function getAMSReleaseImpact(recommendation: AMSRecommendationResult): AM
   switch (recommendation.category) {
     case "restricted_approval_required":
     case "reserve_review":
-      return recommendation.explanation.restrictionStatus.includes("approval required") ? "blocker" : "warning";
+      return recommendation.explanation.restrictionStatus.includes("approval required")
+        ? "blocker"
+        : "warning";
     case "bug_drug_mismatch":
     case "resistant_result_review":
       return "warning";
     case "de_escalation_opportunity":
       return "warning";
     case "insufficient_data":
-      return recommendation.explanation.restrictionStatus.includes("approval required") ? "warning" : "none";
+      return recommendation.explanation.restrictionStatus.includes("approval required")
+        ? "warning"
+        : "none";
     default:
       return "none";
   }
@@ -82,7 +89,9 @@ function getValidationSeverity(recommendation: AMSRecommendationResult): AMSVali
     case "de_escalation_opportunity":
       return "info";
     case "insufficient_data":
-      return recommendation.explanation.restrictionStatus.includes("approval required") ? "warning" : "info";
+      return recommendation.explanation.restrictionStatus.includes("approval required")
+        ? "warning"
+        : "info";
     default:
       return "info";
   }
@@ -119,12 +128,15 @@ function deriveAssessments(accession: Accession): AMSGovernanceAssessment[] {
     const recommendation = evaluateAMSRecommendation(accession, row, decision, stewardship.byAst);
     const releaseRelevant = isAMSReleaseRelevantASTResult(accession, row);
     const isRestrictedOrReserve =
-      decision.releaseClass === "restricted" || decision.aware === "Reserve" || decision.approvalRequired;
+      decision.releaseClass === "restricted" ||
+      decision.aware === "Reserve" ||
+      decision.approvalRequired;
     const releaseImpact = releaseRelevant ? getAMSReleaseImpact(recommendation) : "none";
     const validationSeverity = releaseRelevant ? getValidationSeverity(recommendation) : "info";
     const reportVisibility = getReportVisibility(recommendation);
     const approvalState = approvalStatusForRow(accession, row.id);
-    const approvalPending = releaseRelevant && decision.approvalRequired && approvalState !== "approved";
+    const approvalPending =
+      releaseRelevant && decision.approvalRequired && approvalState !== "approved";
 
     return {
       astId: row.id,
@@ -138,6 +150,7 @@ function deriveAssessments(accession: Accession): AMSGovernanceAssessment[] {
       isRestrictedOrReserve,
       requiresApproval: releaseRelevant && decision.approvalRequired,
       approvalPending,
+      approvalStatus: approvalState,
     };
   });
 }
@@ -157,7 +170,12 @@ export function deriveAMSValidationIssues(accession: Accession): AMSGovernanceIs
   const assessments = deriveAssessments(accession);
   return assessments
     .filter((item) => item.category !== "continue_or_no_action")
-    .filter((item) => item.validationSeverity !== "info" || item.category === "insufficient_data" || item.category === "de_escalation_opportunity")
+    .filter(
+      (item) =>
+        item.validationSeverity !== "info" ||
+        item.category === "insufficient_data" ||
+        item.category === "de_escalation_opportunity",
+    )
     .map((item) => ({
       code: `AMS_${item.category.toUpperCase()}`,
       severity: item.validationSeverity,
@@ -167,12 +185,22 @@ export function deriveAMSValidationIssues(accession: Accession): AMSGovernanceIs
 }
 
 export function deriveAMSReleaseContext(accession: Accession): AMSReleaseContext {
-  const assessments = deriveAssessments(accession).filter((item) => item.category !== "continue_or_no_action");
+  const assessments = deriveAssessments(accession).filter(
+    (item) => item.category !== "continue_or_no_action",
+  );
   const pendingApprovalCount = assessments.filter((item) => item.approvalPending).length;
   const restrictedOrReserveCount = assessments.filter((item) => item.isRestrictedOrReserve).length;
-  const bugDrugMismatchCount = assessments.filter((item) => item.category === "bug_drug_mismatch" || item.category === "resistant_result_review").length;
-  const deEscalationOrReviewCount = assessments.filter((item) => item.category === "de_escalation_opportunity").length;
-  const hasReleaseBlocker = assessments.some((item) => item.releaseImpact === "blocker");
+  const bugDrugMismatchCount = assessments.filter(
+    (item) => item.category === "bug_drug_mismatch" || item.category === "resistant_result_review",
+  ).length;
+  const deEscalationOrReviewCount = assessments.filter(
+    (item) => item.category === "de_escalation_opportunity",
+  ).length;
+  const hasReleaseBlocker = assessments.some((item) => {
+    if (item.releaseImpact !== "blocker") return false;
+    if (!item.requiresApproval) return true;
+    return item.approvalStatus !== "approved";
+  });
 
   const recommendedNextAction = hasReleaseBlocker
     ? "Resolve AMS approval-required items before release."
