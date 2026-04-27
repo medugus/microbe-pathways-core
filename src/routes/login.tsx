@@ -69,36 +69,47 @@ function LoginPage() {
     setError(null);
     setBusy(true);
     const trimmedEmail = email.trim();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: trimmedEmail,
-      password,
-    });
-    setBusy(false);
-    if (signInError) {
-      setError(signInError.message);
-      return;
-    }
+
     try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+
       window.localStorage.setItem("medugu.rememberMe", rememberMe ? "1" : "0");
       if (rememberMe) {
         window.localStorage.setItem("medugu.lastEmail", trimmedEmail);
       } else {
         window.localStorage.removeItem("medugu.lastEmail");
       }
-    } catch {
-      /* ignore */
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign-in failed. Please try again.";
+      setError(message);
+    } finally {
+      setBusy(false);
     }
   };
 
   const onGoogle = async () => {
     setError(null);
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
-    });
-    setBusy(false);
-    if ("error" in result && result.error) {
-      setError(result.error.message);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
+      });
+      if ("error" in result && result.error) {
+        setError(result.error.message);
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Google sign-in failed. Please try again.";
+      setError(message);
+    } finally {
+      setBusy(false);
     }
   };
 
