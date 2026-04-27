@@ -19,23 +19,13 @@ import { applyExpertRulesServer } from "../../store/engines.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { ASTReportabilityBoard } from "./ASTReportabilityBoard";
 import { isBloodCulture, listPositiveBottles, sourceLinkKey } from "../../logic/bloodIsolateRules";
+import { isTrueBlankAstRow } from "../../logic/astBlankRows";
 import { ASTEntryControls } from "./ASTEntryControls";
 import { ASTPanelEntry } from "./ASTPanelEntry";
 import { ASTServerActions } from "./ASTServerActions";
 import { AntibiogramGrid } from "./AntibiogramGrid";
 
 type EntryMode = "panel" | "single";
-
-function isUnresultedAstRow(row: Accession["ast"][number]): boolean {
-  const hasNoRawValues =
-    row.rawValue === undefined && row.micMgL === undefined && row.zoneMm === undefined;
-  const hasNoInterpretation =
-    row.rawInterpretation === undefined &&
-    row.interpretedSIR === undefined &&
-    row.finalInterpretation === undefined;
-  const hasNoComment = !row.comment?.trim();
-  return hasNoRawValues && hasNoInterpretation && hasNoComment;
-}
 
 export function ASTSection() {
   const accession = useActiveAccession();
@@ -138,7 +128,7 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     return { pendingCodes, duplicateCount };
   }, [accession.ast, activeIsolateId, selectedPanel]);
   const blankAstRowIds = useMemo(
-    () => accession.ast.filter((row) => isUnresultedAstRow(row)).map((row) => row.id),
+    () => accession.ast.filter((row) => isTrueBlankAstRow(row)).map((row) => row.id),
     [accession.ast],
   );
 
@@ -315,8 +305,8 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
             Remove unresulted AST rows
           </button>
           <span className="text-[11px] text-muted-foreground">
-            Removes blank placeholders only (no raw value, no MIC/zone, no S/I/R, no
-            interpretation/comment).
+            Removes untouched blank placeholders only (no raw value, no MIC/zone, no S/I/R, no
+            interpretation/comment, no explicit review marker).
           </span>
         </div>
       </div>

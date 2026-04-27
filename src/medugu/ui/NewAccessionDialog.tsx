@@ -2,7 +2,7 @@
 // Pure UI: composes a new Accession aggregate and hands it to the store via
 // meduguActions.upsertAccession. No clinical rule logic lives here.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -101,6 +101,13 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
 
   const subtypes = getFamily(familyCode)?.subtypes ?? [];
 
+  useEffect(() => {
+    if (isBlood) return;
+    if (bloodSources.length === 0 && bloodPreset === "STANDARD_ADULT") return;
+    setBloodSources([]);
+    setBloodPreset("STANDARD_ADULT");
+  }, [bloodPreset, bloodSources.length, isBlood]);
+
   function reset() {
     setMode("new");
     setExistingMrn("");
@@ -129,10 +136,11 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
       ? !!existingMrn
       : givenName.trim().length > 0 && familyName.trim().length > 0 && mrn.trim().length > 0);
   const mrnMissing = mode === "new" && mrn.trim().length === 0;
+  const existingMrnMissing = mode === "existing" && existingMrn.trim().length === 0;
   const bloodSourceMissing = isBlood && bloodSources.length === 0;
   const submitBlockedReason = state.accessions[accessionNumber]
     ? "Accession number already exists."
-    : mrnMissing
+    : mrnMissing || existingMrnMissing
       ? "MRN / Identifier is required."
       : bloodSourceMissing
         ? "Select at least one blood-culture source."
@@ -296,9 +304,14 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
 
           <TabsContent value="existing" className="space-y-3 pt-3">
             <div className="space-y-1">
-              <Label>Patient</Label>
+              <Label>
+                Patient / MRN <span className="text-destructive">*</span>
+              </Label>
               <Select value={existingMrn} onValueChange={setExistingMrn}>
-                <SelectTrigger>
+                <SelectTrigger
+                  aria-invalid={existingMrnMissing}
+                  aria-describedby={existingMrnMissing ? "existing-mrn-required" : undefined}
+                >
                   <SelectValue placeholder="Select an existing patient" />
                 </SelectTrigger>
                 <SelectContent>
@@ -309,6 +322,15 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
                   ))}
                 </SelectContent>
               </Select>
+              {existingMrnMissing ? (
+                <p id="existing-mrn-required" className="text-[11px] text-destructive">
+                  Select a patient/MRN to create an accession for an existing record.
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  Required to link this accession to an existing patient identifier.
+                </p>
+              )}
             </div>
           </TabsContent>
         </Tabs>

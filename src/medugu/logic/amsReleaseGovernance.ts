@@ -169,6 +169,16 @@ export function shouldShowAMSOnClinicianReport(recommendation: AMSRecommendation
 export function deriveAMSValidationIssues(accession: Accession): AMSGovernanceIssue[] {
   const assessments = deriveAssessments(accession);
   return assessments
+    .filter((item) => {
+      if (item.requiresApproval && !item.approvalPending) return false;
+      if (
+        (item.category === "restricted_approval_required" || item.category === "reserve_review") &&
+        !item.approvalPending
+      ) {
+        return false;
+      }
+      return true;
+    })
     .filter((item) => item.category !== "continue_or_no_action")
     .filter(
       (item) =>
@@ -185,18 +195,27 @@ export function deriveAMSValidationIssues(accession: Accession): AMSGovernanceIs
 }
 
 export function deriveAMSReleaseContext(accession: Accession): AMSReleaseContext {
-  const assessments = deriveAssessments(accession).filter(
+  const allAssessments = deriveAssessments(accession).filter(
     (item) => item.category !== "continue_or_no_action",
   );
-  const pendingApprovalCount = assessments.filter((item) => item.approvalPending).length;
-  const restrictedOrReserveCount = assessments.filter((item) => item.isRestrictedOrReserve).length;
-  const bugDrugMismatchCount = assessments.filter(
+  const pendingApprovalCount = allAssessments.filter((item) => item.approvalPending).length;
+  const bugDrugMismatchCount = allAssessments.filter(
     (item) => item.category === "bug_drug_mismatch" || item.category === "resistant_result_review",
   ).length;
-  const deEscalationOrReviewCount = assessments.filter(
+  const deEscalationOrReviewCount = allAssessments.filter(
     (item) => item.category === "de_escalation_opportunity",
   ).length;
-  const hasReleaseBlocker = assessments.some((item) => {
+  const actionableAssessments = allAssessments.filter((item) => {
+    if (item.requiresApproval) return item.approvalPending;
+    if (item.category === "restricted_approval_required" || item.category === "reserve_review") {
+      return item.approvalPending;
+    }
+    return true;
+  });
+  const restrictedOrReserveCount = actionableAssessments.filter(
+    (item) => item.isRestrictedOrReserve,
+  ).length;
+  const hasReleaseBlocker = actionableAssessments.some((item) => {
     if (item.releaseImpact !== "blocker") return false;
     if (!item.requiresApproval) return true;
     return item.approvalStatus !== "approved";
@@ -206,12 +225,12 @@ export function deriveAMSReleaseContext(accession: Accession): AMSReleaseContext
     ? "Resolve AMS approval-required items before release."
     : pendingApprovalCount > 0 || bugDrugMismatchCount > 0
       ? "Review open AMS items in stewardship/approval queue before release."
-      : assessments.length > 0
+      : actionableAssessments.length > 0
         ? "AMS review advisory noted; continue validation checks."
         : "No AMS governance action required.";
 
   return {
-    totalItems: assessments.length,
+    totalItems: actionableAssessments.length,
     pendingApprovalCount,
     restrictedOrReserveCount,
     bugDrugMismatchCount,

@@ -199,6 +199,11 @@ assert(
   !approvedRestrictedContext.hasReleaseBlocker,
   "Approved restricted AST result should clear Release AMS blocker state.",
 );
+const approvedRestrictedIssues = deriveAMSValidationIssues(approvedRestrictedCase);
+assert(
+  !approvedRestrictedIssues.some((issue) => issue.code.includes("RESTRICTED_APPROVAL_REQUIRED")),
+  "Approved restricted AST result should clear restricted approval validation issues.",
+);
 
 const approvedRestrictedDashboard = deriveOperationalDashboard(
   toAccessionsMap([approvedRestrictedCase]),
