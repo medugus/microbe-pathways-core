@@ -49,6 +49,15 @@ accession.ast = [
     governance: "interpreted",
     cascade: "primary",
   },
+  {
+    id: "ast_reviewed_but_uninterpreted",
+    isolateId: "iso_val_1",
+    antibioticCode: "CIP",
+    method: "disk_diffusion",
+    standard: "CLSI",
+    governance: "interpreted",
+    cascade: "primary",
+  },
 ];
 
 const report = runValidation(accession);
@@ -59,6 +68,10 @@ const astIncompleteMessages = report.blockers
 assert(
   astIncompleteMessages.some((message) => message.includes("AMP")),
   "Started AST row without final interpretation must still block release.",
+);
+assert(
+  astIncompleteMessages.some((message) => message.includes("CIP")),
+  "AST row with explicit reviewed/tested marker but no final interpretation must still block release.",
 );
 assert(
   !astIncompleteMessages.some((message) => message.includes("CRO")),

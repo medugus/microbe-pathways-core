@@ -13,6 +13,7 @@ import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
 import { validateBloodIsolates } from "./bloodIsolateRules";
 import { deriveIPCValidationIssues } from "./ipcReportGovernance";
 import { deriveAMSReleaseContext, deriveAMSValidationIssues } from "./amsReleaseGovernance";
+import { isTrueBlankAstRow } from "./astBlankRows";
 
 /**
  * IPC rule codes that constitute a critical alert. When any of these fires on a
@@ -67,17 +68,6 @@ function info(code: string, section: string, message: string): ValidationIssue {
   return { id: newId("vi"), severity: "info", code, section, message };
 }
 
-function isBlankAstPlaceholderRow(row: Accession["ast"][number]): boolean {
-  const hasNoRawValues =
-    row.rawValue === undefined && row.micMgL === undefined && row.zoneMm === undefined;
-  const hasNoInterpretation =
-    row.rawInterpretation === undefined &&
-    row.interpretedSIR === undefined &&
-    row.finalInterpretation === undefined;
-  const hasNoComment = !row.comment?.trim();
-  return hasNoRawValues && hasNoInterpretation && hasNoComment;
-}
-
 export function runValidation(accession: Accession): ValidationReport {
   const issues: ValidationIssue[] = [];
 
@@ -114,7 +104,7 @@ export function runValidation(accession: Accession): ValidationReport {
   }
 
   for (const a of accession.ast) {
-    if (isBlankAstPlaceholderRow(a)) continue;
+    if (isTrueBlankAstRow(a)) continue;
     if (!a.finalInterpretation) {
       issues.push(
         block(

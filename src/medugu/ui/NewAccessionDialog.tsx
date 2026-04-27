@@ -2,7 +2,7 @@
 // Pure UI: composes a new Accession aggregate and hands it to the store via
 // meduguActions.upsertAccession. No clinical rule logic lives here.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -100,6 +100,13 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
   );
 
   const subtypes = getFamily(familyCode)?.subtypes ?? [];
+
+  useEffect(() => {
+    if (isBlood) return;
+    if (bloodSources.length === 0 && bloodPreset === "STANDARD_ADULT") return;
+    setBloodSources([]);
+    setBloodPreset("STANDARD_ADULT");
+  }, [bloodPreset, bloodSources.length, isBlood]);
 
   function reset() {
     setMode("new");

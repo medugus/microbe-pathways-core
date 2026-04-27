@@ -169,7 +169,16 @@ export function shouldShowAMSOnClinicianReport(recommendation: AMSRecommendation
 export function deriveAMSValidationIssues(accession: Accession): AMSGovernanceIssue[] {
   const assessments = deriveAssessments(accession);
   return assessments
-    .filter((item) => !(item.requiresApproval && !item.approvalPending))
+    .filter((item) => {
+      if (item.requiresApproval && !item.approvalPending) return false;
+      if (
+        (item.category === "restricted_approval_required" || item.category === "reserve_review") &&
+        !item.approvalPending
+      ) {
+        return false;
+      }
+      return true;
+    })
     .filter((item) => item.category !== "continue_or_no_action")
     .filter(
       (item) =>
@@ -198,6 +207,9 @@ export function deriveAMSReleaseContext(accession: Accession): AMSReleaseContext
   ).length;
   const actionableAssessments = allAssessments.filter((item) => {
     if (item.requiresApproval) return item.approvalPending;
+    if (item.category === "restricted_approval_required" || item.category === "reserve_review") {
+      return item.approvalPending;
+    }
     return true;
   });
   const restrictedOrReserveCount = actionableAssessments.filter(
