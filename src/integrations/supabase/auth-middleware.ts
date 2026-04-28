@@ -14,10 +14,7 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       process.env.VITE_SUPABASE_ANON_KEY;
 
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-      throw new Response(
-        "Missing Supabase environment variables. Ensure SUPABASE_URL and one of SUPABASE_PUBLISHABLE_KEY / SUPABASE_ANON_KEY (or VITE_ prefixed equivalents) are set.",
-        { status: 500 },
-      );
+      throw new Response("Missing Supabase environment variables", { status: 500 });
     }
 
     const request = getRequest();
@@ -70,5 +67,5 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
         claims: data.claims,
       },
     });
-  },
+  }
 );
