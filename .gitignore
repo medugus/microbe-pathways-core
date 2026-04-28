@@ -30,12 +30,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-
-# Environment files (real/local values)
-.env
-.env.local
-.env.*.local
-.env.production
-.env.development
-!.env.example

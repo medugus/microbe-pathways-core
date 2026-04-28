@@ -40,11 +40,7 @@ export const SPECIMEN_FAMILIES: FamilyDef[] = [
       { code: "URINE_ILEAL_CONDUIT", display: "Ileal conduit", tags: ["device", "mixed_flora"] },
       { code: "URINE_IN_OUT", display: "In-out catheter", tags: ["quantitative"] },
       { code: "URINE_FUNGAL", display: "Fungal urine", tags: ["fungal"] },
-      {
-        code: "URINE_AFB",
-        display: "Mycobacterial urine",
-        tags: ["mycobacterial", "extended_tat"],
-      },
+      { code: "URINE_AFB", display: "Mycobacterial urine", tags: ["mycobacterial", "extended_tat"] },
       { code: "URINE_OTHER", display: "Other urine (configured)", tags: [] },
     ],
   },

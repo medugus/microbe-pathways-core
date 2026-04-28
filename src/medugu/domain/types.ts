@@ -31,9 +31,9 @@ export interface RuleVersion {
 
 export interface AuditEvent {
   id: string;
-  at: string; // ISO timestamp
-  actor: string; // user code (single-user phase: "local")
-  action: string; // e.g. "ast.entered"
+  at: string;            // ISO timestamp
+  actor: string;         // user code (single-user phase: "local")
+  action: string;        // e.g. "ast.entered"
   section?: string;
   /** Field-level diff for state-changing actions. */
   field?: string;
@@ -252,9 +252,9 @@ export interface ASTResult {
 export interface InterpretiveComment {
   id: string;
   scope: "accession" | "isolate" | "ast";
-  targetId?: string; // isolateId or astResultId when applicable
-  code: string; // FK -> config/interpretiveComments
-  text: string; // resolved/rendered text
+  targetId?: string;       // isolateId or astResultId when applicable
+  code: string;            // FK -> config/interpretiveComments
+  text: string;            // resolved/rendered text
   authoredAt: string;
   authoredBy: string;
 }
@@ -265,9 +265,9 @@ export interface PhoneOutEvent {
   id: string;
   at: string;
   calledBy: string;
-  recipient: string; // clinician name/role
+  recipient: string;        // clinician name/role
   recipientContact?: string;
-  reasonCode: string; // critical_value, alert_organism, etc.
+  reasonCode: string;       // critical_value, alert_organism, etc.
   message: string;
   acknowledged: boolean;
   acknowledgedAt?: string;
@@ -334,7 +334,7 @@ export interface ReleaseRecord {
 export interface ReleasePackage {
   builtAt: string;
   version: number;
-  body: unknown; // structured report doc
+  body: unknown;                    // structured report doc
   ruleVersion: string;
   breakpointVersion: string;
   exportVersion: string;
@@ -343,11 +343,16 @@ export interface ReleasePackage {
 
 // ---------- AMS restricted-drug approval (Stage 6, browser-phase) ----------
 
-export type AMSApprovalStatus = "not_requested" | "pending" | "approved" | "denied" | "expired";
+export type AMSApprovalStatus =
+  | "not_requested"
+  | "pending"
+  | "approved"
+  | "denied"
+  | "expired";
 
 export interface AMSApprovalEvent {
   at: string;
-  actor: string; // placeholder identity in browser-phase
+  actor: string;       // placeholder identity in browser-phase
   note?: string;
 }
 
@@ -366,7 +371,7 @@ export interface AMSApprovalRequest {
   /** ISO; computed from policy.slaHours at request time. */
   dueBy?: string;
   requested?: AMSApprovalEvent;
-  decided?: AMSApprovalEvent; // approve or deny
+  decided?: AMSApprovalEvent;       // approve or deny
   expired?: AMSApprovalEvent;
   /** True when SLA has elapsed without a decision (UI hint, not enforcement). */
   escalated?: boolean;
@@ -377,13 +382,13 @@ export interface AMSApprovalRequest {
 export interface Accession {
   /** Accession number, e.g. MB25-XXXXXX. */
   id: string;
-  accessionNumber: string; // mirrors id; explicit per contract
+  accessionNumber: string;          // mirrors id; explicit per contract
   createdAt: string;
   updatedAt: string;
   releasedAt?: string;
   releasingActor?: string;
 
-  workflowStatus: WorkflowStage; // contract field name
+  workflowStatus: WorkflowStage;    // contract field name
   /** @deprecated use workflowStatus. Kept for migration. */
   stage: WorkflowStage;
 

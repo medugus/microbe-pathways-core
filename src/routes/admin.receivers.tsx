@@ -134,13 +134,14 @@ function ReceiversAdminPage() {
         </Link>
       </header>
 
-      <form onSubmit={create} className="space-y-3 rounded-md border border-border bg-card p-4">
+      <form
+        onSubmit={create}
+        className="space-y-3 rounded-md border border-border bg-card p-4"
+      >
         <h2 className="text-sm font-medium">Add receiver</h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <Label htmlFor="rcv-name" className="text-xs">
-              Name
-            </Label>
+            <Label htmlFor="rcv-name" className="text-xs">Name</Label>
             <Input
               id="rcv-name"
               value={name}
@@ -151,9 +152,7 @@ function ReceiversAdminPage() {
             />
           </div>
           <div>
-            <Label htmlFor="rcv-format" className="text-xs">
-              Format
-            </Label>
+            <Label htmlFor="rcv-format" className="text-xs">Format</Label>
             <select
               id="rcv-format"
               value={format}
@@ -167,9 +166,7 @@ function ReceiversAdminPage() {
           </div>
         </div>
         <div>
-          <Label htmlFor="rcv-url" className="text-xs">
-            Endpoint URL (HTTPS)
-          </Label>
+          <Label htmlFor="rcv-url" className="text-xs">Endpoint URL (HTTPS)</Label>
           <Input
             id="rcv-url"
             type="url"
@@ -181,9 +178,7 @@ function ReceiversAdminPage() {
           />
         </div>
         <div>
-          <Label htmlFor="rcv-token" className="text-xs">
-            Bearer token (optional)
-          </Label>
+          <Label htmlFor="rcv-token" className="text-xs">Bearer token (optional)</Label>
           <Input
             id="rcv-token"
             type="password"

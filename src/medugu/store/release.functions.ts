@@ -41,15 +41,14 @@ export interface ReleaseSealResult {
 
 export const sealRelease = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { accessionRowId: string; configVersion?: number; excludedReceiverIds?: string[] }) =>
-      z
-        .object({
-          accessionRowId: z.string().uuid(),
-          configVersion: z.number().int().positive().optional(),
-          excludedReceiverIds: z.array(z.string().uuid()).optional(),
-        })
-        .parse(input),
+  .inputValidator((input: { accessionRowId: string; configVersion?: number; excludedReceiverIds?: string[] }) =>
+    z
+      .object({
+        accessionRowId: z.string().uuid(),
+        configVersion: z.number().int().positive().optional(),
+        excludedReceiverIds: z.array(z.string().uuid()).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }): Promise<ReleaseSealResult> => {
     const { supabase, userId } = context;
@@ -111,9 +110,7 @@ export const sealRelease = createServerFn({ method: "POST" })
         build_version: pkg.buildVersion,
         body_sha256: sealHash,
       } as never)
-      .select(
-        "id, version, body, rule_version, breakpoint_version, export_version, build_version, built_at",
-      )
+      .select("id, version, body, rule_version, breakpoint_version, export_version, build_version, built_at")
       .maybeSingle();
     if (insErr || !insertedPkg) {
       return { ok: false, reason: `Seal insert failed: ${insErr?.message ?? "no row returned"}` };
@@ -186,21 +183,15 @@ export const sealRelease = createServerFn({ method: "POST" })
  */
 export const amendRelease = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      accessionRowId: string;
-      amendmentReason: string;
-      configVersion?: number;
-      excludedReceiverIds?: string[];
-    }) =>
-      z
-        .object({
-          accessionRowId: z.string().uuid(),
-          amendmentReason: z.string().min(4).max(500),
-          configVersion: z.number().int().positive().optional(),
-          excludedReceiverIds: z.array(z.string().uuid()).optional(),
-        })
-        .parse(input),
+  .inputValidator((input: { accessionRowId: string; amendmentReason: string; configVersion?: number; excludedReceiverIds?: string[] }) =>
+    z
+      .object({
+        accessionRowId: z.string().uuid(),
+        amendmentReason: z.string().min(4).max(500),
+        configVersion: z.number().int().positive().optional(),
+        excludedReceiverIds: z.array(z.string().uuid()).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }): Promise<ReleaseSealResult> => {
     const { supabase, userId } = context;
@@ -212,7 +203,10 @@ export const amendRelease = createServerFn({ method: "POST" })
       .maybeSingle();
     if (loadErr) throw new Error(`Load failed: ${loadErr.message}`);
     if (!row) return { ok: false, reason: "Accession not found or not visible." };
-    if (row.release_state !== ReleaseState.Released && row.release_state !== ReleaseState.Amended) {
+    if (
+      row.release_state !== ReleaseState.Released &&
+      row.release_state !== ReleaseState.Amended
+    ) {
       return { ok: false, reason: "Cannot amend — accession has not been released." };
     }
 
@@ -263,15 +257,10 @@ export const amendRelease = createServerFn({ method: "POST" })
         build_version: pkg.buildVersion,
         body_sha256: sealHash,
       } as never)
-      .select(
-        "id, version, body, rule_version, breakpoint_version, export_version, build_version, built_at",
-      )
+      .select("id, version, body, rule_version, breakpoint_version, export_version, build_version, built_at")
       .maybeSingle();
     if (insErr || !insertedPkg) {
-      return {
-        ok: false,
-        reason: `Amendment insert failed: ${insErr?.message ?? "no row returned"}`,
-      };
+      return { ok: false, reason: `Amendment insert failed: ${insErr?.message ?? "no row returned"}` };
     }
 
     const amendedAccession: Accession = {

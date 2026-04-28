@@ -22,162 +22,29 @@ export interface AntibioticStewardship {
 }
 
 export const AB_STEWARDSHIP: AntibioticStewardship[] = [
-  {
-    code: "AMP",
-    aware: "Access",
-    defaultReleaseClass: "first_line_preferred",
-    oralAvailable: true,
-    spectrum: "gram_positive_only",
-  },
-  {
-    code: "AMC",
-    aware: "Access",
-    defaultReleaseClass: "first_line_preferred",
-    oralAvailable: true,
-    spectrum: "mixed",
-  },
-  {
-    code: "TZP",
-    aware: "Watch",
-    defaultReleaseClass: "restricted",
-    spectrum: "broad",
-    narrowerPreferred: ["AMC", "CXM", "SXT"],
-  },
-  {
-    code: "CXM",
-    aware: "Watch",
-    defaultReleaseClass: "first_line_preferred",
-    oralAvailable: true,
-    spectrum: "gram_negative_only",
-  },
-  {
-    code: "CRO",
-    aware: "Watch",
-    defaultReleaseClass: "restricted",
-    spectrum: "broad",
-    narrowerPreferred: ["CXM", "AMC", "SXT"],
-  },
-  {
-    code: "CAZ",
-    aware: "Watch",
-    defaultReleaseClass: "restricted",
-    spectrum: "gram_negative_only",
-    narrowerPreferred: ["CIP", "SXT"],
-  },
-  {
-    code: "FEP",
-    aware: "Watch",
-    defaultReleaseClass: "restricted",
-    spectrum: "broad",
-    narrowerPreferred: ["CRO", "CXM", "SXT"],
-  },
-  {
-    code: "MEM",
-    aware: "Watch",
-    defaultReleaseClass: "restricted",
-    spectrum: "broad",
-    narrowerPreferred: ["TZP", "CRO", "CXM", "SXT"],
-  },
-  {
-    code: "ETP",
-    aware: "Watch",
-    defaultReleaseClass: "restricted",
-    spectrum: "broad",
-    narrowerPreferred: ["CRO", "CXM", "SXT"],
-  },
-  {
-    code: "GEN",
-    aware: "Access",
-    defaultReleaseClass: "unrestricted",
-    spectrum: "gram_negative_only",
-  },
-  {
-    code: "AMK",
-    aware: "Access",
-    defaultReleaseClass: "restricted",
-    spectrum: "gram_negative_only",
-  },
-  {
-    code: "CIP",
-    aware: "Watch",
-    defaultReleaseClass: "cascade_suppressed",
-    oralAvailable: true,
-    spectrum: "mixed",
-  },
-  {
-    code: "LVX",
-    aware: "Watch",
-    defaultReleaseClass: "cascade_suppressed",
-    oralAvailable: true,
-    spectrum: "mixed",
-  },
-  {
-    code: "VAN",
-    aware: "Watch",
-    defaultReleaseClass: "restricted",
-    spectrum: "gram_positive_only",
-  },
-  {
-    code: "TEC",
-    aware: "Watch",
-    defaultReleaseClass: "restricted",
-    spectrum: "gram_positive_only",
-  },
-  {
-    code: "LZD",
-    aware: "Reserve",
-    defaultReleaseClass: "restricted",
-    oralAvailable: true,
-    spectrum: "gram_positive_only",
-  },
-  {
-    code: "CLI",
-    aware: "Access",
-    defaultReleaseClass: "unrestricted",
-    oralAvailable: true,
-    spectrum: "gram_positive_only",
-  },
-  {
-    code: "ERY",
-    aware: "Watch",
-    defaultReleaseClass: "unrestricted",
-    oralAvailable: true,
-    spectrum: "gram_positive_only",
-  },
-  {
-    code: "TET",
-    aware: "Access",
-    defaultReleaseClass: "unrestricted",
-    oralAvailable: true,
-    spectrum: "mixed",
-  },
-  {
-    code: "SXT",
-    aware: "Access",
-    defaultReleaseClass: "first_line_preferred",
-    oralAvailable: true,
-    spectrum: "mixed",
-  },
-  {
-    code: "CST",
-    aware: "Reserve",
-    defaultReleaseClass: "restricted",
-    spectrum: "gram_negative_only",
-  },
-  {
-    code: "NIT",
-    aware: "Access",
-    defaultReleaseClass: "first_line_preferred",
-    oralAvailable: true,
-    spectrum: "gram_negative_only",
-  },
-  {
-    code: "FOS",
-    aware: "Access",
-    defaultReleaseClass: "first_line_preferred",
-    oralAvailable: true,
-    spectrum: "mixed",
-  },
+  { code: "AMP",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "gram_positive_only" },
+  { code: "AMC",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "mixed" },
+  { code: "TZP",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "broad", narrowerPreferred: ["AMC", "CXM", "SXT"] },
+  { code: "CXM",  aware: "Watch",   defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "gram_negative_only" },
+  { code: "CRO",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "broad", narrowerPreferred: ["CXM", "AMC", "SXT"] },
+  { code: "CAZ",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "gram_negative_only", narrowerPreferred: ["CIP", "SXT"] },
+  { code: "FEP",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "broad", narrowerPreferred: ["CRO", "CXM", "SXT"] },
+  { code: "MEM",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "broad", narrowerPreferred: ["TZP", "CRO", "CXM", "SXT"] },
+  { code: "ETP",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "broad", narrowerPreferred: ["CRO", "CXM", "SXT"] },
+  { code: "GEN",  aware: "Access",  defaultReleaseClass: "unrestricted", spectrum: "gram_negative_only" },
+  { code: "AMK",  aware: "Access",  defaultReleaseClass: "restricted", spectrum: "gram_negative_only" },
+  { code: "CIP",  aware: "Watch",   defaultReleaseClass: "cascade_suppressed", oralAvailable: true, spectrum: "mixed" },
+  { code: "LVX",  aware: "Watch",   defaultReleaseClass: "cascade_suppressed", oralAvailable: true, spectrum: "mixed" },
+  { code: "VAN",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "gram_positive_only" },
+  { code: "TEC",  aware: "Watch",   defaultReleaseClass: "restricted", spectrum: "gram_positive_only" },
+  { code: "LZD",  aware: "Reserve", defaultReleaseClass: "restricted", oralAvailable: true, spectrum: "gram_positive_only" },
+  { code: "CLI",  aware: "Access",  defaultReleaseClass: "unrestricted", oralAvailable: true, spectrum: "gram_positive_only" },
+  { code: "ERY",  aware: "Watch",   defaultReleaseClass: "unrestricted", oralAvailable: true, spectrum: "gram_positive_only" },
+  { code: "TET",  aware: "Access",  defaultReleaseClass: "unrestricted", oralAvailable: true, spectrum: "mixed" },
+  { code: "SXT",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "mixed" },
+  { code: "CST",  aware: "Reserve", defaultReleaseClass: "restricted", spectrum: "gram_negative_only" },
+  { code: "NIT",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "gram_negative_only" },
+  { code: "FOS",  aware: "Access",  defaultReleaseClass: "first_line_preferred", oralAvailable: true, spectrum: "mixed" },
 ];
 
 export function getStewardship(code: string): AntibioticStewardship | undefined {
@@ -187,8 +54,8 @@ export function getStewardship(code: string): AntibioticStewardship | undefined 
 /** Syndrome-aware preferences: agents that should be promoted/suppressed for a syndrome. */
 export interface SyndromePreference {
   syndrome: string;
-  prefer: string[]; // agent codes to promote to first-line
-  suppress: string[]; // agent codes to suppress unless escalated
+  prefer: string[];        // agent codes to promote to first-line
+  suppress: string[];      // agent codes to suppress unless escalated
   note: string;
 }
 
@@ -238,31 +105,7 @@ export const SYNDROME_PREFERENCES: SyndromePreference[] = [
   {
     syndrome: "colonisation_screen",
     prefer: [],
-    suppress: [
-      "AMP",
-      "AMC",
-      "TZP",
-      "CXM",
-      "CRO",
-      "CAZ",
-      "FEP",
-      "MEM",
-      "ETP",
-      "GEN",
-      "AMK",
-      "CIP",
-      "LVX",
-      "VAN",
-      "TEC",
-      "LZD",
-      "CLI",
-      "ERY",
-      "TET",
-      "SXT",
-      "CST",
-      "NIT",
-      "FOS",
-    ],
+    suppress: ["AMP","AMC","TZP","CXM","CRO","CAZ","FEP","MEM","ETP","GEN","AMK","CIP","LVX","VAN","TEC","LZD","CLI","ERY","TET","SXT","CST","NIT","FOS"],
     note: "Screening specimen: AST not reported clinically — flag IPC only.",
   },
 ];
@@ -283,10 +126,6 @@ export type AMSRuleCategory =
   | "safety_review"
   | "insufficient_data";
 export type AMSRuleOwner = "AMS" | "Microbiology" | "IPC" | "Joint";
-
-export type AMSReleaseImpact = "none" | "warning" | "blocker";
-export type AMSValidationSeverity = "info" | "warning" | "blocker";
-export type AMSReportVisibility = "internal_only" | "clinician_report" | "none";
 
 export interface AMSRuleDefinition {
   ruleCode: string;
@@ -310,10 +149,6 @@ export interface AMSRuleDefinition {
   recommendationCategory?: string;
   approvalRequired?: boolean;
   releaseReportImpact?: string;
-  releaseImpact?: AMSReleaseImpact;
-  validationSeverity?: AMSValidationSeverity;
-  reportVisibility?: AMSReportVisibility;
-  clinicianReportText?: string;
 }
 
 export const AMS_RULE_CONFIG_VERSION = "local-stewardship-2026.04";
@@ -330,15 +165,11 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     lastReviewedBy: "AMS pharmacist",
     localPolicyRef: "AMS-Restricted-Release-v1",
     rationale: "Restricted agents require AMS approval before clinician release where configured.",
-    limitation:
-      "Browser-phase visibility only; production editing requires backend audit and permissions.",
+    limitation: "Browser-phase visibility only; production editing requires backend audit and permissions.",
     awareScopes: ["Watch", "Reserve"],
     recommendationCategory: "restricted_approval_required",
     approvalRequired: true,
     releaseReportImpact: "Clinician release may be withheld pending AMS decision.",
-    releaseImpact: "blocker",
-    validationSeverity: "blocker",
-    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_RESERVE_REVIEW",
@@ -355,9 +186,6 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     recommendationCategory: "reserve_review",
     approvalRequired: true,
     releaseReportImpact: "Reserve rows are highlighted for review and may require approval.",
-    releaseImpact: "blocker",
-    validationSeverity: "blocker",
-    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_BUG_DRUG_R",
@@ -371,9 +199,6 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     rationale: "Therapy under review with resistant result should trigger mismatch review.",
     recommendationCategory: "bug_drug_mismatch",
     releaseReportImpact: "No direct report suppression; stewardship review signal.",
-    releaseImpact: "warning",
-    validationSeverity: "warning",
-    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_BUG_DRUG_SPECTRUM",
@@ -387,9 +212,6 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     rationale: "Spectrum mismatch between organism gram context and selected therapy.",
     recommendationCategory: "bug_drug_mismatch",
     releaseReportImpact: "No direct report suppression; stewardship review signal.",
-    releaseImpact: "warning",
-    validationSeverity: "warning",
-    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_DE_ESCALATION_ACTIVE_NARROW",
@@ -403,9 +225,6 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     rationale: "Narrower active options are highlighted where clinically appropriate.",
     recommendationCategory: "de_escalation_opportunity",
     releaseReportImpact: "Advisory only; no automatic prescribing changes.",
-    releaseImpact: "warning",
-    validationSeverity: "info",
-    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_RESISTANT_REVIEW",
@@ -419,9 +238,6 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     rationale: "Intermediate or increased-exposure interpretations require review.",
     recommendationCategory: "resistant_result_review",
     releaseReportImpact: "No direct report suppression; review signal.",
-    releaseImpact: "warning",
-    validationSeverity: "warning",
-    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_CONTINUE_OR_NO_ACTION",
@@ -434,9 +250,6 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     lastReviewedBy: "AMS pharmacist",
     recommendationCategory: "continue_or_no_action",
     releaseReportImpact: "No additional release impact.",
-    releaseImpact: "none",
-    validationSeverity: "info",
-    reportVisibility: "internal_only",
   },
   {
     ruleCode: "AMS_REVIEW_RULE",
@@ -450,8 +263,5 @@ export const AMS_RULES: AMSRuleDefinition[] = [
     limitation: "Disabled support is metadata only pending engine enforcement.",
     recommendationCategory: "insufficient_data",
     releaseReportImpact: "Fallback metadata only.",
-    releaseImpact: "none",
-    validationSeverity: "info",
-    reportVisibility: "internal_only",
   },
 ];

@@ -16,13 +16,7 @@ const STATUS_LABEL: Record<AMSApprovalStatus, string> = {
   expired: "Expired",
 };
 
-export function AMSStatusChip({
-  status,
-  overdue,
-}: {
-  status: AMSApprovalStatus;
-  overdue?: boolean;
-}) {
+export function AMSStatusChip({ status, overdue }: { status: AMSApprovalStatus; overdue?: boolean }) {
   return (
     <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${STATUS_TONE[status]}`}>
       {STATUS_LABEL[status]}

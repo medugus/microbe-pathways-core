@@ -179,17 +179,19 @@ export const grantRole = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId, data.tenantId);
-    const { error } = await supabaseAdmin.from("user_roles").upsert(
-      [
-        {
-          user_id: data.userId,
-          tenant_id: data.tenantId,
-          role: data.role,
-          granted_by: context.userId,
-        },
-      ],
-      { onConflict: "user_id,tenant_id,role", ignoreDuplicates: true },
-    );
+    const { error } = await supabaseAdmin
+      .from("user_roles")
+      .upsert(
+        [
+          {
+            user_id: data.userId,
+            tenant_id: data.tenantId,
+            role: data.role,
+            granted_by: context.userId,
+          },
+        ],
+        { onConflict: "user_id,tenant_id,role", ignoreDuplicates: true },
+      );
     if (error) throw new Error(error.message);
     await supabaseAdmin.from("audit_event").insert({
       tenant_id: data.tenantId,

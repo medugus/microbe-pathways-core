@@ -2,7 +2,7 @@
 // Pure UI: composes a new Accession aggregate and hands it to the store via
 // meduguActions.upsertAccession. No clinical rule logic lives here.
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -73,7 +73,9 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
   const [accessionNumber, setAccessionNumber] = useState(newAccessionId());
   const [priority, setPriority] = useState<Priority>(Priority.Routine);
   const [familyCode, setFamilyCode] = useState<string>(SPECIMEN_FAMILIES[0].code);
-  const [subtypeCode, setSubtypeCode] = useState<string>(SPECIMEN_FAMILIES[0].subtypes[0].code);
+  const [subtypeCode, setSubtypeCode] = useState<string>(
+    SPECIMEN_FAMILIES[0].subtypes[0].code,
+  );
   const [collectedAt, setCollectedAt] = useState<string>(localISO(new Date()));
   const [receivedAt, setReceivedAt] = useState<string>(localISO(new Date()));
   const [bloodPreset, setBloodPreset] = useState<string>("STANDARD_ADULT");
@@ -90,23 +92,10 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
     { code: "BC_NEONATAL", label: "Neonatal" },
   ];
   const BLOOD_PRESET_CHIPS = BLOOD_WORKUP_PRESETS.filter((p) =>
-    [
-      "STANDARD_ADULT",
-      "PAEDIATRIC_WORKUP",
-      "CLABSI_WORKUP",
-      "ENDOCARDITIS_WORKUP",
-      "FUNGAEMIA_WORKUP",
-    ].includes(p.code),
+    ["STANDARD_ADULT", "PAEDIATRIC_WORKUP", "CLABSI_WORKUP", "ENDOCARDITIS_WORKUP", "FUNGAEMIA_WORKUP"].includes(p.code),
   );
 
   const subtypes = getFamily(familyCode)?.subtypes ?? [];
-
-  useEffect(() => {
-    if (isBlood) return;
-    if (bloodSources.length === 0 && bloodPreset === "STANDARD_ADULT") return;
-    setBloodSources([]);
-    setBloodPreset("STANDARD_ADULT");
-  }, [bloodPreset, bloodSources.length, isBlood]);
 
   function reset() {
     setMode("new");
@@ -135,16 +124,6 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
     (mode === "existing"
       ? !!existingMrn
       : givenName.trim().length > 0 && familyName.trim().length > 0 && mrn.trim().length > 0);
-  const mrnMissing = mode === "new" && mrn.trim().length === 0;
-  const existingMrnMissing = mode === "existing" && existingMrn.trim().length === 0;
-  const bloodSourceMissing = isBlood && bloodSources.length === 0;
-  const submitBlockedReason = state.accessions[accessionNumber]
-    ? "Accession number already exists."
-    : mrnMissing || existingMrnMissing
-      ? "MRN / Identifier is required."
-      : bloodSourceMissing
-        ? "Select at least one blood-culture source."
-        : null;
 
   function handleSubmit() {
     if (!canSubmit) return;
@@ -232,8 +211,8 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle>New accession</DialogTitle>
           <DialogDescription>
-            Browser-phase intake. Saves locally and pushes to your tenant on the next sync. No EMR
-            or patient-master integration.
+            Browser-phase intake. Saves locally and pushes to your tenant on the next sync. No EMR or
+            patient-master integration.
           </DialogDescription>
         </DialogHeader>
 
@@ -249,40 +228,15 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="given">Given name</Label>
-                <Input
-                  id="given"
-                  value={givenName}
-                  onChange={(e) => setGivenName(e.target.value)}
-                />
+                <Input id="given" value={givenName} onChange={(e) => setGivenName(e.target.value)} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="family">Family name</Label>
-                <Input
-                  id="family"
-                  value={familyName}
-                  onChange={(e) => setFamilyName(e.target.value)}
-                />
+                <Input id="family" value={familyName} onChange={(e) => setFamilyName(e.target.value)} />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="mrn">
-                  MRN / Identifier <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="mrn"
-                  value={mrn}
-                  onChange={(e) => setMrn(e.target.value)}
-                  aria-invalid={mrnMissing}
-                  aria-describedby={mrnMissing ? "mrn-required" : undefined}
-                />
-                {mrnMissing ? (
-                  <p id="mrn-required" className="text-[11px] text-destructive">
-                    MRN / Identifier is required to create a new accession.
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground">
-                    Required for patient identity and release validation.
-                  </p>
-                )}
+                <Label htmlFor="mrn">MRN / Identifier</Label>
+                <Input id="mrn" value={mrn} onChange={(e) => setMrn(e.target.value)} />
               </div>
               <div className="space-y-1">
                 <Label>Sex</Label>
@@ -304,14 +258,9 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
 
           <TabsContent value="existing" className="space-y-3 pt-3">
             <div className="space-y-1">
-              <Label>
-                Patient / MRN <span className="text-destructive">*</span>
-              </Label>
+              <Label>Patient</Label>
               <Select value={existingMrn} onValueChange={setExistingMrn}>
-                <SelectTrigger
-                  aria-invalid={existingMrnMissing}
-                  aria-describedby={existingMrnMissing ? "existing-mrn-required" : undefined}
-                >
+                <SelectTrigger>
                   <SelectValue placeholder="Select an existing patient" />
                 </SelectTrigger>
                 <SelectContent>
@@ -322,15 +271,6 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
                   ))}
                 </SelectContent>
               </Select>
-              {existingMrnMissing ? (
-                <p id="existing-mrn-required" className="text-[11px] text-destructive">
-                  Select a patient/MRN to create an accession for an existing record.
-                </p>
-              ) : (
-                <p className="text-[11px] text-muted-foreground">
-                  Required to link this accession to an existing patient identifier.
-                </p>
-              )}
             </div>
           </TabsContent>
         </Tabs>
@@ -338,12 +278,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
         <div className="grid grid-cols-2 gap-3 border-t border-border pt-3">
           <div className="space-y-1">
             <Label htmlFor="ward">Ward / location</Label>
-            <Input
-              id="ward"
-              value={ward}
-              onChange={(e) => setWard(e.target.value)}
-              placeholder="e.g. ICU-3"
-            />
+            <Input id="ward" value={ward} onChange={(e) => setWard(e.target.value)} placeholder="e.g. ICU-3" />
           </div>
           <div className="space-y-1">
             <Label htmlFor="acc">Accession number</Label>
@@ -388,14 +323,9 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
             <Select
               value={familyCode}
               onValueChange={(v) => {
-                const wasBlood = familyCode === "BLOOD";
                 setFamilyCode(v);
                 const first = getFamily(v)?.subtypes[0]?.code;
                 if (first) setSubtypeCode(first);
-                if (wasBlood && v !== "BLOOD") {
-                  setBloodSources([]);
-                  setBloodPreset("STANDARD_ADULT");
-                }
               }}
             >
               <SelectTrigger>
@@ -441,10 +371,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
               </div>
 
               <div className="space-y-2 col-span-2">
-                <Label>
-                  Source(s){" "}
-                  <span className="text-muted-foreground font-normal">— select one or more</span>
-                </Label>
+                <Label>Source(s) <span className="text-muted-foreground font-normal">— select one or more</span></Label>
                 <div className="flex flex-wrap gap-1.5">
                   {BLOOD_SOURCE_CHIPS.map((s) => {
                     const active = bloodSources.includes(s.code);
@@ -467,8 +394,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
                             : "border-border bg-background hover:bg-accent",
                         )}
                       >
-                        {active ? "✓ " : ""}
-                        {s.label}
+                        {active ? "✓ " : ""}{s.label}
                       </button>
                     );
                   })}
@@ -517,9 +443,6 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
         </div>
 
         <DialogFooter>
-          {!canSubmit && submitBlockedReason && (
-            <p className="mr-auto text-[11px] text-destructive">{submitBlockedReason}</p>
-          )}
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

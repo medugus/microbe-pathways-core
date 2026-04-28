@@ -150,7 +150,10 @@ export type ResolverResult =
 
 // ---------- Resolver ----------
 
-export function resolveSpecimen(familyCode: string, subtypeCode: string): ResolverResult {
+export function resolveSpecimen(
+  familyCode: string,
+  subtypeCode: string,
+): ResolverResult {
   const subtype = getSubtype(familyCode, subtypeCode);
   if (!subtype) {
     return { ok: false, reason: "unknown_subtype" };
@@ -215,9 +218,7 @@ function resolveBlood(subtypeCode: string, display: string): ResolvedSpecimenPro
       clearanceTracked: false,
     },
     quantitative: null,
-    ipcFlagHints: ["alert_organism_watch"].concat(
-      isLine ? ["device_associated_watch"] : [],
-    ) as IPCFlagHint[],
+    ipcFlagHints: ["alert_organism_watch"].concat(isLine ? ["device_associated_watch"] : []) as IPCFlagHint[],
     syndrome: "bsi",
   };
 }
@@ -289,7 +290,9 @@ function resolveUrine(subtypeCode: string, display: string): ResolvedSpecimenPro
 function resolveLRT(subtypeCode: string, display: string): ResolvedSpecimenProfile {
   const isSputum = subtypeCode === "LRT_SPUTUM" || subtypeCode === "LRT_INDUCED_SPUTUM";
   const isQuant =
-    subtypeCode === "LRT_BAL" || subtypeCode === "LRT_BRONCH_WASH" || subtypeCode === "LRT_QUANT";
+    subtypeCode === "LRT_BAL" ||
+    subtypeCode === "LRT_BRONCH_WASH" ||
+    subtypeCode === "LRT_QUANT";
   const isETA = subtypeCode === "LRT_ETA";
 
   const requiredFields: FieldKey[] = ["collectionMethodNote"];
@@ -340,7 +343,9 @@ function resolveLRT(subtypeCode: string, display: string): ResolvedSpecimenProfi
       pathway: "diagnostic",
       clearanceTracked: false,
     },
-    quantitative: isQuant ? { code: "LRT_QUANT", thresholds: { significantCfuPerMl: 1e4 } } : null,
+    quantitative: isQuant
+      ? { code: "LRT_QUANT", thresholds: { significantCfuPerMl: 1e4 } }
+      : null,
     ipcFlagHints: isETA ? ["device_associated_watch"] : [],
     syndrome,
   };

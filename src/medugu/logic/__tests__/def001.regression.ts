@@ -38,25 +38,14 @@ if (!cre) fail(`Seed accession ${CRE_ID} not found in DEMO_ACCESSIONS.`);
 
 // Sanity: fixture must be sterile-site, no acknowledged phone-out, IPC critical alert firing.
 if (cre.specimen.familyCode !== "STERILE_FLUID") {
-  fail(
-    `${CRE_ID} fixture drifted: familyCode is ${cre.specimen.familyCode}, expected STERILE_FLUID.`,
-  );
+  fail(`${CRE_ID} fixture drifted: familyCode is ${cre.specimen.familyCode}, expected STERILE_FLUID.`);
 }
 if (cre.phoneOuts.some((p) => p.acknowledged)) {
-  fail(
-    `${CRE_ID} fixture drifted: an acknowledged phone-out is already present, can't test the gate.`,
-  );
+  fail(`${CRE_ID} fixture drifted: an acknowledged phone-out is already present, can't test the gate.`);
 }
 
 const ipc = evaluateIPC(cre);
-const criticalCodes = new Set([
-  "MRSA_ALERT",
-  "VRE_ALERT",
-  "CRE_ALERT",
-  "CRAB_ALERT",
-  "CRPA_ALERT",
-  "CAURIS_ALERT",
-]);
+const criticalCodes = new Set(["MRSA_ALERT", "VRE_ALERT", "CRE_ALERT", "CRAB_ALERT", "CRPA_ALERT", "CAURIS_ALERT"]);
 const hasCriticalIPC = ipc.decisions.some((d) => criticalCodes.has(d.ruleCode));
 if (!hasCriticalIPC) {
   fail(
@@ -97,9 +86,7 @@ const acked = {
 };
 const ackedReport = runValidation(acked);
 if (ackedReport.blockers.some((b) => b.code === "PHONE_OUT_REQUIRED")) {
-  fail(
-    `${CRE_ID}: PHONE_OUT_REQUIRED still blocking after acknowledged phone-out — inverse gate broken.`,
-  );
+  fail(`${CRE_ID}: PHONE_OUT_REQUIRED still blocking after acknowledged phone-out — inverse gate broken.`);
 }
 pass(`${CRE_ID}: PHONE_OUT_REQUIRED clears after acknowledged phone-out.`);
 

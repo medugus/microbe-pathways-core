@@ -153,7 +153,9 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
         </span>
       </div>
 
-      {error && <p className="mb-2 text-[11px] text-destructive">History failed: {error}</p>}
+      {error && (
+        <p className="mb-2 text-[11px] text-destructive">History failed: {error}</p>
+      )}
 
       {/* Simulate panel */}
       {packages.length === 0 ? (
@@ -227,7 +229,10 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
             {rows.map((r) => {
               const canRetry = r.status === "failed";
               return (
-                <li key={r.id} className="rounded border border-border bg-background p-2">
+                <li
+                  key={r.id}
+                  className="rounded border border-border bg-background p-2"
+                >
                   <div className="flex flex-wrap items-center gap-2 text-[11px]">
                     <span
                       className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase ${STATUS_STYLE[r.status]}`}
@@ -237,7 +242,9 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
                     <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary">
                       v{r.release_version}
                     </span>
-                    <span className="font-medium text-foreground">{r.receiver_name}</span>
+                    <span className="font-medium text-foreground">
+                      {r.receiver_name}
+                    </span>
                     <span className="text-muted-foreground">[{r.format.toUpperCase()}]</span>
                     <span className="text-muted-foreground">attempt #{r.attempt_no}</span>
                     {r.parent_dispatch_id && (
@@ -246,7 +253,9 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
                       </span>
                     )}
                     {r.payload_bytes !== null && (
-                      <span className="text-[10px] text-muted-foreground">{r.payload_bytes} B</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {r.payload_bytes} B
+                      </span>
                     )}
                     <span className="ml-auto text-[10px] text-muted-foreground">
                       {new Date(r.requested_at).toLocaleString()}
@@ -263,9 +272,13 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
                     )}
                   </div>
                   {r.error_message && (
-                    <p className="mt-1 text-[10px] text-destructive">{r.error_message}</p>
+                    <p className="mt-1 text-[10px] text-destructive">
+                      {r.error_message}
+                    </p>
                   )}
-                  <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">id: {r.id}</p>
+                  <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+                    id: {r.id}
+                  </p>
                 </li>
               );
             })}
@@ -274,9 +287,10 @@ export function DispatchHistoryPanel({ accessionRowId }: Props) {
       </div>
 
       <p className="mt-2 text-[10px] text-muted-foreground">
-        Mock dispatch only — no external receiver transport in this build. Payloads are regenerated
-        server-side from the frozen ReleasePackage and never POSTed externally. Audit log records
-        every request, retry, send and failure.
+        Mock dispatch only — no external receiver transport in this build.
+        Payloads are regenerated server-side from the frozen ReleasePackage and
+        never POSTed externally. Audit log records every request, retry, send
+        and failure.
       </p>
     </section>
   );

@@ -20,11 +20,7 @@ const ACTION_LABELS: Record<IPCAction, string> = {
   screen_contacts: "Screen contacts",
 };
 
-export function IPCActionChecklist({
-  actions,
-  acknowledgedAt,
-  acknowledgedBy,
-}: IPCActionChecklistProps) {
+export function IPCActionChecklist({ actions, acknowledgedAt, acknowledgedBy }: IPCActionChecklistProps) {
   const completionAvailable = Boolean(acknowledgedAt);
 
   return (
@@ -35,25 +31,16 @@ export function IPCActionChecklist({
       </p>
       <ul className="space-y-1 text-xs">
         {actions.map((action) => (
-          <li
-            key={action}
-            className="flex flex-wrap items-center gap-2 rounded-sm border border-border/70 bg-background px-2 py-1.5"
-          >
-            <span className="font-medium text-foreground">
-              {ACTION_LABELS[action] ?? action.replaceAll("_", " ")}
-            </span>
-            <span
-              className={`rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${completionAvailable ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}
-            >
+          <li key={action} className="flex flex-wrap items-center gap-2 rounded-sm border border-border/70 bg-background px-2 py-1.5">
+            <span className="font-medium text-foreground">{ACTION_LABELS[action] ?? action.replaceAll("_", " ")}</span>
+            <span className={`rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${completionAvailable ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
               {completionAvailable ? "completed" : "pending"}
             </span>
             {completionAvailable && acknowledgedBy && (
               <span className="text-[10px] text-muted-foreground">actor: {acknowledgedBy}</span>
             )}
             {completionAvailable && acknowledgedAt && (
-              <span className="text-[10px] text-muted-foreground">
-                at: {new Date(acknowledgedAt).toLocaleString()}
-              </span>
+              <span className="text-[10px] text-muted-foreground">at: {new Date(acknowledgedAt).toLocaleString()}</span>
             )}
           </li>
         ))}

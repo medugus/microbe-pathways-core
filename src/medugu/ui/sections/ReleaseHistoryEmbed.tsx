@@ -11,14 +11,8 @@ export function ReleaseHistoryEmbed({ accessionRowId, historyKey }: ReleaseHisto
 
   return (
     <>
-      <ReleaseHistoryPanel
-        key={`${accessionRowId}-${historyKey}`}
-        accessionRowId={accessionRowId}
-      />
-      <DispatchHistoryPanel
-        key={`dispatch-${accessionRowId}-${historyKey}`}
-        accessionRowId={accessionRowId}
-      />
+      <ReleaseHistoryPanel key={`${accessionRowId}-${historyKey}`} accessionRowId={accessionRowId} />
+      <DispatchHistoryPanel key={`dispatch-${accessionRowId}-${historyKey}`} accessionRowId={accessionRowId} />
     </>
   );
 }

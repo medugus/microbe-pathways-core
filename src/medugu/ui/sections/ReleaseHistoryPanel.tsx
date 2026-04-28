@@ -157,7 +157,9 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
         // 3. Pull amendment reasons from audit_event for this accession.
         // The release.amended trigger writes entity_id = '<accessionId>:<version>'
         // and stores the reason in the `reason` column.
-        const versionEntityIds = packages.map((p) => `${accessionRowId}:${p.version}`);
+        const versionEntityIds = packages.map(
+          (p) => `${accessionRowId}:${p.version}`,
+        );
         const reasonByVersion = new Map<number, string>();
         if (versionEntityIds.length > 0) {
           const { data: audits } = await supabase
@@ -236,20 +238,33 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
       <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         Release history
       </h4>
-      {loading && <p className="text-[11px] text-muted-foreground">Loading history…</p>}
-      {error && <p className="text-[11px] text-destructive">History failed: {error}</p>}
+      {loading && (
+        <p className="text-[11px] text-muted-foreground">Loading history…</p>
+      )}
+      {error && (
+        <p className="text-[11px] text-destructive">History failed: {error}</p>
+      )}
       {!loading && !error && entries && entries.length === 0 && (
-        <p className="text-[11px] text-muted-foreground">No release packages yet.</p>
+        <p className="text-[11px] text-muted-foreground">
+          No release packages yet.
+        </p>
       )}
       {!loading && !error && entries && entries.length > 0 && (
         <ol className="space-y-2">
           {entries.map((e) => (
-            <li key={e.id} className="rounded-md border border-border bg-card p-3">
+            <li
+              key={e.id}
+              className="rounded-md border border-border bg-card p-3"
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="chip chip-square chip-info font-mono">v{e.version}</span>
+                  <span className="chip chip-square chip-info font-mono">
+                    v{e.version}
+                  </span>
                   {e.amendmentReason && (
-                    <span className="chip chip-square chip-amended uppercase">amended</span>
+                    <span className="chip chip-square chip-amended uppercase">
+                      amended
+                    </span>
                   )}
                   {isLegacySeal(e.built_at) && (
                     <span
@@ -263,7 +278,9 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                     {new Date(e.built_at).toLocaleString()}
                   </span>
                 </div>
-                <span className="text-[10px] text-muted-foreground">by {e.builtByName ?? "—"}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  by {e.builtByName ?? "—"}
+                </span>
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-2 break-all font-mono text-[10px] text-muted-foreground">
                 <span>seal: {e.body_sha256}</span>
@@ -300,7 +317,7 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
               {(verify[e.id]?.status === "ok" || verify[e.id]?.status === "mismatch") && (
                 <div className="mt-1 space-y-0.5 break-all font-mono text-[10px] text-muted-foreground">
                   <div>
-                    <span className="text-foreground">stored: </span>
+                    <span className="text-foreground">stored:    </span>
                     {(verify[e.id] as { stored: string }).stored}
                   </div>
                   <div>
@@ -309,7 +326,9 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                   </div>
                   <div className="font-sans">
                     verified at{" "}
-                    {new Date((verify[e.id] as { verifiedAt: string }).verifiedAt).toLocaleString()}
+                    {new Date(
+                      (verify[e.id] as { verifiedAt: string }).verifiedAt,
+                    ).toLocaleString()}
                   </div>
                 </div>
               )}
@@ -331,10 +350,12 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                   </div>
                   <ul className="space-y-1">
                     {e.deliveries.map((d) => {
-                      const ok =
-                        d.http_status !== null && d.http_status >= 200 && d.http_status < 300;
+                      const ok = d.http_status !== null && d.http_status >= 200 && d.http_status < 300;
                       return (
-                        <li key={d.id} className="flex flex-wrap items-center gap-2 text-[10px]">
+                        <li
+                          key={d.id}
+                          className="flex flex-wrap items-center gap-2 text-[10px]"
+                        >
                           <span
                             className={`rounded px-1.5 py-0.5 font-mono font-semibold ${
                               ok
@@ -346,7 +367,9 @@ export function ReleaseHistoryPanel({ accessionRowId }: Props) {
                           </span>
                           <span className="font-medium text-foreground">{d.receiverName}</span>
                           <span className="text-muted-foreground">[{d.format}]</span>
-                          <span className="text-muted-foreground">HTTP {d.http_status ?? "—"}</span>
+                          <span className="text-muted-foreground">
+                            HTTP {d.http_status ?? "—"}
+                          </span>
                           <span className="text-muted-foreground">
                             {new Date(d.dispatched_at).toLocaleString()}
                           </span>

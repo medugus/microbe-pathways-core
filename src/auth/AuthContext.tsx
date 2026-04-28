@@ -7,9 +7,16 @@
 //  - All gating (tenant scope, RLS) is enforced server-side; this context is
 //    only for UI and route-guard use.
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { installServerFnAuth } from "./installServerFnAuth";
 
 export type AppRole =
@@ -50,32 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load profile + roles for the current user
   const loadProfileAndRoles = async (userId: string) => {
-    try {
-      const [{ data: prof }, { data: roleRows }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id, tenant_id, display_name, email")
-          .eq("id", userId)
-          .maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", userId),
-      ]);
-      setProfile((prof as ProfileRow | null) ?? null);
-      setRoles(((roleRows ?? []) as { role: AppRole }[]).map((r) => r.role));
-    } catch {
-      setProfile(null);
-      setRoles([]);
-    }
+    const [{ data: prof }, { data: roleRows }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, tenant_id, display_name, email")
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+    ]);
+    setProfile((prof as ProfileRow | null) ?? null);
+    setRoles(((roleRows ?? []) as { role: AppRole }[]).map((r) => r.role));
   };
 
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      setSession(null);
-      setProfile(null);
-      setRoles([]);
-      setLoading(false);
-      return;
-    }
-
     installServerFnAuth();
     // 1) Subscribe FIRST (Supabase guidance) — never miss an event.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
@@ -92,22 +86,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // 2) Then read existing session.
-    void supabase.auth
-      .getSession()
-      .then(async ({ data: { session: existing } }) => {
-        setSession(existing);
-        if (existing?.user) {
-          await loadProfileAndRoles(existing.user.id);
-        }
-      })
-      .catch(() => {
-        setSession(null);
-        setProfile(null);
-        setRoles([]);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    void supabase.auth.getSession().then(async ({ data: { session: existing } }) => {
+      setSession(existing);
+      if (existing?.user) {
+        await loadProfileAndRoles(existing.user.id);
+      }
+      setLoading(false);
+    });
 
     return () => sub.subscription.unsubscribe();
   }, []);

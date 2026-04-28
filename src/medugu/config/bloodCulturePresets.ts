@@ -59,21 +59,9 @@ export const BLOOD_WORKUP_PRESETS: BloodWorkupPreset[] = [
     appliesToSubtypes: ["BC_CENTRAL_LINE", "BC_PORTACATH"],
     sets: [
       { drawSite: "PERIPHERAL_LEFT", bottleTypes: ["AEROBIC", "ANAEROBIC"] },
-      {
-        drawSite: "CENTRAL_LINE",
-        lumenLabel: "Lumen 1 (proximal)",
-        bottleTypes: ["AEROBIC", "ANAEROBIC"],
-      },
-      {
-        drawSite: "CENTRAL_LINE",
-        lumenLabel: "Lumen 2 (medial)",
-        bottleTypes: ["AEROBIC", "ANAEROBIC"],
-      },
-      {
-        drawSite: "CENTRAL_LINE",
-        lumenLabel: "Lumen 3 (distal)",
-        bottleTypes: ["AEROBIC", "ANAEROBIC"],
-      },
+      { drawSite: "CENTRAL_LINE", lumenLabel: "Lumen 1 (proximal)", bottleTypes: ["AEROBIC", "ANAEROBIC"] },
+      { drawSite: "CENTRAL_LINE", lumenLabel: "Lumen 2 (medial)", bottleTypes: ["AEROBIC", "ANAEROBIC"] },
+      { drawSite: "CENTRAL_LINE", lumenLabel: "Lumen 3 (distal)", bottleTypes: ["AEROBIC", "ANAEROBIC"] },
     ],
   },
   {
@@ -113,15 +101,14 @@ export const BLOOD_WORKUP_PRESETS: BloodWorkupPreset[] = [
     rationale:
       "Single low-volume paediatric bottle from a peripheral draw. Volume capped by infant weight; document weight for adequacy assessment.",
     appliesToSubtypes: ["BC_NEONATAL"],
-    sets: [{ drawSite: "PERIPHERAL_OTHER", bottleTypes: ["PAEDIATRIC"] }],
+    sets: [
+      { drawSite: "PERIPHERAL_OTHER", bottleTypes: ["PAEDIATRIC"] },
+    ],
   },
 ];
 
 export function getPresetsForSubtype(subtypeCode: string): BloodWorkupPreset[] {
   return BLOOD_WORKUP_PRESETS.filter(
-    (p) =>
-      !p.appliesToSubtypes ||
-      p.appliesToSubtypes.length === 0 ||
-      p.appliesToSubtypes.includes(subtypeCode),
+    (p) => !p.appliesToSubtypes || p.appliesToSubtypes.length === 0 || p.appliesToSubtypes.includes(subtypeCode),
   );
 }

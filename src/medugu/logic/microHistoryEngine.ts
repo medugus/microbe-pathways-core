@@ -108,14 +108,8 @@ function getPhenotypeFlags(accession: Accession): Set<string> {
   return flags;
 }
 
-function bestInterpretation(
-  accession: Accession,
-  isolateId: string,
-  antibioticCode: string,
-): ASTInterpretation | null {
-  const row = accession.ast.find(
-    (entry) => entry.isolateId === isolateId && entry.antibioticCode === antibioticCode,
-  );
+function bestInterpretation(accession: Accession, isolateId: string, antibioticCode: string): ASTInterpretation | null {
+  const row = accession.ast.find((entry) => entry.isolateId === isolateId && entry.antibioticCode === antibioticCode);
   return row?.finalInterpretation ?? row?.interpretedSIR ?? row?.rawInterpretation ?? null;
 }
 
@@ -133,10 +127,7 @@ function organismMatch(currentIso: Isolate, priorIso: Isolate): boolean {
   return normaliseText(currentIso.organismDisplay) === normaliseText(priorIso.organismDisplay);
 }
 
-function compareAccessionToCurrent(
-  current: Accession,
-  prior: Accession,
-): {
+function compareAccessionToCurrent(current: Accession, prior: Accession): {
   repeatOrganism: boolean;
   sameSpecimenSourceRecurrence: boolean;
   astComparisons: ASTComparison[];
@@ -150,11 +141,7 @@ function compareAccessionToCurrent(
       const priorRows = prior.ast.filter((row) => row.isolateId === priorIso.id);
       for (const priorRow of priorRows) {
         const priorInterpretation = bestInterpretation(prior, priorIso.id, priorRow.antibioticCode);
-        const currentInterpretation = bestInterpretation(
-          current,
-          currentIso.id,
-          priorRow.antibioticCode,
-        );
+        const currentInterpretation = bestInterpretation(current, currentIso.id, priorRow.antibioticCode);
         if (!priorInterpretation || !currentInterpretation) continue;
 
         comparisons.push({
@@ -168,9 +155,8 @@ function compareAccessionToCurrent(
   }
 
   return {
-    repeatOrganism: current.isolates.some((curr) =>
-      prior.isolates.some((prev) => organismMatch(curr, prev)),
-    ),
+    repeatOrganism:
+      current.isolates.some((curr) => prior.isolates.some((prev) => organismMatch(curr, prev))),
     sameSpecimenSourceRecurrence:
       current.specimen.familyCode === prior.specimen.familyCode &&
       current.specimen.subtypeCode === prior.specimen.subtypeCode,
@@ -198,10 +184,7 @@ function buildPriorRow(current: Accession, prior: Accession): PriorHistoryRow {
   };
 }
 
-function patientPriors(
-  current: Accession,
-  allAccessions: Record<string, Accession> | Accession[],
-): Accession[] {
+function patientPriors(current: Accession, allAccessions: Record<string, Accession> | Accession[]): Accession[] {
   const list = Array.isArray(allAccessions) ? allAccessions : Object.values(allAccessions);
   const currentKey = getPatientMatchKey(current);
   if (!currentKey) return [];
@@ -215,9 +198,7 @@ export function compareCurrentIsolatesToPrior(
   currentAccession: Accession,
   allAccessions: Record<string, Accession> | Accession[],
 ): PriorHistoryRow[] {
-  return patientPriors(currentAccession, allAccessions).map((prior) =>
-    buildPriorRow(currentAccession, prior),
-  );
+  return patientPriors(currentAccession, allAccessions).map((prior) => buildPriorRow(currentAccession, prior));
 }
 
 export function getPriorMDROFlags(
@@ -269,9 +250,7 @@ export function derivePatientMicrobiologyHistory(
 
     if (hasSameAlertOrganism) return true;
 
-    const priorHadCREGroup = row.priorPhenotypes.some(
-      (flag) => flag === "CRE" || flag === "carbapenemase_suspected",
-    );
+    const priorHadCREGroup = row.priorPhenotypes.some((flag) => flag === "CRE" || flag === "carbapenemase_suspected");
     return priorHadCREGroup && currentEnterobacterales;
   });
 
@@ -284,12 +263,9 @@ export function derivePatientMicrobiologyHistory(
       repeatAlertOrganism: priorRows.some((row) => row.repeatOrganism && row.priorIPCSignal),
       currentMatchesPriorColonisingOrganism,
       priorColonisationWithRelatedHighRiskGroup,
-      susceptibilityWorsening: priorRows.some((row) =>
-        row.astComparisons.some((item) => item.worsening),
-      ),
+      susceptibilityWorsening: priorRows.some((row) => row.astComparisons.some((item) => item.worsening)),
       newResistantPhenotypeFlag:
-        priorRows.length > 0 &&
-        Array.from(currentPhenotypes).some((flag) => !priorPhenotypes.has(flag)),
+        priorRows.length > 0 && Array.from(currentPhenotypes).some((flag) => !priorPhenotypes.has(flag)),
     },
   };
 }

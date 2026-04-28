@@ -122,14 +122,11 @@ function ensureRepeatTimer(): void {
   if (repeatTimer) return;
   if (!prefs.repeatCritical) return;
   if (typeof window === "undefined") return;
-  repeatTimer = setInterval(
-    () => {
-      if (!prefs.enabled || !prefs.repeatCritical) return;
-      if (pendingCritical.size === 0) return;
-      play("critical");
-    },
-    Math.max(5, prefs.repeatIntervalSec) * 1000,
-  );
+  repeatTimer = setInterval(() => {
+    if (!prefs.enabled || !prefs.repeatCritical) return;
+    if (pendingCritical.size === 0) return;
+    play("critical");
+  }, Math.max(5, prefs.repeatIntervalSec) * 1000);
 }
 
 function clearRepeatTimer(): void {
@@ -230,7 +227,9 @@ export const CRITICAL_VALIDATION_CODES = new Set<string>([
 ]);
 
 /** Codes classified as urgent workflow warnings (action required, not life-safety). */
-export const URGENT_VALIDATION_CODES = new Set<string>(["CONSULTANT_APPROVAL_REQUIRED"]);
+export const URGENT_VALIDATION_CODES = new Set<string>([
+  "CONSULTANT_APPROVAL_REQUIRED",
+]);
 
 /** IPC rule codes considered high-priority (urgent). */
 export const HIGH_PRIORITY_IPC_CODES = new Set<string>([

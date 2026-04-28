@@ -22,56 +22,40 @@ const FILTERS: Array<{ key: AMSRuleCategory; label: string }> = [
   { key: "safety_review", label: "safety review" },
 ];
 
-export function AMSRuleGovernancePanel({ linkedRuleCodes }: { linkedRuleCodes?: string[] }) {
+export function AMSRuleGovernancePanel({
+  linkedRuleCodes,
+}: {
+  linkedRuleCodes?: string[];
+}) {
   const [filter, setFilter] = useState<AMSRuleCategory | "all">("all");
   const summary = useMemo(() => getAMSRuleGovernanceSummary(AMS_RULES), []);
   const grouped = useMemo(() => getAMSRulesByCategory(AMS_RULES), []);
   const coverage = useMemo(() => getAMSRuleCoverageSummary(AMS_RULES), []);
 
-  const displayRules: AMSRuleDefinition[] = filter === "all" ? AMS_RULES : (grouped[filter] ?? []);
+  const displayRules: AMSRuleDefinition[] = filter === "all" ? AMS_RULES : grouped[filter] ?? [];
 
   return (
     <section className="space-y-3 rounded-md border border-border bg-card p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">AMS rule governance</h3>
-        <span className="text-[11px] text-muted-foreground">
-          Config version: {AMS_RULE_CONFIG_VERSION}
-        </span>
+        <span className="text-[11px] text-muted-foreground">Config version: {AMS_RULE_CONFIG_VERSION}</span>
       </div>
 
       <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900">
-        {summary.limitationNote} This is browser-phase visibility for local stewardship
-        configuration.
+        {summary.limitationNote} This is browser-phase visibility for local stewardship configuration.
       </div>
 
       <div className="grid gap-2 text-xs sm:grid-cols-3 lg:grid-cols-6">
-        <div className="rounded border border-border bg-background p-2">
-          Total rules: <span className="font-semibold">{summary.totalRules}</span>
-        </div>
-        <div className="rounded border border-border bg-background p-2">
-          Active rules: <span className="font-semibold">{summary.activeRules}</span>
-        </div>
-        <div className="rounded border border-border bg-background p-2">
-          Review-only rules: <span className="font-semibold">{summary.reviewOnlyRules}</span>
-        </div>
-        <div className="rounded border border-border bg-background p-2">
-          Draft rules: <span className="font-semibold">{summary.draftRules}</span>
-        </div>
-        <div className="rounded border border-border bg-background p-2">
-          Rules needing review:{" "}
-          <span className="font-semibold">{summary.rulesNeedingReview.length}</span>
-        </div>
-        <div className="rounded border border-border bg-background p-2">
-          Missing source/rationale:{" "}
-          <span className="font-semibold">
-            {summary.rulesWithoutSource + summary.rulesWithoutRationale}
-          </span>
-        </div>
+        <div className="rounded border border-border bg-background p-2">Total rules: <span className="font-semibold">{summary.totalRules}</span></div>
+        <div className="rounded border border-border bg-background p-2">Active rules: <span className="font-semibold">{summary.activeRules}</span></div>
+        <div className="rounded border border-border bg-background p-2">Review-only rules: <span className="font-semibold">{summary.reviewOnlyRules}</span></div>
+        <div className="rounded border border-border bg-background p-2">Draft rules: <span className="font-semibold">{summary.draftRules}</span></div>
+        <div className="rounded border border-border bg-background p-2">Rules needing review: <span className="font-semibold">{summary.rulesNeedingReview.length}</span></div>
+        <div className="rounded border border-border bg-background p-2">Missing source/rationale: <span className="font-semibold">{summary.rulesWithoutSource + summary.rulesWithoutRationale}</span></div>
       </div>
 
       <div className="text-[11px] text-muted-foreground">
-        Coverage summary · antibiotics: {coverage.antibioticCodes.length || 0} · classes:{" "}
-        {coverage.antibioticClasses.length || 0} · AWaRe scopes: {coverage.awareScopes.length || 0}
+        Coverage summary · antibiotics: {coverage.antibioticCodes.length || 0} · classes: {coverage.antibioticClasses.length || 0} · AWaRe scopes: {coverage.awareScopes.length || 0}
       </div>
 
       <div className="flex flex-wrap gap-1">

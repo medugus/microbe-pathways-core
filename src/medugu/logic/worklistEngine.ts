@@ -66,9 +66,7 @@ function compareItems(a: MicrobiologyWorklistItem, b: MicrobiologyWorklistItem):
   return a.accessionNumber.localeCompare(b.accessionNumber);
 }
 
-function bucket(
-  items: MicrobiologyWorklistItem[],
-): Record<WorklistQueueCategory, MicrobiologyWorklistItem[]> {
+function bucket(items: MicrobiologyWorklistItem[]): Record<WorklistQueueCategory, MicrobiologyWorklistItem[]> {
   const byCategory: Record<WorklistQueueCategory, MicrobiologyWorklistItem[]> = {
     positive_blood_culture: [],
     ast_pending: [],
@@ -89,18 +87,10 @@ function bucket(
 }
 
 function hasMeaningfulCaseData(a: Accession): boolean {
-  return (
-    a.microscopy.length > 0 || a.isolates.length > 0 || a.ast.length > 0 || a.phoneOuts.length > 0
-  );
+  return a.microscopy.length > 0 || a.isolates.length > 0 || a.ast.length > 0 || a.phoneOuts.length > 0;
 }
 
-function buildItem(
-  a: Accession,
-  entry: Omit<
-    MicrobiologyWorklistItem,
-    "accessionId" | "accessionNumber" | "patientDisplay" | "specimen"
-  >,
-): MicrobiologyWorklistItem {
+function buildItem(a: Accession, entry: Omit<MicrobiologyWorklistItem, "accessionId" | "accessionNumber" | "patientDisplay" | "specimen">): MicrobiologyWorklistItem {
   return {
     accessionId: a.id,
     accessionNumber: a.accessionNumber,
@@ -110,9 +100,7 @@ function buildItem(
   };
 }
 
-export function deriveMicrobiologyWorklist(
-  accessions: MeduguState["accessions"],
-): MicrobiologyWorklist {
+export function deriveMicrobiologyWorklist(accessions: MeduguState["accessions"]): MicrobiologyWorklist {
   const items: MicrobiologyWorklistItem[] = [];
 
   for (const accession of Object.values(accessions)) {
@@ -120,23 +108,15 @@ export function deriveMicrobiologyWorklist(
 
     if (accession.specimen.familyCode === "BLOOD") {
       const positiveBottles = accession.isolates.flatMap((iso) =>
-        (iso.bottleResults ?? [])
-          .filter((b) => b.growth === "growth")
-          .map((b) => ({ ...b, isolateId: iso.id })),
+        (iso.bottleResults ?? []).filter((b) => b.growth === "growth").map((b) => ({ ...b, isolateId: iso.id })),
       );
       if (positiveBottles.length > 0) {
-        const linkedBottleCount = accession.isolates.reduce(
-          (count, iso) => count + (iso.bloodSourceLinks?.length ?? 0),
-          0,
-        );
+        const linkedBottleCount = accession.isolates.reduce((count, iso) => count + (iso.bloodSourceLinks?.length ?? 0), 0);
         const hasUnlinkedSources = linkedBottleCount < positiveBottles.length;
-        const hasOrganismIdentified = accession.isolates.some(
-          (iso) => iso.organismCode !== "NOGRO",
-        );
+        const hasOrganismIdentified = accession.isolates.some((iso) => iso.organismCode !== "NOGRO");
         const gramMissing = accession.microscopy.length === 0;
         const astMissing = accession.isolates.some(
-          (iso) =>
-            iso.organismCode !== "NOGRO" && accession.ast.every((row) => row.isolateId !== iso.id),
+          (iso) => iso.organismCode !== "NOGRO" && accession.ast.every((row) => row.isolateId !== iso.id),
         );
 
         const missingBits = [
@@ -155,11 +135,7 @@ export function deriveMicrobiologyWorklist(
               ? "Link organism isolates to positive source bottles."
               : "Complete isolate workup and AST if required.",
             status: hasUnlinkedSources ? "Needs source linkage" : "Growth detected",
-            timestamp: positiveBottles
-              .map((b) => b.positiveAt)
-              .filter(Boolean)
-              .sort()
-              .at(-1),
+            timestamp: positiveBottles.map((b) => b.positiveAt).filter(Boolean).sort().at(-1),
             linkedSectionTarget: "isolate",
           }),
         );
@@ -171,14 +147,9 @@ export function deriveMicrobiologyWorklist(
       (row) => row.rawValue != null && !row.finalInterpretation,
     );
     const isolatesWithoutAst = accession.isolates.filter(
-      (iso) =>
-        iso.organismCode !== "NOGRO" && accession.ast.every((row) => row.isolateId !== iso.id),
+      (iso) => iso.organismCode !== "NOGRO" && accession.ast.every((row) => row.isolateId !== iso.id),
     );
-    if (
-      isolatesWithoutAst.length > 0 ||
-      astMissingRows.length > 0 ||
-      astNoInterpretation.length > 0
-    ) {
+    if (isolatesWithoutAst.length > 0 || astMissingRows.length > 0 || astNoInterpretation.length > 0) {
       const reasonParts: string[] = [];
       if (isolatesWithoutAst.length > 0) {
         reasonParts.push(`${isolatesWithoutAst.length} isolate(s) with no AST panel`);
@@ -187,9 +158,7 @@ export function deriveMicrobiologyWorklist(
         reasonParts.push(`${astMissingRows.length} AST row(s) missing raw value`);
       }
       if (astNoInterpretation.length > 0) {
-        reasonParts.push(
-          `${astNoInterpretation.length} AST row(s) missing interpretation/no breakpoint`,
-        );
+        reasonParts.push(`${astNoInterpretation.length} AST row(s) missing interpretation/no breakpoint`);
       }
 
       items.push(
@@ -232,9 +201,7 @@ export function deriveMicrobiologyWorklist(
 
     if (amsRows.length > 0) {
       const hasOverdue = amsRows.some((x) => x.overdue);
-      const statuses = [...new Set(amsRows.map((x) => (x.overdue ? "overdue" : x.status)))].join(
-        ", ",
-      );
+      const statuses = [...new Set(amsRows.map((x) => (x.overdue ? "overdue" : x.status)))].join(", ");
 
       items.push(
         buildItem(accession, {
@@ -243,12 +210,11 @@ export function deriveMicrobiologyWorklist(
           reason: `${amsRows.length} restricted AST row(s) require AMS status (${statuses}).`,
           nextAction: "Request/resolve AMS approval for restricted agents.",
           status: hasOverdue ? "Overdue AMS" : "AMS pending",
-          timestamp:
-            amsRows
-              .map((x) => x.latest?.requested?.at)
-              .filter((x): x is string => Boolean(x))
-              .sort()
-              .at(-1) ?? accession.updatedAt,
+          timestamp: amsRows
+            .map((x) => x.latest?.requested?.at)
+            .filter((x): x is string => Boolean(x))
+            .sort()
+            .at(-1) ?? accession.updatedAt,
           linkedSectionTarget: "ams",
         }),
       );
@@ -265,11 +231,7 @@ export function deriveMicrobiologyWorklist(
           reason: `${ipc.decisions.length} IPC signal(s) triggered (${ipc.decisions.map((d) => d.ruleCode).join(", ")}).`,
           nextAction: "Review IPC decision detail and execute required controls.",
           status: immediate ? "Immediate IPC" : sameShift ? "Same-shift IPC" : "IPC review",
-          timestamp:
-            ipc.signals
-              .map((s) => s.raisedAt)
-              .sort()
-              .at(-1) ?? accession.updatedAt,
+          timestamp: ipc.signals.map((s) => s.raisedAt).sort().at(-1) ?? accession.updatedAt,
           linkedSectionTarget: "ipc",
         }),
       );
@@ -286,21 +248,13 @@ export function deriveMicrobiologyWorklist(
             : `${unackPhoneOuts.length} unacknowledged phone-out event(s).`,
           nextAction: "Complete and acknowledge critical communication workflow.",
           status: "Communication incomplete",
-          timestamp:
-            unackPhoneOuts
-              .map((p) => p.at)
-              .sort()
-              .at(-1) ?? accession.updatedAt,
+          timestamp: unackPhoneOuts.map((p) => p.at).sort().at(-1) ?? accession.updatedAt,
           linkedSectionTarget: "release",
         }),
       );
     }
 
-    if (
-      !isReleasedState(accession) &&
-      validation.blockers.length === 0 &&
-      hasMeaningfulCaseData(accession)
-    ) {
+    if (!isReleasedState(accession) && validation.blockers.length === 0 && hasMeaningfulCaseData(accession)) {
       items.push(
         buildItem(accession, {
           queueCategory: "ready_for_review",

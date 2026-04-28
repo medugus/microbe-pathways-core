@@ -4,8 +4,16 @@
 
 import { useMemo, useState } from "react";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
-import { ORGANISMS, GROWTH_QUANTIFIERS, SIGNIFICANCE_OPTIONS } from "../../config/organisms";
-import { buildIsolate, describeGrowth, suggestSignificance } from "../../logic/isolateHelpers";
+import {
+  ORGANISMS,
+  GROWTH_QUANTIFIERS,
+  SIGNIFICANCE_OPTIONS,
+} from "../../config/organisms";
+import {
+  buildIsolate,
+  describeGrowth,
+  suggestSignificance,
+} from "../../logic/isolateHelpers";
 import {
   BC_MAX_ISOLATES,
   canAddBloodIsolate,
@@ -78,8 +86,8 @@ export function IsolateSection() {
           </div>
           {atUnusual && (
             <p className="mt-2 rounded border border-amber-500/40 bg-amber-500/10 p-2 text-amber-700 dark:text-amber-300">
-              Three blood-culture isolates are unusual and often represent contamination or mixed
-              growth. Review clinical significance for each isolate before release.
+              Three blood-culture isolates are unusual and often represent contamination or mixed growth.
+              Review clinical significance for each isolate before release.
             </p>
           )}
           {isoBlockers.has("BC_ISO_MISSING_FOR_POSITIVE") && (
@@ -93,10 +101,8 @@ export function IsolateSection() {
       {/* Entry row */}
       <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-background p-3 md:grid-cols-6">
         <label className="md:col-span-2 text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-            Organism
-          </span>
-          <select
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Organism</span>
+           <select
             value={organismCode}
             onChange={(e) => {
               const code = e.target.value;
@@ -116,32 +122,28 @@ export function IsolateSection() {
           </select>
         </label>
         <label className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-            Growth
-          </span>
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Growth</span>
           <select
             value={growthCode}
             onChange={(e) => setGrowthCode(e.target.value)}
             className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
           >
             <option value="">—</option>
-            {GROWTH_QUANTIFIERS.filter((g) => {
-              const nonGrowthOrganisms = ["NOGRO", "MIXED", "NORML"];
-              if (g.code === "NO_GROWTH" && !nonGrowthOrganisms.includes(organismCode)) {
-                return false;
-              }
-              return true;
-            }).map((g) => (
-              <option key={g.code} value={g.code}>
-                {g.display}
-              </option>
-            ))}
+            {GROWTH_QUANTIFIERS
+              .filter((g) => {
+                const nonGrowthOrganisms = ["NOGRO", "MIXED", "NORML"];
+                if (g.code === "NO_GROWTH" && !nonGrowthOrganisms.includes(organismCode)) {
+                  return false;
+                }
+                return true;
+              })
+              .map((g) => (
+                <option key={g.code} value={g.code}>{g.display}</option>
+              ))}
           </select>
         </label>
         <label className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-            CFU/mL
-          </span>
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">CFU/mL</span>
           <input
             value={colonyCount}
             onChange={(e) => setColonyCount(e.target.value)}
@@ -151,9 +153,7 @@ export function IsolateSection() {
           />
         </label>
         <fieldset className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-            Composition
-          </span>
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Composition</span>
           <div className="mt-1 flex items-center gap-3">
             <label className="flex items-center gap-1.5">
               <input
@@ -201,9 +201,7 @@ export function IsolateSection() {
 
       {/* Existing isolates */}
       {accession.isolates.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          No isolates yet. Add one above (use "No growth" organism for explicit no-growth rows).
-        </p>
+        <p className="text-xs text-muted-foreground">No isolates yet. Add one above (use "No growth" organism for explicit no-growth rows).</p>
       ) : (
         <ul className="space-y-2">
           {accession.isolates.map((i) => {
@@ -222,21 +220,13 @@ export function IsolateSection() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        #{i.isolateNo}
-                      </span>
+                      <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">#{i.isolateNo}</span>
                       <span className="font-medium text-foreground">{i.organismDisplay}</span>
-                      {i.purityFlag && (
-                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">
-                          pure
-                        </span>
+                      {i.purityFlag && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">pure</span>}
+                      {i.mixedGrowth && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">mixed</span>}
+                      {showBcLinkage && (
+                        <SignificanceChip iso={i} />
                       )}
-                      {i.mixedGrowth && (
-                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">
-                          mixed
-                        </span>
-                      )}
-                      {showBcLinkage && <SignificanceChip iso={i} />}
                     </div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       growth: {describeGrowth(i)}
@@ -255,9 +245,7 @@ export function IsolateSection() {
                       }`}
                     >
                       {SIGNIFICANCE_OPTIONS.map((s) => (
-                        <option key={s.code} value={s.code}>
-                          {s.label}
-                        </option>
+                        <option key={s.code} value={s.code}>{s.label}</option>
                       ))}
                     </select>
                     <button
@@ -272,46 +260,36 @@ export function IsolateSection() {
 
                 {sigMissing && (
                   <p className="mt-2 text-[11px] text-destructive">
-                    Classify clinical significance (true pathogen / probable contaminant / mixed
-                    growth / uncertain) before release.
+                    Classify clinical significance (true pathogen / probable contaminant / mixed growth / uncertain)
+                    before release.
                   </p>
                 )}
 
                 {showBcLinkage && (
-                  <div
-                    className={`mt-3 rounded border p-2 ${srcMissing ? "border-destructive bg-destructive/5" : "border-border bg-background/40"}`}
-                  >
+                  <div className={`mt-3 rounded border p-2 ${srcMissing ? "border-destructive bg-destructive/5" : "border-border bg-background/40"}`}>
                     <div className="mb-1.5 flex items-center justify-between">
                       <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                         Linked positive bottle(s) for this organism
                       </span>
                       {srcMissing && (
                         <span className="text-[11px] text-destructive">
-                          Link this organism to at least one positive blood culture bottle before
-                          AST entry.
+                          Link this organism to at least one positive blood culture bottle before AST entry.
                         </span>
                       )}
                     </div>
                     {positiveBottles.length === 0 ? (
                       <p className="text-[11px] text-muted-foreground">
-                        No positive bottles recorded yet. Mark at least one bottle as "growth" in
-                        per-bottle tracking below to link this isolate to its source.
+                        No positive bottles recorded yet. Mark at least one bottle as "growth" in per-bottle tracking
+                        below to link this isolate to its source.
                       </p>
                     ) : (
-                      <SourceLinkPicker
-                        accession={accession.id}
-                        isolate={i}
-                        positives={positiveBottles}
-                      />
+                      <SourceLinkPicker accession={accession.id} isolate={i} positives={positiveBottles} />
                     )}
                   </div>
                 )}
 
                 {showBcLinkage && (
-                  <details
-                    className="mt-3 rounded border border-border bg-background/50 p-2 text-xs"
-                    open
-                  >
+                  <details className="mt-3 rounded border border-border bg-background/50 p-2 text-xs" open>
                     <summary className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Per-set / per-bottle growth
                     </summary>
@@ -376,11 +354,7 @@ function SourceLinkPicker({
               type="button"
               onClick={() =>
                 meduguActions.updateIsolate(accession, isolate.id, {
-                  bloodSourceLinks: toggleSourceLink(
-                    isolate.bloodSourceLinks,
-                    p.setNo,
-                    p.bottleType,
-                  ),
+                  bloodSourceLinks: toggleSourceLink(isolate.bloodSourceLinks, p.setNo, p.bottleType),
                 })
               }
               className={`rounded border px-2 py-1 text-[11px] ${

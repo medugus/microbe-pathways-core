@@ -10,12 +10,8 @@ export function IPCClearanceCounter({ count, required }: IPCClearanceCounterProp
 
   return (
     <div className="rounded border border-border/70 bg-background px-2 py-1 text-xs text-muted-foreground">
-      Clearance counter:{" "}
-      <span className="font-medium text-foreground">
-        {safeCount}/{safeRequired}
-      </span>{" "}
-      negative screens{" "}
-      {isComplete ? "(threshold met in browser-local lookback)" : "(threshold not yet met)"}
+      Clearance counter: <span className="font-medium text-foreground">{safeCount}/{safeRequired}</span>{" "}
+      negative screens {isComplete ? "(threshold met in browser-local lookback)" : "(threshold not yet met)"}
     </div>
   );
 }

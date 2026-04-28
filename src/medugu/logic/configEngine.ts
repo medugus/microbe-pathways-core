@@ -241,7 +241,11 @@ function rowKey(section: ConfigSection, row: unknown): string {
   }
 }
 
-function diffSection(section: ConfigSection, from: unknown[], to: unknown[]): SectionDiffSummary {
+function diffSection(
+  section: ConfigSection,
+  from: unknown[],
+  to: unknown[],
+): SectionDiffSummary {
   const fromMap = new Map(from.map((r) => [rowKey(section, r), JSON.stringify(r)]));
   const toMap = new Map(to.map((r) => [rowKey(section, r), JSON.stringify(r)]));
   let added = 0;
@@ -273,10 +277,8 @@ export function diffPayloads(
 }
 
 export function hasDraftChanges(state: ConfigState): boolean {
-  return (
-    diffPayloads(state.active.payload, state.draft, state.active.meta.version, "draft")
-      .totalChanges > 0
-  );
+  return diffPayloads(state.active.payload, state.draft, state.active.meta.version, "draft")
+    .totalChanges > 0;
 }
 
 // ---------- Per-row diff drilldown ----------

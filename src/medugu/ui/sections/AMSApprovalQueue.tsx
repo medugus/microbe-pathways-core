@@ -23,11 +23,7 @@ export function AMSApprovalQueue({
   onDecide,
 }: AMSApprovalQueueProps) {
   if (restrictedRows.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        No restricted antimicrobial rows on this accession.
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">No restricted antimicrobial rows on this accession.</p>;
   }
 
   return (

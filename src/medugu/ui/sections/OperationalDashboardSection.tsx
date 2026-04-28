@@ -16,8 +16,7 @@ export function OperationalDashboardSection() {
           Metrics use only cases currently loaded in this browser.
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          This view requires backend persistence for hospital-wide operations and durable task
-          management.
+          This view requires backend persistence for hospital-wide operations and durable task management.
         </p>
       </header>
 

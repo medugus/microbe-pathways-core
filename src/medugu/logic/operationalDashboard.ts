@@ -5,7 +5,6 @@ import { deriveColonisationContext, isColonisationScreen } from "./ipcColonisati
 import { deriveLocalOutbreakWatch } from "./ipcLocalWatch";
 import { approvalStatusForRow, isRestrictedRow, latestApprovalForRow } from "./amsEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
-import { isAMSReleaseRelevantASTResult } from "./stewardshipEngine";
 
 export type OperationalQueueCategory =
   | "critical_result"
@@ -31,13 +30,7 @@ export type OperationalQueueOwnerRole =
   | "ipc_officer"
   | "mixed";
 
-export type OperationalQueueSourceModule =
-  | "IPC"
-  | "AMS"
-  | "Validation"
-  | "Release"
-  | "AST"
-  | "Specimen";
+export type OperationalQueueSourceModule = "IPC" | "AMS" | "Validation" | "Release" | "AST" | "Specimen";
 export type OperationalQueueTargetSection =
   | "IPC"
   | "AMS"
@@ -104,14 +97,10 @@ const HIGH_PRIORITY_IPC_RULE_CODES = new Set([
   "ESBL_INVASIVE_ALERT",
 ]);
 
-const STERILE_SITE_KEYWORD_RE =
-  /(sterile|csf|pleural|ascitic|synovial|pericardial|spa|image_guided)/i;
+const STERILE_SITE_KEYWORD_RE = /(sterile|csf|pleural|ascitic|synovial|pericardial|spa|image_guided)/i;
 
 function toPatientLabel(accession: Accession): string {
-  const name = [accession.patient.givenName, accession.patient.familyName]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+  const name = [accession.patient.givenName, accession.patient.familyName].filter(Boolean).join(" ").trim();
   return name || accession.patient.mrn || accession.accessionNumber;
 }
 
@@ -120,8 +109,7 @@ function toSpecimenLabel(accession: Accession): string {
 }
 
 function toAgeHours(accession: Accession): number | undefined {
-  const base =
-    accession.specimen.collectedAt ?? accession.specimen.receivedAt ?? accession.createdAt;
+  const base = accession.specimen.collectedAt ?? accession.specimen.receivedAt ?? accession.createdAt;
   const ms = Date.parse(base);
   if (!Number.isFinite(ms)) return undefined;
   return Math.max(0, Math.round((Date.now() - ms) / 3_600_000));
@@ -150,27 +138,17 @@ function hasPositiveBloodCulture(accession: Accession): boolean {
 }
 
 function hasSignificantResult(accession: Accession): boolean {
-  return accession.isolates.some(
-    (iso) => iso.significance === "significant" && iso.organismCode !== "NOGRO",
-  );
+  return accession.isolates.some((iso) => iso.significance === "significant" && iso.organismCode !== "NOGRO");
 }
 
 function targetSectionForItem(item: OperationalQueueItemDraft): OperationalQueueTargetSection {
-  if (
-    item.category === "ipc_high_priority" ||
-    item.category === "ipc_action" ||
-    item.category === "ipc_outbreak_watch"
-  ) {
+  if (item.category === "ipc_high_priority" || item.category === "ipc_action" || item.category === "ipc_outbreak_watch") {
     return "IPC";
   }
   if (item.category === "colonisation_follow_up") return "IPC";
   if (item.category === "ams_restricted" || item.category === "ams_pending_approval") return "AMS";
   if (item.category === "validation_warning") return "Validation";
-  if (
-    item.category === "release_blocker" ||
-    item.category === "consultant_approval" ||
-    item.category === "phone_out"
-  ) {
+  if (item.category === "release_blocker" || item.category === "consultant_approval" || item.category === "phone_out") {
     return "Release";
   }
   if (item.category === "critical_result") return "Validation";
@@ -257,13 +235,9 @@ export function deriveOperationalQueueItems(
 
     const hasPhoneOutRequirement = validation.phoneOutRequiredPending;
     const hasCriticalPriority = accession.priority === "stat" || accession.priority === "urgent";
-    const isCsf = /csf/i.test(
-      `${accession.specimen.subtypeCode} ${accession.specimen.freeTextLabel ?? ""}`,
-    );
+    const isCsf = /csf/i.test(`${accession.specimen.subtypeCode} ${accession.specimen.freeTextLabel ?? ""}`);
     const positiveBlood = hasPositiveBloodCulture(accession);
-    const hasHighRiskIpcSignal = ipc.decisions.some((d) =>
-      HIGH_PRIORITY_IPC_RULE_CODES.has(d.ruleCode),
-    );
+    const hasHighRiskIpcSignal = ipc.decisions.some((d) => HIGH_PRIORITY_IPC_RULE_CODES.has(d.ruleCode));
 
     if (
       hasPhoneOutRequirement ||
@@ -279,17 +253,17 @@ export function deriveOperationalQueueItems(
         patientLabel: toPatientLabel(accession),
         ward: accession.patient.ward,
         specimenLabel: toSpecimenLabel(accession),
-        organismOrPhenotype: accession.isolates.find((i) => i.organismCode !== "NOGRO")
-          ?.organismDisplay,
+        organismOrPhenotype: accession.isolates.find((i) => i.organismCode !== "NOGRO")?.organismDisplay,
         category: "critical_result",
         priority: "critical",
-        reason: validation.phoneOutRequiredPending
-          ? "Critical communication pathway flagged this accession and phone-out remains pending."
-          : positiveBlood
-            ? "Positive blood culture requires urgent review and escalation."
-            : isCsf
-              ? "CSF specimen requires urgent consultant-facing review."
-              : "Sterile-site high-risk signal requires urgent escalation.",
+        reason:
+          validation.phoneOutRequiredPending
+            ? "Critical communication pathway flagged this accession and phone-out remains pending."
+            : positiveBlood
+              ? "Positive blood culture requires urgent review and escalation."
+              : isCsf
+                ? "CSF specimen requires urgent consultant-facing review."
+                : "Sterile-site high-risk signal requires urgent escalation.",
         recommendedAction:
           "Prioritise immediate review, confirm critical communication completion, and progress urgent clinical escalation.",
         ownerRole: "mixed",
@@ -334,8 +308,7 @@ export function deriveOperationalQueueItems(
         reason: validation.phoneOutRequiredPending
           ? "Phone-out is required and not documented as acknowledged."
           : "At least one phone-out event remains unacknowledged.",
-        recommendedAction:
-          "Document and acknowledge phone-out communication with clinician recipient.",
+        recommendedAction: "Document and acknowledge phone-out communication with clinician recipient.",
         ownerRole: "senior_scientist",
         dueLabel: "Immediate",
         ageHours,
@@ -364,9 +337,7 @@ export function deriveOperationalQueueItems(
     }
 
     for (const decision of ipc.decisions) {
-      const organism = accession.isolates.find(
-        (iso) => iso.id === decision.isolateId,
-      )?.organismDisplay;
+      const organism = accession.isolates.find((iso) => iso.id === decision.isolateId)?.organismDisplay;
       const phenotype = decision.phenotypes.join(", ");
       const organismOrPhenotype = [organism, phenotype].filter(Boolean).join(" · ") || undefined;
       const highPriority =
@@ -404,9 +375,7 @@ export function deriveOperationalQueueItems(
       });
     }
 
-    const restrictedRows = accession.ast.filter(
-      (row) => isRestrictedRow(row) && isAMSReleaseRelevantASTResult(accession, row),
-    );
+    const restrictedRows = accession.ast.filter((row) => isRestrictedRow(row));
     for (const row of restrictedRows) {
       const status = approvalStatusForRow(accession, row.id);
       if (status === "approved") continue;
@@ -419,8 +388,7 @@ export function deriveOperationalQueueItems(
         patientLabel: toPatientLabel(accession),
         ward: accession.patient.ward,
         specimenLabel: toSpecimenLabel(accession),
-        organismOrPhenotype: accession.isolates.find((iso) => iso.id === row.isolateId)
-          ?.organismDisplay,
+        organismOrPhenotype: accession.isolates.find((iso) => iso.id === row.isolateId)?.organismDisplay,
         category: isPending ? "ams_pending_approval" : "ams_restricted",
         priority: isPending ? "high" : "review",
         reason: isPending
@@ -431,9 +399,7 @@ export function deriveOperationalQueueItems(
           : "Request AMS approval for restricted antimicrobial before clinical visibility.",
         ownerRole: "ams_pharmacist",
         dueLabel: latest?.dueBy
-          ? new Date(latest.dueBy).getTime() < Date.now()
-            ? "Overdue AMS"
-            : "AMS due"
+          ? (new Date(latest.dueBy).getTime() < Date.now() ? "Overdue AMS" : "AMS due")
           : undefined,
         ageHours,
         sourceModule: "AMS",
@@ -459,8 +425,7 @@ export function deriveOperationalQueueItems(
           specimenLabel: toSpecimenLabel(accession),
           organismOrPhenotype: colonisation.targetOrganism,
           category: "colonisation_follow_up",
-          priority:
-            positiveScreen && /auris/i.test(colonisation.targetOrganism ?? "") ? "high" : "review",
+          priority: positiveScreen && /auris/i.test(colonisation.targetOrganism ?? "") ? "high" : "review",
           reason: positiveScreen
             ? "Positive colonisation screen requires IPC follow-up and precaution review."
             : `Clearance incomplete (${colonisation.clearanceCount}/${colonisation.clearanceRequired} negative screens).`,
@@ -507,8 +472,7 @@ export function deriveOperationalQueueItems(
         patientLabel: `Cluster (${item.patientAdjustedCount} cases)`,
         ward: item.ward,
         specimenLabel: `Window ${item.windowDays}d`,
-        organismOrPhenotype:
-          [item.organismLabel, item.phenotypeLabel].filter(Boolean).join(" / ") || undefined,
+        organismOrPhenotype: [item.organismLabel, item.phenotypeLabel].filter(Boolean).join(" / ") || undefined,
         category: "ipc_outbreak_watch",
         priority: item.severity === "high" ? "high" : "review",
         reason: item.triggerSummary,
@@ -524,10 +488,7 @@ export function deriveOperationalQueueItems(
   return sortOperationalQueueItems(queue);
 }
 
-function uniqueAccessionCount(
-  items: OperationalQueueItem[],
-  predicate: (item: OperationalQueueItem) => boolean,
-): number {
+function uniqueAccessionCount(items: OperationalQueueItem[], predicate: (item: OperationalQueueItem) => boolean): number {
   return new Set(items.filter(predicate).map((item) => item.accessionId)).size;
 }
 
@@ -547,17 +508,12 @@ export function getOperationalSummary(
   const criticalOrHighPriorityQueueItems = items.filter(
     (item) => item.priority === "critical" || item.priority === "high",
   ).length;
-  const openQueueAgeHours = items
-    .map((item) => item.ageHours)
-    .filter((age): age is number => typeof age === "number");
+  const openQueueAgeHours = items.map((item) => item.ageHours).filter((age): age is number => typeof age === "number");
   const medianOpenQueueAgeHours =
-    openQueueItems === 0 || openQueueAgeHours.length !== openQueueItems
-      ? null
-      : computeMedian(openQueueAgeHours);
+    openQueueItems === 0 || openQueueAgeHours.length !== openQueueItems ? null : computeMedian(openQueueAgeHours);
 
   const releasedOrCompletedCases = loaded.filter(
-    (accession) =>
-      accession.release.state === "released" || accession.workflowStatus === "released",
+    (accession) => accession.release.state === "released" || accession.workflowStatus === "released",
   ).length;
   const noActionCases = loaded.filter((accession) => {
     const accessionOpenItems = itemsByAccession.get(accession.id) ?? [];
@@ -573,10 +529,7 @@ export function getOperationalSummary(
     criticalUrgentCases: uniqueAccessionCount(items, (item) => item.category === "critical_result"),
     releaseBlocked: uniqueAccessionCount(items, (item) => item.category === "release_blocker"),
     pendingPhoneOut: uniqueAccessionCount(items, (item) => item.category === "phone_out"),
-    pendingConsultantApproval: uniqueAccessionCount(
-      items,
-      (item) => item.category === "consultant_approval",
-    ),
+    pendingConsultantApproval: uniqueAccessionCount(items, (item) => item.category === "consultant_approval"),
     amsPendingOrRestricted: uniqueAccessionCount(
       items,
       (item) => item.category === "ams_pending_approval" || item.category === "ams_restricted",

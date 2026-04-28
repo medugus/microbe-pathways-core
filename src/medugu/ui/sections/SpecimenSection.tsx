@@ -25,26 +25,16 @@ const FIELD_LABELS: Record<string, string> = {
   priorPositive: "Prior positive",
 };
 
-function Pill({
-  children,
-  tone = "default",
-}: {
-  children: React.ReactNode;
-  tone?: "default" | "warn" | "alert" | "ok";
-}) {
+function Pill({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "warn" | "alert" | "ok" }) {
   const cls =
     tone === "alert"
       ? "bg-destructive/15 text-destructive"
       : tone === "warn"
-        ? "bg-secondary text-secondary-foreground"
-        : tone === "ok"
-          ? "bg-muted text-foreground"
-          : "bg-muted text-muted-foreground";
-  return (
-    <span className={`inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium ${cls}`}>
-      {children}
-    </span>
-  );
+      ? "bg-secondary text-secondary-foreground"
+      : tone === "ok"
+      ? "bg-muted text-foreground"
+      : "bg-muted text-muted-foreground";
+  return <span className={`inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium ${cls}`}>{children}</span>;
 }
 
 export function SpecimenSection() {
@@ -65,20 +55,14 @@ export function SpecimenSection() {
     return (
       <div className="space-y-3">
         <p className="text-sm text-destructive">
-          Unresolved specimen ({result.reason}). Family: <code>{familyCode}</code>, subtype:{" "}
-          <code>{subtypeCode}</code>.
+          Unresolved specimen ({result.reason}). Family: <code>{familyCode}</code>, subtype: <code>{subtypeCode}</code>.
         </p>
       </div>
     );
   }
 
   const p = result.profile;
-  const acceptanceTone =
-    p.acceptance.mode === "rejectable"
-      ? "alert"
-      : p.acceptance.mode === "qualified"
-        ? "warn"
-        : "ok";
+  const acceptanceTone = p.acceptance.mode === "rejectable" ? "alert" : p.acceptance.mode === "qualified" ? "warn" : "ok";
 
   return (
     <div className="space-y-5">
@@ -97,9 +81,7 @@ export function SpecimenSection() {
           <div className="font-mono text-sm text-foreground">{containerCode ?? "—"}</div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Label (display)
-          </div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Label (display)</div>
           <div className="text-sm text-foreground">{freeTextLabel ?? "—"}</div>
         </div>
       </div>
@@ -107,22 +89,16 @@ export function SpecimenSection() {
       {/* Resolved badges */}
       <div className="flex flex-wrap gap-1.5">
         <Pill tone={acceptanceTone}>acceptance: {p.acceptance.mode}</Pill>
-        <Pill tone={p.gating.pathway === "screen" ? "warn" : "default"}>
-          pathway: {p.gating.pathway}
-        </Pill>
+        <Pill tone={p.gating.pathway === "screen" ? "warn" : "default"}>pathway: {p.gating.pathway}</Pill>
         {p.syndrome && <Pill>syndrome: {p.syndrome}</Pill>}
         {p.gating.consultantReleaseRequired && <Pill tone="alert">consultant release</Pill>}
         {p.gating.criticalCommunicationRequired && <Pill tone="warn">critical comms</Pill>}
-        {p.acceptance.contaminationContextRequired && (
-          <Pill tone="warn">contamination context required</Pill>
-        )}
+        {p.acceptance.contaminationContextRequired && <Pill tone="warn">contamination context required</Pill>}
         {p.gating.clearanceTracked && <Pill tone="warn">clearance tracked</Pill>}
       </div>
 
       {p.acceptance.notes && (
-        <p className="rounded-md border border-border bg-muted/40 p-3 text-xs text-foreground">
-          {p.acceptance.notes}
-        </p>
+        <p className="rounded-md border border-border bg-muted/40 p-3 text-xs text-foreground">{p.acceptance.notes}</p>
       )}
 
       {/* Editable collection fields (resolver-driven) */}
@@ -145,10 +121,7 @@ export function SpecimenSection() {
           </h4>
           <ul className="flex flex-wrap gap-1.5">
             {p.workbenchPanels.map((w) => (
-              <li
-                key={w}
-                className="rounded bg-secondary px-2 py-1 font-mono text-[11px] text-secondary-foreground"
-              >
+              <li key={w} className="rounded bg-secondary px-2 py-1 font-mono text-[11px] text-secondary-foreground">
                 {w}
               </li>
             ))}
@@ -160,10 +133,7 @@ export function SpecimenSection() {
           </h4>
           <ul className="flex flex-wrap gap-1.5">
             {p.reportSections.map((r) => (
-              <li
-                key={r}
-                className="rounded bg-muted px-2 py-1 font-mono text-[11px] text-foreground"
-              >
+              <li key={r} className="rounded bg-muted px-2 py-1 font-mono text-[11px] text-foreground">
                 {r}
               </li>
             ))}
@@ -180,14 +150,12 @@ export function SpecimenSection() {
             <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{p.quantitative.code}</code>
             {p.quantitative.thresholds?.significantCfuPerMl !== undefined && (
               <span className="text-foreground">
-                significant ≥ {p.quantitative.thresholds.significantCfuPerMl.toExponential(0)}{" "}
-                CFU/mL
+                significant ≥ {p.quantitative.thresholds.significantCfuPerMl.toExponential(0)} CFU/mL
               </span>
             )}
             {p.quantitative.thresholds?.contaminationCfuPerMl !== undefined && (
               <span className="text-muted-foreground">
-                · contamination ≤ {p.quantitative.thresholds.contaminationCfuPerMl.toExponential(0)}{" "}
-                CFU/mL
+                · contamination ≤ {p.quantitative.thresholds.contaminationCfuPerMl.toExponential(0)} CFU/mL
               </span>
             )}
           </div>
@@ -201,10 +169,7 @@ export function SpecimenSection() {
           </h4>
           <ul className="flex flex-wrap gap-1.5">
             {p.ipcFlagHints.map((h) => (
-              <li
-                key={h}
-                className="rounded bg-destructive/10 px-2 py-1 font-mono text-[11px] text-destructive"
-              >
+              <li key={h} className="rounded bg-destructive/10 px-2 py-1 font-mono text-[11px] text-destructive">
                 {h}
               </li>
             ))}

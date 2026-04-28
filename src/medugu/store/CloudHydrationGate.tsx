@@ -40,7 +40,9 @@ export function CloudHydrationGate({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="max-w-md text-center">
-          <p className="text-sm font-medium text-destructive">Could not load lab data</p>
+          <p className="text-sm font-medium text-destructive">
+            Could not load lab data
+          </p>
           <p className="mt-2 text-xs text-muted-foreground">{error}</p>
         </div>
       </div>

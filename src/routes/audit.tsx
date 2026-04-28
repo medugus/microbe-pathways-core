@@ -86,11 +86,7 @@ function AuditViewer() {
     return rows.filter((r) => {
       if (entityFilter !== "all" && r.entity !== entityFilter) return false;
       if (actionQuery && !r.action.toLowerCase().includes(actionQuery.toLowerCase())) return false;
-      if (
-        accessionQuery &&
-        !(r.entity_id ?? "").toLowerCase().includes(accessionQuery.toLowerCase())
-      )
-        return false;
+      if (accessionQuery && !(r.entity_id ?? "").toLowerCase().includes(accessionQuery.toLowerCase())) return false;
       return true;
     });
   }, [rows, entityFilter, actionQuery, accessionQuery]);
@@ -104,7 +100,10 @@ function AuditViewer() {
             Tenant-scoped, append-only. Most recent {rows.length} events.
           </p>
         </div>
-        <Link to="/" className="text-sm text-primary underline-offset-4 hover:underline">
+        <Link
+          to="/"
+          className="text-sm text-primary underline-offset-4 hover:underline"
+        >
           ← Back to lab
         </Link>
       </div>

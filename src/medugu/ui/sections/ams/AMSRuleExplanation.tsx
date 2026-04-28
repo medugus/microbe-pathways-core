@@ -1,8 +1,5 @@
 import type { ASTResult } from "../../../domain/types";
-import type {
-  AMSRecommendationExplanation,
-  StewardshipDecision,
-} from "../../../logic/stewardshipEngine";
+import type { AMSRecommendationExplanation, StewardshipDecision } from "../../../logic/stewardshipEngine";
 
 function Item({ label, value }: { label: string; value?: string }) {
   return (
@@ -22,9 +19,7 @@ export function AMSRuleExplanation({
 }) {
   return (
     <details className="rounded-md border border-border bg-background p-2 text-xs">
-      <summary className="cursor-pointer font-medium text-foreground">
-        Why this recommendation?
-      </summary>
+      <summary className="cursor-pointer font-medium text-foreground">Why this recommendation?</summary>
       <ul className="mt-2 space-y-1.5">
         <Item label="Matched rule" value={explanation.matchedRuleCode} />
         <Item label="Antibiotic under review" value={explanation.antibioticUnderReview} />

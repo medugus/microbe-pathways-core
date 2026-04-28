@@ -73,8 +73,7 @@ export function MicroscopySection() {
     setOpenKey(key);
     setDraftValue(existing?.cellsPerHpf !== undefined ? String(existing.cellsPerHpf) : "");
     // Try to parse unit from existing.result ("12 cells/hpf"), else default.
-    const fromResult =
-      typeof existing?.result === "string" ? existing.result.split(" ").slice(1).join(" ") : "";
+    const fromResult = typeof existing?.result === "string" ? existing.result.split(" ").slice(1).join(" ") : "";
     setDraftUnit(fromResult && units.includes(fromResult) ? fromResult : units[0]);
   }
 
@@ -153,9 +152,7 @@ export function MicroscopySection() {
                     <span className="flex items-center gap-2">
                       {finding ? (
                         <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-mono text-primary">
-                          {typeof finding.result === "string"
-                            ? finding.result
-                            : String(finding.result)}
+                          {typeof finding.result === "string" ? finding.result : String(finding.result)}
                         </span>
                       ) : (
                         <span className="rounded bg-muted px-2 py-0.5 text-[10px] uppercase text-muted-foreground">

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
-import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,6 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { session, loading } = useAuth();
-  const supabaseEnabled = isSupabaseConfigured();
   const navigate = useNavigate();
   const search = Route.useSearch();
   // Never honour a redirect back to /login or /signup — that creates an
@@ -60,74 +59,46 @@ function LoginPage() {
 
   // If already authenticated, leave the login page.
   useEffect(() => {
-    if (!supabaseEnabled) return;
     if (!loading && session) {
       void navigate({ to: redirectTo });
     }
-  }, [supabaseEnabled, loading, session, navigate, redirectTo]);
-
-  if (!supabaseEnabled) {
-    return (
-      <AuthShell currentPage="login">
-        <AuthCard>
-          <h1 className="font-serif text-3xl tracking-tight text-foreground">Authentication disabled</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This deployment is running without Supabase auth. You can continue directly to the app.
-          </p>
-          <Button className="mt-6 w-full" onClick={() => void navigate({ to: "/" })}>
-            Continue to app
-          </Button>
-        </AuthCard>
-      </AuthShell>
-    );
-  }
+  }, [loading, session, navigate, redirectTo]);
 
   const onEmailSignIn = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setBusy(true);
     const trimmedEmail = email.trim();
-
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: trimmedEmail,
+      password,
+    });
+    setBusy(false);
+    if (signInError) {
+      setError(signInError.message);
+      return;
+    }
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
-        password,
-      });
-      if (signInError) {
-        setError(signInError.message);
-        return;
-      }
-
       window.localStorage.setItem("medugu.rememberMe", rememberMe ? "1" : "0");
       if (rememberMe) {
         window.localStorage.setItem("medugu.lastEmail", trimmedEmail);
       } else {
         window.localStorage.removeItem("medugu.lastEmail");
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Sign-in failed. Please try again.";
-      setError(message);
-    } finally {
-      setBusy(false);
+    } catch {
+      /* ignore */
     }
   };
 
   const onGoogle = async () => {
     setError(null);
     setBusy(true);
-    try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
-      });
-      if ("error" in result && result.error) {
-        setError(result.error.message);
-      }
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Google sign-in failed. Please try again.";
-      setError(message);
-    } finally {
-      setBusy(false);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
+    });
+    setBusy(false);
+    if ("error" in result && result.error) {
+      setError(result.error.message);
     }
   };
 

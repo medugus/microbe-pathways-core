@@ -23,15 +23,18 @@ export function ASTServerActions({
           {applying ? "Applying on server…" : "Apply expert rules"}
         </button>
         <span className="text-[11px] text-muted-foreground">
-          Server re-runs MRSA / ESBL / CRE / VRE / ICR / intrinsic / AmpC inference and writes
-          phenotype + cascade decisions.
+          Server re-runs MRSA / ESBL / CRE / VRE / ICR / intrinsic / AmpC inference and writes phenotype + cascade decisions.
         </span>
       </div>
       {applyError && (
-        <p className="md:col-span-6 text-[11px] text-destructive">Server rejected: {applyError}</p>
+        <p className="md:col-span-6 text-[11px] text-destructive">
+          Server rejected: {applyError}
+        </p>
       )}
       {appliedSummary && (
-        <p className="md:col-span-6 text-[11px] text-muted-foreground">{appliedSummary}</p>
+        <p className="md:col-span-6 text-[11px] text-muted-foreground">
+          {appliedSummary}
+        </p>
       )}
     </>
   );

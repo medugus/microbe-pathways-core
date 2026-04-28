@@ -125,7 +125,10 @@ function appendAudit(
   });
   return {
     ...a,
-    audit: [...a.audit, { id: newId("aud"), at: new Date().toISOString(), ...ev }],
+    audit: [
+      ...a.audit,
+      { id: newId("aud"), at: new Date().toISOString(), ...ev },
+    ],
   };
 }
 
@@ -354,11 +357,7 @@ export const accessionStore = {
           action: "phoneOut.recorded",
           section: "release",
           field: "phoneOuts",
-          newValue: {
-            recipient: evt.recipient,
-            reasonCode: evt.reasonCode,
-            acknowledged: evt.acknowledged,
-          },
+          newValue: { recipient: evt.recipient, reasonCode: evt.reasonCode, acknowledged: evt.acknowledged },
         },
         { entity: "release_package", entityId: accessionId },
       ),
@@ -453,11 +452,7 @@ export const accessionStore = {
   recordConsultantOverride(
     accessionId: string,
     astId: string,
-    override: {
-      actor: string;
-      reason: string;
-      toInterpretation?: import("../domain/enums").ASTInterpretation;
-    },
+    override: { actor: string; reason: string; toInterpretation?: import("../domain/enums").ASTInterpretation },
     actor = "local",
   ) {
     mutate(accessionId, (a) => {
@@ -492,7 +487,11 @@ export const accessionStore = {
 
   // ---------- Stage 6: AMS restricted-drug approval (browser-phase) ----------
 
-  requestAMSApproval(accessionId: string, req: AMSApprovalRequest, actor = "local") {
+  requestAMSApproval(
+    accessionId: string,
+    req: AMSApprovalRequest,
+    actor = "local",
+  ) {
     mutate(accessionId, (a) => {
       const list = [...(a.amsApprovals ?? []), req];
       return appendAudit(
@@ -552,7 +551,11 @@ export const accessionStore = {
     });
   },
 
-  expireAMSApproval(accessionId: string, requestId: string, actor = "system") {
+  expireAMSApproval(
+    accessionId: string,
+    requestId: string,
+    actor = "system",
+  ) {
     mutate(accessionId, (a) => {
       const list = a.amsApprovals ?? [];
       const before = list.find((r) => r.id === requestId);
@@ -580,7 +583,12 @@ export const accessionStore = {
     });
   },
 
-  escalateAMSApproval(accessionId: string, requestId: string, actor = "system", note?: string) {
+  escalateAMSApproval(
+    accessionId: string,
+    requestId: string,
+    actor = "system",
+    note?: string,
+  ) {
     mutate(accessionId, (a) => {
       const list = a.amsApprovals ?? [];
       const before = list.find((r) => r.id === requestId);

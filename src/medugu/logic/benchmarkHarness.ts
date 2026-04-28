@@ -137,12 +137,7 @@ export const SCENARIO_ACCESSION_MAP: Record<ScenarioId, string> = {
 
 export function evaluateScenarioMetrics(
   accession: Accession,
-  liveMetrics: {
-    clicks: number;
-    screenTransitions: number;
-    timeOnTaskMs: number;
-    ruleExplanationVisible: boolean;
-  },
+  liveMetrics: { clicks: number; screenTransitions: number; timeOnTaskMs: number; ruleExplanationVisible: boolean },
 ): ScenarioAcceptance["metrics"] {
   const v = runValidation(accession);
   const gate = evaluateExportGate(accession);
@@ -235,11 +230,7 @@ class Harness {
     this.emit();
   }
   reset() {
-    this.snap = {
-      ...emptySnapshot(),
-      scenarioId: this.snap.scenarioId,
-      accessionId: this.snap.accessionId,
-    };
+    this.snap = { ...emptySnapshot(), scenarioId: this.snap.scenarioId, accessionId: this.snap.accessionId };
     this.emit();
   }
   recordClick(detail?: string) {

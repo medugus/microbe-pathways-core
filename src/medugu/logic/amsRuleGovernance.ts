@@ -33,9 +33,7 @@ export function getActiveAMSRules(rules: AMSRuleDefinition[]): AMSRuleDefinition
   return rules.filter((rule) => rule.governanceStatus === "active");
 }
 
-export function getAMSRulesByCategory(
-  rules: AMSRuleDefinition[],
-): Record<string, AMSRuleDefinition[]> {
+export function getAMSRulesByCategory(rules: AMSRuleDefinition[]): Record<string, AMSRuleDefinition[]> {
   return rules.reduce<Record<string, AMSRuleDefinition[]>>((acc, rule) => {
     const key = rule.ruleCategory ?? "uncategorized";
     acc[key] = acc[key] ?? [];

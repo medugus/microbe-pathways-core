@@ -6,11 +6,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "./AuthContext";
-import { isSupabaseConfigured } from "@/integrations/supabase/client";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { loading, session } = useAuth();
-  const supabaseEnabled = isSupabaseConfigured();
   const navigate = useNavigate();
   const location = useRouterState({ select: (s) => s.location });
 
@@ -23,7 +21,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!supabaseEnabled) return;
     if (loading) return;
     if (session) return;
     // Don't push a redirect back to /login or /signup — would loop.
@@ -34,11 +31,11 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       search: { redirect: target },
       replace: true,
     });
-  }, [supabaseEnabled, loading, session, navigate, location.pathname]);
+  }, [loading, session, navigate, location.pathname]);
 
   if (!hydrated) return null;
 
-  if (supabaseEnabled && (loading || !session)) {
+  if (loading || !session) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-sm text-muted-foreground">Loading…</div>

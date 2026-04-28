@@ -83,11 +83,11 @@ function resolvePositiveDay(
 // ---------------------------------------------------------------------------
 
 type CellVariant =
-  | "empty" // no metadata / set not started
-  | "incubating" // day is within incubation period, no flag yet
-  | "flagged" // this is the day the bottle flagged positive
-  | "removed" // bottle was removed from incubator after positive flag
-  | "no_growth" // bottle is confirmed no-growth (terminal negative)
+  | "empty"       // no metadata / set not started
+  | "incubating"  // day is within incubation period, no flag yet
+  | "flagged"     // this is the day the bottle flagged positive
+  | "removed"     // bottle was removed from incubator after positive flag
+  | "no_growth"   // bottle is confirmed no-growth (terminal negative)
   | "pending_ng"; // no_growth not yet terminal (earlier days for no_growth bottles)
 
 function getVariant(
@@ -123,17 +123,20 @@ function cellStyle(variant: CellVariant): CellStyleConfig {
   switch (variant) {
     case "flagged":
       return {
-        wrapper: "rounded border border-destructive bg-destructive/10 px-1 py-0.5 text-center",
+        wrapper:
+          "rounded border border-destructive bg-destructive/10 px-1 py-0.5 text-center",
         label: "text-destructive font-semibold",
       };
     case "no_growth":
       return {
-        wrapper: "rounded border border-border bg-muted/30 px-1 py-0.5 text-center",
+        wrapper:
+          "rounded border border-border bg-muted/30 px-1 py-0.5 text-center",
         label: "text-muted-foreground",
       };
     case "removed":
       return {
-        wrapper: "rounded border border-border bg-muted/20 px-1 py-0.5 text-center",
+        wrapper:
+          "rounded border border-border bg-muted/20 px-1 py-0.5 text-center",
         label: "text-muted-foreground",
       };
     case "pending_ng":
@@ -162,7 +165,9 @@ function cellText(
 ): string {
   switch (variant) {
     case "flagged":
-      return positiveInfo?.ttpHours !== undefined ? `+${positiveInfo.ttpHours}h` : "Flag";
+      return positiveInfo?.ttpHours !== undefined
+        ? `+${positiveInfo.ttpHours}h`
+        : "Flag";
     case "no_growth":
       return "No growth";
     case "removed":
@@ -209,7 +214,10 @@ function cellTitle(
 // Main component
 // ---------------------------------------------------------------------------
 
-export function BottleIncubationBoard({ sets, bottleResults }: BottleIncubationBoardProps) {
+export function BottleIncubationBoard({
+  sets,
+  bottleResults,
+}: BottleIncubationBoardProps) {
   if (sets.length === 0) return null;
 
   // Collect rows: one per (set x bottle).
@@ -223,7 +231,9 @@ export function BottleIncubationBoard({ sets, bottleResults }: BottleIncubationB
       key: `${set.setNo}-${bottle}`,
       set,
       bottle,
-      result: bottleResults.find((r) => r.setNo === set.setNo && r.bottleType === bottle),
+      result: bottleResults.find(
+        (r) => r.setNo === set.setNo && r.bottleType === bottle,
+      ),
     })),
   );
 
@@ -261,8 +271,12 @@ export function BottleIncubationBoard({ sets, bottleResults }: BottleIncubationB
                 set,
               );
               const label = BOTTLE_LABEL[bottle] ?? bottle;
-              const siteLabel = set.drawSite ? set.drawSite.replace(/_/g, " ").toLowerCase() : "—";
-              const siteDisplay = set.lumenLabel ? `${siteLabel} · ${set.lumenLabel}` : siteLabel;
+              const siteLabel = set.drawSite
+                ? set.drawSite.replace(/_/g, " ").toLowerCase()
+                : "—";
+              const siteDisplay = set.lumenLabel
+                ? `${siteLabel} · ${set.lumenLabel}`
+                : siteLabel;
 
               return (
                 <tr key={key} className="border-t border-border align-middle">
@@ -276,8 +290,14 @@ export function BottleIncubationBoard({ sets, bottleResults }: BottleIncubationB
                     const title = cellTitle(variant, positiveInfo, day, label);
                     return (
                       <td key={day} className="p-1">
-                        <span className={styles.wrapper} title={title} aria-label={title}>
-                          <span className={`text-[10px] ${styles.label}`}>{text}</span>
+                        <span
+                          className={styles.wrapper}
+                          title={title}
+                          aria-label={title}
+                        >
+                          <span className={`text-[10px] ${styles.label}`}>
+                            {text}
+                          </span>
                         </span>
                       </td>
                     );

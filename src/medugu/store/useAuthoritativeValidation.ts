@@ -89,7 +89,9 @@ export function useAuthoritativeValidation(
         if (reqIdRef.current !== reqId) return;
         setServerReport(null);
         setSource("client-fallback");
-        setFallbackReason(err instanceof Error ? err.message : "Server validation request failed.");
+        setFallbackReason(
+          err instanceof Error ? err.message : "Server validation request failed.",
+        );
       })
       .finally(() => {
         if (reqIdRef.current !== reqId) return;

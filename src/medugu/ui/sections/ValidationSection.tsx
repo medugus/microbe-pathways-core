@@ -45,7 +45,9 @@ export function ValidationSection() {
           </span>
         )}
         {v.phoneOutRequiredPending && (
-          <span className="chip chip-square chip-danger">phone-out required (blocking)</span>
+          <span className="chip chip-square chip-danger">
+            phone-out required (blocking)
+          </span>
         )}
         {v.amsPendingRestrictedCount > 0 && (
           <span className="chip chip-square chip-ams-pending">
@@ -70,8 +72,8 @@ export function ValidationSection() {
                     sev === "block"
                       ? "border-destructive/30 bg-destructive/10 text-destructive"
                       : sev === "warn"
-                        ? "border-border bg-muted text-foreground"
-                        : "border-border bg-background text-muted-foreground"
+                      ? "border-border bg-muted text-foreground"
+                      : "border-border bg-background text-muted-foreground"
                   }`}
                 >
                   <div className="flex items-baseline justify-between gap-3">

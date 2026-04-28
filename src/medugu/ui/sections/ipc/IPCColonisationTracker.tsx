@@ -30,40 +30,22 @@ export function IPCColonisationTracker({ context }: IPCColonisationTrackerProps)
         </span>
       </div>
 
-      <p className="text-sm text-foreground">
-        Target organism: {context.targetOrganism ?? "not available"}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        Screening result: {humanize(context.screenResult)}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        Carrier status: {humanize(context.episodeStatus)}
-      </p>
+      <p className="text-sm text-foreground">Target organism: {context.targetOrganism ?? "not available"}</p>
+      <p className="text-xs text-muted-foreground">Screening result: {humanize(context.screenResult)}</p>
+      <p className="text-xs text-muted-foreground">Carrier status: {humanize(context.episodeStatus)}</p>
 
       <IPCClearanceCounter count={context.clearanceCount} required={context.clearanceRequired} />
 
       <p className="text-xs text-muted-foreground">
-        Last positive date:{" "}
-        {context.lastPositiveDate
-          ? new Date(context.lastPositiveDate).toLocaleDateString()
-          : "not available"}
+        Last positive date: {context.lastPositiveDate ? new Date(context.lastPositiveDate).toLocaleDateString() : "not available"}
       </p>
       <p className="text-xs text-muted-foreground">
-        Days since last positive:{" "}
-        {context.daysSinceLastPositive !== undefined
-          ? context.daysSinceLastPositive
-          : "not available"}
+        Days since last positive: {context.daysSinceLastPositive !== undefined ? context.daysSinceLastPositive : "not available"}
       </p>
 
-      <p className="text-xs text-muted-foreground">
-        Isolation status: {humanize(context.isolationStatus)}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        Decolonisation status: {humanize(context.decolonisationStatus)}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        Next suggested screen/action: {context.nextAction ?? "not available"}
-      </p>
+      <p className="text-xs text-muted-foreground">Isolation status: {humanize(context.isolationStatus)}</p>
+      <p className="text-xs text-muted-foreground">Decolonisation status: {humanize(context.decolonisationStatus)}</p>
+      <p className="text-xs text-muted-foreground">Next suggested screen/action: {context.nextAction ?? "not available"}</p>
       <p className="text-[10px] text-muted-foreground">{context.limitationNote}</p>
     </section>
   );

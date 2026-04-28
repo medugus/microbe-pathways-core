@@ -19,7 +19,6 @@ import { applyExpertRulesServer } from "../../store/engines.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { ASTReportabilityBoard } from "./ASTReportabilityBoard";
 import { isBloodCulture, listPositiveBottles, sourceLinkKey } from "../../logic/bloodIsolateRules";
-import { isTrueBlankAstRow } from "../../logic/astBlankRows";
 import { ASTEntryControls } from "./ASTEntryControls";
 import { ASTPanelEntry } from "./ASTPanelEntry";
 import { ASTServerActions } from "./ASTServerActions";
@@ -76,12 +75,12 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     return new Set(listPositiveBottles(accession).map((p) => sourceLinkKey(p.setNo, p.bottleType)));
   }, [accession]);
 
-  const selectedIsolateHasPositiveLink = !!selectedIsolate?.bloodSourceLinks?.some((l) =>
-    bloodPositiveSources.has(sourceLinkKey(l.setNo, l.bottleType)),
-  );
+  const selectedIsolateHasPositiveLink =
+    !!selectedIsolate?.bloodSourceLinks?.some((l) =>
+      bloodPositiveSources.has(sourceLinkKey(l.setNo, l.bottleType)),
+    );
 
-  const isBloodASTBlocked =
-    isBloodCulture(accession) && !!selectedIsolate && !selectedIsolateHasPositiveLink;
+  const isBloodASTBlocked = isBloodCulture(accession) && !!selectedIsolate && !selectedIsolateHasPositiveLink;
 
   useEffect(() => {
     if (!selectedIsolate) return;
@@ -97,14 +96,7 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     if (!panelId && selectedPanel.id) {
       setPanelId(selectedPanel.id);
     }
-  }, [
-    eligiblePanels,
-    fallbackPanel,
-    isSelectedPanelEligible,
-    panelId,
-    selectedIsolate,
-    selectedPanel,
-  ]);
+  }, [eligiblePanels, fallbackPanel, isSelectedPanelEligible, panelId, selectedIsolate, selectedPanel]);
 
   const panelMeta = useMemo(() => {
     if (!selectedPanel || !activeIsolateId) {
@@ -127,10 +119,6 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
 
     return { pendingCodes, duplicateCount };
   }, [accession.ast, activeIsolateId, selectedPanel]);
-  const blankAstRowIds = useMemo(
-    () => accession.ast.filter((row) => isTrueBlankAstRow(row)).map((row) => row.id),
-    [accession.ast],
-  );
 
   function onAdd() {
     if (!activeIsolateId || isBloodASTBlocked) return;
@@ -205,14 +193,6 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     }
   }
 
-  function clearUnresultedRows() {
-    if (blankAstRowIds.length === 0) return;
-    for (const rowId of blankAstRowIds) {
-      meduguActions.removeAST(accession.id, rowId);
-    }
-    setPanelSummary(`Removed ${blankAstRowIds.length} unresulted placeholder row(s).`);
-  }
-
   if (isolates.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -225,9 +205,7 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     <div className="space-y-5">
       <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-background p-3 md:grid-cols-6">
         <label className="text-xs md:col-span-2">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-            Entry mode
-          </span>
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Entry mode</span>
           <select
             value={entryMode}
             onChange={(e) => setEntryMode(e.target.value as EntryMode)}
@@ -239,9 +217,7 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
         </label>
 
         <label className="text-xs md:col-span-2">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-            Isolate
-          </span>
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Isolate</span>
           <select
             value={activeIsolateId}
             onChange={(e) => setIsolateId(e.target.value)}
@@ -294,21 +270,6 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
           appliedSummary={appliedSummary}
           onApplyExpertRules={applyExpertRules}
         />
-
-        <div className="md:col-span-6 flex flex-wrap items-center gap-2 rounded border border-border bg-card px-2 py-2">
-          <button
-            type="button"
-            onClick={clearUnresultedRows}
-            disabled={blankAstRowIds.length === 0}
-            className="rounded border border-border px-3 py-1 text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Remove unresulted AST rows
-          </button>
-          <span className="text-[11px] text-muted-foreground">
-            Removes untouched blank placeholders only (no raw value, no MIC/zone, no S/I/R, no
-            interpretation/comment, no explicit review marker).
-          </span>
-        </div>
       </div>
 
       <ASTReportabilityBoard accession={accession} />
@@ -316,10 +277,10 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
       <AntibiogramGrid accession={accession} />
 
       <p className="text-[11px] text-muted-foreground">
-        Antibiogram view — antibiotics down, isolates across. S/I/R cells are color-coded with raw
-        value below. Click a cell to edit interpretation or governance; phenotype + cascade
-        decisions are written by the server expert engine. Use consultant override (per row) to
-        deviate, with reason audited.
+        Antibiogram view — antibiotics down, isolates across. S/I/R cells are
+        color-coded with raw value below. Click a cell to edit interpretation or
+        governance; phenotype + cascade decisions are written by the server expert
+        engine. Use consultant override (per row) to deviate, with reason audited.
       </p>
     </div>
   );

@@ -21,8 +21,6 @@ import { ReleaseSealPanel } from "./ReleaseSealPanel";
 import { AmendmentPanel } from "./AmendmentPanel";
 import { ReleaseHistoryEmbed } from "./ReleaseHistoryEmbed";
 import { deriveIPCReleaseContext } from "../../logic/ipcReportGovernance";
-import { deriveAMSReleaseContext } from "../../logic/amsReleaseGovernance";
-import { AMSReleaseContextPanel } from "./release/AMSReleaseContextPanel";
 
 export function ReleaseSection() {
   const accession = useActiveAccession();
@@ -75,7 +73,6 @@ export function ReleaseSection() {
     accession.release.state === ReleaseState.Released ||
     accession.release.state === ReleaseState.Amended;
   const ipcReleaseContext = deriveIPCReleaseContext(accession);
-  const amsReleaseContext = deriveAMSReleaseContext(accession);
 
   function advance(to: WorkflowStage) {
     if (!accession) return;
@@ -228,6 +225,8 @@ export function ReleaseSection() {
       {/* Validation source badge */}
       <ValidationSourceBadge validation={validation} />
 
+
+
       {ipcReleaseContext && (
         <section className="rounded-md border border-border bg-card p-3">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -251,7 +250,6 @@ export function ReleaseSection() {
           </div>
         </section>
       )}
-      <AMSReleaseContextPanel context={amsReleaseContext} />
       <ReleaseGate
         accession={accession}
         validationReport={v}
@@ -317,8 +315,7 @@ function ValidationSourceBadge({ validation }: { validation: AuthoritativeValida
     default:
       label = "client engine";
       toneClass = "border-border bg-muted text-muted-foreground";
-      title =
-        fallbackReason ?? "PHASE5_SERVER_VALIDATION is disabled; local engine is the contract.";
+      title = fallbackReason ?? "PHASE5_SERVER_VALIDATION is disabled; local engine is the contract.";
       break;
   }
 

@@ -13,7 +13,10 @@ import { supabase } from "@/integrations/supabase/client";
 let activeTenantId: string | null = null;
 let activeActorLabel: string | null = null;
 
-export function setAuditContext(opts: { tenantId: string | null; actorLabel?: string | null }) {
+export function setAuditContext(opts: {
+  tenantId: string | null;
+  actorLabel?: string | null;
+}) {
   activeTenantId = opts.tenantId;
   activeActorLabel = opts.actorLabel ?? null;
 }
@@ -24,15 +27,7 @@ export function getAuditTenantId(): string | null {
 
 export interface AuditWrite {
   action: string;
-  entity:
-    | "accession"
-    | "isolate"
-    | "ast"
-    | "release_package"
-    | "workflow"
-    | "ipc"
-    | "stewardship"
-    | "report";
+  entity: "accession" | "isolate" | "ast" | "release_package" | "workflow" | "ipc" | "stewardship" | "report";
   entityId?: string | null;
   field?: string | null;
   oldValue?: unknown;

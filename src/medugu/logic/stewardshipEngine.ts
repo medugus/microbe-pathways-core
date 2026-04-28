@@ -14,7 +14,6 @@ import {
 import { newId } from "../domain/ids";
 import { approvalStatusForRow, isRestrictedRow } from "./amsEngine";
 import { getOrganism } from "../config/organisms";
-import { evaluateASTReportability } from "./reportability";
 
 export interface StewardshipDecision {
   astId: string;
@@ -71,28 +70,6 @@ export interface AMSRecommendationResult {
 
 const nowIso = () => new Date().toISOString();
 
-function hasClinicalResultEvidence(row: ASTResult): boolean {
-  return (
-    row.rawValue !== undefined ||
-    !!row.interpretedSIR ||
-    !!row.rawInterpretation ||
-    !!row.finalInterpretation ||
-    !!row.consultantOverride ||
-    !!row.expertRulesFired?.length
-  );
-}
-
-export function isAMSReleaseRelevantASTResult(accession: Accession, row: ASTResult): boolean {
-  const isolateLinked = accession.isolates.some((iso) => iso.id === row.isolateId);
-  if (!isolateLinked) return false;
-  if (!hasClinicalResultEvidence(row)) return false;
-
-  const reportability = evaluateASTReportability(row, accession);
-  if (reportability.isSuppressed) return false;
-
-  return reportability.isReportable || reportability.needsApproval || reportability.isRestricted;
-}
-
 export function evaluateStewardship(accession: Accession): StewardshipReport {
   const r = resolveSpecimen(accession.specimen.familyCode, accession.specimen.subtypeCode);
   const profile = r.ok ? r.profile : null;
@@ -125,10 +102,7 @@ export function evaluateStewardship(accession: Accession): StewardshipReport {
 
     // Restricted agents require AMS approval before clinician release.
     // Browser-phase Stage 6: consult amsApprovals on the accession.
-    if (
-      (releaseClass === "restricted" || isRestrictedRow(row)) &&
-      isAMSReleaseRelevantASTResult(accession, row)
-    ) {
+    if (releaseClass === "restricted" || isRestrictedRow(row)) {
       const amsStatus = approvalStatusForRow(accession, row.id);
       if (amsStatus === "approved") {
         approvalRequired = false;
@@ -138,13 +112,10 @@ export function evaluateStewardship(accession: Accession): StewardshipReport {
         approvalRequired = true;
         visibleToClinician = false;
         const stateLabel =
-          amsStatus === "pending"
-            ? "approval pending"
-            : amsStatus === "denied"
-              ? "approval denied"
-              : amsStatus === "expired"
-                ? "approval expired"
-                : "approval not requested";
+          amsStatus === "pending" ? "approval pending"
+          : amsStatus === "denied" ? "approval denied"
+          : amsStatus === "expired" ? "approval expired"
+          : "approval not requested";
         suppressionReason = suppressionReason ?? `Restricted agent (${aware}) — AMS ${stateLabel}.`;
       }
     }
@@ -156,9 +127,7 @@ export function evaluateStewardship(accession: Accession): StewardshipReport {
     }
     if (row.cascadeDecision === "hidden_until_promoted") {
       visibleToClinician = false;
-      suppressionReason =
-        suppressionReason ??
-        "Cascade-tier agent — hidden until first-line resistance is confirmed.";
+      suppressionReason = suppressionReason ?? "Cascade-tier agent — hidden until first-line resistance is confirmed.";
     }
 
     // Screen pathway: never release AST clinically
@@ -204,10 +173,7 @@ export function evaluateStewardship(accession: Accession): StewardshipReport {
   // Bug-drug mismatch (simple heuristic): any row marked R but listed as preferred.
   if (syndromePref) {
     for (const code of syndromePref.prefer) {
-      const matching = accession.ast.filter(
-        (a) =>
-          a.antibioticCode === code && (a.finalInterpretation === "R" || a.interpretedSIR === "R"),
-      );
+      const matching = accession.ast.filter((a) => a.antibioticCode === code && (a.finalInterpretation === "R" || a.interpretedSIR === "R"));
       if (matching.length > 0) {
         notes.push({
           id: newId("sw"),
@@ -240,7 +206,7 @@ export function evaluateAMSRecommendation(
   byAst?: Record<string, StewardshipDecision>,
 ): AMSRecommendationResult {
   const specimen = resolveSpecimen(accession.specimen.familyCode, accession.specimen.subtypeCode);
-  const syndrome = specimen.ok ? (specimen.profile.syndrome ?? undefined) : undefined;
+  const syndrome = specimen.ok ? specimen.profile.syndrome ?? undefined : undefined;
   const specimenLabel = specimen.ok ? specimen.profile.displayName : accession.specimen.subtypeCode;
   const isolate = isolateOfRow(accession, row);
   const organism = isolate ? getOrganism(isolate.organismCode) : undefined;
@@ -264,15 +230,11 @@ export function evaluateAMSRecommendation(
     awareCategory: decision.aware,
     restrictionStatus: decision.approvalRequired ? "approval required" : "not restricted",
     astInterpretation: interpretation ?? "not available",
-    organismContext: organism
-      ? `${isolate?.organismDisplay ?? organism.display} (${organism.gram})`
-      : "not available",
-    specimenOrSyndromeContext:
-      [specimenLabel, syndrome].filter(Boolean).join(" · ") || "not available",
+    organismContext: organism ? `${isolate?.organismDisplay ?? organism.display} (${organism.gram})` : "not available",
+    specimenOrSyndromeContext: [specimenLabel, syndrome].filter(Boolean).join(" · ") || "not available",
     reportabilityGovernanceState: `${row.governance} · ${decision.visibleToClinician ? "reportable" : "withheld"} · approval ${approvalState}`,
     missingData,
-    safetyNote:
-      "Stewardship decision support only — review required; no automatic prescribing or therapy changes.",
+    safetyNote: "Stewardship decision support only — review required; no automatic prescribing or therapy changes.",
   };
 
   if (!therapyUnderReview) {
@@ -296,8 +258,7 @@ export function evaluateAMSRecommendation(
   }
 
   const isolateRows = accession.ast.filter((a) => a.isolateId === row.isolateId);
-  const isNarrowerOption = (candidateCode: string) =>
-    sw?.narrowerPreferred?.includes(candidateCode) ?? false;
+  const isNarrowerOption = (candidateCode: string) => sw?.narrowerPreferred?.includes(candidateCode) ?? false;
   const narrowerActiveOptions = isolateRows.filter((candidate) => {
     if (!isNarrowerOption(candidate.antibioticCode)) return false;
     const candidateInterpretation = candidate.finalInterpretation ?? candidate.interpretedSIR;
@@ -309,8 +270,7 @@ export function evaluateAMSRecommendation(
     return true;
   });
 
-  const severeContext =
-    syndrome === "meningitis" || accession.specimen.subtypeCode.toLowerCase().includes("csf");
+  const severeContext = syndrome === "meningitis" || accession.specimen.subtypeCode.toLowerCase().includes("csf");
 
   if (interpretation === "R") {
     return {
@@ -323,8 +283,8 @@ export function evaluateAMSRecommendation(
   }
 
   const spectrumMismatch =
-    (sw?.spectrum === "gram_positive_only" && organism.gram === "gram_negative") ||
-    (sw?.spectrum === "gram_negative_only" && organism.gram === "gram_positive");
+    (sw?.spectrum === "gram_positive_only" && organism.gram === "gram_negative")
+    || (sw?.spectrum === "gram_negative_only" && organism.gram === "gram_positive");
   if (spectrumMismatch) {
     return {
       category: "bug_drug_mismatch",
@@ -346,15 +306,11 @@ export function evaluateAMSRecommendation(
   }
 
   const broadOrRestrictedContext =
-    decision.aware === "Watch" ||
-    decision.aware === "Reserve" ||
-    decision.approvalRequired ||
-    decision.releaseClass === "restricted";
+    decision.aware === "Watch" || decision.aware === "Reserve" || decision.approvalRequired || decision.releaseClass === "restricted";
   if (!severeContext && broadOrRestrictedContext && narrowerActiveOptions.length > 0) {
     return {
       category: "de_escalation_opportunity",
-      recommendation:
-        "De-escalation opportunity: narrower active option available. Review with clinical context.",
+      recommendation: "De-escalation opportunity: narrower active option available. Review with clinical context.",
       reason: `Active narrower option(s): ${narrowerActiveOptions.map((n) => n.antibioticCode).join(", ")}.`,
       releaseImpact,
       explanation: { ...explanation, matchedRuleCode: "AMS_DE_ESCALATION_ACTIVE_NARROW" },
@@ -364,8 +320,7 @@ export function evaluateAMSRecommendation(
   if (decision.aware === "Reserve") {
     return {
       category: "reserve_review",
-      recommendation:
-        "Reserve antimicrobial requires AMS review; approval required before release where configured.",
+      recommendation: "Reserve antimicrobial requires AMS review; approval required before release where configured.",
       reason: "AWaRe Reserve category is under review.",
       releaseImpact,
       explanation: { ...explanation, matchedRuleCode: "AMS_RESERVE_REVIEW" },
@@ -375,8 +330,7 @@ export function evaluateAMSRecommendation(
   if (decision.approvalRequired || isRestrictedRow(row)) {
     return {
       category: "restricted_approval_required",
-      recommendation:
-        "Restricted antimicrobial requires AMS review and approval before release where configured.",
+      recommendation: "Restricted antimicrobial requires AMS review and approval before release where configured.",
       reason: `Current approval state: ${approvalState.replace("_", " ")}.`,
       releaseImpact,
       explanation: { ...explanation, matchedRuleCode: "AMS_RESTRICTED_APPROVAL" },

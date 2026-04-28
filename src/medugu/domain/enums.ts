@@ -62,8 +62,8 @@ export const ASTInterpretation = {
   I: "I",
   R: "R",
   SDD: "SDD", // susceptible dose-dependent
-  NS: "NS", // non-susceptible
-  ND: "ND", // not determined
+  NS: "NS",   // non-susceptible
+  ND: "ND",   // not determined
 } as const;
 export type ASTInterpretation = (typeof ASTInterpretation)[keyof typeof ASTInterpretation];
 

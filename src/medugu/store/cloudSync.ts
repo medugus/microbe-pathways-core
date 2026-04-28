@@ -134,7 +134,11 @@ export async function pushAccession(tenantId: string, a: Accession): Promise<voi
     if (error) throw error;
 
     if (a.releasePackage) {
-      await maybePushReleasePackage(tenantId, existing.id as string, a.releasePackage);
+      await maybePushReleasePackage(
+        tenantId,
+        existing.id as string,
+        a.releasePackage,
+      );
     }
     return;
   }

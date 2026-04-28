@@ -6,30 +6,13 @@ import type { ConfigState } from "../logic/configEngine";
 export const CONFIG_STORAGE_KEY = "medugu.v3.config";
 export const CONFIG_SCHEMA_VERSION = 1;
 
-function isValidConfigState(input: unknown): input is ConfigState {
-  if (!input || typeof input !== "object") return false;
-  const state = input as Partial<ConfigState>;
-  if (state.schemaVersion !== CONFIG_SCHEMA_VERSION) return false;
-  if (!state.active || typeof state.active !== "object") return false;
-  if (!state.active.meta || typeof state.active.meta !== "object") return false;
-  if (typeof state.active.meta.version !== "number") return false;
-  if (!state.active.payload || typeof state.active.payload !== "object") return false;
-  if (!state.draft || typeof state.draft !== "object") return false;
-  if (!Array.isArray(state.history)) return false;
-  return true;
-}
-
 export function loadConfigState(): ConfigState | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(CONFIG_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as unknown;
-    if (!isValidConfigState(parsed)) {
-      window.localStorage.removeItem(CONFIG_STORAGE_KEY);
-      console.warn("[medugu] dropped incompatible cached config from localStorage");
-      return null;
-    }
+    const parsed = JSON.parse(raw) as ConfigState;
+    if (parsed.schemaVersion !== CONFIG_SCHEMA_VERSION) return null;
     return parsed;
   } catch {
     return null;

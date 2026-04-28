@@ -8,12 +8,11 @@
 import type { Accession, ValidationIssue } from "../domain/types";
 import { resolveSpecimen } from "./specimenResolver";
 import { newId } from "../domain/ids";
+import { pendingRestrictedRowCount } from "./amsEngine";
 import { evaluateIPC } from "./ipcEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
 import { validateBloodIsolates } from "./bloodIsolateRules";
 import { deriveIPCValidationIssues } from "./ipcReportGovernance";
-import { deriveAMSReleaseContext, deriveAMSValidationIssues } from "./amsReleaseGovernance";
-import { isTrueBlankAstRow } from "./astBlankRows";
 
 /**
  * IPC rule codes that constitute a critical alert. When any of these fires on a
@@ -77,9 +76,7 @@ export function runValidation(accession: Accession): ValidationReport {
 
   const r = resolveSpecimen(accession.specimen.familyCode, accession.specimen.subtypeCode);
   if (!r.ok) {
-    issues.push(
-      block("SP_UNRESOLVED", "specimen", `Specimen could not be resolved (${r.reason}).`),
-    );
+    issues.push(block("SP_UNRESOLVED", "specimen", `Specimen could not be resolved (${r.reason}).`));
   }
   const profile = r.ok ? r.profile : null;
 
@@ -95,31 +92,18 @@ export function runValidation(accession: Accession): ValidationReport {
 
   if (profile && profile.gating.pathway === "diagnostic" && accession.isolates.length === 0) {
     issues.push(
-      warn(
-        "ISO_NONE",
-        "isolate",
-        "No isolate recorded — record an explicit no-growth finding if appropriate.",
-      ),
+      warn("ISO_NONE", "isolate", "No isolate recorded — record an explicit no-growth finding if appropriate."),
     );
   }
 
   for (const a of accession.ast) {
-    if (isTrueBlankAstRow(a)) continue;
     if (!a.finalInterpretation) {
       issues.push(
-        block(
-          "AST_INCOMPLETE",
-          "ast",
-          `AST row ${a.antibioticCode} has no final S/I/R interpretation.`,
-        ),
+        block("AST_INCOMPLETE", "ast", `AST row ${a.antibioticCode} has no final S/I/R interpretation.`),
       );
     } else if (a.governance === "draft") {
       issues.push(
-        warn(
-          "AST_NOT_APPROVED",
-          "ast",
-          `AST row ${a.antibioticCode} still in draft governance — approve before release.`,
-        ),
+        warn("AST_NOT_APPROVED", "ast", `AST row ${a.antibioticCode} still in draft governance — approve before release.`),
       );
     }
   }
@@ -127,9 +111,7 @@ export function runValidation(accession: Accession): ValidationReport {
   // ---- Blood culture per-set completeness (BLOCKERS, one per missing field per set).
   if (accession.specimen.familyCode === "BLOOD") {
     const details = (accession.specimen.details ?? {}) as Record<string, unknown>;
-    const sets = Array.isArray(details.sets)
-      ? (details.sets as Array<Record<string, unknown>>)
-      : [];
+    const sets = Array.isArray(details.sets) ? (details.sets as Array<Record<string, unknown>>) : [];
     if (sets.length === 0) {
       issues.push(
         block(
@@ -148,29 +130,17 @@ export function runValidation(accession: Accession): ValidationReport {
         const drawTime = typeof s.drawTime === "string" ? s.drawTime.trim() : "";
         if (!drawSite) {
           issues.push(
-            block(
-              `BC_SET_${setNo}_DRAWSITE_MISSING`,
-              "specimen",
-              `Blood culture set ${setNo}: draw site is required.`,
-            ),
+            block(`BC_SET_${setNo}_DRAWSITE_MISSING`, "specimen", `Blood culture set ${setNo}: draw site is required.`),
           );
         }
         if (bottleTypes.length === 0) {
           issues.push(
-            block(
-              `BC_SET_${setNo}_BOTTLES_MISSING`,
-              "specimen",
-              `Blood culture set ${setNo}: at least one bottle type is required.`,
-            ),
+            block(`BC_SET_${setNo}_BOTTLES_MISSING`, "specimen", `Blood culture set ${setNo}: at least one bottle type is required.`),
           );
         }
         if (!drawTime) {
           issues.push(
-            block(
-              `BC_SET_${setNo}_DRAWTIME_MISSING`,
-              "specimen",
-              `Blood culture set ${setNo}: draw time is required.`,
-            ),
+            block(`BC_SET_${setNo}_DRAWTIME_MISSING`, "specimen", `Blood culture set ${setNo}: draw time is required.`),
           );
         }
       });
@@ -179,10 +149,9 @@ export function runValidation(accession: Accession): ValidationReport {
     // Per-rule blood culture isolate allocation (1–3, source linkage,
     // significance, senior-review on triple pathogen, contaminant carry).
     for (const r of validateBloodIsolates(accession)) {
-      const issue =
-        r.severity === "block"
-          ? block(r.code, "isolate", r.message)
-          : warn(r.code, "isolate", r.message);
+      const issue = r.severity === "block"
+        ? block(r.code, "isolate", r.message)
+        : warn(r.code, "isolate", r.message);
       issues.push(issue);
     }
   }
@@ -208,11 +177,7 @@ export function runValidation(accession: Accession): ValidationReport {
       );
     } else if (!hasAck) {
       issues.push(
-        info(
-          "PHONE_OUT_HINT",
-          "release",
-          "Critical-pathway specimen — phone-out workflow available.",
-        ),
+        info("PHONE_OUT_HINT", "release", "Critical-pathway specimen — phone-out workflow available."),
       );
     }
   }
@@ -259,20 +224,20 @@ export function runValidation(accession: Accession): ValidationReport {
     }
   }
 
-  // ---- AMS governance hooks for validation/release review.
-  // Signals stay decision-support only and do not auto-generate prescribing changes.
-  for (const amsIssue of deriveAMSValidationIssues(accession)) {
-    if (amsIssue.severity === "blocker") {
-      issues.push(block(amsIssue.code, "release", amsIssue.message));
-    } else if (amsIssue.severity === "warning") {
-      issues.push(warn(amsIssue.code, "release", amsIssue.message));
-    } else {
-      issues.push(info(amsIssue.code, "release", amsIssue.message));
-    }
+  // ---- Stage 6: AMS restricted-drug approvals (warning surface).
+  // Restricted rows are hidden from the clinician report by stewardship until
+  // approved, so this is informational/warn — not a release blocker.
+  const amsPendingRestrictedCount = pendingRestrictedRowCount(accession);
+  if (amsPendingRestrictedCount > 0) {
+    issues.push(
+      warn(
+        "AMS_PENDING_RESTRICTED",
+        "release",
+        `${amsPendingRestrictedCount} restricted antimicrobial row(s) hidden from clinician report pending AMS approval.`,
+      ),
+    );
   }
 
-  // Keep count surfaced in Validation/Release chips for pending restricted approvals.
-  const amsPendingRestrictedCount = deriveAMSReleaseContext(accession).pendingApprovalCount;
 
   // ---- IPC governance warnings/blockers (non-clinician-facing by default).
   issues.push(...deriveIPCValidationIssues(accession));

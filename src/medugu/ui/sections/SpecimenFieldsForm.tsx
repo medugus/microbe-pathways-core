@@ -217,7 +217,11 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
         );
       case "drawTime":
         return (
-          <DateTimeInput label={label} value={String(value)} onChange={(v) => update(field, v)} />
+          <DateTimeInput
+            label={label}
+            value={String(value)}
+            onChange={(v) => update(field, v)}
+          />
         );
       case "contaminationContext":
         return (
@@ -267,8 +271,8 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
                 familyCode === "URINE"
                   ? urineCollectionMethodOptions
                   : familyCode === "LRT"
-                    ? COLLECTION_METHOD_NOTES_LRT
-                    : []
+                  ? COLLECTION_METHOD_NOTES_LRT
+                  : []
               }
               onChange={(v) => {
                 setCollectionResetWarning(false);
@@ -328,7 +332,13 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
           />
         );
       default:
-        return <TextInput label={label} value={String(value)} onChange={(v) => update(field, v)} />;
+        return (
+          <TextInput
+            label={label}
+            value={String(value)}
+            onChange={(v) => update(field, v)}
+          />
+        );
     }
   };
 

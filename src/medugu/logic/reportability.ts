@@ -1,12 +1,7 @@
 import type { Accession, ASTResult } from "../domain/types";
 import { isRestrictedRow } from "./amsEngine";
 
-export type ClinicianVisibility =
-  | "Suppressed"
-  | "Needs approval"
-  | "Lab-only"
-  | "Will report"
-  | "Unknown";
+export type ClinicianVisibility = "Suppressed" | "Needs approval" | "Lab-only" | "Will report" | "Unknown";
 
 function normalize(value: string | undefined): string {
   return (value ?? "").trim().toLowerCase();
@@ -28,10 +23,7 @@ export interface ASTReportabilityEvaluation {
   missingGovernance: boolean;
 }
 
-export function evaluateASTReportability(
-  row: ASTResult,
-  accession: Accession,
-): ASTReportabilityEvaluation {
+export function evaluateASTReportability(row: ASTResult, accession: Accession): ASTReportabilityEvaluation {
   void accession;
   const governance = normalize(row.governance);
   const cascadeDecision = normalize(row.cascadeDecision);
@@ -41,16 +33,9 @@ export function evaluateASTReportability(
     cascadeDecision.includes("withheld") ||
     cascadeDecision.includes("hidden");
 
-  const needsApproval =
-    governance.includes("approval required") || governance === "approval_required";
+  const needsApproval = governance.includes("approval required") || governance === "approval_required";
   const isLabOnly = governance === "lab-only" || governance === "lab_only";
-  const rawGovernanceReportable = new Set([
-    "reportable",
-    "report",
-    "interpreted",
-    "approved",
-    "released",
-  ]).has(governance);
+  const rawGovernanceReportable = new Set(["reportable", "report", "interpreted", "approved", "released"]).has(governance);
   const isRestricted = isRestrictedRow(row);
   const phenotypePresent = hasPhenotypeFlags(row);
   const missingGovernance = governance === "";

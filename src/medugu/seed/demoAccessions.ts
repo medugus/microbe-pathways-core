@@ -289,12 +289,7 @@ const csf = (() => {
     },
     ...emptyTail(),
     microscopy: [
-      {
-        id: "mic_csf_g",
-        stainCode: "gram",
-        result: "gram_positive",
-        organismsSeen: "Gram-positive diplococci",
-      },
+      { id: "mic_csf_g", stainCode: "gram", result: "gram_positive", organismsSeen: "Gram-positive diplococci" },
       { id: "mic_csf_w", stainCode: "cellCountWBC", result: "1850" },
       { id: "mic_csf_r", stainCode: "cellCountRBC", result: "5" },
       { id: "mic_csf_d", stainCode: "differential", result: "neutrophils 92%" },
@@ -352,11 +347,7 @@ const mrsaScreen = (() => {
     },
     ...emptyTail(),
     isolates: [i],
-    ast: [
-      ast(i.id, "FOX", 6, "R"),
-      ast(i.id, "OXA", 8, "R"),
-      ast(i.id, "VAN", 1, "S", ASTMethod.MIC_Broth),
-    ],
+    ast: [ast(i.id, "FOX", 6, "R"), ast(i.id, "OXA", 8, "R"), ast(i.id, "VAN", 1, "S", ASTMethod.MIC_Broth)],
     release: { state: ReleaseState.Draft, reportVersion: 0 },
   } as Accession;
 })();
@@ -422,67 +413,61 @@ const cpeScreenPositive = (() => {
     },
     ...emptyTail(),
     isolates: [i],
-    ast: [
-      ast(i.id, "MEM", 8, "R", ASTMethod.MIC_Broth),
-      ast(i.id, "ETP", 8, "R", ASTMethod.MIC_Broth),
-    ],
+    ast: [ast(i.id, "MEM", 8, "R", ASTMethod.MIC_Broth), ast(i.id, "ETP", 8, "R", ASTMethod.MIC_Broth)],
     release: { state: ReleaseState.Released, reportVersion: 1 },
   } as Accession;
 })();
 
-const cpeScreenNeg1 = (() =>
-  ({
-    ...base("MB25-COL003A", WorkflowStage.Released, dayAgo(20)),
-    priority: Priority.Routine,
-    patient: { ...cpeScreenPositive.patient },
-    specimen: {
-      familyCode: "COLONISATION",
-      subtypeCode: "COL_CPE_RECTAL",
-      collectedAt: dayAgo(20),
-      receivedAt: dayAgo(20),
-      containerCode: "SWAB_TRANSPORT",
-      freeTextLabel: "CPE clearance screen 1",
-    },
-    ...emptyTail(),
-    isolates: [iso(1, "NOGRO", "No growth", { significance: "indeterminate" })],
-    release: { state: ReleaseState.Released, reportVersion: 1 },
-  }) as Accession)();
+const cpeScreenNeg1 = (() => ({
+  ...base("MB25-COL003A", WorkflowStage.Released, dayAgo(20)),
+  priority: Priority.Routine,
+  patient: { ...cpeScreenPositive.patient },
+  specimen: {
+    familyCode: "COLONISATION",
+    subtypeCode: "COL_CPE_RECTAL",
+    collectedAt: dayAgo(20),
+    receivedAt: dayAgo(20),
+    containerCode: "SWAB_TRANSPORT",
+    freeTextLabel: "CPE clearance screen 1",
+  },
+  ...emptyTail(),
+  isolates: [iso(1, "NOGRO", "No growth", { significance: "indeterminate" })],
+  release: { state: ReleaseState.Released, reportVersion: 1 },
+}) as Accession)();
 
-const cpeScreenNeg2 = (() =>
-  ({
-    ...base("MB25-COL003B", WorkflowStage.Released, dayAgo(10)),
-    priority: Priority.Routine,
-    patient: { ...cpeScreenPositive.patient },
-    specimen: {
-      familyCode: "COLONISATION",
-      subtypeCode: "COL_CPE_RECTAL",
-      collectedAt: dayAgo(10),
-      receivedAt: dayAgo(10),
-      containerCode: "SWAB_TRANSPORT",
-      freeTextLabel: "CPE clearance screen 2",
-    },
-    ...emptyTail(),
-    isolates: [iso(1, "NOGRO", "No growth", { significance: "indeterminate" })],
-    release: { state: ReleaseState.Released, reportVersion: 1 },
-  }) as Accession)();
+const cpeScreenNeg2 = (() => ({
+  ...base("MB25-COL003B", WorkflowStage.Released, dayAgo(10)),
+  priority: Priority.Routine,
+  patient: { ...cpeScreenPositive.patient },
+  specimen: {
+    familyCode: "COLONISATION",
+    subtypeCode: "COL_CPE_RECTAL",
+    collectedAt: dayAgo(10),
+    receivedAt: dayAgo(10),
+    containerCode: "SWAB_TRANSPORT",
+    freeTextLabel: "CPE clearance screen 2",
+  },
+  ...emptyTail(),
+  isolates: [iso(1, "NOGRO", "No growth", { significance: "indeterminate" })],
+  release: { state: ReleaseState.Released, reportVersion: 1 },
+}) as Accession)();
 
-const cpeScreenNeg3Current = (() =>
-  ({
-    ...base("MB25-COL003C", WorkflowStage.Culture),
-    priority: Priority.Routine,
-    patient: { ...cpeScreenPositive.patient },
-    specimen: {
-      familyCode: "COLONISATION",
-      subtypeCode: "COL_CPE_RECTAL",
-      collectedAt: now,
-      receivedAt: now,
-      containerCode: "SWAB_TRANSPORT",
-      freeTextLabel: "CPE clearance screen 3",
-    },
-    ...emptyTail(),
-    isolates: [iso(1, "NOGRO", "No growth", { significance: "indeterminate" })],
-    release: { state: ReleaseState.Draft, reportVersion: 0 },
-  }) as Accession)();
+const cpeScreenNeg3Current = (() => ({
+  ...base("MB25-COL003C", WorkflowStage.Culture),
+  priority: Priority.Routine,
+  patient: { ...cpeScreenPositive.patient },
+  specimen: {
+    familyCode: "COLONISATION",
+    subtypeCode: "COL_CPE_RECTAL",
+    collectedAt: now,
+    receivedAt: now,
+    containerCode: "SWAB_TRANSPORT",
+    freeTextLabel: "CPE clearance screen 3",
+  },
+  ...emptyTail(),
+  isolates: [iso(1, "NOGRO", "No growth", { significance: "indeterminate" })],
+  release: { state: ReleaseState.Draft, reportVersion: 0 },
+}) as Accession)();
 
 // 9. Candida auris screen positive
 const candidaAurisScreen = (() => {
@@ -517,57 +502,55 @@ const candidaAurisScreen = (() => {
 })();
 
 // 10. CRAB and CRPA screens to cover high-value target organisms.
-const crabScreen = (() =>
-  ({
-    ...base("MB25-COL005", WorkflowStage.Culture),
-    priority: Priority.Routine,
-    patient: {
-      mrn: "AMCE-004005",
-      givenName: "Peter",
-      familyName: "Osuji",
-      sex: Sex.Male,
-      dob: "1959-12-03",
-      ward: "ICU",
-      attendingClinician: "Dr. Mensah",
-    },
-    specimen: {
-      familyCode: "COLONISATION",
-      subtypeCode: "COL_CRAB_SCREEN",
-      collectedAt: now,
-      receivedAt: now,
-      containerCode: "SWAB_TRANSPORT",
-      freeTextLabel: "CRAB weekly colonisation screen",
-    },
-    ...emptyTail(),
-    isolates: [iso(1, "ABAU", "Acinetobacter baumannii", { significance: "significant" })],
-    release: { state: ReleaseState.Draft, reportVersion: 0 },
-  }) as Accession)();
+const crabScreen = (() => ({
+  ...base("MB25-COL005", WorkflowStage.Culture),
+  priority: Priority.Routine,
+  patient: {
+    mrn: "AMCE-004005",
+    givenName: "Peter",
+    familyName: "Osuji",
+    sex: Sex.Male,
+    dob: "1959-12-03",
+    ward: "ICU",
+    attendingClinician: "Dr. Mensah",
+  },
+  specimen: {
+    familyCode: "COLONISATION",
+    subtypeCode: "COL_CRAB_SCREEN",
+    collectedAt: now,
+    receivedAt: now,
+    containerCode: "SWAB_TRANSPORT",
+    freeTextLabel: "CRAB weekly colonisation screen",
+  },
+  ...emptyTail(),
+  isolates: [iso(1, "ABAU", "Acinetobacter baumannii", { significance: "significant" })],
+  release: { state: ReleaseState.Draft, reportVersion: 0 },
+}) as Accession)();
 
-const crpaScreenNoPrior = (() =>
-  ({
-    ...base("MB25-COL006", WorkflowStage.Culture),
-    priority: Priority.Routine,
-    patient: {
-      mrn: "AMCE-004006",
-      givenName: "Grace",
-      familyName: "Nnaji",
-      sex: Sex.Female,
-      dob: "1990-03-09",
-      ward: "High Dependency Unit",
-      attendingClinician: "Dr. Danladi",
-    },
-    specimen: {
-      familyCode: "COLONISATION",
-      subtypeCode: "COL_CRPA_SCREEN",
-      collectedAt: now,
-      receivedAt: now,
-      containerCode: "SWAB_TRANSPORT",
-      freeTextLabel: "CRPA clearance screen",
-    },
-    ...emptyTail(),
-    isolates: [iso(1, "NOGRO", "No growth", { significance: "indeterminate" })],
-    release: { state: ReleaseState.Draft, reportVersion: 0 },
-  }) as Accession)();
+const crpaScreenNoPrior = (() => ({
+  ...base("MB25-COL006", WorkflowStage.Culture),
+  priority: Priority.Routine,
+  patient: {
+    mrn: "AMCE-004006",
+    givenName: "Grace",
+    familyName: "Nnaji",
+    sex: Sex.Female,
+    dob: "1990-03-09",
+    ward: "High Dependency Unit",
+    attendingClinician: "Dr. Danladi",
+  },
+  specimen: {
+    familyCode: "COLONISATION",
+    subtypeCode: "COL_CRPA_SCREEN",
+    collectedAt: now,
+    receivedAt: now,
+    containerCode: "SWAB_TRANSPORT",
+    freeTextLabel: "CRPA clearance screen",
+  },
+  ...emptyTail(),
+  isolates: [iso(1, "NOGRO", "No growth", { significance: "indeterminate" })],
+  release: { state: ReleaseState.Draft, reportVersion: 0 },
+}) as Accession)();
 
 export const DEMO_ACCESSIONS: Accession[] = [
   mrsa,
