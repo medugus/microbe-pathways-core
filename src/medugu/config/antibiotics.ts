@@ -31,11 +31,14 @@ export const ANTIBIOTICS: AntibioticDef[] = [
   { code: "AMC", display: "Amoxicillin/clavulanate", class: "penicillin" },
   { code: "TZP", display: "Piperacillin/tazobactam", class: "penicillin", restricted: true },
   { code: "CXM", display: "Cefuroxime", class: "cephalosporin" },
+  { code: "CTX", display: "Cefotaxime", class: "cephalosporin", restricted: true },
   { code: "CRO", display: "Ceftriaxone", class: "cephalosporin", restricted: true },
   { code: "CAZ", display: "Ceftazidime", class: "cephalosporin", restricted: true },
   { code: "FEP", display: "Cefepime", class: "cephalosporin", restricted: true },
   { code: "MEM", display: "Meropenem", class: "carbapenem", restricted: true },
   { code: "ETP", display: "Ertapenem", class: "carbapenem", restricted: true },
+  { code: "IPM", display: "Imipenem", class: "carbapenem", restricted: true },
+  { code: "ATM", display: "Aztreonam", class: "other" },
   { code: "GEN", display: "Gentamicin", class: "aminoglycoside" },
   { code: "AMK", display: "Amikacin", class: "aminoglycoside", restricted: true },
   { code: "CIP", display: "Ciprofloxacin", class: "fluoroquinolone" },
@@ -50,6 +53,7 @@ export const ANTIBIOTICS: AntibioticDef[] = [
   { code: "CST", display: "Colistin", class: "polymyxin", restricted: true },
   { code: "NIT", display: "Nitrofurantoin", class: "nitrofuran" },
   { code: "FOS", display: "Fosfomycin", class: "fosfomycin" },
+  { code: "TGC", display: "Tigecycline", class: "tetracycline", restricted: true },
 ];
 
 const CODE_SET = new Set(ANTIBIOTICS.map((a) => a.code));
@@ -59,11 +63,14 @@ const REQUESTED_NAME_TO_CODE: Record<string, string> = {
   "amoxicillin-clavulanate": "AMC",
   "piperacillin-tazobactam": "TZP",
   cefuroxime: "CXM",
+  cefotaxime: "CTX",
   ceftriaxone: "CRO",
   ceftazidime: "CAZ",
   cefepime: "FEP",
+  aztreonam: "ATM",
   meropenem: "MEM",
   ertapenem: "ETP",
+  imipenem: "IPM",
   gentamicin: "GEN",
   amikacin: "AMK",
   ciprofloxacin: "CIP",
@@ -78,6 +85,7 @@ const REQUESTED_NAME_TO_CODE: Record<string, string> = {
   colistin: "CST",
   nitrofurantoin: "NIT",
   fosfomycin: "FOS",
+  tigecycline: "TGC",
 };
 
 export interface ASTPanelDef {

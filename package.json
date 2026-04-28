@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/run-medugu-logic-tests.mjs"
+    "test": "node scripts/run-medugu-logic-tests.mjs",
+    "check:enterobacterales-breakpoints": "node scripts/check-enterobacterales-breakpoint-coverage.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
