@@ -16,6 +16,7 @@ export default defineConfig({
       "import.meta.env.SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
         process.env.SUPABASE_PUBLISHABLE_KEY ?? "",
       ),
+      "import.meta.env.SUPABASE_ANON_KEY": JSON.stringify(process.env.SUPABASE_ANON_KEY ?? ""),
     },
   },
 });

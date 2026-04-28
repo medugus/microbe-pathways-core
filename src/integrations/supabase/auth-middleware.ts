@@ -8,6 +8,14 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
   async ({ next }) => {
     const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const SUPABASE_PUBLISHABLE_KEY =
+      process.env.SUPABASE_PUBLISHABLE_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+      throw new Response(
+        "Missing Supabase environment variables. Ensure SUPABASE_URL and one of SUPABASE_PUBLISHABLE_KEY / SUPABASE_ANON_KEY (or VITE_ prefixed equivalents) are set.",
       process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
