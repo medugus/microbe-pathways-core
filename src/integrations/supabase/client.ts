@@ -14,6 +14,7 @@ export function isSupabaseConfigured(): boolean {
     import.meta.env.SUPABASE_ANON_KEY ||
     processEnv?.VITE_SUPABASE_PUBLISHABLE_KEY ||
     processEnv?.VITE_SUPABASE_ANON_KEY ||
+    import.meta.env.SUPABASE_PUBLISHABLE_KEY ||
     processEnv?.SUPABASE_PUBLISHABLE_KEY;
   return Boolean(supabaseUrl && supabasePublishableKey);
 }
@@ -30,6 +31,7 @@ function createSupabaseClient() {
     import.meta.env.SUPABASE_ANON_KEY ||
     processEnv?.VITE_SUPABASE_PUBLISHABLE_KEY ||
     processEnv?.VITE_SUPABASE_ANON_KEY ||
+    import.meta.env.SUPABASE_PUBLISHABLE_KEY ||
     processEnv?.SUPABASE_PUBLISHABLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
