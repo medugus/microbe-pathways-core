@@ -1,5 +1,6 @@
 // Validation engine — pure. Returns blocking issues + warnings + releaseAllowed.
 //
+//
 // Phase-2 contract corrections:
 // - Required phone-out for critical-comm pathways is a BLOCKER, not a warning.
 // - Consultant-required release is a BLOCKER until ReleaseRecord.consultantApproval is set.
