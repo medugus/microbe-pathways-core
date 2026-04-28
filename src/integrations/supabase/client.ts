@@ -5,22 +5,36 @@ import type { Database } from "./types";
 const processEnv = typeof process === "undefined" ? undefined : process.env;
 
 export function isSupabaseConfigured(): boolean {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || processEnv?.SUPABASE_URL;
+  const supabaseUrl =
+    import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL || processEnv?.SUPABASE_URL;
   const supabasePublishableKey =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || processEnv?.SUPABASE_PUBLISHABLE_KEY;
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    import.meta.env.SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.SUPABASE_ANON_KEY ||
+    processEnv?.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    processEnv?.VITE_SUPABASE_ANON_KEY ||
+    processEnv?.SUPABASE_PUBLISHABLE_KEY;
   return Boolean(supabaseUrl && supabasePublishableKey);
 }
 
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || processEnv?.SUPABASE_URL;
+  const SUPABASE_URL =
+    import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL || processEnv?.SUPABASE_URL;
   const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || processEnv?.SUPABASE_PUBLISHABLE_KEY;
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    import.meta.env.SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.SUPABASE_ANON_KEY ||
+    processEnv?.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    processEnv?.VITE_SUPABASE_ANON_KEY ||
+    processEnv?.SUPABASE_PUBLISHABLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     throw new Error(
-      "Missing Supabase environment variables. Ensure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (or VITE_ prefixed versions) are set in your .env file.",
+      "Missing Supabase environment variables. Set SUPABASE_URL and one of SUPABASE_PUBLISHABLE_KEY / SUPABASE_ANON_KEY (or VITE_ prefixed equivalents) in your .env file.",
     );
   }
 
