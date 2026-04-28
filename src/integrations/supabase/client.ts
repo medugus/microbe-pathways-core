@@ -3,6 +3,70 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
 const processEnv = typeof process === "undefined" ? undefined : process.env;
+const SUPABASE_DISABLED_MESSAGE =
+  "Supabase is not configured for this deployment. Running in local/no-auth mode.";
+
+function createNoopQueryBuilder(): any {
+  let proxy: any;
+  const handler: ProxyHandler<(...args: unknown[]) => unknown> = {
+    get(_target, prop) {
+      if (prop === "then") {
+        return (resolve: (value: unknown) => void) =>
+          resolve({
+            data: null,
+            error: new Error(SUPABASE_DISABLED_MESSAGE),
+            count: 0,
+            status: 503,
+            statusText: "Supabase disabled",
+          });
+      }
+      if (prop === "catch") {
+        return () => proxy;
+      }
+      if (prop === "finally") {
+        return (cb: () => void) => {
+          cb();
+          return proxy;
+        };
+      }
+      return proxy;
+    },
+    apply() {
+      return proxy;
+    },
+  };
+  proxy = new Proxy((() => undefined) as (...args: unknown[]) => unknown, handler);
+  return proxy;
+}
+
+function createDisabledSupabaseClient() {
+  const query = createNoopQueryBuilder();
+  return {
+    auth: {
+      onAuthStateChange: () => ({
+        data: { subscription: { unsubscribe: () => undefined } },
+      }),
+      getSession: async () => ({ data: { session: null }, error: null }),
+      getUser: async () => ({ data: { user: null }, error: new Error(SUPABASE_DISABLED_MESSAGE) }),
+      signOut: async () => ({ error: null }),
+      signInWithPassword: async () => ({
+        data: { user: null, session: null },
+        error: new Error(SUPABASE_DISABLED_MESSAGE),
+      }),
+      signUp: async () => ({
+        data: { user: null, session: null },
+        error: new Error(SUPABASE_DISABLED_MESSAGE),
+      }),
+      resetPasswordForEmail: async () => ({ data: null, error: new Error(SUPABASE_DISABLED_MESSAGE) }),
+      updateUser: async () => ({ data: null, error: new Error(SUPABASE_DISABLED_MESSAGE) }),
+      setSession: async () => ({ data: null, error: new Error(SUPABASE_DISABLED_MESSAGE) }),
+    },
+    from: () => query,
+    rpc: () => query,
+    channel: () => query,
+    removeChannel: async () => ({ error: null }),
+  };
+}
 
 export function isSupabaseConfigured(): boolean {
   const supabaseUrl =
@@ -35,9 +99,7 @@ function createSupabaseClient() {
     processEnv?.SUPABASE_PUBLISHABLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    throw new Error(
-      "Missing Supabase environment variables. Set SUPABASE_URL and one of SUPABASE_PUBLISHABLE_KEY / SUPABASE_ANON_KEY (or VITE_ prefixed equivalents) in your .env file.",
-    );
+    return createDisabledSupabaseClient() as unknown as ReturnType<typeof createClient<Database>>;
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
