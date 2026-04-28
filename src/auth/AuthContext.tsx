@@ -50,16 +50,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load profile + roles for the current user
   const loadProfileAndRoles = async (userId: string) => {
-    const [{ data: prof }, { data: roleRows }] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, tenant_id, display_name, email")
-        .eq("id", userId)
-        .maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", userId),
-    ]);
-    setProfile((prof as ProfileRow | null) ?? null);
-    setRoles(((roleRows ?? []) as { role: AppRole }[]).map((r) => r.role));
+    try {
+      const [{ data: prof }, { data: roleRows }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, tenant_id, display_name, email")
+          .eq("id", userId)
+          .maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId),
+      ]);
+      setProfile((prof as ProfileRow | null) ?? null);
+      setRoles(((roleRows ?? []) as { role: AppRole }[]).map((r) => r.role));
+    } catch {
+      setProfile(null);
+      setRoles([]);
+    }
   };
 
   useEffect(() => {
@@ -87,13 +92,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // 2) Then read existing session.
-    void supabase.auth.getSession().then(async ({ data: { session: existing } }) => {
-      setSession(existing);
-      if (existing?.user) {
-        await loadProfileAndRoles(existing.user.id);
-      }
-      setLoading(false);
-    });
+    void supabase.auth
+      .getSession()
+      .then(async ({ data: { session: existing } }) => {
+        setSession(existing);
+        if (existing?.user) {
+          await loadProfileAndRoles(existing.user.id);
+        }
+      })
+      .catch(() => {
+        setSession(null);
+        setProfile(null);
+        setRoles([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
     return () => sub.subscription.unsubscribe();
   }, []);

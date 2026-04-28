@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { session, loading } = useAuth();
+  const supabaseEnabled = isSupabaseConfigured();
   const navigate = useNavigate();
   const search = Route.useSearch();
   // Never honour a redirect back to /login or /signup — that creates an
@@ -59,10 +60,27 @@ function LoginPage() {
 
   // If already authenticated, leave the login page.
   useEffect(() => {
+    if (!supabaseEnabled) return;
     if (!loading && session) {
       void navigate({ to: redirectTo });
     }
-  }, [loading, session, navigate, redirectTo]);
+  }, [supabaseEnabled, loading, session, navigate, redirectTo]);
+
+  if (!supabaseEnabled) {
+    return (
+      <AuthShell currentPage="login">
+        <AuthCard>
+          <h1 className="font-serif text-3xl tracking-tight text-foreground">Authentication disabled</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This deployment is running without Supabase auth. You can continue directly to the app.
+          </p>
+          <Button className="mt-6 w-full" onClick={() => void navigate({ to: "/" })}>
+            Continue to app
+          </Button>
+        </AuthCard>
+      </AuthShell>
+    );
+  }
 
   const onEmailSignIn = async (e: FormEvent) => {
     e.preventDefault();
