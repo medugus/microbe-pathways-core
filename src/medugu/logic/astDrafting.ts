@@ -1,8 +1,9 @@
-// Phase-2 AST drafting helper.
-// Builds an ASTResult row with governance/cascade placeholders and a
-// trivial draft interpretation against the configured breakpoint table.
-// Full expert rules (intrinsic resistance, ESBL/AmpC inference, expert
-// overrides, cascade reporting) land in Phase 3.
+// Phase-2 AST drafting helper — EUCAST v16.0 indication-aware.
+//
+// Builds an ASTResult row with governance/cascade placeholders and a draft
+// interpretation against the configured breakpoint table. Resolution uses
+// the indication-aware composite key (organism × drug × method × indication),
+// driven by the specimen syndrome and isolate organism code.
 
 import type {
   ASTGovernanceState,
@@ -17,9 +18,11 @@ import { newId } from "../domain/ids";
 import { getOrganism } from "../config/organisms";
 import {
   PRIMARY_STANDARD,
-  findDiskBreakpoint,
-  findMICBreakpoint,
+  resolveBreakpoint,
+  type BreakpointResolution,
+  type ResolverSyndrome,
 } from "../config/breakpoints";
+import { resolveSpecimen } from "./specimenResolver";
 
 export interface DraftASTInput {
   isolateId: string;
@@ -30,50 +33,84 @@ export interface DraftASTInput {
   comment?: string;
 }
 
+/** Lift the syndrome from the accession's resolved specimen profile. */
+function syndromeFor(accession: Accession): ResolverSyndrome {
+  const r = resolveSpecimen({
+    familyCode: accession.specimen.familyCode,
+    subtypeCode: accession.specimen.subtypeCode,
+    details: accession.specimen.details,
+  });
+  if (!r.ok) return null;
+  return (r.profile.syndrome ?? null) as ResolverSyndrome;
+}
+
+export interface DraftResult {
+  interpretation?: ASTInterpretation;
+  resolution?: BreakpointResolution;
+}
+
+export function draftInterpretationFull(
+  accession: Accession | undefined,
+  isolate: Isolate | undefined,
+  input: DraftASTInput,
+): DraftResult {
+  if (input.rawValue === undefined || !isolate) return {};
+
+  const group = getOrganism(isolate.organismCode)?.group;
+  if (!group) return {};
+  const standard = input.standard ?? PRIMARY_STANDARD;
+  const method = input.method === ASTMethod.DiskDiffusion ? "disk_diffusion" : "mic";
+
+  const resolution = resolveBreakpoint({
+    organismGroup: group,
+    organismCode: isolate.organismCode,
+    antibioticCode: input.antibioticCode,
+    method,
+    standard,
+    syndrome: accession ? syndromeFor(accession) : undefined,
+  });
+
+  if (resolution.status !== "matched" || !resolution.breakpoint) {
+    // species_restricted_block returns a resolution carrying flags; engine
+    // surfaces this as a validation issue but does not interpret S/I/R.
+    return { resolution };
+  }
+
+  const bp = resolution.breakpoint;
+  const interp =
+    bp.method === "disk_diffusion"
+      ? interpretDisk(input.rawValue, bp)
+      : interpretMIC(input.rawValue, bp);
+  return { interpretation: interp, resolution };
+}
+
+/** Backwards-compatible thin wrapper for callers that only need S/I/R. */
 export function draftInterpretation(
   isolate: Isolate | undefined,
   input: DraftASTInput,
 ): ASTInterpretation | undefined {
-  if (input.rawValue === undefined || !isolate) return undefined;
-
-  const group = getOrganism(isolate.organismCode)?.group;
-  const standard = input.standard ?? PRIMARY_STANDARD;
-
-  if (input.method === "disk_diffusion") {
-    const bp = findDiskBreakpoint(group, input.antibioticCode, standard);
-    return interpretDiskAgainstBreakpoint(input.rawValue, bp);
-  }
-
-  const bp = findMICBreakpoint(group, input.antibioticCode, standard);
-  return interpretMICAgainstBreakpoint(input.rawValue, bp);
+  return draftInterpretationFull(undefined, isolate, input).interpretation;
 }
 
-function interpretDiskAgainstBreakpoint(
-  rawValue: number,
-  bp: ReturnType<typeof findDiskBreakpoint> | undefined,
-): ASTInterpretation | undefined {
-  if (!bp) return undefined;
+function interpretDisk(rawValue: number, bp: { susceptibleMinMm?: number; resistantLessThanMm?: number; resistantMaxMm?: number }): ASTInterpretation | undefined {
   if (bp.susceptibleMinMm !== undefined && rawValue >= bp.susceptibleMinMm) return "S";
   if (bp.resistantLessThanMm !== undefined && rawValue < bp.resistantLessThanMm) return "R";
   if (bp.resistantMaxMm !== undefined && rawValue <= bp.resistantMaxMm) return "R";
   return "I";
 }
 
-function interpretMICAgainstBreakpoint(
-  rawValue: number,
-  bp: ReturnType<typeof findMICBreakpoint> | undefined,
-): ASTInterpretation | undefined {
-  if (!bp) return undefined;
+function interpretMIC(rawValue: number, bp: { susceptibleMaxMgL?: number; resistantGreaterThanMgL?: number; resistantMinMgL?: number }): ASTInterpretation | undefined {
   if (bp.susceptibleMaxMgL !== undefined && rawValue <= bp.susceptibleMaxMgL) return "S";
   if (bp.resistantGreaterThanMgL !== undefined && rawValue > bp.resistantGreaterThanMgL) return "R";
   if (bp.resistantMinMgL !== undefined && rawValue >= bp.resistantMinMgL) return "R";
   return "I";
 }
+
 export function buildASTResult(accession: Accession, input: DraftASTInput): ASTResult {
   const isolate = accession.isolates.find((i) => i.id === input.isolateId);
   const standard: ASTStandard = input.standard ?? PRIMARY_STANDARD;
   const rawUnit: "mg/L" | "mm" = input.method === "disk_diffusion" ? "mm" : "mg/L";
-  const draft = draftInterpretation(isolate, input);
+  const { interpretation, resolution } = draftInterpretationFull(accession, isolate, input);
   const governance: ASTGovernanceState = "draft";
   const cascade: ASTCascadeState = "primary";
 
@@ -87,11 +124,16 @@ export function buildASTResult(accession: Accession, input: DraftASTInput): ASTR
     rawUnit,
     micMgL: rawUnit === "mg/L" ? input.rawValue : undefined,
     zoneMm: rawUnit === "mm" ? input.rawValue : undefined,
-    rawInterpretation: draft,
-    finalInterpretation: draft,
+    rawInterpretation: interpretation,
+    finalInterpretation: interpretation,
     governance,
     cascade,
     comment: input.comment,
+    breakpointKey: resolution?.breakpointKey,
+    indicationUsed: resolution?.indicationUsed,
+    breakpointSource: resolution?.source,
+    breakpointFlags: resolution?.flags,
+    breakpointSpeciesViolation: resolution?.status === "species_restricted_block",
   };
 }
 
@@ -117,13 +159,17 @@ export function rebuildASTFromRawEdit(
   const standard = patch.standard ?? row.standard;
   const rawValue = patch.rawValue;
   const rawUnit = patch.rawUnit ?? resolvedRawUnit(method);
-  const draft = draftInterpretation(accession.isolates.find((i) => i.id === row.isolateId), {
-    isolateId: row.isolateId,
-    antibioticCode: row.antibioticCode,
-    method,
-    standard,
-    rawValue,
-  });
+  const { interpretation: draft, resolution } = draftInterpretationFull(
+    accession,
+    accession.isolates.find((i) => i.id === row.isolateId),
+    {
+      isolateId: row.isolateId,
+      antibioticCode: row.antibioticCode,
+      method,
+      standard,
+      rawValue,
+    },
+  );
 
   const patchOut: Partial<ASTResult> = {
     method,
@@ -134,6 +180,11 @@ export function rebuildASTFromRawEdit(
     zoneMm: rawUnit === "mm" ? rawValue : undefined,
     rawInterpretation: draft,
     interpretedSIR: draft,
+    breakpointKey: resolution?.breakpointKey,
+    indicationUsed: resolution?.indicationUsed,
+    breakpointSource: resolution?.source,
+    breakpointFlags: resolution?.flags ?? {},
+    breakpointSpeciesViolation: resolution?.status === "species_restricted_block",
   };
 
   const hasManualOverride =
