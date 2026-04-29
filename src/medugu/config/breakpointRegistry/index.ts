@@ -6,6 +6,8 @@ import {
   supportsCategory,
   type AnyBreakpoint,
   type BreakpointCategory,
+  type BreakpointFlags,
+  type BreakpointIndication,
   type DiskBreakpoint,
   type EucastBreakpointRecord,
   type MICBreakpoint,
@@ -145,6 +147,186 @@ export function getInterpretationLabel(
     ND: "No defined breakpoint",
   } as const;
   return generic[category];
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// EUCAST v16.0 indication-aware breakpoint resolution
+// ────────────────────────────────────────────────────────────────────────────
+
+/** Coarse syndrome codes consumed by resolveBreakpoint. Mirrors specimenResolver. */
+export type ResolverSyndrome =
+  | "bsi" | "uti" | "cauti" | "uti_uncomplicated"
+  | "cap" | "hap" | "vap"
+  | "meningitis"
+  | "spontaneous_bacterial_peritonitis"
+  | "septic_arthritis" | "pleural_empyema" | "pericarditis"
+  | "pd_peritonitis" | "abscess" | "colonisation_screen"
+  | null
+  | undefined;
+
+export interface BreakpointLookup {
+  organismGroup: string;
+  organismCode?: string;
+  antibioticCode: string;
+  /** Domain ASTMethod ("disk_diffusion" | "MIC" | ...) — normalised internally. */
+  method: string;
+  standard: ASTStandard;
+  syndrome?: ResolverSyndrome;
+  /** Optional explicit indication override (advanced callers). */
+  indication?: BreakpointIndication;
+}
+
+export type BreakpointResolutionStatus =
+  | "matched"
+  | "no_breakpoint"
+  | "species_restricted_block";
+
+export interface BreakpointResolution {
+  status: BreakpointResolutionStatus;
+  breakpoint?: AnyBreakpoint;
+  /** Composite key used to find the row: organismGroup|antibiotic|method|indication. */
+  breakpointKey?: string;
+  indicationUsed?: BreakpointIndication;
+  source?: string;
+  flags: BreakpointFlags;
+  /** Human-readable explanation of any block / fallback decision. */
+  reason?: string;
+}
+
+/** Build a stable composite key for audit + dedup. */
+export function makeBreakpointKey(
+  organismGroup: string,
+  antibioticCode: string,
+  method: "mic" | "disk_diffusion",
+  indication: BreakpointIndication | undefined,
+): string {
+  return `${organismGroup}|${antibioticCode}|${method}|${indication ?? "general"}`;
+}
+
+/** Map a clinical syndrome to the ordered list of EUCAST indications to try. */
+export function syndromeToIndicationChain(
+  syndrome: ResolverSyndrome,
+): BreakpointIndication[] {
+  switch (syndrome) {
+    case "uti_uncomplicated":
+      return ["uti_uncomplicated", "uti", "general", "iv", "non_meningitis"];
+    case "uti":
+    case "cauti":
+      return ["uti", "uti_uncomplicated", "general", "iv", "non_meningitis"];
+    case "meningitis":
+      return ["meningitis", "general", "non_meningitis"];
+    case "bsi":
+    case "cap": case "hap": case "vap":
+    case "spontaneous_bacterial_peritonitis":
+    case "septic_arthritis": case "pleural_empyema":
+    case "pericarditis": case "pd_peritonitis": case "abscess":
+      return ["non_meningitis", "systemic", "iv", "general"];
+    default:
+      // No syndrome resolved — prefer general / non-meningitis canonical rows.
+      return ["general", "non_meningitis", "iv"];
+  }
+}
+
+function normaliseMethod(method: string): "mic" | "disk_diffusion" | undefined {
+  const m = method.toLowerCase();
+  if (m === "mic" || m === "etest" || m === "broth_microdilution" || m === "agar_dilution" || m === "gradient") return "mic";
+  if (m === "disk_diffusion" || m === "disk" || m === "disc" || m === "kirby_bauer") return "disk_diffusion";
+  return undefined;
+}
+
+/**
+ * Indication-aware breakpoint resolution.
+ *
+ * Resolution order:
+ *   1. Caller-provided indication override (if present).
+ *   2. Each indication in syndromeToIndicationChain(syndrome) in turn.
+ *   3. Any active row for (group, antibiotic, method, standard) regardless of indication.
+ *   4. Status "no_breakpoint".
+ *
+ * Species restriction: if the matched row carries flags.restrictedSpecies and
+ * organismCode is provided but not in that list, status becomes
+ * "species_restricted_block" — caller MUST surface as a hard validation issue.
+ */
+export function resolveBreakpoint(input: BreakpointLookup): BreakpointResolution {
+  const normMethod = normaliseMethod(input.method);
+  if (!normMethod) {
+    return { status: "no_breakpoint", flags: {}, reason: `Unknown AST method: ${input.method}` };
+  }
+
+  const pool: AnyBreakpoint[] = normMethod === "mic" ? MIC_BREAKPOINTS : DISK_BREAKPOINTS;
+  const candidates = pool.filter(
+    (b) =>
+      b.organismGroup === input.organismGroup &&
+      b.antibioticCode === input.antibioticCode &&
+      b.standard === input.standard &&
+      b.method === normMethod &&
+      (b.breakpointStatus ?? "active") === "active",
+  );
+
+  if (candidates.length === 0) {
+    return { status: "no_breakpoint", flags: {}, reason: "No active EUCAST row for this (group, drug, method, standard)." };
+  }
+
+  const chain: BreakpointIndication[] = input.indication
+    ? [input.indication]
+    : syndromeToIndicationChain(input.syndrome);
+
+  let matched: AnyBreakpoint | undefined;
+  let usedIndication: BreakpointIndication | undefined;
+  for (const ind of chain) {
+    matched = candidates.find((c) => (c.indication ?? "general") === ind);
+    if (matched) { usedIndication = ind; break; }
+  }
+  // Fallback: any active row, regardless of indication.
+  if (!matched) {
+    matched = candidates[0];
+    usedIndication = matched.indication;
+  }
+
+  const flags = { ...(matched.flags ?? {}) };
+  const key = makeBreakpointKey(matched.organismGroup, matched.antibioticCode, normMethod, matched.indication);
+
+  if (
+    flags.restrictedSpecies &&
+    flags.restrictedSpecies.length > 0 &&
+    input.organismCode &&
+    !flags.restrictedSpecies.includes(input.organismCode)
+  ) {
+    return {
+      status: "species_restricted_block",
+      breakpoint: matched,
+      breakpointKey: key,
+      indicationUsed: usedIndication,
+      source: matched.sourceTableRef ?? matched.sourceLabel,
+      flags,
+      reason: `${input.antibioticCode} EUCAST breakpoint is restricted to: ${flags.restrictedSpecies.join(", ")}.`,
+    };
+  }
+
+  return {
+    status: "matched",
+    breakpoint: matched,
+    breakpointKey: key,
+    indicationUsed: usedIndication,
+    source: matched.sourceTableRef ?? matched.sourceLabel,
+    flags,
+  };
+}
+
+/**
+ * Validate registry uniqueness on the composite key. Throws (in dev) or
+ * returns the duplicate set so callers can surface the issue.
+ */
+export function findDuplicateBreakpointKeys(
+  records: AnyBreakpoint[] = [...MIC_BREAKPOINTS, ...DISK_BREAKPOINTS],
+): string[] {
+  const seen = new Map<string, number>();
+  for (const r of records) {
+    if ((r.breakpointStatus ?? "active") !== "active") continue;
+    const k = makeBreakpointKey(r.organismGroup, r.antibioticCode, r.method, r.indication);
+    seen.set(k, (seen.get(k) ?? 0) + 1);
+  }
+  return Array.from(seen.entries()).filter(([, n]) => n > 1).map(([k]) => k);
 }
 
 export { EUCAST_2026_METADATA };

@@ -98,6 +98,35 @@ export function runValidation(accession: Accession): ValidationReport {
   }
 
   for (const a of accession.ast) {
+    if (a.breakpointSpeciesViolation) {
+      const allowed = a.breakpointFlags?.restrictedSpecies?.join(", ") ?? "restricted species";
+      issues.push(
+        block(
+          "AST_SPECIES_RESTRICTED",
+          "ast",
+          `${a.antibioticCode}: EUCAST breakpoint is restricted to ${allowed}. Remove or change drug — interpretation suppressed.`,
+        ),
+      );
+      continue;
+    }
+    if (a.breakpointFlags?.bracketed && a.rawValue !== undefined) {
+      issues.push(
+        warn(
+          "AST_BRACKETED_BREAKPOINT",
+          "ast",
+          `${a.antibioticCode}: EUCAST bracketed breakpoint applied (${a.indicationUsed ?? "general"}). Use with caution; not a routine breakpoint.`,
+        ),
+      );
+    }
+    if (a.breakpointFlags?.screeningOnly && a.rawValue !== undefined) {
+      issues.push(
+        warn(
+          "AST_SCREENING_ONLY",
+          "ast",
+          `${a.antibioticCode}: EUCAST screening-only breakpoint (${a.indicationUsed ?? "general"}). Confirmatory MIC recommended.`,
+        ),
+      );
+    }
     if (!a.finalInterpretation) {
       issues.push(
         block("AST_INCOMPLETE", "ast", `AST row ${a.antibioticCode} has no final S/I/R interpretation.`),

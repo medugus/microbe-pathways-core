@@ -151,6 +151,34 @@ export function AntibiogramGrid({ accession }: { accession: Accession }) {
                           No breakpoint (No defined breakpoint)
                         </span>
                       )}
+                      {cell.breakpointSpeciesViolation && (
+                        <span className="text-center text-[9px] font-semibold text-destructive">
+                          ⚠ Restricted to{" "}
+                          {(cell.breakpointFlags?.restrictedSpecies ?? []).join(", ")}
+                        </span>
+                      )}
+                      {cell.indicationUsed && cell.indicationUsed !== "general" && !cell.breakpointSpeciesViolation && (
+                        <span className="text-center text-[9px] text-muted-foreground">
+                          indication: {cell.indicationUsed.replace(/_/g, " ")}
+                        </span>
+                      )}
+                      {cell.breakpointFlags?.bracketed && (
+                        <span className="text-center text-[9px] font-semibold text-amber-700 dark:text-amber-300">
+                          [bracketed]
+                        </span>
+                      )}
+                      {cell.breakpointFlags?.screeningOnly && (
+                        <span className="text-center text-[9px] text-amber-700 dark:text-amber-300">
+                          screening only
+                        </span>
+                      )}
+                      {cell.breakpointFlags?.restrictedSpecies?.length === 1 &&
+                        cell.breakpointFlags.restrictedSpecies[0] === "ECOL" &&
+                        !cell.breakpointSpeciesViolation && (
+                          <span className="text-center text-[9px] text-muted-foreground">
+                            E. coli only
+                          </span>
+                        )}
                       {cell.standard === "EUCAST" && ["S", "I", "R"].includes(sir) && (
                         <span className="text-center text-[9px] text-muted-foreground">
                           {sir}: {getInterpretationLabel(cell.standard, sir as "S" | "I" | "R")}
