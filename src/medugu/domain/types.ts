@@ -245,6 +245,23 @@ export interface ASTResult {
     toInterpretation?: ASTInterpretation;
   };
   comment?: string;
+  /** Composite breakpoint key used for this row's interpretation (audit). */
+  breakpointKey?: string;
+  /** Indication actually used by the resolver (e.g. "uti", "meningitis"). */
+  indicationUsed?: string;
+  /** Human label for the breakpoint table source, e.g. "EUCAST v16.0". */
+  breakpointSource?: string;
+  /** Flags surfaced from the breakpoint row (bracketed, restrictedSpecies, etc). */
+  breakpointFlags?: {
+    bracketed?: boolean;
+    screeningOnly?: boolean;
+    restrictedSpecies?: string[];
+    meningitisOnly?: boolean;
+    urinaryOnly?: boolean;
+    oralOnly?: boolean;
+  };
+  /** True when species-restricted drug applied to wrong organism. Blocks release. */
+  breakpointSpeciesViolation?: boolean;
 }
 
 // ---------- Interpretive comments ----------
