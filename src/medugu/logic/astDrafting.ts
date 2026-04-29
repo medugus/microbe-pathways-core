@@ -35,11 +35,7 @@ export interface DraftASTInput {
 
 /** Lift the syndrome from the accession's resolved specimen profile. */
 function syndromeFor(accession: Accession): ResolverSyndrome {
-  const r = resolveSpecimen({
-    familyCode: accession.specimen.familyCode,
-    subtypeCode: accession.specimen.subtypeCode,
-    details: accession.specimen.details,
-  });
+  const r = resolveSpecimen(accession.specimen.familyCode, accession.specimen.subtypeCode);
   if (!r.ok) return null;
   return (r.profile.syndrome ?? null) as ResolverSyndrome;
 }
