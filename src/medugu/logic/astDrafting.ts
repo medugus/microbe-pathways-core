@@ -110,7 +110,6 @@ function interpretMIC(rawValue: number, bp: { susceptibleMaxMgL?: number; resist
 
 export function buildASTResult(accession: Accession, input: DraftASTInput): ASTResult {
   const isolate = accession.isolates.find((i) => i.id === input.isolateId);
-  const isolate = accession.isolates.find((i) => i.id === input.isolateId);
   const standard: ASTStandard = input.standard ?? defaultStandardForGroup(getOrganism(isolate?.organismCode ?? "")?.group);
   const rawUnit: "mg/L" | "mm" = input.method === "disk_diffusion" ? "mm" : "mg/L";
   const { interpretation, resolution, standardUsed } = draftInterpretationFull(accession, isolate, { ...input, standard });
