@@ -128,7 +128,9 @@ assert(syndromeToIndicationChain("uti")[0] === "uti", "uti chain head");
 {
   const panel = AST_PANELS.find((p) => p.id === "enterobacterales");
   assert(panel, "Enterobacterales panel must exist");
-  assert(getDefaultASTStandardForPanel(panel) === "EUCAST", "Enterobacterales panel default standard must be EUCAST");
+  if (!panel) throw new Error("EUCAST 2026 Enterobacterales: Enterobacterales panel must exist");
+  const panelStandard = getDefaultASTStandardForPanel(panel);
+  assert(panelStandard === "EUCAST", "Enterobacterales panel default standard must be EUCAST");
 
   const accession = {
     id: "acc-eucast-panel",
@@ -143,7 +145,7 @@ assert(syndromeToIndicationChain("uti")[0] === "uti", "uti chain head");
       isolateId: "iso-ecol",
       antibioticCode: code,
       method: ASTMethod.DiskDiffusion,
-      standard: getDefaultASTStandardForPanel(panel),
+      standard: panelStandard,
       rawValue: 20,
     }))
     .filter((row) => !row.finalInterpretation)
