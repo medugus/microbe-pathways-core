@@ -5,6 +5,41 @@ export type BreakpointStatus = "active" | "missing" | "not_applicable" | "needs_
 export type BreakpointMethod = "disk" | "mic";
 export type BreakpointCategory = "S" | "I" | "R" | "ND";
 
+/**
+ * Indication context for an EUCAST breakpoint row.
+ * Used to disambiguate rows that share (organism, antibiotic, method) but
+ * differ by syndrome / route / population.
+ *
+ *  - "general"            : default route used when no indication context applies
+ *  - "uti"                : urinary-tract / urinary-origin infection
+ *  - "uti_uncomplicated"  : oral, uncomplicated lower UTI only
+ *  - "meningitis"         : CNS / CSF infection
+ *  - "non_meningitis"     : explicit non-CNS variant where EUCAST splits the row
+ *  - "systemic"           : systemic / bloodstream / deep-seated (non-UTI)
+ *  - "oral"               : oral route (non-UTI specific)
+ *  - "iv"                 : intravenous route
+ */
+export type BreakpointIndication =
+  | "general"
+  | "uti"
+  | "uti_uncomplicated"
+  | "meningitis"
+  | "non_meningitis"
+  | "systemic"
+  | "oral"
+  | "iv";
+
+/** Flags surfaced alongside an interpreted result for downstream UI/validation. */
+export interface BreakpointFlags {
+  bracketed?: boolean;
+  screeningOnly?: boolean;
+  /** When set, the breakpoint may only be applied to these organism codes. */
+  restrictedSpecies?: string[];
+  meningitisOnly?: boolean;
+  urinaryOnly?: boolean;
+  oralOnly?: boolean;
+}
+
 export interface BreakpointMeta {
   standard: ASTStandard;
   version?: string;
@@ -16,6 +51,8 @@ export interface BreakpointMeta {
   notes?: string;
   breakpointStatus?: BreakpointStatus;
   interpretationCategories?: BreakpointCategory[];
+  indication?: BreakpointIndication;
+  flags?: BreakpointFlags;
 }
 
 export interface MICBreakpoint extends BreakpointMeta {
