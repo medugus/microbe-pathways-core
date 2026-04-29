@@ -6,6 +6,8 @@ import {
   supportsCategory,
   type AnyBreakpoint,
   type BreakpointCategory,
+  type BreakpointFlags,
+  type BreakpointIndication,
   type DiskBreakpoint,
   type EucastBreakpointRecord,
   type MICBreakpoint,
