@@ -6,6 +6,11 @@ import {
   findDuplicateBreakpointKeys,
   syndromeToIndicationChain,
 } from "../../config/breakpoints";
+import { AST_PANELS } from "../../config/antibiotics";
+import { ASTMethod } from "../../domain/enums";
+import { buildASTResult } from "../astDrafting";
+import { getDefaultASTStandardForPanel } from "../astPanelSelection";
+import type { Accession } from "../../domain/types";
 
 function assert(condition: unknown, message: string): void {
   if (!condition) throw new Error(`EUCAST 2026 Enterobacterales: ${message}`);
@@ -118,6 +123,34 @@ assert(dups.length === 0, `Duplicate composite keys found: ${dups.join(", ")}`);
 // 10. syndromeToIndicationChain order
 assert(syndromeToIndicationChain("meningitis")[0] === "meningitis", "meningitis chain head");
 assert(syndromeToIndicationChain("uti")[0] === "uti", "uti chain head");
+
+// 11. Enterobacterales panel defaults to EUCAST and all panel disk rows auto-interpret.
+{
+  const panel = AST_PANELS.find((p) => p.id === "enterobacterales");
+  assert(panel, "Enterobacterales panel must exist");
+  assert(getDefaultASTStandardForPanel(panel) === "EUCAST", "Enterobacterales panel default standard must be EUCAST");
+
+  const accession = {
+    id: "acc-eucast-panel",
+    accessionNumber: "ACC-EUCAST-PANEL",
+    specimen: { familyCode: "BLOOD", subtypeCode: "BLOOD_CULTURE" },
+    isolates: [{ id: "iso-ecol", isolateNo: 1, organismCode: "ECOL", organismDisplay: "Escherichia coli" }],
+    ast: [],
+  } as unknown as Accession;
+
+  const uninterpreted = panel.codes
+    .map((code) => buildASTResult(accession, {
+      isolateId: "iso-ecol",
+      antibioticCode: code,
+      method: ASTMethod.DiskDiffusion,
+      standard: getDefaultASTStandardForPanel(panel),
+      rawValue: 20,
+    }))
+    .filter((row) => !row.finalInterpretation)
+    .map((row) => row.antibioticCode);
+
+  assert(uninterpreted.length === 0, `Enterobacterales disk rows without S/I/R: ${uninterpreted.join(", ")}`);
+}
 
 // eslint-disable-next-line no-console
 console.log("EUCAST 2026 Enterobacterales tests passed.");
