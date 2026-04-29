@@ -10,6 +10,7 @@ import { PRIMARY_STANDARD } from "../../config/breakpoints";
 import { buildASTResult } from "../../logic/astDrafting";
 import {
   getDefaultASTPanelForIsolate,
+  getDefaultASTStandardForPanel,
   getEligibleASTPanelsForIsolate,
   isASTPanelEligibleForIsolate,
 } from "../../logic/astPanelSelection";
@@ -97,6 +98,13 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
       setPanelId(selectedPanel.id);
     }
   }, [eligiblePanels, fallbackPanel, isSelectedPanelEligible, panelId, selectedIsolate, selectedPanel]);
+
+  useEffect(() => {
+    const nextStandard = getDefaultASTStandardForPanel(selectedPanel);
+    if (standard !== nextStandard) {
+      setStandard(nextStandard);
+    }
+  }, [selectedPanel, standard]);
 
   const panelMeta = useMemo(() => {
     if (!selectedPanel || !activeIsolateId) {

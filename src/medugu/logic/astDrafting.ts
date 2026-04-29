@@ -18,6 +18,7 @@ import { newId } from "../domain/ids";
 import { getOrganism } from "../config/organisms";
 import {
   PRIMARY_STANDARD,
+  SECONDARY_STANDARD,
   resolveBreakpoint,
   type BreakpointResolution,
   type ResolverSyndrome,
@@ -43,6 +44,11 @@ function syndromeFor(accession: Accession): ResolverSyndrome {
 export interface DraftResult {
   interpretation?: ASTInterpretation;
   resolution?: BreakpointResolution;
+  standardUsed?: ASTStandard;
+}
+
+function defaultStandardForGroup(group: string | undefined): ASTStandard {
+  return group === "enterobacterales" ? SECONDARY_STANDARD : PRIMARY_STANDARD;
 }
 
 export function draftInterpretationFull(
@@ -54,7 +60,7 @@ export function draftInterpretationFull(
 
   const group = getOrganism(isolate.organismCode)?.group;
   if (!group) return {};
-  const standard = input.standard ?? PRIMARY_STANDARD;
+  const standard = input.standard ?? defaultStandardForGroup(group);
   const method = input.method === ASTMethod.DiskDiffusion ? "disk_diffusion" : "mic";
 
   const resolution = resolveBreakpoint({
@@ -69,7 +75,7 @@ export function draftInterpretationFull(
   if (resolution.status !== "matched" || !resolution.breakpoint) {
     // species_restricted_block returns a resolution carrying flags; engine
     // surfaces this as a validation issue but does not interpret S/I/R.
-    return { resolution };
+    return { resolution, standardUsed: standard };
   }
 
   const bp = resolution.breakpoint;
@@ -77,7 +83,7 @@ export function draftInterpretationFull(
     bp.method === "disk_diffusion"
       ? interpretDisk(input.rawValue, bp)
       : interpretMIC(input.rawValue, bp);
-  return { interpretation: interp, resolution };
+  return { interpretation: interp, resolution, standardUsed: standard };
 }
 
 /** Backwards-compatible thin wrapper for callers that only need S/I/R. */
@@ -104,9 +110,9 @@ function interpretMIC(rawValue: number, bp: { susceptibleMaxMgL?: number; resist
 
 export function buildASTResult(accession: Accession, input: DraftASTInput): ASTResult {
   const isolate = accession.isolates.find((i) => i.id === input.isolateId);
-  const standard: ASTStandard = input.standard ?? PRIMARY_STANDARD;
+  const standard: ASTStandard = input.standard ?? defaultStandardForGroup(getOrganism(isolate?.organismCode ?? "")?.group);
   const rawUnit: "mg/L" | "mm" = input.method === "disk_diffusion" ? "mm" : "mg/L";
-  const { interpretation, resolution } = draftInterpretationFull(accession, isolate, input);
+  const { interpretation, resolution, standardUsed } = draftInterpretationFull(accession, isolate, { ...input, standard });
   const governance: ASTGovernanceState = "draft";
   const cascade: ASTCascadeState = "primary";
 
@@ -115,7 +121,7 @@ export function buildASTResult(accession: Accession, input: DraftASTInput): ASTR
     isolateId: input.isolateId,
     antibioticCode: input.antibioticCode,
     method: input.method,
-    standard,
+    standard: standardUsed ?? standard,
     rawValue: input.rawValue,
     rawUnit,
     micMgL: rawUnit === "mg/L" ? input.rawValue : undefined,
@@ -152,12 +158,13 @@ export function rebuildASTFromRawEdit(
   },
 ): Partial<ASTResult> {
   const method = patch.method ?? row.method;
-  const standard = patch.standard ?? row.standard;
+  const isolate = accession.isolates.find((i) => i.id === row.isolateId);
+  const standard = patch.standard ?? (getOrganism(isolate?.organismCode ?? "")?.group === "enterobacterales" ? SECONDARY_STANDARD : row.standard);
   const rawValue = patch.rawValue;
   const rawUnit = patch.rawUnit ?? resolvedRawUnit(method);
   const { interpretation: draft, resolution } = draftInterpretationFull(
     accession,
-    accession.isolates.find((i) => i.id === row.isolateId),
+    isolate,
     {
       isolateId: row.isolateId,
       antibioticCode: row.antibioticCode,

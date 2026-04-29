@@ -1,5 +1,6 @@
 import type { Accession, Isolate } from "../domain/types";
 import { AST_PANELS, type ASTPanelDef } from "../config/antibiotics";
+import { PRIMARY_STANDARD, SECONDARY_STANDARD } from "../config/breakpoints";
 import { getOrganism, type OrganismDef } from "../config/organisms";
 
 function isUrineFamily(accession?: Accession): boolean {
@@ -73,4 +74,12 @@ export function getDefaultASTPanelForIsolate(
 
   const preferred = eligible.find((panel) => panel.id !== "reserve_cre" && panel.id !== "other");
   return preferred ?? eligible[0];
+}
+
+export function getDefaultASTStandardForPanel(panel?: ASTPanelDef) {
+  if (panel?.id === "enterobacterales" || panel?.id === "urine_enterobacterales") {
+    return SECONDARY_STANDARD;
+  }
+
+  return PRIMARY_STANDARD;
 }
