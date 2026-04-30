@@ -14,6 +14,7 @@ import type {
 import type { ASTInterpretation } from "../domain/enums";
 import { getOrganism } from "../config/organisms";
 import { getAntibiotic } from "../config/antibiotics";
+import { evaluateCascadeForIsolate } from "./cascadeEngine";
 
 export interface IsolateRuleOutput {
   isolateId: string;
