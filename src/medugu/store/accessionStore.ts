@@ -296,8 +296,31 @@ export const accessionStore = {
       const before = a.ast.find((x) => x.id === astId);
       if (!before) return a;
       const after: ASTResult = { ...before, ...patch };
+      let nextAccession: Accession = { ...a, ast: a.ast.map((x) => (x.id === astId ? after : x)) };
+      // Live cascade re-evaluation: any raw/SIR change can flip a 2nd-line
+      // drug's selective-reporting status. Pure logic — no audit write.
+      try {
+        // Lazy import avoids a circular dep at module load.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { evaluateCascadeForAccession } = require("../logic/cascadeEngine") as typeof import("../logic/cascadeEngine");
+        const evals = evaluateCascadeForAccession(nextAccession);
+        const merged: Record<string, Partial<ASTResult>> = {};
+        for (const e of evals) {
+          for (const [rid, p] of Object.entries(e.rowPatches)) {
+            merged[rid] = { ...(merged[rid] ?? {}), ...p };
+          }
+        }
+        if (Object.keys(merged).length > 0) {
+          nextAccession = {
+            ...nextAccession,
+            ast: nextAccession.ast.map((r) => (merged[r.id] ? { ...r, ...merged[r.id] } : r)),
+          };
+        }
+      } catch {
+        // Non-fatal: if cascade module fails to load (test env), skip.
+      }
       return appendAudit(
-        { ...a, ast: a.ast.map((x) => (x.id === astId ? after : x)) },
+        nextAccession,
         {
           actor,
           action: "ast.updated",
