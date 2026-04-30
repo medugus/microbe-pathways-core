@@ -406,6 +406,8 @@ export const accessionStore = {
       );
     });
   },
+
+  setWorkflowStage(accessionId: string, to: WorkflowStage, audit: AuditEvent) {
     mutate(accessionId, (a) => ({
       ...a,
       workflowStatus: to,
