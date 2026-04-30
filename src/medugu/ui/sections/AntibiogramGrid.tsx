@@ -233,15 +233,10 @@ export function AntibiogramGrid({ accession }: { accession: Accession }) {
                                 `Release ${drug.display} on the report anyway?\nDocument the clinical reason (allergy, prior failure, source control, etc.):`,
                               );
                               if (!reason || !reason.trim()) return;
-                              meduguActions.updateAST(accession.id, cell.id, {
-                                cascadeOverride: {
-                                  released: true,
-                                  actor: "local",
-                                  at: new Date().toISOString(),
-                                  reason: reason.trim(),
-                                },
-                                cascadeDecision: "shown",
-                                cascade: "primary",
+                              meduguActions.overrideCascade(accession.id, cell.id, {
+                                released: true,
+                                actor: "local",
+                                reason: reason.trim(),
                               });
                             }}
                             className="mt-1 w-full rounded border border-amber-600/40 bg-amber-500/20 px-1 py-0.5 text-[9px] font-semibold text-amber-900 hover:bg-amber-500/30 dark:text-amber-100"
