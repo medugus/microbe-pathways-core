@@ -225,6 +225,19 @@ export interface ASTResult {
   cascade: ASTCascadeState;
   /** Active cascade decision: shown / hidden_until_promoted / suppressed_by_phenotype. */
   cascadeDecision?: "shown" | "hidden_until_promoted" | "suppressed_by_phenotype";
+  /** Human-readable reason for the cascade decision (selective reporting). */
+  cascadeReason?: string;
+  /** Cascade rule code that fired (e.g. EUCAST_ENB_MEM_CASCADE). */
+  cascadeRuleCode?: string;
+  /** Version label for the cascade ruleset that fired (audit). */
+  cascadeRulesetVersion?: string;
+  /** Manual override: lab/clinician released a cascaded drug anyway, with reason + audit. */
+  cascadeOverride?: {
+    released: boolean;
+    actor: string;
+    at: string;
+    reason: string;
+  };
   /** Phenotype flags fired against the parent isolate (mirrored on AST rows for filter ease). */
   phenotypeFlags?: PhenotypeFlag[];
   /** @deprecated use phenotypeFlags. */

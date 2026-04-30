@@ -30,6 +30,7 @@ export const meduguActions = {
   addAST: accessionStore.addAST,
   updateAST: accessionStore.updateAST,
   removeAST: accessionStore.removeAST,
+  overrideCascade: accessionStore.overrideCascade,
   setWorkflowStage: accessionStore.setWorkflowStage,
   recordPhoneOut: accessionStore.recordPhoneOut,
   finaliseRelease: accessionStore.finaliseRelease,

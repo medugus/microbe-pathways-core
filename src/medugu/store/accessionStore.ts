@@ -23,6 +23,7 @@ import { newId } from "../domain/ids";
 import { loadState, saveState, SCHEMA_VERSION } from "./persistence";
 import { hydrateFromCloud, pushAccession } from "./cloudSync";
 import { recordAuditAsync, setAuditContext } from "./cloudAudit";
+import { evaluateCascadeForAccession } from "../logic/cascadeEngine";
 
 type Listener = () => void;
 
@@ -296,8 +297,24 @@ export const accessionStore = {
       const before = a.ast.find((x) => x.id === astId);
       if (!before) return a;
       const after: ASTResult = { ...before, ...patch };
+      let nextAccession: Accession = { ...a, ast: a.ast.map((x) => (x.id === astId ? after : x)) };
+      // Live cascade re-evaluation: any raw/SIR change can flip a 2nd-line
+      // drug's selective-reporting status. Pure logic — no audit write.
+      const evals = evaluateCascadeForAccession(nextAccession);
+      const merged: Record<string, Partial<ASTResult>> = {};
+      for (const e of evals) {
+        for (const [rid, p] of Object.entries(e.rowPatches)) {
+          merged[rid] = { ...(merged[rid] ?? {}), ...p };
+        }
+      }
+      if (Object.keys(merged).length > 0) {
+        nextAccession = {
+          ...nextAccession,
+          ast: nextAccession.ast.map((r) => (merged[r.id] ? { ...r, ...merged[r.id] } : r)),
+        };
+      }
       return appendAudit(
-        { ...a, ast: a.ast.map((x) => (x.id === astId ? after : x)) },
+        nextAccession,
         {
           actor,
           action: "ast.updated",
@@ -323,6 +340,67 @@ export const accessionStore = {
           section: "ast",
           field: `ast[${before.antibioticCode}]`,
           oldValue: before,
+        },
+        { entity: "ast", entityId: astId },
+      );
+    });
+  },
+
+  /**
+   * Manual cascade override — release a 2nd-line drug on the report despite
+   * a susceptible 1st-line agent. Writes an explicit audit row with reason;
+   * the cascade engine subsequently reads cascadeOverride.released and
+   * promotes the row to "shown".
+   */
+  overrideCascade(
+    accessionId: string,
+    astId: string,
+    opts: { released: boolean; actor: string; reason: string },
+  ) {
+    mutate(accessionId, (a) => {
+      const before = a.ast.find((x) => x.id === astId);
+      if (!before) return a;
+      const nextRow: ASTResult = {
+        ...before,
+        cascadeOverride: opts.released
+          ? {
+              released: true,
+              actor: opts.actor,
+              at: new Date().toISOString(),
+              reason: opts.reason,
+            }
+          : undefined,
+        cascadeDecision: opts.released ? "shown" : before.cascadeDecision,
+        cascade: opts.released ? "primary" : before.cascade,
+      };
+      let nextAccession: Accession = {
+        ...a,
+        ast: a.ast.map((x) => (x.id === astId ? nextRow : x)),
+      };
+      // Re-run cascade so peer rows reconcile.
+      const evals = evaluateCascadeForAccession(nextAccession);
+      const merged: Record<string, Partial<ASTResult>> = {};
+      for (const e of evals) {
+        for (const [rid, p] of Object.entries(e.rowPatches)) {
+          merged[rid] = { ...(merged[rid] ?? {}), ...p };
+        }
+      }
+      if (Object.keys(merged).length > 0) {
+        nextAccession = {
+          ...nextAccession,
+          ast: nextAccession.ast.map((r) => (merged[r.id] ? { ...r, ...merged[r.id] } : r)),
+        };
+      }
+      return appendAudit(
+        nextAccession,
+        {
+          actor: opts.actor,
+          action: opts.released ? "ast.cascadeOverride.released" : "ast.cascadeOverride.cleared",
+          section: "ast",
+          field: `ast[${before.antibioticCode}].cascadeOverride`,
+          oldValue: before.cascadeOverride ?? null,
+          newValue: nextRow.cascadeOverride ?? null,
+          reason: opts.reason,
         },
         { entity: "ast", entityId: astId },
       );

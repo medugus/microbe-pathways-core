@@ -14,6 +14,7 @@ import type {
 import type { ASTInterpretation } from "../domain/enums";
 import { getOrganism } from "../config/organisms";
 import { getAntibiotic } from "../config/antibiotics";
+import { evaluateCascadeForIsolate } from "./cascadeEngine";
 
 export interface IsolateRuleOutput {
   isolateId: string;
@@ -185,7 +186,15 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
     }
   }
 
-  // Default: rows not touched get cascadeDecision "shown"
+  // Apply phenotype patches to a synthetic accession view, then run the
+  // cascade engine so selective-reporting decisions see the post-rule SIRs.
+  const patchedAst = accession.ast.map((r) => (patches[r.id] ? { ...r, ...patches[r.id] } : r));
+  const cascadeOut = evaluateCascadeForIsolate({ ...accession, ast: patchedAst }, isolate);
+  for (const [rid, p] of Object.entries(cascadeOut.rowPatches)) {
+    patch(rid, p);
+  }
+
+  // Default: rows still untouched get cascadeDecision "shown" + interpretedSIR mirror.
   for (const r of rows) {
     if (!patches[r.id]?.cascadeDecision && !r.cascadeDecision) {
       patch(r.id, { cascadeDecision: "shown" });
