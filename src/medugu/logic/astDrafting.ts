@@ -48,7 +48,10 @@ export interface DraftResult {
 }
 
 function defaultStandardForGroup(group: string | undefined): ASTStandard {
-  return group === "enterobacterales" ? SECONDARY_STANDARD : PRIMARY_STANDARD;
+  if (group === "enterobacterales" || group === "staphylococcus") {
+    return SECONDARY_STANDARD;
+  }
+  return PRIMARY_STANDARD;
 }
 
 export function draftInterpretationFull(
@@ -159,7 +162,12 @@ export function rebuildASTFromRawEdit(
 ): Partial<ASTResult> {
   const method = patch.method ?? row.method;
   const isolate = accession.isolates.find((i) => i.id === row.isolateId);
-  const standard = patch.standard ?? (getOrganism(isolate?.organismCode ?? "")?.group === "enterobacterales" ? SECONDARY_STANDARD : row.standard);
+  const isoGroup = getOrganism(isolate?.organismCode ?? "")?.group;
+  const standard = patch.standard ?? (
+    (isoGroup === "enterobacterales" || isoGroup === "staphylococcus")
+      ? SECONDARY_STANDARD
+      : row.standard
+  );
   const rawValue = patch.rawValue;
   const rawUnit = patch.rawUnit ?? resolvedRawUnit(method);
   const { interpretation: draft, resolution } = draftInterpretationFull(

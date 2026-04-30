@@ -77,7 +77,11 @@ export function getDefaultASTPanelForIsolate(
 }
 
 export function getDefaultASTStandardForPanel(panel?: ASTPanelDef) {
-  if (panel?.id === "enterobacterales" || panel?.id === "urine_enterobacterales") {
+  if (
+    panel?.id === "enterobacterales" ||
+    panel?.id === "urine_enterobacterales" ||
+    panel?.id === "staphylococcus"
+  ) {
     return SECONDARY_STANDARD;
   }
 
