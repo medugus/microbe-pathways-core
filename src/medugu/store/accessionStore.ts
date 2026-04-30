@@ -23,6 +23,7 @@ import { newId } from "../domain/ids";
 import { loadState, saveState, SCHEMA_VERSION } from "./persistence";
 import { hydrateFromCloud, pushAccession } from "./cloudSync";
 import { recordAuditAsync, setAuditContext } from "./cloudAudit";
+import { evaluateCascadeForAccession } from "../logic/cascadeEngine";
 
 type Listener = () => void;
 
