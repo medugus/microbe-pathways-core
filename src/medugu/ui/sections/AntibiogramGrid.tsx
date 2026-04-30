@@ -220,9 +220,56 @@ export function AntibiogramGrid({ accession }: { accession: Accession }) {
                       <div className="text-center text-[9px] text-muted-foreground/80">
                         {cell.method} · {cell.standard}
                       </div>
-                      {cell.cascadeDecision && cell.cascadeDecision !== "shown" && (
+                      {cell.cascadeDecision === "hidden_until_promoted" && !cell.cascadeOverride?.released && (
+                        <div className="rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-1 text-[9px] text-amber-800 dark:text-amber-200">
+                          <div className="font-semibold">Suppressed — 1st-line susceptible</div>
+                          {cell.cascadeReason && (
+                            <div className="mt-0.5 font-normal opacity-90">{cell.cascadeReason}</div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const reason = window.prompt(
+                                `Release ${drug.display} on the report anyway?\nDocument the clinical reason (allergy, prior failure, source control, etc.):`,
+                              );
+                              if (!reason || !reason.trim()) return;
+                              meduguActions.updateAST(accession.id, cell.id, {
+                                cascadeOverride: {
+                                  released: true,
+                                  actor: "local",
+                                  at: new Date().toISOString(),
+                                  reason: reason.trim(),
+                                },
+                                cascadeDecision: "shown",
+                                cascade: "primary",
+                              });
+                            }}
+                            className="mt-1 w-full rounded border border-amber-600/40 bg-amber-500/20 px-1 py-0.5 text-[9px] font-semibold text-amber-900 hover:bg-amber-500/30 dark:text-amber-100"
+                          >
+                            Release anyway…
+                          </button>
+                        </div>
+                      )}
+                      {cell.cascadeOverride?.released && (
+                        <div className="rounded border border-primary/30 bg-primary/10 px-1.5 py-1 text-[9px] text-primary">
+                          <div className="font-semibold">Cascade overridden — released</div>
+                          <div className="mt-0.5 opacity-90">Reason: {cell.cascadeOverride.reason}</div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              meduguActions.updateAST(accession.id, cell.id, {
+                                cascadeOverride: undefined,
+                              });
+                            }}
+                            className="mt-1 w-full rounded border border-border px-1 py-0.5 text-[9px] text-muted-foreground hover:bg-muted"
+                          >
+                            Undo override
+                          </button>
+                        </div>
+                      )}
+                      {cell.cascadeDecision === "suppressed_by_phenotype" && (
                         <span className="rounded bg-muted px-1 py-0.5 text-center text-[9px] text-muted-foreground">
-                          {cell.cascadeDecision}
+                          suppressed by phenotype
                         </span>
                       )}
                     </div>
