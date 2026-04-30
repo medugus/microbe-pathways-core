@@ -252,8 +252,10 @@ export function AntibiogramGrid({ accession }: { accession: Accession }) {
                           <button
                             type="button"
                             onClick={() => {
-                              meduguActions.updateAST(accession.id, cell.id, {
-                                cascadeOverride: undefined,
+                              meduguActions.overrideCascade(accession.id, cell.id, {
+                                released: false,
+                                actor: "local",
+                                reason: "Cleared override",
                               });
                             }}
                             className="mt-1 w-full rounded border border-border px-1 py-0.5 text-[9px] text-muted-foreground hover:bg-muted"
