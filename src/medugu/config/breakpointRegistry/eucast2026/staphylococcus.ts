@@ -73,18 +73,18 @@ export const EUCAST_2026_STAPHYLOCOCCUS_BREAKPOINTS: EucastBreakpointRecord[] = 
   {
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "CIP",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 0.001, resistantGreaterThanMgL: 2,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMaxMgL: 0.001, resistantGreaterThanMgL: 1,
+    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Ciprofloxacin`,
-    notes: "MIC S≤0.001, R>2. Wide WT distribution; resistance common.",
+    notes: "EUCAST v16.0: off-scale S≤0.001, R>1 — no 'S' category, report I or R. Resistance common.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "CIP",
     method: "disk", indication: "general",
-    susceptibleMinMm: 50, resistantLessThanMm: 17,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMinMm: 50, resistantLessThanMm: 21,
+    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Ciprofloxacin`,
-    notes: "Disk 5 µg. S≥50, R<17.",
+    notes: "Disk 5 µg. EUCAST off-scale S≥50, R<21; report I for zones ≥21. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── LVX — Levofloxacin
@@ -92,17 +92,17 @@ export const EUCAST_2026_STAPHYLOCOCCUS_BREAKPOINTS: EucastBreakpointRecord[] = 
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "LVX",
     method: "mic", indication: "general",
     susceptibleMaxMgL: 0.001, resistantGreaterThanMgL: 1,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Levofloxacin`,
-    notes: "MIC S≤0.001, R>1. Same mechanism as CIP (gyrA/parC).",
+    notes: "EUCAST v16.0: off-scale S≤0.001, R>1 — no 'S' category. Same mechanism as CIP (gyrA/parC).",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "LVX",
     method: "disk", indication: "general",
-    susceptibleMinMm: 50, resistantLessThanMm: 22,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMinMm: 50, resistantLessThanMm: 25,
+    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Levofloxacin`,
-    notes: "Disk 5 µg. S≥50, R<22.",
+    notes: "Disk 5 µg. EUCAST off-scale S≥50, R<25; report I for zones ≥25. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── SXT — Trimethoprim/sulfamethoxazole

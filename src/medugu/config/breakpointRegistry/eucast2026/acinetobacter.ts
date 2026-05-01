@@ -130,44 +130,40 @@ export const EUCAST_2026_ACINETOBACTER_BREAKPOINTS: EucastBreakpointRecord[] = [
     notes: "Disk 30 µg. S≥18, R<15.",
   },
 
-  // ─────────────────────────────────────────── GEN — Gentamicin (S/I/R)
+  // ─────────────────────────────────────────── GEN — Gentamicin (IE per EUCAST v16.0)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "GEN",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 4, resistantGreaterThanMgL: 4,
-    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
     sourceTableRef: `${SRC}, Gentamicin`,
     flags: ABAU_ONLY,
-    notes: "MIC S≤4, R>4.",
+    notes: "EUCAST v16.0 lists IE (insufficient evidence) for gentamicin in Acinetobacter spp.; do not infer S/I/R.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "GEN",
     method: "disk", indication: "general",
-    susceptibleMinMm: 17, resistantLessThanMm: 17,
-    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
     sourceTableRef: `${SRC}, Gentamicin`,
     flags: ABAU_ONLY,
-    notes: "Disk 10 µg. S≥17, R<17.",
+    notes: "EUCAST v16.0 lists IE (insufficient evidence) for gentamicin in Acinetobacter spp.; do not infer S/I/R.",
   },
 
-  // ─────────────────────────────────────────── TOB — Tobramycin (S/I/R)
+  // ─────────────────────────────────────────── TOB — Tobramycin (IE per EUCAST v16.0)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 4, resistantGreaterThanMgL: 4,
-    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
     sourceTableRef: `${SRC}, Tobramycin`,
     flags: ABAU_ONLY,
-    notes: "MIC S≤4, R>4.",
+    notes: "EUCAST v16.0 lists IE (insufficient evidence) for tobramycin in Acinetobacter spp.; do not infer S/I/R.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
     method: "disk", indication: "general",
-    susceptibleMinMm: 17, resistantLessThanMm: 17,
-    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
     sourceTableRef: `${SRC}, Tobramycin`,
     flags: ABAU_ONLY,
-    notes: "Disk 10 µg. S≥17, R<17.",
+    notes: "EUCAST v16.0 lists IE (insufficient evidence) for tobramycin in Acinetobacter spp.; do not infer S/I/R.",
   },
 
   // ─────────────────────────────────────────── CST — Colistin (MIC only, BMD mandatory)
