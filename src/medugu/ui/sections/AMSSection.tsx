@@ -13,6 +13,7 @@ import { getRuleForAMSRecommendation } from "../../logic/amsRuleGovernance";
 import { resolveSpecimen } from "../../logic/specimenResolver";
 import { evaluateAMSRecommendation, evaluateStewardship } from "../../logic/stewardshipEngine";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
+import { useAccessionRowId } from "../../store/useAccessionRowId";
 import { AMSApprovalQueue } from "./AMSApprovalQueue";
 import { AMSRecommendationCard } from "./ams/AMSRecommendationCard";
 import { AMSRuleGovernancePanel } from "./ams/AMSRuleGovernancePanel";
