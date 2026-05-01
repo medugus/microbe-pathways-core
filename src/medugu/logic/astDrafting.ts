@@ -48,8 +48,16 @@ export interface DraftResult {
 }
 
 function defaultStandardForGroup(group: string | undefined): ASTStandard {
-  if (group === "enterobacterales" || group === "staphylococcus") {
-    return SECONDARY_STANDARD;
+  // EUCAST v16.0 (2026) is the encoded source of truth for these groups.
+  // Switch to CLSI only for groups where CLSI rows have been authored.
+  if (
+    group === "enterobacterales" ||
+    group === "staphylococcus" ||
+    group === "streptococcus" ||
+    group === "enterococcus" ||
+    group === "non_fermenter"
+  ) {
+    return SECONDARY_STANDARD; // EUCAST
   }
   return PRIMARY_STANDARD;
 }
