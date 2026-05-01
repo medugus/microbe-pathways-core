@@ -13,6 +13,7 @@ import { getRuleForAMSRecommendation } from "../../logic/amsRuleGovernance";
 import { resolveSpecimen } from "../../logic/specimenResolver";
 import { evaluateAMSRecommendation, evaluateStewardship } from "../../logic/stewardshipEngine";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
+import { useAccessionRowId } from "../../store/useAccessionRowId";
 import { AMSApprovalQueue } from "./AMSApprovalQueue";
 import { AMSRecommendationCard } from "./ams/AMSRecommendationCard";
 import { AMSRuleGovernancePanel } from "./ams/AMSRuleGovernancePanel";
@@ -20,6 +21,7 @@ import { AMSSummaryStrip } from "./ams/AMSSummaryStrip";
 
 export function AMSSection() {
   const accession = useActiveAccession();
+  const accessionRowId = useAccessionRowId(accession?.accessionNumber ?? null);
   const [actor, setActor] = useState("AMS pharmacist");
   const [requestNote, setRequestNote] = useState<Record<string, string>>({});
   const [decisionNote, setDecisionNote] = useState<Record<string, string>>({});
@@ -171,6 +173,7 @@ export function AMSSection() {
 
       <AMSApprovalQueue
         accession={currentAccession}
+        accessionRowId={accessionRowId}
         restrictedRows={restrictedRows}
         requestNote={requestNote}
         decisionNote={decisionNote}

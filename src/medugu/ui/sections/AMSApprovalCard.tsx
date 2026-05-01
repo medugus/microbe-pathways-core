@@ -7,6 +7,7 @@ import {
 import type { Accession, ASTResult } from "../../domain/types";
 import { AMSSLAChip } from "./AMSSLAChip";
 import { AMSStatusChip } from "./AMSStatusChip";
+import { PolishButton } from "../PolishButton";
 
 function awareChip(aware: string | undefined): { label: string; tone: string } {
   const normalized = (aware ?? "").trim().toLowerCase();
@@ -18,6 +19,10 @@ function awareChip(aware: string | undefined): { label: string; tone: string } {
 
 interface AMSApprovalCardProps {
   accession: Accession;
+  /** Cloud row id; required for the AI assist surface to be enabled (audit
+   *  events are tenant-scoped to the accession). When null, the polish
+   *  button is disabled with an explanatory tooltip. */
+  accessionRowId?: string | null;
   row: ASTResult;
   requestNote: string;
   decisionNote: Record<string, string>;
@@ -29,6 +34,7 @@ interface AMSApprovalCardProps {
 
 export function AMSApprovalCard({
   accession,
+  accessionRowId,
   row,
   requestNote,
   decisionNote,
@@ -81,20 +87,29 @@ export function AMSApprovalCard({
       ) : null}
 
       {(status === "not_requested" || status === "denied" || status === "expired") ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <input
-            value={requestNote}
-            onChange={(e) => onRequestNoteChange(e.target.value)}
-            placeholder="Reason / clinical justification (optional)"
-            className="min-w-[200px] flex-1 rounded border border-border bg-background px-2 py-1 text-xs"
-          />
-          <button
-            type="button"
-            onClick={() => onRequest(row)}
-            className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90"
-          >
-            Request approval
-          </button>
+        <div className="mt-2 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              value={requestNote}
+              onChange={(e) => onRequestNoteChange(e.target.value)}
+              placeholder="Reason / clinical justification (optional)"
+              className="min-w-[200px] flex-1 rounded border border-border bg-background px-2 py-1 text-xs"
+            />
+            <PolishButton
+              task="ams_request_reason_polish"
+              draft={requestNote}
+              accessionRowId={accessionRowId}
+              onAccept={(text) => onRequestNoteChange(text)}
+              compact
+            />
+            <button
+              type="button"
+              onClick={() => onRequest(row)}
+              className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90"
+            >
+              Request approval
+            </button>
+          </div>
         </div>
       ) : null}
 
