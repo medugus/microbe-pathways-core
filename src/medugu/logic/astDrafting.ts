@@ -20,6 +20,7 @@ import {
   PRIMARY_STANDARD,
   SECONDARY_STANDARD,
   resolveBreakpoint,
+  supportsCategory,
   type BreakpointResolution,
   type ResolverSyndrome,
 } from "../config/breakpoints";
@@ -90,10 +91,11 @@ export function draftInterpretationFull(
   }
 
   const bp = resolution.breakpoint;
-  const interp =
+  const rawInterp =
     bp.method === "disk_diffusion"
       ? interpretDisk(input.rawValue, bp)
       : interpretMIC(input.rawValue, bp);
+  const interp = normalizeSupportedInterpretation(rawInterp, bp);
   return { interpretation: interp, resolution, standardUsed: standard };
 }
 
@@ -117,6 +119,17 @@ function interpretMIC(rawValue: number, bp: { susceptibleMaxMgL?: number; resist
   if (bp.resistantGreaterThanMgL !== undefined && rawValue > bp.resistantGreaterThanMgL) return "R";
   if (bp.resistantMinMgL !== undefined && rawValue >= bp.resistantMinMgL) return "R";
   return "I";
+}
+
+function normalizeSupportedInterpretation(
+  interpretation: ASTInterpretation | undefined,
+  bp: { interpretationCategories?: Array<"S" | "I" | "R" | "ND"> },
+): ASTInterpretation | undefined {
+  if (!interpretation || interpretation === "SDD" || interpretation === "NS") return interpretation;
+  if (supportsCategory(bp, interpretation)) return interpretation;
+  if (interpretation === "S" && supportsCategory(bp, "I")) return "I";
+  if (supportsCategory(bp, "ND")) return "ND";
+  return undefined;
 }
 
 export function buildASTResult(accession: Accession, input: DraftASTInput): ASTResult {
