@@ -16,6 +16,10 @@ export type AntibioticClass =
   | "oxazolidinone"
   | "nitrofuran"
   | "fosfomycin"
+  | "rifamycin"
+  | "fusidane"
+  | "topical"
+  | "lipopeptide"
   | "other";
 
 export interface AntibioticDef {
