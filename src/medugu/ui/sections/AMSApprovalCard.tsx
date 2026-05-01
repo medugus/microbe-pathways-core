@@ -7,6 +7,7 @@ import {
 import type { Accession, ASTResult } from "../../domain/types";
 import { AMSSLAChip } from "./AMSSLAChip";
 import { AMSStatusChip } from "./AMSStatusChip";
+import { PolishButton } from "../PolishButton";
 
 function awareChip(aware: string | undefined): { label: string; tone: string } {
   const normalized = (aware ?? "").trim().toLowerCase();
