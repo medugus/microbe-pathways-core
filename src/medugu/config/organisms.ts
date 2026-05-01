@@ -31,6 +31,8 @@ export const ORGANISMS: OrganismDef[] = [
   { code: "SPYO",  display: "Streptococcus pyogenes (GAS)",    gram: "gram_positive", group: "streptococcus" },
   { code: "SAGAL", display: "Streptococcus agalactiae (GBS)",  gram: "gram_positive", group: "streptococcus" },
   { code: "SPNE",  display: "Streptococcus pneumoniae",        gram: "gram_positive", group: "streptococcus" },
+  { code: "SDYS",  display: "Streptococcus dysgalactiae / β-haemolytic groups C/G", gram: "gram_positive", group: "streptococcus" },
+  { code: "SVIR",  display: "Viridans group streptococci",      gram: "gram_positive", group: "streptococcus" },
   { code: "EFAE",  display: "Enterococcus faecalis",           gram: "gram_positive", group: "enterococcus" },
   { code: "EFAM",  display: "Enterococcus faecium",            gram: "gram_positive", group: "enterococcus", alert: true },
   { code: "CALB",  display: "Candida albicans",                gram: "yeast",         group: "candida" },

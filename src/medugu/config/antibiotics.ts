@@ -83,6 +83,11 @@ export const ANTIBIOTICS: AntibioticDef[] = [
   { code: "CZA",  display: "Ceftazidime/avibactam",     class: "cephalosporin", restricted: true },
   { code: "MIN",  display: "Minocycline",               class: "tetracycline" },
   { code: "CFD",  display: "Cefiderocol",               class: "siderophore_cephalosporin", restricted: true },
+  // Streptococcus-relevant additions
+  { code: "CTX",  display: "Cefotaxime",                class: "cephalosporin", restricted: true },
+  { code: "MXF",  display: "Moxifloxacin",              class: "fluoroquinolone" },
+  { code: "BPN",  display: "Benzylpenicillin (oral)",   class: "penicillin" },
+  { code: "AMX",  display: "Amoxicillin",               class: "penicillin" },
 ];
 
 const CODE_SET = new Set(ANTIBIOTICS.map((a) => a.code));
@@ -132,6 +137,9 @@ const REQUESTED_NAME_TO_CODE: Record<string, string> = {
   "ceftazidime-avibactam": "CZA",
   minocycline: "MIN",
   cefiderocol: "CFD",
+  cefotaxime: "CTX",
+  moxifloxacin: "MXF",
+  amoxicillin: "AMX",
 };
 
 export interface ASTPanelDef {
