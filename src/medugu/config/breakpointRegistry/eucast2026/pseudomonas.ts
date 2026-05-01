@@ -368,4 +368,59 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
     flags: PAER_ONLY,
     notes: "Intrinsic resistance — P. aeruginosa is intrinsically resistant to SXT. Report R; do not test.",
   },
+
+  // ─────────────────────────────────────────── Bulk intrinsic-R block list
+  // EUCAST Expected Resistant Phenotypes — P. aeruginosa.
+  // Encoded as single-category "R" rows (MIC + disk) so any value entered
+  // resolves to "R — intrinsic" with provenance, regardless of measured value.
+  // Reference: EUCAST Expected Resistant Phenotypes v1.2 (2023), reaffirmed v16.0 2026.
+  ...(
+    [
+      // [code, display reason]
+      ["AMP", "Ampicillin — no activity vs P. aeruginosa (impermeability + AmpC)."],
+      ["AMC", "Amoxicillin-clavulanate — clavulanate does not restore activity; intrinsic AmpC."],
+      ["CRO", "Ceftriaxone — non-pseudomonal cephalosporin; insufficient anti-pseudomonal activity."],
+      ["CXM", "Cefuroxime — 2nd-gen cephalosporin; no anti-pseudomonal activity."],
+      ["ETP", "Ertapenem — group 1 carbapenem with no activity vs non-fermenters."],
+      ["TET", "Tetracycline — intrinsic efflux (MexAB-OprM/MexXY)."],
+      ["DOX", "Doxycycline — intrinsic efflux (MexAB-OprM/MexXY)."],
+      ["NIT", "Nitrofurantoin — no clinically useful activity vs P. aeruginosa."],
+      ["FOS", "Fosfomycin (oral/IV) — variable, no EUCAST clinical breakpoint for systemic P. aeruginosa."],
+      ["CHL", "Chloramphenicol — intrinsic efflux; no clinical use."],
+      ["ERY", "Erythromycin — intrinsic resistance (Gram-negative impermeability + efflux)."],
+      ["CLI", "Clindamycin — intrinsic resistance (Gram-negative impermeability)."],
+      ["VAN", "Vancomycin — Gram-negative outer membrane impermeable to glycopeptides."],
+      ["TEC", "Teicoplanin — Gram-negative outer membrane impermeable to glycopeptides."],
+      ["LZD", "Linezolid — Gram-positive spectrum only; no activity vs P. aeruginosa."],
+      ["RIF", "Rifampicin — no clinical breakpoint vs P. aeruginosa; not used as monotherapy."],
+      ["DAP", "Daptomycin — Gram-positive spectrum only."],
+      ["FUS", "Fusidic acid — Gram-positive spectrum (mainly staphylococci)."],
+      ["MUP", "Mupirocin — topical Gram-positive agent only."],
+      ["OXA", "Oxacillin — anti-staphylococcal penicillin; no Gram-negative activity."],
+      ["FOX", "Cefoxitin — used as mecA screen for staphylococci; not for P. aeruginosa."],
+      ["PEN", "Penicillin G — no activity vs Gram-negative non-fermenters."],
+      ["HLG", "High-level Gentamicin — enterococcal synergy screen; not applicable to P. aeruginosa."],
+      ["HLS", "High-level Streptomycin — enterococcal synergy screen; not applicable to P. aeruginosa."],
+      ["QDA", "Quinupristin/dalfopristin — Gram-positive spectrum; intrinsic R in Gram-negatives."],
+    ] as const
+  ).flatMap<EucastBreakpointRecord>(([code, reason]) => [
+    {
+      ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: code,
+      method: "mic", indication: "general",
+      resistantGreaterThanMgL: 0,
+      interpretationCategories: ["R"], breakpointStatus: "active",
+      sourceTableRef: `${SRC}, ${code} (intrinsic resistance)`,
+      flags: { ...PAER_ONLY, screeningOnly: false },
+      notes: `Intrinsic resistance — ${reason} Report R regardless of measured value (EUCAST Expected Resistant Phenotypes).`,
+    },
+    {
+      ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: code,
+      method: "disk", indication: "general",
+      resistantLessThanMm: 999,
+      interpretationCategories: ["R"], breakpointStatus: "active",
+      sourceTableRef: `${SRC}, ${code} (intrinsic resistance)`,
+      flags: { ...PAER_ONLY, screeningOnly: false },
+      notes: `Intrinsic resistance — ${reason} Report R regardless of measured zone (EUCAST Expected Resistant Phenotypes).`,
+    },
+  ]),
 ];
