@@ -24,6 +24,21 @@ const BOTTLE_LABEL: Record<string, string> = {
   ISOLATOR: "Isolator",
 };
 
+// Bench-conventional ordering: anaerobic → aerobic → paeds → specialty.
+// Mirrors BottleIncubationBoard so rows align across views.
+const BOTTLE_SORT_RANK: Record<string, number> = {
+  ANAEROBIC: 0,
+  AEROBIC: 1,
+  PAEDIATRIC: 2,
+  MYCOLOGY: 3,
+  MYCOBACTERIAL: 4,
+  ISOLATOR: 5,
+};
+
+function bottleSortKey(bottle: string): number {
+  return BOTTLE_SORT_RANK[bottle] ?? 99;
+}
+
 interface SetRow {
   setNo: number;
   drawSite: string;
