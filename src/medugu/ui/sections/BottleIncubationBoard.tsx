@@ -1,11 +1,17 @@
 // BottleIncubationBoard — read-only Epic Beaker-style incubation timeline.
 //
-// Renders a compact Day 1–5 grid above the per-bottle editing table so bench
-// staff can see each bottle's incubation status, flagged-positive day/TTP, and
-// terminal no-growth at a glance. Pure presentation layer; derives everything
-// from the same props already available to BottleResultsEditor. No writes.
+// Renders a per-(set × bottle) row showing each day of the bottle's incubation
+// window. The window length now varies by bottle type:
+//   AEROBIC / ANAEROBIC / PAEDIATRIC = 5 d
+//   MYCOLOGY                         = 14 d
+//   MYCOBACTERIAL                    = 42 d
+//   ISOLATOR                         = subcultured, no incubation grid
+//
+// Each cell shows the bottle's status for that day. For incubating cells we
+// also surface the cumulative hours-on-instrument so the bench can read TTP-
+// progress at a glance, mirroring how Beaker displays the BACTEC/BacT-Alert
+// hours counter next to each bottle row. Pure presentation; no writes.
 
-const INCUBATION_DAYS = [1, 2, 3, 4, 5] as const;
 const HOURS_PER_DAY = 24;
 
 const BOTTLE_LABEL: Record<string, string> = {
@@ -16,6 +22,34 @@ const BOTTLE_LABEL: Record<string, string> = {
   MYCOBACTERIAL: "Mycobacterial",
   ISOLATOR: "Isolator",
 };
+
+/** Maximum incubation window per bottle type, in days. 0 = no grid (e.g. isolator). */
+const BOTTLE_MAX_DAYS: Record<string, number> = {
+  AEROBIC: 5,
+  ANAEROBIC: 5,
+  PAEDIATRIC: 5,
+  MYCOLOGY: 14,
+  MYCOBACTERIAL: 42,
+  ISOLATOR: 0,
+};
+
+/**
+ * Bench-conventional bottle ordering (anaerobic first per draw-order teaching,
+ * then aerobic, then paeds/specialty bottles). Used to sort rows in the board
+ * so techs see a consistent layout across accessions.
+ */
+const BOTTLE_SORT_RANK: Record<string, number> = {
+  ANAEROBIC: 0,
+  AEROBIC: 1,
+  PAEDIATRIC: 2,
+  MYCOLOGY: 3,
+  MYCOBACTERIAL: 4,
+  ISOLATOR: 5,
+};
+
+function bottleSortKey(bottle: string): number {
+  return BOTTLE_SORT_RANK[bottle] ?? 99;
+}
 
 // ---------------------------------------------------------------------------
 // Local types inferred from BottleResultsEditor data shape — no domain edits.
@@ -46,35 +80,45 @@ interface BottleIncubationBoardProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
+function maxDaysFor(bottle: string): number {
+  return BOTTLE_MAX_DAYS[bottle] ?? 5;
+}
+
+function buildDayList(maxDays: number): number[] {
+  if (maxDays <= 0) return [];
+  // Cap rendered columns to keep the table compact — for long protocols we
+  // surface key milestones only (D1, D2, D3, D5, D7, D10, D14, D21, D28, D35, D42).
+  if (maxDays <= 7) return Array.from({ length: maxDays }, (_, i) => i + 1);
+  const milestones = [1, 2, 3, 5, 7, 10, 14, 21, 28, 35, 42];
+  return milestones.filter((d) => d <= maxDays);
+}
+
 /**
  * Derives the approximate positive day (1-indexed) from ttpHours.
- * If ttpHours is not available but positiveAt + drawTime are, fall back to
- * computing it here; the tooltip will note "approximate from draw time".
+ * Falls back to (positiveAt − drawTime) when ttpHours is missing.
  */
 function resolvePositiveDay(
   result: BoardBottleResult,
   set: BoardSetRow | undefined,
+  maxDays: number,
 ): { day: number; approx: boolean; ttpHours?: number } | null {
   if (result.growth !== "growth") return null;
 
-  // Prefer stored ttpHours (already computed by the editor).
   if (result.ttpHours !== undefined && result.ttpHours >= 0) {
-    const day = Math.min(Math.ceil(result.ttpHours / HOURS_PER_DAY) || 1, 5);
+    const day = Math.min(Math.ceil(result.ttpHours / HOURS_PER_DAY) || 1, maxDays);
     return { day, approx: false, ttpHours: result.ttpHours };
   }
 
-  // Fallback: derive from drawTime + positiveAt.
   if (set?.drawTime && result.positiveAt) {
     const t0 = new Date(set.drawTime).getTime();
     const t1 = new Date(result.positiveAt).getTime();
     if (Number.isFinite(t0) && Number.isFinite(t1) && t1 >= t0) {
       const hours = Math.round(((t1 - t0) / 36e5) * 10) / 10;
-      const day = Math.min(Math.ceil(hours / HOURS_PER_DAY) || 1, 5);
+      const day = Math.min(Math.ceil(hours / HOURS_PER_DAY) || 1, maxDays);
       return { day, approx: true, ttpHours: hours };
     }
   }
 
-  // growth=true but no timing data — mark Day 1 as unknown flag.
   return { day: 1, approx: true, ttpHours: undefined };
 }
 
@@ -83,18 +127,21 @@ function resolvePositiveDay(
 // ---------------------------------------------------------------------------
 
 type CellVariant =
-  | "empty"       // no metadata / set not started
-  | "incubating"  // day is within incubation period, no flag yet
-  | "flagged"     // this is the day the bottle flagged positive
-  | "removed"     // bottle was removed from incubator after positive flag
-  | "no_growth"   // bottle is confirmed no-growth (terminal negative)
-  | "pending_ng"; // no_growth not yet terminal (earlier days for no_growth bottles)
+  | "empty"        // bottle has no status for this column
+  | "incubating"   // incubation window includes this day, no flag yet
+  | "flagged"      // bottle flagged positive on this day
+  | "removed"      // bottle was unloaded after positive flag
+  | "no_growth"    // terminal negative on the final day
+  | "pending_ng"   // earlier days for a no_growth bottle
+  | "out_of_range"; // day is beyond this bottle's max incubation window
 
 function getVariant(
   day: number,
   result: BoardBottleResult | undefined,
   positiveInfo: { day: number; approx: boolean; ttpHours?: number } | null,
+  maxDays: number,
 ): CellVariant {
+  if (day > maxDays) return "out_of_range";
   if (!result) return "empty";
 
   if (result.growth === "growth" && positiveInfo) {
@@ -104,13 +151,10 @@ function getVariant(
   }
 
   if (result.growth === "no_growth") {
-    // Terminal negative only on the last rendered day (Day 5).
-    // Earlier days shown as incubating for no_growth bottles.
-    if (day === INCUBATION_DAYS[INCUBATION_DAYS.length - 1]) return "no_growth";
+    if (day === maxDays) return "no_growth";
     return "pending_ng";
   }
 
-  // pending
   return "incubating";
 }
 
@@ -123,31 +167,29 @@ function cellStyle(variant: CellVariant): CellStyleConfig {
   switch (variant) {
     case "flagged":
       return {
-        wrapper:
-          "rounded border border-destructive bg-destructive/10 px-1 py-0.5 text-center",
+        wrapper: "rounded border border-destructive bg-destructive/10 px-1 py-0.5 text-center",
         label: "text-destructive font-semibold",
       };
     case "no_growth":
       return {
-        wrapper:
-          "rounded border border-border bg-muted/30 px-1 py-0.5 text-center",
+        wrapper: "rounded border border-border bg-muted/30 px-1 py-0.5 text-center",
         label: "text-muted-foreground",
       };
     case "removed":
       return {
-        wrapper:
-          "rounded border border-border bg-muted/20 px-1 py-0.5 text-center",
+        wrapper: "rounded border border-border bg-muted/20 px-1 py-0.5 text-center",
         label: "text-muted-foreground",
       };
     case "pending_ng":
-      return {
-        wrapper: "rounded border border-border px-1 py-0.5 text-center",
-        label: "text-muted-foreground",
-      };
     case "incubating":
       return {
         wrapper: "rounded border border-border px-1 py-0.5 text-center",
         label: "text-foreground",
+      };
+    case "out_of_range":
+      return {
+        wrapper: "px-1 py-0.5 text-center opacity-30",
+        label: "text-muted-foreground",
       };
     case "empty":
     default:
@@ -158,10 +200,19 @@ function cellStyle(variant: CellVariant): CellStyleConfig {
   }
 }
 
+/**
+ * Cumulative hours-on-instrument estimate for a given column day.
+ * For incubating cells we show the elapsed hours since draw at the END of that
+ * column day (e.g. Day 3 → +72h), so the tech sees TTP progress per row.
+ */
+function cumulativeHoursLabel(day: number): string {
+  return `+${day * HOURS_PER_DAY}h`;
+}
+
 function cellText(
   variant: CellVariant,
   positiveInfo: { day: number; approx: boolean; ttpHours?: number } | null,
-  _day: number,
+  day: number,
 ): string {
   switch (variant) {
     case "flagged":
@@ -174,7 +225,9 @@ function cellText(
       return "Removed";
     case "pending_ng":
     case "incubating":
-      return "Incub.";
+      return cumulativeHoursLabel(day);
+    case "out_of_range":
+      return "·";
     case "empty":
     default:
       return "—";
@@ -186,6 +239,7 @@ function cellTitle(
   positiveInfo: { day: number; approx: boolean; ttpHours?: number } | null,
   day: number,
   bottleLabel: string,
+  maxDays: number,
 ): string {
   switch (variant) {
     case "flagged":
@@ -197,13 +251,14 @@ function cellTitle(
       }
       return `${bottleLabel}: flagged positive on Day ${day} (timing unavailable)`;
     case "no_growth":
-      return `${bottleLabel}: terminal no growth at Day ${day}`;
+      return `${bottleLabel}: terminal no growth at Day ${day} (${maxDays}-day protocol)`;
     case "removed":
-      return `${bottleLabel}: Bottle removed from automated incubation after positive flag.`;
+      return `${bottleLabel}: unloaded from incubator after positive flag`;
     case "pending_ng":
-      return `${bottleLabel}: incubating (no growth recorded at Day ${day})`;
     case "incubating":
-      return `${bottleLabel}: incubating at Day ${day}`;
+      return `${bottleLabel}: incubating — approx. ${day * HOURS_PER_DAY} h on instrument by end of Day ${day}`;
+    case "out_of_range":
+      return `${bottleLabel}: outside ${maxDays}-day incubation window`;
     case "empty":
     default:
       return `${bottleLabel}: no data`;
@@ -220,22 +275,36 @@ export function BottleIncubationBoard({
 }: BottleIncubationBoardProps) {
   if (sets.length === 0) return null;
 
-  // Collect rows: one per (set x bottle).
+  // Build sorted rows: anaerobic → aerobic → paeds → specialty.
   const rows: Array<{
     key: string;
     set: BoardSetRow;
     bottle: string;
     result: BoardBottleResult | undefined;
   }> = sets.flatMap((set) =>
-    set.bottleTypes.map((bottle) => ({
-      key: `${set.setNo}-${bottle}`,
-      set,
-      bottle,
-      result: bottleResults.find(
-        (r) => r.setNo === set.setNo && r.bottleType === bottle,
-      ),
-    })),
+    [...set.bottleTypes]
+      .sort((a, b) => bottleSortKey(a) - bottleSortKey(b))
+      .map((bottle) => ({
+        key: `${set.setNo}-${bottle}`,
+        set,
+        bottle,
+        result: bottleResults.find(
+          (r) => r.setNo === set.setNo && r.bottleType === bottle,
+        ),
+      })),
   );
+
+  // Determine the union of days across all rendered rows, so the header is
+  // wide enough to cover the longest protocol present (e.g. a mycobacterial
+  // bottle next to standard aerobic/anaerobic).
+  const headerMaxDays = rows.reduce(
+    (max, r) => Math.max(max, maxDaysFor(r.bottle)),
+    0,
+  );
+  const headerDays = buildDayList(headerMaxDays);
+
+  // Hide the board entirely if every bottle is no-grid (e.g. only ISOLATOR).
+  if (headerDays.length === 0) return null;
 
   return (
     <div className="space-y-1">
@@ -245,7 +314,7 @@ export function BottleIncubationBoard({
           Bottle incubation board
         </p>
         <p className="text-[10px] text-muted-foreground">
-          Read-only timeline derived from existing bottle data
+          Read-only timeline. Cells show approximate cumulative hours on instrument; window length varies by bottle type (5 d standard / 14 d mycology / 42 d AFB).
         </p>
       </div>
 
@@ -257,18 +326,21 @@ export function BottleIncubationBoard({
               <th className="p-1.5 text-left">Set</th>
               <th className="p-1.5 text-left">Bottle</th>
               <th className="p-1.5 text-left">Site</th>
-              {INCUBATION_DAYS.map((d) => (
+              <th className="p-1.5 text-center">Window</th>
+              {headerDays.map((d) => (
                 <th key={d} className="p-1.5 text-center">
-                  Day {d}
+                  D{d}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map(({ key, set, bottle, result }) => {
+              const maxDays = maxDaysFor(bottle);
               const positiveInfo = resolvePositiveDay(
                 result ?? { setNo: set.setNo, bottleType: bottle, growth: "pending" },
                 set,
+                maxDays,
               );
               const label = BOTTLE_LABEL[bottle] ?? bottle;
               const siteLabel = set.drawSite
@@ -278,16 +350,40 @@ export function BottleIncubationBoard({
                 ? `${siteLabel} · ${set.lumenLabel}`
                 : siteLabel;
 
+              // Special-case rows whose bottle type carries no incubation grid
+              // (e.g. isolator → plated subculture).
+              if (maxDays <= 0) {
+                return (
+                  <tr key={key} className="border-t border-border align-middle">
+                    <td className="p-1.5 font-mono text-foreground">#{set.setNo}</td>
+                    <td className="p-1.5 text-foreground">{label}</td>
+                    <td className="p-1.5 text-muted-foreground">{siteDisplay}</td>
+                    <td className="p-1.5 text-center text-[10px] text-muted-foreground">
+                      Subcultured
+                    </td>
+                    <td
+                      colSpan={headerDays.length}
+                      className="p-1.5 text-[10px] italic text-muted-foreground"
+                    >
+                      No automated incubation — read by plate culture.
+                    </td>
+                  </tr>
+                );
+              }
+
               return (
                 <tr key={key} className="border-t border-border align-middle">
                   <td className="p-1.5 font-mono text-foreground">#{set.setNo}</td>
                   <td className="p-1.5 text-foreground">{label}</td>
                   <td className="p-1.5 text-muted-foreground">{siteDisplay}</td>
-                  {INCUBATION_DAYS.map((day) => {
-                    const variant = getVariant(day, result, positiveInfo);
+                  <td className="p-1.5 text-center text-[10px] text-muted-foreground">
+                    {maxDays} d
+                  </td>
+                  {headerDays.map((day) => {
+                    const variant = getVariant(day, result, positiveInfo, maxDays);
                     const styles = cellStyle(variant);
                     const text = cellText(variant, positiveInfo, day);
-                    const title = cellTitle(variant, positiveInfo, day, label);
+                    const title = cellTitle(variant, positiveInfo, day, label, maxDays);
                     return (
                       <td key={day} className="p-1">
                         <span
