@@ -23,6 +23,8 @@ export type AntibioticClass =
   | "glycylcycline"
   | "phenicol"
   | "streptogramin"
+  | "monobactam"
+  | "siderophore_cephalosporin"
   | "other";
 
 export interface AntibioticDef {
@@ -72,6 +74,15 @@ export const ANTIBIOTICS: AntibioticDef[] = [
   { code: "HLG",  display: "High-level Gentamicin (synergy screen)", class: "aminoglycoside" },
   { code: "HLS",  display: "High-level Streptomycin (synergy screen)", class: "aminoglycoside" },
   { code: "QDA",  display: "Quinupristin/dalfopristin", class: "streptogramin", restricted: true },
+  // Pseudomonas / non-fermenter additions
+  { code: "IPM",  display: "Imipenem",                  class: "carbapenem", restricted: true },
+  { code: "DOR",  display: "Doripenem",                 class: "carbapenem", restricted: true },
+  { code: "TOB",  display: "Tobramycin",                class: "aminoglycoside" },
+  { code: "ATM",  display: "Aztreonam",                 class: "monobactam", restricted: true },
+  { code: "TOL",  display: "Ceftolozane/tazobactam",    class: "cephalosporin", restricted: true },
+  { code: "CZA",  display: "Ceftazidime/avibactam",     class: "cephalosporin", restricted: true },
+  { code: "MIN",  display: "Minocycline",               class: "tetracycline" },
+  { code: "CFD",  display: "Cefiderocol",               class: "siderophore_cephalosporin", restricted: true },
 ];
 
 const CODE_SET = new Set(ANTIBIOTICS.map((a) => a.code));
@@ -113,6 +124,14 @@ const REQUESTED_NAME_TO_CODE: Record<string, string> = {
   "high-level gentamicin": "HLG",
   "high-level streptomycin": "HLS",
   "quinupristin-dalfopristin": "QDA",
+  imipenem: "IPM",
+  doripenem: "DOR",
+  tobramycin: "TOB",
+  aztreonam: "ATM",
+  "ceftolozane-tazobactam": "TOL",
+  "ceftazidime-avibactam": "CZA",
+  minocycline: "MIN",
+  cefiderocol: "CFD",
 };
 
 export interface ASTPanelDef {
