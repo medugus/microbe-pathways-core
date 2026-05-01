@@ -272,6 +272,7 @@ export function ReleaseSection() {
 
       <AmendmentPanel
         accession={accession}
+        accessionRowId={accessionRowId}
         amendmentReason={amendmentReason}
         amending={amending}
         amendError={amendError}
