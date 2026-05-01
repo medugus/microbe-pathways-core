@@ -214,9 +214,11 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
             <tr>
               <th className="p-1.5 text-left">Set</th>
               <th className="p-1.5 text-left">Bottle</th>
-              <th className="p-1.5 text-left">Growth</th>
+              <th className="p-1.5 text-left">Status</th>
+              <th className="p-1.5 text-left">Loaded at</th>
               <th className="p-1.5 text-left">Positive at</th>
               <th className="p-1.5 text-left">TTP (h)</th>
+              <th className="p-1.5 text-left">Termination</th>
               <th className="p-1.5 text-left">Linked organism(s)</th>
             </tr>
           </thead>
@@ -226,7 +228,15 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
                 .sort((a, b) => bottleSortKey(a) - bottleSortKey(b))
                 .map((bottle) => {
                 const row = findRow(set.setNo, bottle);
-                const growth = row?.growth ?? "pending";
+                const status: BottleLifecycleStatus =
+                  row?.status ??
+                  (row?.growth === "growth"
+                    ? "flagged_positive"
+                    : row?.growth === "no_growth"
+                      ? "terminal_negative"
+                      : "received");
+                const isPositive = status === "flagged_positive" || status === "removed";
+                const isTerminal = status === "terminal_negative" || status === "discontinued";
                 const linked = linkedOrganisms(set.setNo, bottle);
                 return (
                   <tr key={`${set.setNo}-${bottle}`} className="border-t border-border align-middle">
@@ -240,34 +250,79 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
                     <td className="p-1.5 text-foreground">{BOTTLE_LABEL[bottle] ?? bottle}</td>
                     <td className="p-1.5">
                       <select
-                        value={growth}
+                        value={status}
                         onChange={(e) =>
-                          upsert(set.setNo, bottle, { growth: e.target.value as BottleGrowthState })
+                          upsert(set.setNo, bottle, {
+                            status: e.target.value as BottleLifecycleStatus,
+                          })
                         }
                         className={`rounded border bg-background px-1.5 py-1 text-xs ${
-                          growth === "growth"
+                          isPositive
                             ? "border-destructive text-destructive"
-                            : growth === "no_growth"
+                            : isTerminal
                               ? "border-border text-muted-foreground"
                               : "border-border text-foreground"
                         }`}
                       >
-                        <option value="pending">Pending</option>
-                        <option value="growth">Growth</option>
-                        <option value="no_growth">No growth</option>
+                        {STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s}>
+                            {STATUS_LABEL[s]}
+                          </option>
+                        ))}
                       </select>
                     </td>
                     <td className="p-1.5">
                       <input
                         type="datetime-local"
-                        disabled={growth !== "growth"}
+                        value={row?.loadedAt && row.loadedAt.length >= 16 ? row.loadedAt.slice(0, 16) : row?.loadedAt ?? ""}
+                        onChange={(e) => upsert(set.setNo, bottle, { loadedAt: e.target.value })}
+                        className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs"
+                      />
+                    </td>
+                    <td className="p-1.5">
+                      <input
+                        type="datetime-local"
+                        disabled={!isPositive}
                         value={row?.positiveAt && row.positiveAt.length >= 16 ? row.positiveAt.slice(0, 16) : row?.positiveAt ?? ""}
                         onChange={(e) => upsert(set.setNo, bottle, { positiveAt: e.target.value })}
                         className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs disabled:opacity-50"
                       />
                     </td>
                     <td className="p-1.5 font-mono text-muted-foreground">
-                      {row?.ttpHours !== undefined ? `${row.ttpHours} h` : "—"}
+                      {row?.ttpHours !== undefined ? (
+                        <>
+                          {row.ttpHours} h
+                          {row.drawToPositiveHours !== undefined &&
+                            row.drawToPositiveHours !== row.ttpHours && (
+                              <span className="ml-1 text-[10px] opacity-70" title="Draw → positive (pre-analytic inclusive)">
+                                (draw {row.drawToPositiveHours} h)
+                              </span>
+                            )}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="p-1.5">
+                      <select
+                        disabled={!isTerminal}
+                        value={row?.terminationReason ?? ""}
+                        onChange={(e) =>
+                          upsert(set.setNo, bottle, {
+                            terminationReason: (e.target.value || undefined) as
+                              | BottleTerminationReason
+                              | undefined,
+                          })
+                        }
+                        className="rounded border border-border bg-background px-1.5 py-1 text-xs disabled:opacity-50"
+                      >
+                        <option value="">—</option>
+                        {TERMINATION_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="p-1.5 text-[11px] text-muted-foreground">
                       {linked.length === 0
