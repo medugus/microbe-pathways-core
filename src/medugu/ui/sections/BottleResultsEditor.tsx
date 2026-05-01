@@ -12,8 +12,53 @@
 
 import { useMemo } from "react";
 import { meduguActions } from "../../store/useAccessionStore";
-import type { Accession, BloodBottleResult, BottleGrowthState, Isolate } from "../../domain/types";
+import type {
+  Accession,
+  BloodBottleResult,
+  BottleGrowthState,
+  BottleLifecycleStatus,
+  BottleTerminationReason,
+  Isolate,
+} from "../../domain/types";
 import { BottleIncubationBoard } from "./BottleIncubationBoard";
+
+const STATUS_LABEL: Record<BottleLifecycleStatus, string> = {
+  received: "Received",
+  loaded: "Loaded",
+  incubating: "Incubating",
+  flagged_positive: "Flagged +",
+  removed: "Removed",
+  terminal_negative: "No growth",
+  discontinued: "Discontinued",
+};
+
+const STATUS_OPTIONS: BottleLifecycleStatus[] = [
+  "received",
+  "loaded",
+  "incubating",
+  "flagged_positive",
+  "removed",
+  "terminal_negative",
+  "discontinued",
+];
+
+const TERMINATION_OPTIONS: { value: BottleTerminationReason; label: string }[] = [
+  { value: "no_growth_complete", label: "No growth — full window" },
+  { value: "clinician_request", label: "Clinician request" },
+  { value: "contaminated", label: "Contaminated / discard" },
+  { value: "lab_error", label: "Lab error" },
+  { value: "broken_bottle", label: "Broken bottle" },
+  { value: "other", label: "Other" },
+];
+
+/** Map lifecycle status → legacy growth field so downstream engines keep working. */
+function deriveGrowth(status: BottleLifecycleStatus | undefined, fallback: BottleGrowthState): BottleGrowthState {
+  if (!status) return fallback;
+  if (status === "flagged_positive" || status === "removed") return "growth";
+  if (status === "terminal_negative") return "no_growth";
+  if (status === "discontinued") return "no_growth";
+  return "pending";
+}
 
 const BOTTLE_LABEL: Record<string, string> = {
   AEROBIC: "Aerobic",
@@ -64,12 +109,12 @@ function readSets(accession: Accession): SetRow[] {
   }));
 }
 
-function computeTtp(drawTime?: string, positiveAt?: string): number | undefined {
-  if (!drawTime || !positiveAt) return undefined;
-  const t0 = new Date(drawTime).getTime();
-  const t1 = new Date(positiveAt).getTime();
+function hoursBetween(start?: string, end?: string): number | undefined {
+  if (!start || !end) return undefined;
+  const t0 = new Date(start).getTime();
+  const t1 = new Date(end).getTime();
   if (!Number.isFinite(t0) || !Number.isFinite(t1) || t1 < t0) return undefined;
-  return Math.round(((t1 - t0) / 36e5) * 10) / 10; // 1-decimal hours
+  return Math.round(((t1 - t0) / 36e5) * 10) / 10;
 }
 
 export function BottleResultsEditor({ accession, isolate }: Props) {
@@ -94,14 +139,37 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
 
   function upsert(setNo: number, bottleType: string, patch: Partial<BloodBottleResult>) {
     const set = sets.find((s) => s.setNo === setNo);
-    const current = findRow(setNo, bottleType) ?? { setNo, bottleType, growth: "pending" as BottleGrowthState };
+    const current = findRow(setNo, bottleType) ?? {
+      setNo,
+      bottleType,
+      growth: "pending" as BottleGrowthState,
+      status: "received" as BottleLifecycleStatus,
+    };
     const merged: BloodBottleResult = { ...current, ...patch };
+
+    // Re-derive legacy growth from lifecycle status whenever status is set.
+    merged.growth = deriveGrowth(merged.status, merged.growth);
+
+    // TTP semantics: Beaker = positiveAt − loadedAt. Pre-analytic value
+    // (positiveAt − drawTime) is preserved separately as drawToPositiveHours.
     if (merged.growth !== "growth") {
       merged.positiveAt = undefined;
       merged.ttpHours = undefined;
+      merged.drawToPositiveHours = undefined;
     } else {
-      merged.ttpHours = computeTtp(set?.drawTime, merged.positiveAt);
+      merged.ttpHours = hoursBetween(merged.loadedAt, merged.positiveAt)
+        ?? hoursBetween(set?.drawTime, merged.positiveAt);
+      merged.drawToPositiveHours = hoursBetween(set?.drawTime, merged.positiveAt);
     }
+
+    // Auto-stamp terminatedAt when entering a terminal state.
+    if (
+      (merged.status === "terminal_negative" || merged.status === "discontinued") &&
+      !merged.terminatedAt
+    ) {
+      merged.terminatedAt = new Date().toISOString();
+    }
+
     const next = existing.filter((r) => !(r.setNo === setNo && r.bottleType === bottleType));
     next.push(merged);
     next.sort(
@@ -146,9 +214,11 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
             <tr>
               <th className="p-1.5 text-left">Set</th>
               <th className="p-1.5 text-left">Bottle</th>
-              <th className="p-1.5 text-left">Growth</th>
+              <th className="p-1.5 text-left">Status</th>
+              <th className="p-1.5 text-left">Loaded at</th>
               <th className="p-1.5 text-left">Positive at</th>
               <th className="p-1.5 text-left">TTP (h)</th>
+              <th className="p-1.5 text-left">Termination</th>
               <th className="p-1.5 text-left">Linked organism(s)</th>
             </tr>
           </thead>
@@ -158,7 +228,15 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
                 .sort((a, b) => bottleSortKey(a) - bottleSortKey(b))
                 .map((bottle) => {
                 const row = findRow(set.setNo, bottle);
-                const growth = row?.growth ?? "pending";
+                const status: BottleLifecycleStatus =
+                  row?.status ??
+                  (row?.growth === "growth"
+                    ? "flagged_positive"
+                    : row?.growth === "no_growth"
+                      ? "terminal_negative"
+                      : "received");
+                const isPositive = status === "flagged_positive" || status === "removed";
+                const isTerminal = status === "terminal_negative" || status === "discontinued";
                 const linked = linkedOrganisms(set.setNo, bottle);
                 return (
                   <tr key={`${set.setNo}-${bottle}`} className="border-t border-border align-middle">
@@ -172,34 +250,79 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
                     <td className="p-1.5 text-foreground">{BOTTLE_LABEL[bottle] ?? bottle}</td>
                     <td className="p-1.5">
                       <select
-                        value={growth}
+                        value={status}
                         onChange={(e) =>
-                          upsert(set.setNo, bottle, { growth: e.target.value as BottleGrowthState })
+                          upsert(set.setNo, bottle, {
+                            status: e.target.value as BottleLifecycleStatus,
+                          })
                         }
                         className={`rounded border bg-background px-1.5 py-1 text-xs ${
-                          growth === "growth"
+                          isPositive
                             ? "border-destructive text-destructive"
-                            : growth === "no_growth"
+                            : isTerminal
                               ? "border-border text-muted-foreground"
                               : "border-border text-foreground"
                         }`}
                       >
-                        <option value="pending">Pending</option>
-                        <option value="growth">Growth</option>
-                        <option value="no_growth">No growth</option>
+                        {STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s}>
+                            {STATUS_LABEL[s]}
+                          </option>
+                        ))}
                       </select>
                     </td>
                     <td className="p-1.5">
                       <input
                         type="datetime-local"
-                        disabled={growth !== "growth"}
+                        value={row?.loadedAt && row.loadedAt.length >= 16 ? row.loadedAt.slice(0, 16) : row?.loadedAt ?? ""}
+                        onChange={(e) => upsert(set.setNo, bottle, { loadedAt: e.target.value })}
+                        className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs"
+                      />
+                    </td>
+                    <td className="p-1.5">
+                      <input
+                        type="datetime-local"
+                        disabled={!isPositive}
                         value={row?.positiveAt && row.positiveAt.length >= 16 ? row.positiveAt.slice(0, 16) : row?.positiveAt ?? ""}
                         onChange={(e) => upsert(set.setNo, bottle, { positiveAt: e.target.value })}
                         className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs disabled:opacity-50"
                       />
                     </td>
                     <td className="p-1.5 font-mono text-muted-foreground">
-                      {row?.ttpHours !== undefined ? `${row.ttpHours} h` : "—"}
+                      {row?.ttpHours !== undefined ? (
+                        <>
+                          {row.ttpHours} h
+                          {row.drawToPositiveHours !== undefined &&
+                            row.drawToPositiveHours !== row.ttpHours && (
+                              <span className="ml-1 text-[10px] opacity-70" title="Draw → positive (pre-analytic inclusive)">
+                                (draw {row.drawToPositiveHours} h)
+                              </span>
+                            )}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="p-1.5">
+                      <select
+                        disabled={!isTerminal}
+                        value={row?.terminationReason ?? ""}
+                        onChange={(e) =>
+                          upsert(set.setNo, bottle, {
+                            terminationReason: (e.target.value || undefined) as
+                              | BottleTerminationReason
+                              | undefined,
+                          })
+                        }
+                        className="rounded border border-border bg-background px-1.5 py-1 text-xs disabled:opacity-50"
+                      >
+                        <option value="">—</option>
+                        {TERMINATION_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="p-1.5 text-[11px] text-muted-foreground">
                       {linked.length === 0

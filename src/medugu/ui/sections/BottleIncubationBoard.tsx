@@ -66,9 +66,12 @@ interface BoardSetRow {
 interface BoardBottleResult {
   setNo: number;
   bottleType: string;
-  growth: string; // "pending" | "growth" | "no_growth"
+  growth: string; // legacy: "pending" | "growth" | "no_growth"
+  status?: string; // lifecycle: received|loaded|incubating|flagged_positive|removed|terminal_negative|discontinued
   positiveAt?: string;
   ttpHours?: number;
+  loadedAt?: string;
+  protocolDays?: number;
 }
 
 interface BottleIncubationBoardProps {
@@ -80,7 +83,8 @@ interface BottleIncubationBoardProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function maxDaysFor(bottle: string): number {
+function maxDaysFor(bottle: string, override?: number): number {
+  if (override && override > 0) return override;
   return BOTTLE_MAX_DAYS[bottle] ?? 5;
 }
 
@@ -109,13 +113,16 @@ function resolvePositiveDay(
     return { day, approx: false, ttpHours: result.ttpHours };
   }
 
-  if (set?.drawTime && result.positiveAt) {
-    const t0 = new Date(set.drawTime).getTime();
+  // Prefer instrument time-on-bottle (loadedAt → positiveAt) per Beaker convention,
+  // fall back to draw-to-positive when loadedAt is missing.
+  const t0Source = result.loadedAt ?? set?.drawTime;
+  if (t0Source && result.positiveAt) {
+    const t0 = new Date(t0Source).getTime();
     const t1 = new Date(result.positiveAt).getTime();
     if (Number.isFinite(t0) && Number.isFinite(t1) && t1 >= t0) {
       const hours = Math.round(((t1 - t0) / 36e5) * 10) / 10;
       const day = Math.min(Math.ceil(hours / HOURS_PER_DAY) || 1, maxDays);
-      return { day, approx: true, ttpHours: hours };
+      return { day, approx: !result.loadedAt, ttpHours: hours };
     }
   }
 
@@ -298,7 +305,7 @@ export function BottleIncubationBoard({
   // wide enough to cover the longest protocol present (e.g. a mycobacterial
   // bottle next to standard aerobic/anaerobic).
   const headerMaxDays = rows.reduce(
-    (max, r) => Math.max(max, maxDaysFor(r.bottle)),
+    (max, r) => Math.max(max, maxDaysFor(r.bottle, r.result?.protocolDays)),
     0,
   );
   const headerDays = buildDayList(headerMaxDays);
@@ -336,7 +343,7 @@ export function BottleIncubationBoard({
           </thead>
           <tbody>
             {rows.map(({ key, set, bottle, result }) => {
-              const maxDays = maxDaysFor(bottle);
+              const maxDays = maxDaysFor(bottle, result?.protocolDays);
               const positiveInfo = resolvePositiveDay(
                 result ?? { setNo: set.setNo, bottleType: bottle, growth: "pending" },
                 set,
