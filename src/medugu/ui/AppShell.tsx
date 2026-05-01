@@ -74,6 +74,7 @@ export function AppShell() {
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2 text-[11px] uppercase">
+                <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] normal-case text-muted-foreground md:inline">⌘K</kbd>
                 <SoundAckChip />
                 <Link
                   to="/settings/sounds"
