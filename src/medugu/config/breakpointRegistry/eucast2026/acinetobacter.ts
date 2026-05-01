@@ -103,11 +103,11 @@ export const EUCAST_2026_ACINETOBACTER_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "LVX",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 19,
+    susceptibleMinMm: 999, resistantLessThanMm: 20,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Levofloxacin`,
     flags: ABAU_ONLY,
-    notes: "Disk 5 µg. I≥19, R<19.",
+    notes: "Disk 5 µg. EUCAST v16.0: I≥20, R<20.",
   },
 
   // ─────────────────────────────────────────── AMK — Amikacin (S/I/R)
