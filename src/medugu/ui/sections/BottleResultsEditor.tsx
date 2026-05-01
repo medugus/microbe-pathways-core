@@ -154,7 +154,9 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
           </thead>
           <tbody>
             {sets.flatMap((set) =>
-              set.bottleTypes.map((bottle) => {
+              [...set.bottleTypes]
+                .sort((a, b) => bottleSortKey(a) - bottleSortKey(b))
+                .map((bottle) => {
                 const row = findRow(set.setNo, bottle);
                 const growth = row?.growth ?? "pending";
                 const linked = linkedOrganisms(set.setNo, bottle);
