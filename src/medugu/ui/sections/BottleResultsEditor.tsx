@@ -15,11 +15,26 @@ import { meduguActions } from "../../store/useAccessionStore";
 import type {
   Accession,
   BloodBottleResult,
+  BottleCriticalCall,
+  BottleGramStain,
   BottleGrowthState,
   BottleLifecycleStatus,
   BottleTerminationReason,
   Isolate,
 } from "../../domain/types";
+
+const GRAM_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "—" },
+  { value: "GPC_CLUSTERS", label: "GPC in clusters" },
+  { value: "GPC_PAIRS_CHAINS", label: "GPC in pairs/chains" },
+  { value: "GPC_OTHER", label: "GPC other" },
+  { value: "GPR", label: "Gram-positive rods" },
+  { value: "GNR", label: "Gram-negative rods" },
+  { value: "GNC", label: "Gram-negative cocci" },
+  { value: "YEAST", label: "Yeast" },
+  { value: "MIXED", label: "Mixed morphology" },
+  { value: "NO_ORGANISMS", label: "No organisms seen" },
+];
 import { BottleIncubationBoard } from "./BottleIncubationBoard";
 
 const STATUS_LABEL: Record<BottleLifecycleStatus, string> = {
