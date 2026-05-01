@@ -129,15 +129,22 @@ export const aiAssist = createServerFn({ method: "POST" })
     }
 
     // Best-effort audit. Failure here MUST NOT break the user-facing flow.
+    // Tenant scoping: prefer the accession's tenant when given (matches the
+    // RLS policy on audit_event); otherwise skip the audit row rather than
+    // guess a tenant.
     try {
-      const { supabase, userId, claims } = context as {
-        supabase: { from: (t: string) => { insert: (row: unknown) => Promise<{ error: unknown }> } };
-        userId: string;
-        claims?: { tenant_id?: string };
-      };
-      const tenantId = claims?.tenant_id;
+      const { supabase, userId } = context;
+      let tenantId: string | null = null;
+      if (data.accessionRowId) {
+        const { data: row } = await supabase
+          .from("accessions")
+          .select("tenant_id")
+          .eq("id", data.accessionRowId)
+          .maybeSingle();
+        tenantId = (row?.tenant_id as string | undefined) ?? null;
+      }
       if (tenantId) {
-        await supabase.from("audit_event").insert({
+        await (supabase.from("audit_event") as any).insert({
           tenant_id: tenantId,
           actor_user_id: userId,
           actor_label: "ai_assist",
@@ -145,8 +152,8 @@ export const aiAssist = createServerFn({ method: "POST" })
           entity: "ai_assist",
           entity_id: data.accessionRowId ?? null,
           field: data.task,
-          old_value: { draft: data.draft } as never,
-          new_value: { suggestion: text, model } as never,
+          old_value: { draft: data.draft },
+          new_value: { suggestion: text, model },
           reason: null,
         });
       }
