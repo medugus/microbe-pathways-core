@@ -20,6 +20,9 @@ export type AntibioticClass =
   | "fusidane"
   | "topical"
   | "lipopeptide"
+  | "glycylcycline"
+  | "phenicol"
+  | "streptogramin"
   | "other";
 
 export interface AntibioticDef {
@@ -63,6 +66,12 @@ export const ANTIBIOTICS: AntibioticDef[] = [
   { code: "FUS",  display: "Fusidic acid",           class: "fusidane" },
   { code: "MUP",  display: "Mupirocin (topical)",    class: "topical" },
   { code: "DAP",  display: "Daptomycin",             class: "lipopeptide", restricted: true },
+  // Enterococcus-relevant additions
+  { code: "TGC",  display: "Tigecycline",            class: "glycylcycline", restricted: true },
+  { code: "CHL",  display: "Chloramphenicol",        class: "phenicol" },
+  { code: "HLG",  display: "High-level Gentamicin (synergy screen)", class: "aminoglycoside" },
+  { code: "HLS",  display: "High-level Streptomycin (synergy screen)", class: "aminoglycoside" },
+  { code: "QDA",  display: "Quinupristin/dalfopristin", class: "streptogramin", restricted: true },
 ];
 
 const CODE_SET = new Set(ANTIBIOTICS.map((a) => a.code));
@@ -99,6 +108,11 @@ const REQUESTED_NAME_TO_CODE: Record<string, string> = {
   "fusidic acid": "FUS",
   mupirocin: "MUP",
   daptomycin: "DAP",
+  tigecycline: "TGC",
+  chloramphenicol: "CHL",
+  "high-level gentamicin": "HLG",
+  "high-level streptomycin": "HLS",
+  "quinupristin-dalfopristin": "QDA",
 };
 
 export interface ASTPanelDef {
