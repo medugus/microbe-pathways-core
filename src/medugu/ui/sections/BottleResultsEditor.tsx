@@ -104,7 +104,12 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
     }
     const next = existing.filter((r) => !(r.setNo === setNo && r.bottleType === bottleType));
     next.push(merged);
-    next.sort((a, b) => a.setNo - b.setNo || a.bottleType.localeCompare(b.bottleType));
+    next.sort(
+      (a, b) =>
+        a.setNo - b.setNo ||
+        bottleSortKey(a.bottleType) - bottleSortKey(b.bottleType) ||
+        a.bottleType.localeCompare(b.bottleType),
+    );
     persist(next);
   }
 
