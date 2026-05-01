@@ -171,11 +171,8 @@ export function rebuildASTFromRawEdit(
   const method = patch.method ?? row.method;
   const isolate = accession.isolates.find((i) => i.id === row.isolateId);
   const isoGroup = getOrganism(isolate?.organismCode ?? "")?.group;
-  const standard = patch.standard ?? (
-    (isoGroup === "enterobacterales" || isoGroup === "staphylococcus")
-      ? SECONDARY_STANDARD
-      : row.standard
-  );
+  const defaultStandard = defaultStandardForGroup(isoGroup);
+  const standard = patch.standard ?? (row.standard === PRIMARY_STANDARD ? defaultStandard : row.standard);
   const rawValue = patch.rawValue;
   const rawUnit = patch.rawUnit ?? resolvedRawUnit(method);
   const { interpretation: draft, resolution } = draftInterpretationFull(
