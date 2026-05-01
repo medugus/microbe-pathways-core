@@ -55,6 +55,7 @@ export function AppShell() {
   return (
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-[minmax(220px,22vw)_1fr] bg-background text-foreground">
       <SoundTriggerGate />
+      <CommandPalette />
       <CaseManager />
 
       <main className="flex min-h-screen min-w-0 flex-col overflow-hidden">
