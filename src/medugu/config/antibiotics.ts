@@ -88,6 +88,10 @@ export const ANTIBIOTICS: AntibioticDef[] = [
   { code: "MXF",  display: "Moxifloxacin",              class: "fluoroquinolone" },
   { code: "BPN",  display: "Benzylpenicillin (oral)",   class: "penicillin" },
   { code: "AMX",  display: "Amoxicillin",               class: "penicillin" },
+  // Haemophilus / Moraxella additions
+  { code: "AZM",  display: "Azithromycin",              class: "macrolide" },
+  { code: "CLR",  display: "Clarithromycin",            class: "macrolide" },
+  { code: "CFM",  display: "Cefixime",                  class: "cephalosporin" },
 ];
 
 const CODE_SET = new Set(ANTIBIOTICS.map((a) => a.code));
@@ -140,6 +144,9 @@ const REQUESTED_NAME_TO_CODE: Record<string, string> = {
   cefotaxime: "CTX",
   moxifloxacin: "MXF",
   amoxicillin: "AMX",
+  azithromycin: "AZM",
+  clarithromycin: "CLR",
+  cefixime: "CFM",
 };
 
 export interface ASTPanelDef {
@@ -150,13 +157,14 @@ export interface ASTPanelDef {
     | "enterobacterales"
     | "urine_enterobacterales"
     | "nonfermenters"
+    | "haemophilus_moraxella"
     | "reserve_cre"
     | "other";
   label: string;
   codes: string[];
   missingRequested: string[];
   allowedOrganismGroups?: Array<
-    "enterobacterales" | "non_fermenter" | "staphylococcus" | "streptococcus" | "enterococcus" | "candida" | "other"
+    "enterobacterales" | "non_fermenter" | "staphylococcus" | "streptococcus" | "enterococcus" | "candida" | "fastidious" | "other"
   >;
 }
 
@@ -210,6 +218,12 @@ export const AST_PANELS: ASTPanelDef[] = [
     "meropenem", "doripenem", "aztreonam", "amikacin", "gentamicin", "tobramycin", "ciprofloxacin", "levofloxacin",
     "colistin", "minocycline", "tigecycline", "trimethoprim-sulfamethoxazole",
   ], ["non_fermenter"]),
+  makePanel("haemophilus_moraxella", "Haemophilus / Moraxella panel", [
+    "ampicillin", "amoxicillin", "amoxicillin-clavulanate", "penicillin", "cefuroxime", "cefixime",
+    "ceftriaxone", "cefotaxime", "meropenem", "imipenem", "ciprofloxacin", "levofloxacin", "moxifloxacin",
+    "tetracycline", "doxycycline", "erythromycin", "azithromycin", "clarithromycin",
+    "trimethoprim-sulfamethoxazole", "chloramphenicol", "rifampicin",
+  ], ["fastidious"]),
   makePanel("reserve_cre", "Reserve / CRE panel", [
     "meropenem", "imipenem", "ertapenem", "ceftazidime-avibactam", "ceftolozane-tazobactam", "imipenem-relebactam",
     "meropenem-vaborbactam", "cefiderocol", "aztreonam", "aztreonam-avibactam", "amikacin", "gentamicin", "tigecycline",

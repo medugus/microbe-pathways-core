@@ -18,6 +18,7 @@ import { EUCAST_2026_STREPTOCOCCUS_BREAKPOINTS } from "./eucast2026/streptococcu
 import { EUCAST_2026_ENTEROCOCCUS_BREAKPOINTS } from "./eucast2026/enterococcus";
 import { EUCAST_2026_PSEUDOMONAS_BREAKPOINTS } from "./eucast2026/pseudomonas";
 import { EUCAST_2026_ACINETOBACTER_BREAKPOINTS } from "./eucast2026/acinetobacter";
+import { EUCAST_2026_HAEMOPHILUS_MORAXELLA_BREAKPOINTS } from "./eucast2026/haemophilusMoraxella";
 import { EUCAST_2026_METADATA } from "./eucast2026/notes";
 
 export const PRIMARY_STANDARD: ASTStandard = "CLSI";
@@ -82,6 +83,7 @@ export const EUCAST_2026_BREAKPOINT_REGISTRY: EucastBreakpointRecord[] = [
   ...EUCAST_2026_ENTEROCOCCUS_BREAKPOINTS,
   ...EUCAST_2026_PSEUDOMONAS_BREAKPOINTS,
   ...EUCAST_2026_ACINETOBACTER_BREAKPOINTS,
+  ...EUCAST_2026_HAEMOPHILUS_MORAXELLA_BREAKPOINTS,
 ];
 
 const EUCAST_MIC_BREAKPOINTS: MICBreakpoint[] = EUCAST_2026_BREAKPOINT_REGISTRY
@@ -271,16 +273,39 @@ export function resolveBreakpoint(input: BreakpointLookup): BreakpointResolution
     ? [input.indication]
     : syndromeToIndicationChain(input.syndrome);
 
+  // Prefer rows whose restrictedSpecies explicitly includes the organism code
+  // over rows restricted to other species in the same group. Unrestricted
+  // rows are last-resort fallbacks. This prevents e.g. an HINF-only AMC row
+  // being picked for MCAT just because it appeared first in the registry.
+  function speciesScore(b: AnyBreakpoint): number {
+    const rs = b.flags?.restrictedSpecies;
+    if (!rs || rs.length === 0) return 1; // generic row
+    if (input.organismCode && rs.includes(input.organismCode)) return 2; // exact match
+    return 0; // restricted to other species — block candidate
+  }
+
   let matched: AnyBreakpoint | undefined;
   let usedIndication: BreakpointIndication | undefined;
   for (const ind of chain) {
-    matched = candidates.find((c) => (c.indication ?? "general") === ind);
-    if (matched) { usedIndication = ind; break; }
+    const indMatches = candidates.filter((c) => (c.indication ?? "general") === ind);
+    if (indMatches.length === 0) continue;
+    indMatches.sort((a, b) => speciesScore(b) - speciesScore(a));
+    if (speciesScore(indMatches[0]) > 0) {
+      matched = indMatches[0];
+      usedIndication = ind;
+      break;
+    }
   }
-  // Fallback: any active row, regardless of indication.
+  // Fallback: any active row, regardless of indication, preferring species match.
   if (!matched) {
-    matched = candidates[0];
-    usedIndication = matched.indication;
+    const sorted = [...candidates].sort((a, b) => speciesScore(b) - speciesScore(a));
+    if (sorted.length > 0 && speciesScore(sorted[0]) > 0) {
+      matched = sorted[0];
+      usedIndication = matched.indication;
+    }
+  }
+  if (!matched) {
+    return { status: "no_breakpoint", flags: {}, reason: "No EUCAST row matches this organism within the group." };
   }
 
   const flags = { ...(matched.flags ?? {}) };
