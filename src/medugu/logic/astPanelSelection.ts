@@ -81,7 +81,7 @@ export function getDefaultASTStandardForPanel(panel?: ASTPanelDef) {
     panel?.id === "enterobacterales" ||
     panel?.id === "urine_enterobacterales" ||
     panel?.id === "staphylococcus" ||
-    panel?.id === "non_fermenter" ||
+    panel?.id === "nonfermenters" ||
     panel?.id === "streptococcus" ||
     panel?.id === "enterococcus"
   ) {
