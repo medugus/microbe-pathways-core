@@ -213,8 +213,7 @@ export function BloodSetsForm({ accession }: Props) {
         )}
 
         {sets.map((s, idx) => {
-          const isLine =
-            s.drawSite === "CENTRAL_LINE" || s.drawSite === "PORTACATH" || s.drawSite === "ARTERIAL_LINE";
+          const isLine = LINE_DRAW_SITES.has(s.drawSite);
           const setNo = idx + 1;
           const errs = setErrorMap[setNo] ?? {};
           const hasError = !!(errs.drawSite || errs.bottles || errs.drawTime);
