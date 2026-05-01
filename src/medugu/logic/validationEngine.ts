@@ -14,6 +14,7 @@ import { evaluateIPC } from "./ipcEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
 import { validateBloodIsolates } from "./bloodIsolateRules";
 import { deriveIPCValidationIssues } from "./ipcReportGovernance";
+import { getBottleResults, isPositiveBottle } from "./bloodBottles";
 
 /**
  * IPC rule codes that constitute a critical alert. When any of these fires on a
