@@ -119,7 +119,6 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
 
   const isolates: ReportIsolate[] = accession.isolates.map((i) => {
     const rowOutputs = astByIsolate.find((o) => o.isolateId === i.id);
-    const orgGroup = getOrganism(i.organismCode)?.group;
     return {
       isolateNo: i.isolateNo,
       organismDisplay: i.organismDisplay,
@@ -146,36 +145,25 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
           const dec: StewardshipDecision | undefined = stewardship.byAst[a.id];
           const enginePatch = rowOutputs?.rowPatches[a.id];
           const interp = a.finalInterpretation ?? enginePatch?.interpretedSIR ?? a.interpretedSIR ?? a.rawInterpretation;
+
+          // Governed source of truth: AST row carries breakpointKey,
+          // indicationUsed, breakpointSource, and breakpointFlags as written
+          // by astDrafting.resolveBreakpoint. The report layer never re-derives.
           let breakpoint: ReportASTRow["breakpoint"];
-          if (a.method === "disk_diffusion") {
-            const bp = findDiskBreakpoint(orgGroup, a.antibioticCode, a.standard);
-            if (bp) {
-              const parts: string[] = [];
-              if (bp.susceptibleMinMm !== undefined) parts.push(`S≥${bp.susceptibleMinMm}`);
-              if (bp.resistantMaxMm !== undefined) parts.push(`R≤${bp.resistantMaxMm}`);
-              breakpoint = {
-                standard: bp.standard,
-                summary: `${parts.join(" / ")} mm`,
-                susceptible: bp.susceptibleMinMm,
-                resistant: bp.resistantMaxMm,
-                unit: "mm",
-              };
-            }
-          } else if (a.method === "mic_broth" || a.method === "mic_etest" || a.method === "automated_phoenix" || a.method === "automated_vitek") {
-            const bp = findMICBreakpoint(orgGroup, a.antibioticCode, a.standard);
-            if (bp) {
-              const parts: string[] = [];
-              if (bp.susceptibleMaxMgL !== undefined) parts.push(`S≤${bp.susceptibleMaxMgL}`);
-              if (bp.resistantMinMgL !== undefined) parts.push(`R≥${bp.resistantMinMgL}`);
-              breakpoint = {
-                standard: bp.standard,
-                summary: `${parts.join(" / ")} mg/L`,
-                susceptible: bp.susceptibleMaxMgL,
-                resistant: bp.resistantMinMgL,
-                unit: "mg/L",
-              };
-            }
+          if (a.breakpointKey) {
+            breakpoint = {
+              standard: a.standard,
+              summary: a.indicationUsed && a.indicationUsed !== "general"
+                ? `governed (${a.indicationUsed})`
+                : "governed",
+              breakpointKey: a.breakpointKey,
+              indicationUsed: a.indicationUsed,
+              source: a.breakpointSource,
+              flags: a.breakpointFlags,
+              speciesViolation: a.breakpointSpeciesViolation,
+            };
           }
+
           return {
             antibioticCode: a.antibioticCode,
             antibioticDisplay: getAntibiotic(a.antibioticCode)?.display ?? a.antibioticCode,
