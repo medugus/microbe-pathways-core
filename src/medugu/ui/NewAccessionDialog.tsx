@@ -3,6 +3,7 @@
 // meduguActions.upsertAccession. No clinical rule logic lives here.
 
 import { useMemo, useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
