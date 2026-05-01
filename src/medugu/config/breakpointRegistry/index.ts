@@ -323,7 +323,9 @@ export function findDuplicateBreakpointKeys(
   const seen = new Map<string, number>();
   for (const r of records) {
     if ((r.breakpointStatus ?? "active") !== "active") continue;
-    const k = makeBreakpointKey(r.organismGroup, r.antibioticCode, r.method, r.indication);
+    // Composite key includes standard so CLSI + EUCAST rows for the same
+    // (group, drug, method, indication) are not falsely flagged as duplicates.
+    const k = `${r.standard}|${makeBreakpointKey(r.organismGroup, r.antibioticCode, r.method, r.indication)}`;
     seen.set(k, (seen.get(k) ?? 0) + 1);
   }
   return Array.from(seen.entries()).filter(([, n]) => n > 1).map(([k]) => k);
