@@ -204,8 +204,13 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
   );
 }
 
+const LINE_DRAW_SITES_BR = new Set([
+  "CENTRAL_LINE", "PICC", "HICKMAN", "BROVIAC", "GROSHONG",
+  "PORTACATH", "DIALYSIS_CATHETER", "ARTERIAL_LINE", "UMBILICAL",
+]);
+
 function isLineSet(sets: SetRow[], setNo: number): boolean {
   const s = sets.find((x) => x.setNo === setNo);
   if (!s) return false;
-  return s.drawSite === "CENTRAL_LINE" || s.drawSite === "PORTACATH" || s.drawSite === "ARTERIAL_LINE";
+  return LINE_DRAW_SITES_BR.has(s.drawSite);
 }
