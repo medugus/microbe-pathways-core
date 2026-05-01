@@ -113,13 +113,16 @@ function resolvePositiveDay(
     return { day, approx: false, ttpHours: result.ttpHours };
   }
 
-  if (set?.drawTime && result.positiveAt) {
-    const t0 = new Date(set.drawTime).getTime();
+  // Prefer instrument time-on-bottle (loadedAt → positiveAt) per Beaker convention,
+  // fall back to draw-to-positive when loadedAt is missing.
+  const t0Source = result.loadedAt ?? set?.drawTime;
+  if (t0Source && result.positiveAt) {
+    const t0 = new Date(t0Source).getTime();
     const t1 = new Date(result.positiveAt).getTime();
     if (Number.isFinite(t0) && Number.isFinite(t1) && t1 >= t0) {
       const hours = Math.round(((t1 - t0) / 36e5) * 10) / 10;
       const day = Math.min(Math.ceil(hours / HOURS_PER_DAY) || 1, maxDays);
-      return { day, approx: true, ttpHours: hours };
+      return { day, approx: !result.loadedAt, ttpHours: hours };
     }
   }
 
