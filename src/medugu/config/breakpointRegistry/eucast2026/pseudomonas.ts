@@ -119,11 +119,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "IPM",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 20,
+    susceptibleMinMm: 50, resistantLessThanMm: 20,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Imipenem`,
     flags: PAER_ONLY,
-    notes: "Disk 10 µg. I≥20, R<20.",
+    notes: "Disk 10 µg. EUCAST off-scale S≥50, R<20; report I for zones ≥20. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── DOR — Doripenem (I/R only)
@@ -139,11 +139,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "DOR",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 22,
+    susceptibleMinMm: 50, resistantLessThanMm: 22,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Doripenem`,
     flags: PAER_ONLY,
-    notes: "Disk 10 µg. I≥22, R<22. No 'S' category.",
+    notes: "Disk 10 µg. EUCAST off-scale S≥50, R<22; report I for zones ≥22. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── ATM — Aztreonam (I/R only)
@@ -159,11 +159,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "ATM",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 18,
+    susceptibleMinMm: 50, resistantLessThanMm: 18,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Aztreonam`,
     flags: PAER_ONLY,
-    notes: "Disk 30 µg. I≥18, R<18. No 'S' category.",
+    notes: "Disk 30 µg. EUCAST off-scale S≥50, R<18; report I for zones ≥18. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── TOL — Ceftolozane/tazobactam (S/R)
