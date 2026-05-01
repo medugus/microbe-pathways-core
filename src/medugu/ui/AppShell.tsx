@@ -3,6 +3,7 @@
 // No tab-only navigation — sections are collapsible but always reachable.
 
 import { CaseManager } from "./CaseManager";
+import { CommandPalette } from "./CommandPalette";
 import { ContextBar } from "./ContextBar";
 import { SectionRail } from "./SectionRail";
 import { SectionPanel } from "./SectionPanel";
