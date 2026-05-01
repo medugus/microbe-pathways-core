@@ -59,6 +59,31 @@ export interface ReportASTRow {
   };
 }
 
+export interface ReportBottleRow {
+  setNo: number;
+  bottleType: string;
+  growth: string;
+  status?: string;
+  positiveAt?: string;
+  ttpHours?: number;
+  drawToPositiveHours?: number;
+  /** Direct-from-bottle Gram stain (when bottle flagged positive). */
+  gramStain?: {
+    result: string;
+    morphology?: string;
+    performedBy?: string;
+    performedAt?: string;
+  };
+  /** Critical-call documentation (when bottle flagged positive). */
+  criticalCall?: {
+    calledBy: string;
+    calledTo: string;
+    calledAt: string;
+    readBack: boolean;
+    notes?: string;
+  };
+}
+
 export interface ReportIsolate {
   isolateNo: number;
   organismDisplay: string;
@@ -67,14 +92,13 @@ export interface ReportIsolate {
   phenotypeFlags: string[];
   /** Blood-culture only: positive (set, bottle) sources for this isolate. */
   bloodSourceLinks?: { setNo: number; bottleType: string }[];
-  /** Blood-culture only: per-bottle growth rows (mirrored for export). */
-  bottleResults?: {
-    setNo: number;
-    bottleType: string;
-    growth: string;
-    positiveAt?: string;
-    ttpHours?: number;
-  }[];
+  /**
+   * Blood-culture only: per-bottle rows linked to THIS isolate via
+   * `bloodSourceLinks`. Drawn from the specimen-level bottle inventory so
+   * Gram stain + critical-call data flows through to the report. Empty when
+   * no source linkage exists.
+   */
+  bottleResults?: ReportBottleRow[];
   ast: ReportASTRow[];
 }
 
@@ -94,6 +118,13 @@ export interface ReportPreviewDoc {
   specimen: { display: string; syndrome?: string; pathway: string };
   /** Per-set blood culture details, when specimen family is BLOOD. */
   bloodSets?: ReportBloodSet[];
+  /**
+   * Specimen-level bottle inventory (every bottle the lab loaded), with
+   * Gram + critical-call data when flagged positive. Authoritative source
+   * for downstream readers; per-isolate `bottleResults` is a filtered
+   * projection of this list.
+   */
+  bloodBottles?: ReportBottleRow[];
   microscopySummary: string;
   isolates: ReportIsolate[];
   comments: ReportComment[];
