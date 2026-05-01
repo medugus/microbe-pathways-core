@@ -10,16 +10,31 @@
 // Pure UI. No clinical rule logic; merely persists Isolate.bottleResults via
 // meduguActions.updateIsolate.
 
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { meduguActions } from "../../store/useAccessionStore";
 import type {
   Accession,
   BloodBottleResult,
+  BottleCriticalCall,
+  BottleGramStain,
   BottleGrowthState,
   BottleLifecycleStatus,
   BottleTerminationReason,
   Isolate,
 } from "../../domain/types";
+
+const GRAM_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "—" },
+  { value: "GPC_CLUSTERS", label: "GPC in clusters" },
+  { value: "GPC_PAIRS_CHAINS", label: "GPC in pairs/chains" },
+  { value: "GPC_OTHER", label: "GPC other" },
+  { value: "GPR", label: "Gram-positive rods" },
+  { value: "GNR", label: "Gram-negative rods" },
+  { value: "GNC", label: "Gram-negative cocci" },
+  { value: "YEAST", label: "Yeast" },
+  { value: "MIXED", label: "Mixed morphology" },
+  { value: "NO_ORGANISMS", label: "No organisms seen" },
+];
 import { BottleIncubationBoard } from "./BottleIncubationBoard";
 
 const STATUS_LABEL: Record<BottleLifecycleStatus, string> = {
@@ -181,6 +196,33 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
     persist(next);
   }
 
+  function upsertGram(
+    setNo: number,
+    bottleType: string,
+    row: BloodBottleResult | undefined,
+    patch: Partial<BottleGramStain>,
+  ) {
+    const current: BottleGramStain = row?.gramStain ?? { result: "" };
+    const next = { ...current, ...patch };
+    upsert(setNo, bottleType, { gramStain: next });
+  }
+
+  function upsertCall(
+    setNo: number,
+    bottleType: string,
+    row: BloodBottleResult | undefined,
+    patch: Partial<BottleCriticalCall>,
+  ) {
+    const current: BottleCriticalCall = row?.criticalCall ?? {
+      calledBy: "",
+      calledTo: "",
+      calledAt: "",
+      readBack: false,
+    };
+    const next = { ...current, ...patch };
+    upsert(setNo, bottleType, { criticalCall: next });
+  }
+
   function linkedOrganisms(setNo: number, bottleType: string): string[] {
     return accession.isolates
       .filter((iso) =>
@@ -239,7 +281,8 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
                 const isTerminal = status === "terminal_negative" || status === "discontinued";
                 const linked = linkedOrganisms(set.setNo, bottle);
                 return (
-                  <tr key={`${set.setNo}-${bottle}`} className="border-t border-border align-middle">
+                  <Fragment key={`${set.setNo}-${bottle}`}>
+                  <tr className="border-t border-border align-middle">
                     <td className="p-1.5 font-mono text-foreground">
                       #{set.setNo}
                       <span className="ml-1 text-[10px] text-muted-foreground">
@@ -332,6 +375,117 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
                           : linked.join("; ")}
                     </td>
                   </tr>
+                  {isPositive && (
+                    <tr className="border-t border-dashed border-border bg-muted/20 align-top">
+                      <td colSpan={2} className="p-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Workup
+                      </td>
+                      <td colSpan={6} className="p-1.5">
+                        <div className="grid gap-2 md:grid-cols-2">
+                          {/* Gram stain */}
+                          <div className="space-y-1 rounded border border-border bg-background p-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              Direct Gram (from bottle)
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <select
+                                value={row?.gramStain?.result ?? ""}
+                                onChange={(e) =>
+                                  upsertGram(set.setNo, bottle, row, { result: e.target.value })
+                                }
+                                className="rounded border border-border bg-background px-1.5 py-1 text-xs"
+                              >
+                                {GRAM_OPTIONS.map((g) => (
+                                  <option key={g.value} value={g.value}>{g.label}</option>
+                                ))}
+                              </select>
+                              <input
+                                type="text"
+                                placeholder="Tech ID"
+                                value={row?.gramStain?.performedBy ?? ""}
+                                onChange={(e) =>
+                                  upsertGram(set.setNo, bottle, row, { performedBy: e.target.value })
+                                }
+                                className="w-24 rounded border border-border bg-background px-1.5 py-1 text-xs"
+                              />
+                              <input
+                                type="datetime-local"
+                                value={row?.gramStain?.performedAt && row.gramStain.performedAt.length >= 16 ? row.gramStain.performedAt.slice(0, 16) : row?.gramStain?.performedAt ?? ""}
+                                onChange={(e) =>
+                                  upsertGram(set.setNo, bottle, row, { performedAt: e.target.value })
+                                }
+                                className="rounded border border-border bg-background px-1.5 py-1 text-xs"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              placeholder="Morphology detail (optional)"
+                              value={row?.gramStain?.morphology ?? ""}
+                              onChange={(e) =>
+                                upsertGram(set.setNo, bottle, row, { morphology: e.target.value })
+                              }
+                              className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs"
+                            />
+                          </div>
+
+                          {/* Critical call */}
+                          <div className="space-y-1 rounded border border-border bg-background p-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              Critical call
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <input
+                                type="text"
+                                placeholder="Called by (tech)"
+                                value={row?.criticalCall?.calledBy ?? ""}
+                                onChange={(e) =>
+                                  upsertCall(set.setNo, bottle, row, { calledBy: e.target.value })
+                                }
+                                className="w-28 rounded border border-border bg-background px-1.5 py-1 text-xs"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Called to (clinician/role)"
+                                value={row?.criticalCall?.calledTo ?? ""}
+                                onChange={(e) =>
+                                  upsertCall(set.setNo, bottle, row, { calledTo: e.target.value })
+                                }
+                                className="w-48 rounded border border-border bg-background px-1.5 py-1 text-xs"
+                              />
+                              <input
+                                type="datetime-local"
+                                value={row?.criticalCall?.calledAt && row.criticalCall.calledAt.length >= 16 ? row.criticalCall.calledAt.slice(0, 16) : row?.criticalCall?.calledAt ?? ""}
+                                onChange={(e) =>
+                                  upsertCall(set.setNo, bottle, row, { calledAt: e.target.value })
+                                }
+                                className="rounded border border-border bg-background px-1.5 py-1 text-xs"
+                              />
+                              <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                <input
+                                  type="checkbox"
+                                  checked={!!row?.criticalCall?.readBack}
+                                  onChange={(e) =>
+                                    upsertCall(set.setNo, bottle, row, { readBack: e.target.checked })
+                                  }
+                                />
+                                Read-back
+                              </label>
+                            </div>
+                            <input
+                              type="text"
+                              placeholder="Notes (optional)"
+                              value={row?.criticalCall?.notes ?? ""}
+                              onChange={(e) =>
+                                upsertCall(set.setNo, bottle, row, { notes: e.target.value })
+                              }
+                              className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs"
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               }),
             )}

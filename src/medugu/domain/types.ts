@@ -232,6 +232,42 @@ export interface BloodBottleResult {
    * for sepsis / collection-to-positive QA, distinct from instrument TTP.
    */
   drawToPositiveHours?: number;
+  /**
+   * Direct-from-bottle Gram stain performed when the bottle flagged positive.
+   * Required (validation blocker) before release for any flagged_positive /
+   * removed bottle — Beaker convention.
+   */
+  gramStain?: BottleGramStain;
+  /**
+   * Critical-call documentation for the positive-flag notification (clinician
+   * call-out). Required before release for any flagged_positive bottle.
+   */
+  criticalCall?: BottleCriticalCall;
+}
+
+/** Gram stain read directly from the positive bottle broth (pre-subculture). */
+export interface BottleGramStain {
+  /** Coded gram morphology (e.g. GPC_CLUSTERS, GNR, GPR_CHAINS, YEAST, MIXED, NEGATIVE). */
+  result: string;
+  /** Free-text morphology detail (e.g. "GPC in pairs and chains"). */
+  morphology?: string;
+  performedBy?: string;
+  /** ISO timestamp. */
+  performedAt?: string;
+}
+
+/** Critical-result phone call from lab → clinician at positive-flag time. */
+export interface BottleCriticalCall {
+  /** Lab tech who placed the call. */
+  calledBy: string;
+  /** Clinician/role contacted (e.g. "Dr. Smith — ICU registrar"). */
+  calledTo: string;
+  /** ISO timestamp call was placed. */
+  calledAt: string;
+  /** Read-back / acknowledgement received. */
+  readBack: boolean;
+  /** Free-text notes (e.g. "GPC in clusters reported, awaiting ID"). */
+  notes?: string;
 }
 
 // ---------- AST ----------
