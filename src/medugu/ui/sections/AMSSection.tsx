@@ -21,6 +21,7 @@ import { AMSSummaryStrip } from "./ams/AMSSummaryStrip";
 
 export function AMSSection() {
   const accession = useActiveAccession();
+  const accessionRowId = useAccessionRowId(accession?.accessionNumber ?? null);
   const [actor, setActor] = useState("AMS pharmacist");
   const [requestNote, setRequestNote] = useState<Record<string, string>>({});
   const [decisionNote, setDecisionNote] = useState<Record<string, string>>({});
