@@ -541,8 +541,23 @@ export interface NormalisedExport {
       lumenLabel?: string;
       drawTime?: string;
       growth: string;
+      status?: string;
       positiveAt?: string;
       ttpHours?: number;
+      drawToPositiveHours?: number;
+      gramStain?: {
+        result: string;
+        morphology?: string;
+        performedBy?: string;
+        performedAt?: string;
+      };
+      criticalCall?: {
+        calledBy: string;
+        calledTo: string;
+        calledAt: string;
+        readBack: boolean;
+        notes?: string;
+      };
     }[];
     isolateLinks: {
       isolateNo: number;
