@@ -174,6 +174,21 @@ export function runValidation(accession: Accession): ValidationReport {
           );
         }
       });
+
+      // Soft warning: a single adult blood culture set is sub-optimal
+      // sensitivity. IDSA / CLSI recommend ≥2 sets from separate venepunctures
+      // for adults. Skip for neonatal/paediatric where 1 set is acceptable.
+      const subtype = accession.specimen.subtypeCode ?? "";
+      const isPaedSubtype = subtype === "BC_NEONATAL" || subtype === "BC_PAEDIATRIC";
+      if (sets.length === 1 && !isPaedSubtype) {
+        issues.push(
+          warn(
+            "BC_SINGLE_SET_ADULT",
+            "specimen",
+            "Only one blood culture set submitted — consider a repeat draw from a second site to improve sensitivity (IDSA recommends ≥2 sets for adults).",
+          ),
+        );
+      }
     }
 
     // Per-rule blood culture isolate allocation (1–3, source linkage,
