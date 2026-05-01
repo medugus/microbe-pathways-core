@@ -137,6 +137,9 @@ const REQUESTED_NAME_TO_CODE: Record<string, string> = {
   "ceftazidime-avibactam": "CZA",
   minocycline: "MIN",
   cefiderocol: "CFD",
+  cefotaxime: "CTX",
+  moxifloxacin: "MXF",
+  amoxicillin: "AMX",
 };
 
 export interface ASTPanelDef {
