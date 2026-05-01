@@ -6,10 +6,10 @@
 //   MIC : S if value ≤ susceptibleMaxMgL ; R if value > resistantGreaterThanMgL
 //   Disk: S if value ≥ susceptibleMinMm  ; R if value < resistantLessThanMm
 //
-// Per EUCAST v16.0 (2026), Pseudomonas breakpoints are largely "I or R" only —
-// the "S" category was withdrawn for many drugs and standard dosing alone is
-// not considered adequate. Where this is the case, interpretationCategories
-// excludes "S" and notes call it out explicitly.
+// Per EUCAST v16.0 (2026), Pseudomonas breakpoints are largely "I or R" only.
+// EUCAST encodes these using off-scale S thresholds (MIC S≤0.001 / disk S≥50);
+// interpretationCategories excludes "S", so the interpreter maps values above
+// the R threshold to "I" rather than reporting "S" for those rows.
 //
 // Intrinsic resistance rows (AMP, AMC, CRO, ETP, TET, TGC, NIT, FOS, CHL, SXT,
 // ERY, CLI, VAN, TEC, LZD, RIF, DAP, FUS, MUP, OXA, FOX, PEN, DOX, CXM, HLG,
@@ -39,11 +39,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TZP",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 18,
+    susceptibleMinMm: 50, resistantLessThanMm: 18,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Piperacillin-tazobactam`,
     flags: PAER_ONLY,
-    notes: "Disk 30-6 µg. I≥18, R<18. No 'S' category.",
+    notes: "Disk 30-6 µg. EUCAST off-scale S≥50, R<18; report I for zones ≥18. ATU 18–19. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── CAZ — Ceftazidime (I/R only)
@@ -59,11 +59,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "CAZ",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 17,
+    susceptibleMinMm: 50, resistantLessThanMm: 17,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Ceftazidime`,
     flags: PAER_ONLY,
-    notes: "Disk 10 µg. I≥17, R<17.",
+    notes: "Disk 10 µg. EUCAST off-scale S≥50, R<17; report I for zones ≥17. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── FEP — Cefepime (I/R only)
@@ -79,11 +79,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "FEP",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 21,
+    susceptibleMinMm: 50, resistantLessThanMm: 21,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Cefepime`,
     flags: PAER_ONLY,
-    notes: "Disk 30 µg. I≥21, R<21; ATU 19–23. No 'S' category.",
+    notes: "Disk 30 µg. EUCAST off-scale S≥50, R<21; report I for zones ≥21. ATU 19–23. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── MEM — Meropenem (S/I/R)
