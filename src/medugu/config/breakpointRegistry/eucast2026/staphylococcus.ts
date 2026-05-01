@@ -81,10 +81,10 @@ export const EUCAST_2026_STAPHYLOCOCCUS_BREAKPOINTS: EucastBreakpointRecord[] = 
   {
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "CIP",
     method: "disk", indication: "general",
-    susceptibleMinMm: 50, resistantLessThanMm: 21,
+    susceptibleMinMm: 50, resistantLessThanMm: 17,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Ciprofloxacin`,
-    notes: "Disk 5 µg. EUCAST off-scale S≥50, R<21; report I for zones ≥21. No 'S' category.",
+    sourceTableRef: `${SRC}, Ciprofloxacin (S. aureus)`,
+    notes: "Disk 5 µg. EUCAST v16.0 S. aureus off-scale S≥(50), R<(17); CoNS R<(22). All bracketed — screen via norfloxacin recommended.",
   },
 
   // ─────────────────────────────────────────── LVX — Levofloxacin
