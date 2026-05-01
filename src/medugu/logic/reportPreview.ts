@@ -10,6 +10,7 @@ import { evaluateIPC } from "./ipcEngine";
 import { IPC_RULES } from "../config/ipcRules";
 import { deriveIPCInternalReportNotes, getIPCReportVisibility, shouldShowIPCOnClinicianReport } from "./ipcReportGovernance";
 import { evaluateAccession } from "./astEngine";
+import { getBottleResults, isPositiveBottle } from "./bloodBottles";
 
 export type CommentSource = "clinical" | "stewardship" | "ipc";
 
