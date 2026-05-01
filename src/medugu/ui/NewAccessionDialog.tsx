@@ -101,6 +101,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
 
   function reset() {
     setMode("new");
+    setAdvancedOpen(false);
     setExistingMrn("");
     setGivenName("");
     setFamilyName("");
@@ -118,11 +119,14 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
     setBloodSources([]);
   }
 
+  // Step-2 fields are optional at intake. Engines receive sensible defaults:
+  //  - subtype defaults to family's first subtype
+  //  - datetimes default to now
+  //  - blood: preset = STANDARD_ADULT, sources = [] (Specimen section flags as required)
   const canSubmit =
     accessionNumber.trim().length > 0 &&
     !state.accessions[accessionNumber] &&
-    familyCode &&
-    (isBlood ? bloodSources.length > 0 : !!subtypeCode) &&
+    !!familyCode &&
     (mode === "existing"
       ? !!existingMrn
       : givenName.trim().length > 0 && familyName.trim().length > 0 && mrn.trim().length > 0);
