@@ -83,7 +83,8 @@ interface BottleIncubationBoardProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function maxDaysFor(bottle: string): number {
+function maxDaysFor(bottle: string, override?: number): number {
+  if (override && override > 0) return override;
   return BOTTLE_MAX_DAYS[bottle] ?? 5;
 }
 
