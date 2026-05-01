@@ -54,9 +54,10 @@ export interface AiAssistResult {
   model?: string;
 }
 
-/** Feature-flag read per request. Default OFF — opt-in via env. */
+/** Feature-flag read per request. Default ON for the language-polish surface
+ *  (zero clinical recommendation). Set AI_ASSIST_ENABLED=0 to kill-switch. */
 function isAiAssistEnabled(): boolean {
-  const v = (process.env.AI_ASSIST_ENABLED ?? "").toLowerCase();
+  const v = (process.env.AI_ASSIST_ENABLED ?? "1").toLowerCase();
   return v === "1" || v === "true";
 }
 
