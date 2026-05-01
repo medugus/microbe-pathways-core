@@ -109,7 +109,19 @@ interface SetRow {
 
 interface Props {
   accession: Accession;
-  isolate: Isolate;
+  /**
+   * Optional. When provided, the editor reads/writes only that isolate's
+   * `bottleResults` (legacy per-isolate mode). When omitted, the editor
+   * operates in **accession mode**: it aggregates bottle rows across every
+   * isolate (deduped by setNo+bottleType, last-write wins) and routes new
+   * writes to whichever isolate currently owns the row — falling back to
+   * `accession.isolates[0]` for brand-new rows. Bottle facts (status,
+   * Gram stain, critical call, TTP, termination) are specimen-level rather
+   * than organism-level, so a single accession-level panel avoids the
+   * confusing N-times duplication you otherwise see when multiple isolates
+   * are present.
+   */
+  isolate?: Isolate;
 }
 
 function readSets(accession: Accession): SetRow[] {
@@ -134,7 +146,22 @@ function hoursBetween(start?: string, end?: string): number | undefined {
 
 export function BottleResultsEditor({ accession, isolate }: Props) {
   const sets = useMemo(() => readSets(accession), [accession]);
-  const existing = isolate.bottleResults ?? [];
+
+  // Aggregate bottle rows. In per-isolate mode we read just that isolate;
+  // in accession mode we union across every isolate so the table renders
+  // exactly once per accession instead of once per isolate.
+  const existing: BloodBottleResult[] = useMemo(() => {
+    if (isolate) return isolate.bottleResults ?? [];
+    const seen = new Map<string, BloodBottleResult>();
+    for (const iso of accession.isolates) {
+      for (const r of iso.bottleResults ?? []) {
+        // Last write wins on key collisions — should be rare since rows are
+        // typically authored once and live on a single carrier isolate.
+        seen.set(`${r.setNo}|${r.bottleType}`, r);
+      }
+    }
+    return Array.from(seen.values());
+  }, [isolate, accession.isolates]);
 
   if (sets.length === 0) {
     return (
@@ -148,8 +175,24 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
     return existing.find((r) => r.setNo === setNo && r.bottleType === bottleType);
   }
 
-  function persist(next: BloodBottleResult[]) {
-    meduguActions.updateIsolate(accession.id, isolate.id, { bottleResults: next });
+  /**
+   * Find the isolate that currently owns a given (setNo, bottleType) row.
+   * In per-isolate mode this is always the bound isolate. In accession mode
+   * we look through every isolate; if none owns the row yet, the first
+   * isolate becomes the carrier (or undefined when no isolates exist).
+   */
+  function ownerIsolateId(setNo: number, bottleType: string): string | undefined {
+    if (isolate) return isolate.id;
+    for (const iso of accession.isolates) {
+      if ((iso.bottleResults ?? []).some((r) => r.setNo === setNo && r.bottleType === bottleType)) {
+        return iso.id;
+      }
+    }
+    return accession.isolates[0]?.id;
+  }
+
+  function persistFor(isoId: string, next: BloodBottleResult[]) {
+    meduguActions.updateIsolate(accession.id, isoId, { bottleResults: next });
   }
 
   function upsert(setNo: number, bottleType: string, patch: Partial<BloodBottleResult>) {
@@ -185,7 +228,20 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
       merged.terminatedAt = new Date().toISOString();
     }
 
-    const next = existing.filter((r) => !(r.setNo === setNo && r.bottleType === bottleType));
+    const isoId = ownerIsolateId(setNo, bottleType);
+    if (!isoId) {
+      // No carrier isolate available (accession mode with zero isolates).
+      // Silently no-op rather than crash; the UI gates editing behind an
+      // explicit hint when this happens.
+      return;
+    }
+    // Build the next bottleResults array for the OWNING isolate only,
+    // so accession-mode writes don't accidentally fan out across isolates.
+    const ownerIso = accession.isolates.find((i) => i.id === isoId);
+    const ownerExisting = ownerIso?.bottleResults ?? [];
+    const next = ownerExisting.filter(
+      (r) => !(r.setNo === setNo && r.bottleType === bottleType),
+    );
     next.push(merged);
     next.sort(
       (a, b) =>
@@ -193,7 +249,7 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
         bottleSortKey(a.bottleType) - bottleSortKey(b.bottleType) ||
         a.bottleType.localeCompare(b.bottleType),
     );
-    persist(next);
+    persistFor(isoId, next);
   }
 
   function upsertGram(

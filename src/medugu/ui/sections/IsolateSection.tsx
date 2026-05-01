@@ -98,6 +98,28 @@ export function IsolateSection() {
         </div>
       )}
 
+      {/* Accession-level bottle workup: incubation board + per-bottle editor.
+          Rendered ONCE per accession (not per isolate) because bottle facts
+          — lifecycle status, Gram stain, critical call, TTP, termination —
+          are specimen-level. Per-isolate ↔ bottle linkage stays inside each
+          isolate card via SourceLinkPicker below. */}
+      {isBlood && (
+        <details
+          className="rounded-md border border-border bg-background/40 p-3"
+          open
+        >
+          <summary className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Per-set / per-bottle growth
+            {accession.isolates.length === 0
+              ? " (add an isolate to record bottle results)"
+              : ""}
+          </summary>
+          <div className="mt-2">
+            <BottleResultsEditor accession={accession} />
+          </div>
+        </details>
+      )}
+
       {/* Entry row */}
       <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-background p-3 md:grid-cols-6">
         <label className="md:col-span-2 text-xs">
@@ -288,16 +310,11 @@ export function IsolateSection() {
                   </div>
                 )}
 
-                {showBcLinkage && (
-                  <details className="mt-3 rounded border border-border bg-background/50 p-2 text-xs" open>
-                    <summary className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Per-set / per-bottle growth
-                    </summary>
-                    <div className="mt-2">
-                      <BottleResultsEditor accession={accession} isolate={i} />
-                    </div>
-                  </details>
-                )}
+                {/* Per-bottle growth tracking is rendered ONCE per accession,
+                    above the isolate list — bottle facts (status, Gram,
+                    critical call, TTP) are specimen-level and don't repeat
+                    per organism. See <BottleResultsEditor accession={...} />
+                    rendered above. */}
               </li>
             );
           })}
