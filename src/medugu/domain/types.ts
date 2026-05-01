@@ -134,12 +134,13 @@ export interface Isolate {
   identificationMethodCode?: string;
   notes?: string;
   /**
-   * Blood culture per-bottle growth tracking. One row per (setNo, bottleType)
-   * the lab loaded into the instrument. Optional (absent for non-BLOOD or for
-   * isolates entered before per-bottle tracking was added). The row carries the
-   * bottle-level growth call and, when growth, the positivity timestamp and
-   * computed time-to-positivity in hours; downstream rules (e.g. differential
-   * TTP for line vs peripheral) read this array.
+   * @deprecated Bottle results now live at the specimen level
+   * (`accession.specimen.details.bottleResults`) — bottle facts are
+   * specimen-scoped, not organism-scoped. Read via
+   * `logic/bloodBottles.getBottleResults(accession)`, which transparently
+   * unions any legacy per-isolate rows for backward compatibility. New
+   * writes must go to specimen.details. This field is kept on the type so
+   * old fixtures still parse.
    */
   bottleResults?: BloodBottleResult[];
   /**
