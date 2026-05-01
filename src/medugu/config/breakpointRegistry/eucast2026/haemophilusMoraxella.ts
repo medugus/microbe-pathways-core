@@ -20,7 +20,7 @@ import { EUCAST_2026_METADATA } from "./notes";
 
 const SRC = "EUCAST v16.0 2026, Haemophilus / Moraxella";
 const HINF_ONLY = { restrictedSpecies: ["HINF"] };
-const HPAR_ONLY = { restrictedSpecies: ["HPAR"] };
+// HPAR-specific rows can be added later using { restrictedSpecies: ["HPAR"] }.
 const HAEM_ALL  = { restrictedSpecies: ["HINF", "HPAR"] };
 const MCAT_ONLY = { restrictedSpecies: ["MCAT"] };
 
