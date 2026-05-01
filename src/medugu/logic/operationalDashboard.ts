@@ -5,6 +5,7 @@ import { deriveColonisationContext, isColonisationScreen } from "./ipcColonisati
 import { deriveLocalOutbreakWatch } from "./ipcLocalWatch";
 import { approvalStatusForRow, isRestrictedRow, latestApprovalForRow } from "./amsEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
+import { getBottleResults, isPositiveBottle } from "./bloodBottles";
 
 export type OperationalQueueCategory =
   | "critical_result"
@@ -130,11 +131,8 @@ function isSterileSite(accession: Accession): boolean {
 
 function hasPositiveBloodCulture(accession: Accession): boolean {
   if (accession.specimen.familyCode !== "BLOOD") return false;
-  return accession.isolates.some(
-    (iso) =>
-      iso.organismCode !== "NOGRO" ||
-      (iso.bottleResults ?? []).some((bottle) => bottle.growth === "growth"),
-  );
+  if (accession.isolates.some((iso) => iso.organismCode !== "NOGRO")) return true;
+  return getBottleResults(accession).some(isPositiveBottle);
 }
 
 function hasSignificantResult(accession: Accession): boolean {

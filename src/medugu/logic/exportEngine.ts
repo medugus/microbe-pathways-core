@@ -541,8 +541,23 @@ export interface NormalisedExport {
       lumenLabel?: string;
       drawTime?: string;
       growth: string;
+      status?: string;
       positiveAt?: string;
       ttpHours?: number;
+      drawToPositiveHours?: number;
+      gramStain?: {
+        result: string;
+        morphology?: string;
+        performedBy?: string;
+        performedAt?: string;
+      };
+      criticalCall?: {
+        calledBy: string;
+        calledTo: string;
+        calledAt: string;
+        readBack: boolean;
+        notes?: string;
+      };
     }[];
     isolateLinks: {
       isolateNo: number;
@@ -602,20 +617,15 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
     })),
   );
 
-  // Build a stable, normalised blood-culture linkage block. We only emit it
-  // when there is something to say (BLOOD specimen with at least one set or
-  // one per-bottle row). Sorting is deterministic so the JSON is byte-stable
-  // across runs and safe to seal/diff.
+  // Build a stable, normalised blood-culture linkage block from the
+  // specimen-level bottle inventory (doc.bloodBottles). Set-level metadata
+  // (drawSite, lumenLabel, drawTime) is denormalised onto each bottle row so
+  // receivers do not need a second join. Sorting is deterministic so the
+  // JSON is byte-stable across runs and safe to seal/diff.
   let bloodLinkage: NormalisedExport["bloodLinkage"];
   const hasSets = !!(doc.bloodSets && doc.bloodSets.length > 0);
-  const hasBottleRows = doc.isolates.some(
-    (iso) => iso.bottleResults && iso.bottleResults.length > 0,
-  );
+  const hasBottleRows = !!(doc.bloodBottles && doc.bloodBottles.length > 0);
   if (hasSets || hasBottleRows) {
-    // Bottle inventory: union of (setNo, bottleType) declared on sets and
-    // any (setNo, bottleType) referenced by isolate bottleResults. Set-level
-    // metadata (drawSite, lumenLabel, drawTime) is denormalised onto each
-    // bottle row so receivers do not need a second join.
     const setMeta = new Map<
       number,
       { drawSite?: string; lumenLabel?: string; drawTime?: string; bottleTypes: string[] }
@@ -629,21 +639,9 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
       });
     }
 
-    type BottleKey = string;
-    const keyOf = (setNo: number, bt: string): BottleKey => `${setNo}::${bt}`;
-    const bottleRows = new Map<
-      BottleKey,
-      {
-        setNo: number;
-        bottleType: string;
-        drawSite?: string;
-        lumenLabel?: string;
-        drawTime?: string;
-        growth: string;
-        positiveAt?: string;
-        ttpHours?: number;
-      }
-    >();
+    type BottleOut = NonNullable<NormalisedExport["bloodLinkage"]>["bottles"][number];
+    const keyOf = (setNo: number, bt: string): string => `${setNo}::${bt}`;
+    const bottleRows = new Map<string, BottleOut>();
 
     // Seed from declared sets so empty/no-growth bottles are still listed.
     for (const [setNo, meta] of setMeta.entries()) {
@@ -659,24 +657,25 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
       }
     }
 
-    // Overlay per-bottle results from any isolate (last write wins per
-    // bottle key — bottle-level growth/TTP is shared across isolates).
-    for (const iso of doc.isolates) {
-      for (const r of iso.bottleResults ?? []) {
-        const meta = setMeta.get(r.setNo);
-        const k = keyOf(r.setNo, r.bottleType);
-        const existing = bottleRows.get(k);
-        bottleRows.set(k, {
-          setNo: r.setNo,
-          bottleType: r.bottleType,
-          drawSite: existing?.drawSite ?? meta?.drawSite,
-          lumenLabel: existing?.lumenLabel ?? meta?.lumenLabel,
-          drawTime: existing?.drawTime ?? meta?.drawTime,
-          growth: r.growth,
-          positiveAt: r.positiveAt,
-          ttpHours: r.ttpHours,
-        });
-      }
+    // Overlay specimen-level bottle rows (Gram + critical-call included).
+    for (const r of doc.bloodBottles ?? []) {
+      const meta = setMeta.get(r.setNo);
+      const k = keyOf(r.setNo, r.bottleType);
+      const existing = bottleRows.get(k);
+      bottleRows.set(k, {
+        setNo: r.setNo,
+        bottleType: r.bottleType,
+        drawSite: existing?.drawSite ?? meta?.drawSite,
+        lumenLabel: existing?.lumenLabel ?? meta?.lumenLabel,
+        drawTime: existing?.drawTime ?? meta?.drawTime,
+        growth: r.growth,
+        status: r.status,
+        positiveAt: r.positiveAt,
+        ttpHours: r.ttpHours,
+        drawToPositiveHours: r.drawToPositiveHours,
+        gramStain: r.gramStain,
+        criticalCall: r.criticalCall,
+      });
     }
 
     const bottles = Array.from(bottleRows.values()).sort(

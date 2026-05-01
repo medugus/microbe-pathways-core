@@ -10,6 +10,7 @@ import { evaluateIPC } from "./ipcEngine";
 import { IPC_RULES } from "../config/ipcRules";
 import { deriveIPCInternalReportNotes, getIPCReportVisibility, shouldShowIPCOnClinicianReport } from "./ipcReportGovernance";
 import { evaluateAccession } from "./astEngine";
+import { getBottleResults, isPositiveBottle } from "./bloodBottles";
 
 export type CommentSource = "clinical" | "stewardship" | "ipc";
 
@@ -58,6 +59,31 @@ export interface ReportASTRow {
   };
 }
 
+export interface ReportBottleRow {
+  setNo: number;
+  bottleType: string;
+  growth: string;
+  status?: string;
+  positiveAt?: string;
+  ttpHours?: number;
+  drawToPositiveHours?: number;
+  /** Direct-from-bottle Gram stain (when bottle flagged positive). */
+  gramStain?: {
+    result: string;
+    morphology?: string;
+    performedBy?: string;
+    performedAt?: string;
+  };
+  /** Critical-call documentation (when bottle flagged positive). */
+  criticalCall?: {
+    calledBy: string;
+    calledTo: string;
+    calledAt: string;
+    readBack: boolean;
+    notes?: string;
+  };
+}
+
 export interface ReportIsolate {
   isolateNo: number;
   organismDisplay: string;
@@ -66,14 +92,13 @@ export interface ReportIsolate {
   phenotypeFlags: string[];
   /** Blood-culture only: positive (set, bottle) sources for this isolate. */
   bloodSourceLinks?: { setNo: number; bottleType: string }[];
-  /** Blood-culture only: per-bottle growth rows (mirrored for export). */
-  bottleResults?: {
-    setNo: number;
-    bottleType: string;
-    growth: string;
-    positiveAt?: string;
-    ttpHours?: number;
-  }[];
+  /**
+   * Blood-culture only: per-bottle rows linked to THIS isolate via
+   * `bloodSourceLinks`. Drawn from the specimen-level bottle inventory so
+   * Gram stain + critical-call data flows through to the report. Empty when
+   * no source linkage exists.
+   */
+  bottleResults?: ReportBottleRow[];
   ast: ReportASTRow[];
 }
 
@@ -93,6 +118,13 @@ export interface ReportPreviewDoc {
   specimen: { display: string; syndrome?: string; pathway: string };
   /** Per-set blood culture details, when specimen family is BLOOD. */
   bloodSets?: ReportBloodSet[];
+  /**
+   * Specimen-level bottle inventory (every bottle the lab loaded), with
+   * Gram + critical-call data when flagged positive. Authoritative source
+   * for downstream readers; per-isolate `bottleResults` is a filtered
+   * projection of this list.
+   */
+  bloodBottles?: ReportBottleRow[];
   microscopySummary: string;
   isolates: ReportIsolate[];
   comments: ReportComment[];
@@ -117,8 +149,45 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
   const phenotypesByIsolate: Record<string, string[]> = {};
   for (const o of astByIsolate) phenotypesByIsolate[o.isolateId] = o.phenotypeFlags;
 
+  // Specimen-level bottle inventory — single source of truth, including
+  // Gram stain + critical-call data for every flagged_positive bottle.
+  const allBottles = getBottleResults(accession);
+  const projectBottle = (r: typeof allBottles[number]): ReportBottleRow => ({
+    setNo: r.setNo,
+    bottleType: r.bottleType,
+    growth: r.growth,
+    status: r.status,
+    positiveAt: r.positiveAt,
+    ttpHours: r.ttpHours,
+    drawToPositiveHours: r.drawToPositiveHours,
+    gramStain: r.gramStain && r.gramStain.result
+      ? {
+          result: r.gramStain.result,
+          morphology: r.gramStain.morphology,
+          performedBy: r.gramStain.performedBy,
+          performedAt: r.gramStain.performedAt,
+        }
+      : undefined,
+    criticalCall: r.criticalCall && (r.criticalCall.calledAt || r.criticalCall.calledTo)
+      ? {
+          calledBy: r.criticalCall.calledBy,
+          calledTo: r.criticalCall.calledTo,
+          calledAt: r.criticalCall.calledAt,
+          readBack: !!r.criticalCall.readBack,
+          notes: r.criticalCall.notes,
+        }
+      : undefined,
+  });
+
   const isolates: ReportIsolate[] = accession.isolates.map((i) => {
     const rowOutputs = astByIsolate.find((o) => o.isolateId === i.id);
+    const links = i.bloodSourceLinks ?? [];
+    const linkedKeys = new Set(links.map((l) => `${l.setNo}|${l.bottleType}`));
+    const linkedBottles = links.length > 0
+      ? allBottles
+          .filter((b) => linkedKeys.has(`${b.setNo}|${b.bottleType}`))
+          .map(projectBottle)
+      : undefined;
     return {
       isolateNo: i.isolateNo,
       organismDisplay: i.organismDisplay,
@@ -128,17 +197,8 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
           ? `${i.colonyCountCfuPerMl.toExponential(0)} CFU/mL`
           : i.growthQuantifierCode,
       phenotypeFlags: phenotypesByIsolate[i.id] ?? [],
-      bloodSourceLinks: i.bloodSourceLinks && i.bloodSourceLinks.length > 0 ? i.bloodSourceLinks : undefined,
-      bottleResults:
-        i.bottleResults && i.bottleResults.length > 0
-          ? i.bottleResults.map((r) => ({
-              setNo: r.setNo,
-              bottleType: r.bottleType,
-              growth: r.growth,
-              positiveAt: r.positiveAt,
-              ttpHours: r.ttpHours,
-            }))
-          : undefined,
+      bloodSourceLinks: links.length > 0 ? links : undefined,
+      bottleResults: linkedBottles && linkedBottles.length > 0 ? linkedBottles : undefined,
       ast: accession.ast
         .filter((a) => a.isolateId === i.id)
         .map<ReportASTRow>((a) => {
@@ -277,6 +337,7 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
       pathway: profile?.gating.pathway ?? "diagnostic",
     },
     bloodSets,
+    bloodBottles: allBottles.length > 0 ? allBottles.map(projectBottle) : undefined,
     microscopySummary,
     isolates,
     comments,

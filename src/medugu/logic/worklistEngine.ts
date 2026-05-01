@@ -3,6 +3,7 @@ import { ReleaseState } from "../domain/enums";
 import { approvalStatusForRow, isRestrictedRow, latestApprovalForRow } from "./amsEngine";
 import { evaluateIPC } from "./ipcEngine";
 import { runValidation } from "./validationEngine";
+import { getBottleResults, isPositiveBottle } from "./bloodBottles";
 
 export type WorklistQueueCategory =
   | "positive_blood_culture"
@@ -107,9 +108,7 @@ export function deriveMicrobiologyWorklist(accessions: MeduguState["accessions"]
     const validation = runValidation(accession);
 
     if (accession.specimen.familyCode === "BLOOD") {
-      const positiveBottles = accession.isolates.flatMap((iso) =>
-        (iso.bottleResults ?? []).filter((b) => b.growth === "growth").map((b) => ({ ...b, isolateId: iso.id })),
-      );
+      const positiveBottles = getBottleResults(accession).filter(isPositiveBottle);
       if (positiveBottles.length > 0) {
         const linkedBottleCount = accession.isolates.reduce((count, iso) => count + (iso.bloodSourceLinks?.length ?? 0), 0);
         const hasUnlinkedSources = linkedBottleCount < positiveBottles.length;
