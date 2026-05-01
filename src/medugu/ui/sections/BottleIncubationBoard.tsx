@@ -343,7 +343,7 @@ export function BottleIncubationBoard({
           </thead>
           <tbody>
             {rows.map(({ key, set, bottle, result }) => {
-              const maxDays = maxDaysFor(bottle);
+              const maxDays = maxDaysFor(bottle, result?.protocolDays);
               const positiveInfo = resolvePositiveDay(
                 result ?? { setNo: set.setNo, bottleType: bottle, growth: "pending" },
                 set,
