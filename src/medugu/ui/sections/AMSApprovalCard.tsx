@@ -87,20 +87,29 @@ export function AMSApprovalCard({
       ) : null}
 
       {(status === "not_requested" || status === "denied" || status === "expired") ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <input
-            value={requestNote}
-            onChange={(e) => onRequestNoteChange(e.target.value)}
-            placeholder="Reason / clinical justification (optional)"
-            className="min-w-[200px] flex-1 rounded border border-border bg-background px-2 py-1 text-xs"
-          />
-          <button
-            type="button"
-            onClick={() => onRequest(row)}
-            className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90"
-          >
-            Request approval
-          </button>
+        <div className="mt-2 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              value={requestNote}
+              onChange={(e) => onRequestNoteChange(e.target.value)}
+              placeholder="Reason / clinical justification (optional)"
+              className="min-w-[200px] flex-1 rounded border border-border bg-background px-2 py-1 text-xs"
+            />
+            <PolishButton
+              task="ams_request_reason_polish"
+              draft={requestNote}
+              accessionRowId={accessionRowId}
+              onAccept={(text) => onRequestNoteChange(text)}
+              compact
+            />
+            <button
+              type="button"
+              onClick={() => onRequest(row)}
+              className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90"
+            >
+              Request approval
+            </button>
+          </div>
         </div>
       ) : null}
 
