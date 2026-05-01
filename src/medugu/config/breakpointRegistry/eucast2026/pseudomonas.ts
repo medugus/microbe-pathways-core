@@ -79,11 +79,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "FEP",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 19,
+    susceptibleMinMm: 999, resistantLessThanMm: 21,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Cefepime`,
     flags: PAER_ONLY,
-    notes: "Disk 30 µg. I≥19, R<19.",
+    notes: "Disk 30 µg. I≥21, R<21; ATU 19–23. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── MEM — Meropenem (S/I/R)
@@ -99,11 +99,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "MEM",
     method: "disk", indication: "general",
-    susceptibleMinMm: 24, resistantLessThanMm: 18,
+    susceptibleMinMm: 20, resistantLessThanMm: 14,
     interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Meropenem`,
     flags: PAER_ONLY,
-    notes: "Disk 10 µg. S≥24, R<18 (I 18–23).",
+    notes: "Disk 10 µg. S≥20, R<14 for P. aeruginosa non-meningitis indications.",
   },
 
   // ─────────────────────────────────────────── IPM — Imipenem (I/R only)
@@ -139,11 +139,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "DOR",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 25,
+    susceptibleMinMm: 999, resistantLessThanMm: 22,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Doripenem`,
     flags: PAER_ONLY,
-    notes: "Disk 10 µg. I≥25, R<25.",
+    notes: "Disk 10 µg. I≥22, R<22. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── ATM — Aztreonam (I/R only)
@@ -159,11 +159,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "ATM",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 50,
+    susceptibleMinMm: 999, resistantLessThanMm: 18,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Aztreonam`,
     flags: PAER_ONLY,
-    notes: "Disk 30 µg. I≥50 mm only at high inoculum reading (rare); EUCAST recommends MIC for ATM in P. aeruginosa.",
+    notes: "Disk 30 µg. I≥18, R<18. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── TOL — Ceftolozane/tazobactam (S/R)
@@ -179,11 +179,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOL",
     method: "disk", indication: "general",
-    susceptibleMinMm: 22, resistantLessThanMm: 22,
+    susceptibleMinMm: 23, resistantLessThanMm: 23,
     interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Ceftolozane-tazobactam`,
     flags: PAER_ONLY,
-    notes: "Disk 30-10 µg. S≥22, R<22.",
+    notes: "Disk 30-10 µg. S≥23, R<23.",
   },
 
   // ─────────────────────────────────────────── CZA — Ceftazidime/avibactam (S/R)
@@ -206,64 +206,98 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
     notes: "Disk 10-4 µg. S≥17, R<17.",
   },
 
-  // ─────────────────────────────────────────── AMK — Amikacin (S/R, combination only)
+  // ─────────────────────────────────────────── AMK — Amikacin (S/R, bracketed for systemic)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "AMK",
-    method: "mic", indication: "general",
+    method: "mic", indication: "systemic",
     susceptibleMaxMgL: 16, resistantGreaterThanMgL: 16,
     interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Amikacin`,
-    flags: PAER_ONLY,
-    notes: "MIC S≤16, R>16. EUCAST: aminoglycosides for P. aeruginosa only as part of combination therapy.",
+    flags: { ...PAER_ONLY, bracketed: true },
+    notes: "Systemic infections: bracketed MIC S≤16, R>16; see EUCAST guidance for bracketed breakpoints.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "AMK",
-    method: "disk", indication: "general",
-    susceptibleMinMm: 18, resistantLessThanMm: 18,
-    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Amikacin`,
-    flags: PAER_ONLY,
-    notes: "Disk 30 µg. S≥18, R<18.",
-  },
-
-  // ─────────────────────────────────────────── GEN — Gentamicin (combination only)
-  {
-    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "GEN",
-    method: "mic", indication: "general",
-    susceptibleMaxMgL: 4, resistantGreaterThanMgL: 4,
-    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Gentamicin`,
-    flags: PAER_ONLY,
-    notes: "MIC S≤4, R>4. Combination therapy only.",
-  },
-  {
-    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "GEN",
-    method: "disk", indication: "general",
+    method: "disk", indication: "systemic",
     susceptibleMinMm: 15, resistantLessThanMm: 15,
     interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Gentamicin`,
-    flags: PAER_ONLY,
-    notes: "Disk 10 µg. S≥15, R<15.",
+    sourceTableRef: `${SRC}, Amikacin`,
+    flags: { ...PAER_ONLY, bracketed: true },
+    notes: "Systemic infections: bracketed disk 30 µg S≥15, R<15.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "AMK",
+    method: "mic", indication: "uti",
+    susceptibleMaxMgL: 16, resistantGreaterThanMgL: 16,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Amikacin`,
+    flags: { ...PAER_ONLY, urinaryOnly: true },
+    notes: "Infections originating from the urinary tract: MIC S≤16, R>16.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "AMK",
+    method: "disk", indication: "uti",
+    susceptibleMinMm: 15, resistantLessThanMm: 15,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Amikacin`,
+    flags: { ...PAER_ONLY, urinaryOnly: true },
+    notes: "Infections originating from the urinary tract: disk 30 µg S≥15, R<15.",
   },
 
-  // ─────────────────────────────────────────── TOB — Tobramycin (combination only)
+  // ─────────────────────────────────────────── GEN — Gentamicin (insufficient evidence)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "GEN",
+    method: "mic", indication: "general",
+    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
+    sourceTableRef: `${SRC}, Gentamicin`,
+    flags: PAER_ONLY,
+    notes: "EUCAST lists IE (insufficient evidence) for gentamicin in Pseudomonas spp.; do not infer S/I/R.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "GEN",
+    method: "disk", indication: "general",
+    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
+    sourceTableRef: `${SRC}, Gentamicin`,
+    flags: PAER_ONLY,
+    notes: "EUCAST lists IE (insufficient evidence) for gentamicin in Pseudomonas spp.; do not infer S/I/R.",
+  },
+
+  // ─────────────────────────────────────────── TOB — Tobramycin (S/R, bracketed for systemic)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
-    method: "mic", indication: "general",
+    method: "mic", indication: "systemic",
     susceptibleMaxMgL: 2, resistantGreaterThanMgL: 2,
     interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Tobramycin`,
-    flags: PAER_ONLY,
-    notes: "MIC S≤2, R>2. Combination therapy only.",
+    flags: { ...PAER_ONLY, bracketed: true },
+    notes: "Systemic infections: bracketed MIC S≤2, R>2; see EUCAST guidance for bracketed breakpoints.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
-    method: "disk", indication: "general",
+    method: "disk", indication: "systemic",
     susceptibleMinMm: 18, resistantLessThanMm: 18,
     interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Tobramycin`,
-    flags: PAER_ONLY,
-    notes: "Disk 10 µg. S≥18, R<18.",
+    flags: { ...PAER_ONLY, bracketed: true },
+    notes: "Systemic infections: bracketed disk 10 µg S≥18, R<18.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
+    method: "mic", indication: "uti",
+    susceptibleMaxMgL: 2, resistantGreaterThanMgL: 2,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tobramycin`,
+    flags: { ...PAER_ONLY, urinaryOnly: true },
+    notes: "Infections originating from the urinary tract: MIC S≤2, R>2.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
+    method: "disk", indication: "uti",
+    susceptibleMinMm: 18, resistantLessThanMm: 18,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tobramycin`,
+    flags: { ...PAER_ONLY, urinaryOnly: true },
+    notes: "Infections originating from the urinary tract: disk 10 µg S≥18, R<18.",
   },
 
   // ─────────────────────────────────────────── CIP — Ciprofloxacin (I/R only)
@@ -290,20 +324,20 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "LVX",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 0.001, resistantGreaterThanMgL: 1,
+    susceptibleMaxMgL: 0.001, resistantGreaterThanMgL: 2,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Levofloxacin`,
     flags: PAER_ONLY,
-    notes: "MIC I≤1, R>1. High-dose 500 mg bid.",
+    notes: "MIC I≤2, R>2. High-dose 500 mg bid. No 'S' category.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "LVX",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 20,
+    susceptibleMinMm: 999, resistantLessThanMm: 18,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Levofloxacin`,
     flags: PAER_ONLY,
-    notes: "Disk 5 µg. I≥20, R<20.",
+    notes: "Disk 5 µg. I≥18, R<18. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── CST — Colistin (MIC only, BMD mandatory)
@@ -313,8 +347,8 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
     susceptibleMaxMgL: 4, resistantGreaterThanMgL: 4,
     interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Colistin`,
-    flags: PAER_ONLY,
-    notes: "MIC S≤4, R>4. BMD only (ISO 20776-1); disk diffusion and gradient strips not reliable.",
+    flags: { ...PAER_ONLY, bracketed: true },
+    notes: "Bracketed MIC S≤4, R>4. Broth microdilution only; disk diffusion and gradient strips are not reliable.",
   },
 
   // ─────────────────────────────────────────── MIN — Minocycline (no clinical BP for P. aeruginosa)
