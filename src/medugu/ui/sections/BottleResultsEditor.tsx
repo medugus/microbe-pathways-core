@@ -109,12 +109,12 @@ function readSets(accession: Accession): SetRow[] {
   }));
 }
 
-function computeTtp(drawTime?: string, positiveAt?: string): number | undefined {
-  if (!drawTime || !positiveAt) return undefined;
-  const t0 = new Date(drawTime).getTime();
-  const t1 = new Date(positiveAt).getTime();
+function hoursBetween(start?: string, end?: string): number | undefined {
+  if (!start || !end) return undefined;
+  const t0 = new Date(start).getTime();
+  const t1 = new Date(end).getTime();
   if (!Number.isFinite(t0) || !Number.isFinite(t1) || t1 < t0) return undefined;
-  return Math.round(((t1 - t0) / 36e5) * 10) / 10; // 1-decimal hours
+  return Math.round(((t1 - t0) / 36e5) * 10) / 10;
 }
 
 export function BottleResultsEditor({ accession, isolate }: Props) {
@@ -139,14 +139,37 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
 
   function upsert(setNo: number, bottleType: string, patch: Partial<BloodBottleResult>) {
     const set = sets.find((s) => s.setNo === setNo);
-    const current = findRow(setNo, bottleType) ?? { setNo, bottleType, growth: "pending" as BottleGrowthState };
+    const current = findRow(setNo, bottleType) ?? {
+      setNo,
+      bottleType,
+      growth: "pending" as BottleGrowthState,
+      status: "received" as BottleLifecycleStatus,
+    };
     const merged: BloodBottleResult = { ...current, ...patch };
+
+    // Re-derive legacy growth from lifecycle status whenever status is set.
+    merged.growth = deriveGrowth(merged.status, merged.growth);
+
+    // TTP semantics: Beaker = positiveAt − loadedAt. Pre-analytic value
+    // (positiveAt − drawTime) is preserved separately as drawToPositiveHours.
     if (merged.growth !== "growth") {
       merged.positiveAt = undefined;
       merged.ttpHours = undefined;
+      merged.drawToPositiveHours = undefined;
     } else {
-      merged.ttpHours = computeTtp(set?.drawTime, merged.positiveAt);
+      merged.ttpHours = hoursBetween(merged.loadedAt, merged.positiveAt)
+        ?? hoursBetween(set?.drawTime, merged.positiveAt);
+      merged.drawToPositiveHours = hoursBetween(set?.drawTime, merged.positiveAt);
     }
+
+    // Auto-stamp terminatedAt when entering a terminal state.
+    if (
+      (merged.status === "terminal_negative" || merged.status === "discontinued") &&
+      !merged.terminatedAt
+    ) {
+      merged.terminatedAt = new Date().toISOString();
+    }
+
     const next = existing.filter((r) => !(r.setNo === setNo && r.bottleType === bottleType));
     next.push(merged);
     next.sort(
