@@ -201,11 +201,6 @@ export function OperationalPriorityQueue({ items }: { items: QueueItem[] }) {
         </table>
       </div>
 
-      {/* Lazy-load row ids when the user is about to triage. We trigger this by
-          calling handleTriage from a hidden effect-like hook on first render of
-          a non-empty queue, but to keep things simple we resolve them on demand
-          inside the button via accessionRowIds prop refresh. */}
-      <button type="button" onClick={handleTriage} className="hidden" aria-hidden />
     </section>
   );
 }
