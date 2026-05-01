@@ -56,7 +56,8 @@ function defaultStandardForGroup(group: string | undefined): ASTStandard {
     group === "staphylococcus" ||
     group === "streptococcus" ||
     group === "enterococcus" ||
-    group === "non_fermenter"
+    group === "non_fermenter" ||
+    group === "fastidious"
   ) {
     return SECONDARY_STANDARD; // EUCAST
   }

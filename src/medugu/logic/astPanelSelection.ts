@@ -83,7 +83,8 @@ export function getDefaultASTStandardForPanel(panel?: ASTPanelDef) {
     panel?.id === "staphylococcus" ||
     panel?.id === "nonfermenters" ||
     panel?.id === "streptococcus" ||
-    panel?.id === "enterococcus"
+    panel?.id === "enterococcus" ||
+    panel?.id === "haemophilus_moraxella"
   ) {
     return SECONDARY_STANDARD;
   }
