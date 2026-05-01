@@ -1,4 +1,6 @@
 import type { OperationalQueueItem as QueueItem } from "../../../logic/operationalDashboard";
+import type { TriageScored } from "../../../ai/triageWorklist.functions";
+import { TriageBucketChip } from "./TriageBucketChip";
 
 const PRIORITY_STYLE: Record<QueueItem["priority"], string> = {
   critical: "bg-destructive text-white",
@@ -9,18 +11,23 @@ const PRIORITY_STYLE: Record<QueueItem["priority"], string> = {
 
 export function OperationalQueueItem({
   item,
+  triage,
   onOpen,
 }: {
   item: QueueItem;
+  triage?: TriageScored;
   onOpen: (item: QueueItem) => void;
 }) {
   const openLabel = `Open ${item.accessionNumber ?? item.targetAccessionId} in ${item.targetSection}`;
   return (
     <tr className="hover:bg-muted/40">
       <td className="px-2 py-2 align-top">
-        <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_STYLE[item.priority]}`}>
-          {item.priority}
-        </span>
+        <div className="flex flex-col gap-1">
+          <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_STYLE[item.priority]}`}>
+            {item.priority}
+          </span>
+          {triage && <TriageBucketChip bucket={triage.bucket} rationale={triage.rationale} />}
+        </div>
       </td>
       <td className="px-2 py-2 align-top text-xs text-foreground">{item.category.replaceAll("_", " ")}</td>
       <td className="px-2 py-2 align-top text-xs">
