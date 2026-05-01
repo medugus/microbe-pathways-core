@@ -53,6 +53,7 @@ function localISO(d: Date): string {
 export function NewAccessionDialog({ open, onOpenChange }: Props) {
   const state = useMeduguState();
   const [mode, setMode] = useState<Mode>("new");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   // Build a unique-by-MRN patient list from existing accessions.
   const existingPatients = useMemo(() => {
