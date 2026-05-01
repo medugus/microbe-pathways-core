@@ -1,8 +1,20 @@
 import { useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import type { OperationalQueueItem as QueueItem } from "../../../logic/operationalDashboard";
 import { meduguActions } from "../../../store/useAccessionStore";
+import type { TriageBucket, TriageScored } from "../../../ai/triageWorklist.functions";
 import { OperationalFilters, type OperationalQueueFilter } from "./OperationalFilters";
 import { OperationalQueueItem } from "./OperationalQueueItem";
+import { TriageBatchButton } from "./TriageBatchButton";
+
+type TriageFilter = "all" | TriageBucket;
+
+const TRIAGE_FILTER_LABELS: Record<TriageFilter, string> = {
+  all: "All triage",
+  auto: "✨ Auto",
+  glance: "✨ Glance",
+  work: "✨ Work",
+};
 
 function matchesFilter(item: QueueItem, filter: OperationalQueueFilter): boolean {
   if (filter === "all") return true;
@@ -16,9 +28,30 @@ function matchesFilter(item: QueueItem, filter: OperationalQueueFilter): boolean
 
 export function OperationalPriorityQueue({ items }: { items: QueueItem[] }) {
   const [filter, setFilter] = useState<OperationalQueueFilter>("all");
+  const [triageFilter, setTriageFilter] = useState<TriageFilter>("all");
+  const [triage, setTriage] = useState<Record<string, TriageScored>>({});
+  const [triageError, setTriageError] = useState<string | null>(null);
+  const [accessionRowIds, setAccessionRowIds] = useState<Record<string, string>>({});
   const [navHint, setNavHint] = useState<string | null>(null);
 
-  const filtered = useMemo(() => items.filter((item) => matchesFilter(item, filter)), [items, filter]);
+  const moduleFiltered = useMemo(
+    () => items.filter((item) => matchesFilter(item, filter)),
+    [items, filter],
+  );
+
+  const filtered = useMemo(() => {
+    if (triageFilter === "all") return moduleFiltered;
+    return moduleFiltered.filter((it) => triage[it.id]?.bucket === triageFilter);
+  }, [moduleFiltered, triage, triageFilter]);
+
+  const triageCounts = useMemo(() => {
+    const counts: Record<TriageBucket, number> = { auto: 0, glance: 0, work: 0 };
+    for (const it of moduleFiltered) {
+      const t = triage[it.id];
+      if (t) counts[t.bucket] += 1;
+    }
+    return counts;
+  }, [moduleFiltered, triage]);
 
   function targetSectionId(item: QueueItem): string | null {
     if (item.targetSection === "IPC") return "sec-ipc";
@@ -51,6 +84,29 @@ export function OperationalPriorityQueue({ items }: { items: QueueItem[] }) {
     }, 0);
   }
 
+  async function ensureAccessionRowIds(visible: QueueItem[]): Promise<Record<string, string>> {
+    const codes = Array.from(
+      new Set(visible.map((it) => it.accessionNumber).filter((c): c is string => !!c)),
+    );
+    const missing = codes.filter((c) => !(c in accessionRowIds));
+    if (missing.length === 0) return accessionRowIds;
+    const { data } = await supabase
+      .from("accessions")
+      .select("id, accession_code")
+      .in("accession_code", missing);
+    const next = { ...accessionRowIds };
+    for (const row of data ?? []) {
+      if (row?.accession_code && row?.id) next[row.accession_code as string] = row.id as string;
+    }
+    setAccessionRowIds(next);
+    return next;
+  }
+
+  async function handleTriage() {
+    setTriageError(null);
+    return ensureAccessionRowIds(moduleFiltered);
+  }
+
   return (
     <section className="space-y-2 rounded-md border border-border bg-card p-3">
       <div className="flex items-center justify-between gap-2">
@@ -59,6 +115,52 @@ export function OperationalPriorityQueue({ items }: { items: QueueItem[] }) {
       </div>
 
       <OperationalFilters filter={filter} onChange={setFilter} />
+
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded border border-dashed border-border bg-muted/20 p-2">
+        <TriageBatchButton
+          items={moduleFiltered}
+          accessionRowIds={accessionRowIds}
+          onScored={(results) => {
+            setTriage((prev) => {
+              const next = { ...prev };
+              for (const r of results) next[r.id] = r;
+              return next;
+            });
+          }}
+          onError={(reason) => setTriageError(reason)}
+        />
+        <div className="flex flex-wrap items-center gap-1">
+          {(Object.keys(TRIAGE_FILTER_LABELS) as TriageFilter[]).map((key) => {
+            const count = key === "all" ? null : triageCounts[key];
+            const disabled = key !== "all" && count === 0;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTriageFilter(key)}
+                disabled={disabled}
+                className={`rounded border px-2 py-1 text-[11px] ${
+                  triageFilter === key
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:bg-muted"
+                } ${disabled ? "opacity-40" : ""}`}
+              >
+                {TRIAGE_FILTER_LABELS[key]}
+                {count !== null ? ` (${count})` : ""}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {triageError && (
+        <p className="rounded border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs text-destructive">
+          {triageError}
+        </p>
+      )}
+      <p className="text-[11px] text-muted-foreground">
+        ✨ AI triage scores workload only (auto / glance / work). It is not a clinical decision and never recommends therapy.
+      </p>
       {navHint && <p className="text-xs text-muted-foreground">{navHint}</p>}
 
       <div className="overflow-x-auto">
@@ -80,11 +182,22 @@ export function OperationalPriorityQueue({ items }: { items: QueueItem[] }) {
           </thead>
           <tbody className="divide-y divide-border">
             {filtered.map((item) => (
-              <OperationalQueueItem key={item.id} item={item} onOpen={handleOpen} />
+              <OperationalQueueItem
+                key={item.id}
+                item={item}
+                triage={triage[item.id]}
+                onOpen={handleOpen}
+              />
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Lazy-load row ids when the user is about to triage. We trigger this by
+          calling handleTriage from a hidden effect-like hook on first render of
+          a non-empty queue, but to keep things simple we resolve them on demand
+          inside the button via accessionRowIds prop refresh. */}
+      <button type="button" onClick={handleTriage} className="hidden" aria-hidden />
     </section>
   );
 }
