@@ -84,28 +84,36 @@ export function OperationalPriorityQueue({ items }: { items: QueueItem[] }) {
     }, 0);
   }
 
-  async function ensureAccessionRowIds(visible: QueueItem[]): Promise<Record<string, string>> {
+  const resolvedCodesRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
     const codes = Array.from(
-      new Set(visible.map((it) => it.accessionNumber).filter((c): c is string => !!c)),
+      new Set(items.map((it) => it.accessionNumber).filter((c): c is string => !!c)),
     );
-    const missing = codes.filter((c) => !(c in accessionRowIds));
-    if (missing.length === 0) return accessionRowIds;
-    const { data } = await supabase
+    const missing = codes.filter((c) => !resolvedCodesRef.current.has(c));
+    if (missing.length === 0) return;
+    let cancelled = false;
+    void supabase
       .from("accessions")
       .select("id, accession_code")
-      .in("accession_code", missing);
-    const next = { ...accessionRowIds };
-    for (const row of data ?? []) {
-      if (row?.accession_code && row?.id) next[row.accession_code as string] = row.id as string;
-    }
-    setAccessionRowIds(next);
-    return next;
-  }
-
-  async function handleTriage() {
-    setTriageError(null);
-    return ensureAccessionRowIds(moduleFiltered);
-  }
+      .in("accession_code", missing)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const next: Record<string, string> = {};
+        for (const row of data ?? []) {
+          if (row?.accession_code && row?.id) {
+            next[row.accession_code as string] = row.id as string;
+            resolvedCodesRef.current.add(row.accession_code as string);
+          }
+        }
+        if (Object.keys(next).length > 0) {
+          setAccessionRowIds((prev) => ({ ...prev, ...next }));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
 
   return (
     <section className="space-y-2 rounded-md border border-border bg-card p-3">
