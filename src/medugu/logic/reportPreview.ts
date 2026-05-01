@@ -10,8 +10,6 @@ import { evaluateIPC } from "./ipcEngine";
 import { IPC_RULES } from "../config/ipcRules";
 import { deriveIPCInternalReportNotes, getIPCReportVisibility, shouldShowIPCOnClinicianReport } from "./ipcReportGovernance";
 import { evaluateAccession } from "./astEngine";
-import { getOrganism } from "../config/organisms";
-import { findDiskBreakpoint, findMICBreakpoint } from "../config/breakpoints";
 
 export type CommentSource = "clinical" | "stewardship" | "ipc";
 
