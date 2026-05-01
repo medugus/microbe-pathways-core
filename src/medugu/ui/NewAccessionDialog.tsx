@@ -281,11 +281,8 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
           </TabsContent>
         </Tabs>
 
+        {/* Step 1 — minimal essentials always visible */}
         <div className="grid grid-cols-2 gap-3 border-t border-border pt-3">
-          <div className="space-y-1">
-            <Label htmlFor="ward">Ward / location</Label>
-            <Input id="ward" value={ward} onChange={(e) => setWard(e.target.value)} placeholder="e.g. ICU-3" />
-          </div>
           <div className="space-y-1">
             <Label htmlFor="acc">Accession number</Label>
             <div className="flex gap-2">
@@ -309,23 +306,7 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
           </div>
 
           <div className="space-y-1">
-            <Label>Priority</Label>
-            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.values(Priority).map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1">
-            <Label>Specimen family</Label>
+            <Label>Culture type</Label>
             <Select
               value={familyCode}
               onValueChange={(v) => {
@@ -346,106 +327,143 @@ export function NewAccessionDialog({ open, onOpenChange }: Props) {
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          {isBlood ? (
-            <>
-              <div className="space-y-2 col-span-2">
-                <Label>Workup preset</Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {BLOOD_PRESET_CHIPS.map((p) => {
-                    const active = bloodPreset === p.code;
-                    return (
-                      <button
-                        key={p.code}
-                        type="button"
-                        onClick={() => setBloodPreset(p.code)}
-                        className={cn(
-                          "rounded-full border px-3 py-1 text-xs transition-colors",
-                          active
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-background hover:bg-accent",
-                        )}
-                      >
-                        {p.display.split(" (")[0]}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Detailed set/site editing available in Collection Details after creation.
-                </p>
+        {/* Step 2 — collapsible advanced overrides. All fields have safe defaults
+            and are also editable in the Specimen / Collection Details section after creation. */}
+        <div className="border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((v) => !v)}
+            className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+          >
+            <span className="flex items-center gap-1.5">
+              {advancedOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+              Advanced (optional)
+            </span>
+            <span className="font-normal normal-case tracking-normal text-[11px]">
+              Defaults: now · standard workup · edit later in Collection Details
+            </span>
+          </button>
+
+          {advancedOpen && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="ward">Ward / location</Label>
+                <Input id="ward" value={ward} onChange={(e) => setWard(e.target.value)} placeholder="e.g. ICU-3" />
               </div>
 
-              <div className="space-y-2 col-span-2">
-                <Label>Source(s) <span className="text-muted-foreground font-normal">— select one or more</span></Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {BLOOD_SOURCE_CHIPS.map((s) => {
-                    const active = bloodSources.includes(s.code);
-                    return (
-                      <button
-                        key={s.code}
-                        type="button"
-                        onClick={() => {
-                          setBloodSources((prev) =>
-                            prev.includes(s.code)
-                              ? prev.filter((c) => c !== s.code)
-                              : [...prev, s.code],
-                          );
-                        }}
-                        aria-pressed={active}
-                        className={cn(
-                          "rounded-md border px-2.5 py-1 text-xs transition-colors",
-                          active
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-background hover:bg-accent",
-                        )}
-                      >
-                        {active ? "✓ " : ""}{s.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {bloodSources.length === 0 && (
-                  <p className="text-[11px] text-destructive">Select at least one source.</p>
-                )}
+              <div className="space-y-1">
+                <Label>Priority</Label>
+                <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(Priority).map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </>
-          ) : (
-            <div className="space-y-1 col-span-2">
-              <Label>Specimen subtype</Label>
-              <Select value={subtypeCode} onValueChange={setSubtypeCode}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {subtypes.map((s) => (
-                    <SelectItem key={s.code} value={s.code}>
-                      {s.display}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+              {isBlood ? (
+                <>
+                  <div className="space-y-2 col-span-2">
+                    <Label>Workup preset</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {BLOOD_PRESET_CHIPS.map((p) => {
+                        const active = bloodPreset === p.code;
+                        return (
+                          <button
+                            key={p.code}
+                            type="button"
+                            onClick={() => setBloodPreset(p.code)}
+                            className={cn(
+                              "rounded-full border px-3 py-1 text-xs transition-colors",
+                              active
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background hover:bg-accent",
+                            )}
+                          >
+                            {p.display.split(" (")[0]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 col-span-2">
+                    <Label>Source(s) <span className="text-muted-foreground font-normal">— optional at intake</span></Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {BLOOD_SOURCE_CHIPS.map((s) => {
+                        const active = bloodSources.includes(s.code);
+                        return (
+                          <button
+                            key={s.code}
+                            type="button"
+                            onClick={() => {
+                              setBloodSources((prev) =>
+                                prev.includes(s.code)
+                                  ? prev.filter((c) => c !== s.code)
+                                  : [...prev, s.code],
+                              );
+                            }}
+                            aria-pressed={active}
+                            className={cn(
+                              "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                              active
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border bg-background hover:bg-accent",
+                            )}
+                          >
+                            {active ? "✓ " : ""}{s.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-1 col-span-2">
+                  <Label>Specimen subtype</Label>
+                  <Select value={subtypeCode} onValueChange={setSubtypeCode}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subtypes.map((s) => (
+                        <SelectItem key={s.code} value={s.code}>
+                          {s.display}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <Label htmlFor="collected">Collection datetime</Label>
+                <Input
+                  id="collected"
+                  type="datetime-local"
+                  value={collectedAt}
+                  onChange={(e) => setCollectedAt(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="received">Received datetime</Label>
+                <Input
+                  id="received"
+                  type="datetime-local"
+                  value={receivedAt}
+                  onChange={(e) => setReceivedAt(e.target.value)}
+                />
+              </div>
             </div>
           )}
-
-          <div className="space-y-1">
-            <Label htmlFor="collected">Collection datetime</Label>
-            <Input
-              id="collected"
-              type="datetime-local"
-              value={collectedAt}
-              onChange={(e) => setCollectedAt(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="received">Received datetime</Label>
-            <Input
-              id="received"
-              type="datetime-local"
-              value={receivedAt}
-              onChange={(e) => setReceivedAt(e.target.value)}
-            />
-          </div>
         </div>
 
         <DialogFooter>
