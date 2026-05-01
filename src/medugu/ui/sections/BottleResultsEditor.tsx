@@ -116,15 +116,10 @@ interface Props {
   accession: Accession;
   /**
    * Optional. When provided, the editor reads/writes only that isolate's
-   * `bottleResults` (legacy per-isolate mode). When omitted, the editor
-   * operates in **accession mode**: it aggregates bottle rows across every
-   * isolate (deduped by setNo+bottleType, last-write wins) and routes new
-   * writes to whichever isolate currently owns the row — falling back to
-   * `accession.isolates[0]` for brand-new rows. Bottle facts (status,
-   * Gram stain, critical call, TTP, termination) are specimen-level rather
-   * than organism-level, so a single accession-level panel avoids the
-   * confusing N-times duplication you otherwise see when multiple isolates
-   * are present.
+  /**
+   * @deprecated Bottle results are now specimen-scoped. The `isolate` prop is
+   * accepted for backward compatibility but ignored — the editor always reads
+   * and writes via `accession.specimen.details.bottleResults`.
    */
   isolate?: Isolate;
 }
