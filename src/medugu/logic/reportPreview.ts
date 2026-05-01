@@ -337,6 +337,7 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
       pathway: profile?.gating.pathway ?? "diagnostic",
     },
     bloodSets,
+    bloodBottles: allBottles.length > 0 ? allBottles.map(projectBottle) : undefined,
     microscopySummary,
     isolates,
     comments,
