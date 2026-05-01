@@ -313,11 +313,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "CIP",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 26,
+    susceptibleMinMm: 50, resistantLessThanMm: 26,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Ciprofloxacin`,
     flags: PAER_ONLY,
-    notes: "Disk 5 µg. I≥26, R<26.",
+    notes: "Disk 5 µg. EUCAST off-scale S≥50, R<26; report I for zones ≥26. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── LVX — Levofloxacin (I/R only)
@@ -333,11 +333,11 @@ export const EUCAST_2026_PSEUDOMONAS_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "LVX",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 18,
+    susceptibleMinMm: 50, resistantLessThanMm: 18,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Levofloxacin`,
     flags: PAER_ONLY,
-    notes: "Disk 5 µg. I≥18, R<18. No 'S' category.",
+    notes: "Disk 5 µg. EUCAST off-scale S≥50, R<18; report I for zones ≥18. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── CST — Colistin (MIC only, BMD mandatory)
