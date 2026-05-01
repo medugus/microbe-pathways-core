@@ -54,6 +54,15 @@ export const ANTIBIOTICS: AntibioticDef[] = [
   { code: "CST",  display: "Colistin",              class: "polymyxin", restricted: true },
   { code: "NIT",  display: "Nitrofurantoin",        class: "nitrofuran" },
   { code: "FOS",  display: "Fosfomycin",            class: "fosfomycin" },
+  // Staphylococcus-relevant additions
+  { code: "PEN",  display: "Penicillin G",           class: "penicillin" },
+  { code: "FOX",  display: "Cefoxitin (mecA screen)", class: "cephalosporin" },
+  { code: "OXA",  display: "Oxacillin",              class: "penicillin" },
+  { code: "DOX",  display: "Doxycycline",            class: "tetracycline" },
+  { code: "RIF",  display: "Rifampicin",             class: "rifamycin", restricted: true },
+  { code: "FUS",  display: "Fusidic acid",           class: "fusidane" },
+  { code: "MUP",  display: "Mupirocin (topical)",    class: "topical" },
+  { code: "DAP",  display: "Daptomycin",             class: "lipopeptide", restricted: true },
 ];
 
 const CODE_SET = new Set(ANTIBIOTICS.map((a) => a.code));
