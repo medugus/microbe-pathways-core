@@ -305,7 +305,7 @@ export function BottleIncubationBoard({
   // wide enough to cover the longest protocol present (e.g. a mycobacterial
   // bottle next to standard aerobic/anaerobic).
   const headerMaxDays = rows.reduce(
-    (max, r) => Math.max(max, maxDaysFor(r.bottle)),
+    (max, r) => Math.max(max, maxDaysFor(r.bottle, r.result?.protocolDays)),
     0,
   );
   const headerDays = buildDayList(headerMaxDays);
