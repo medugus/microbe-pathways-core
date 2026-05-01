@@ -197,4 +197,93 @@ export const EUCAST_2026_ENTEROCOCCUS_BREAKPOINTS: EucastBreakpointRecord[] = [
     sourceTableRef: `${SRC}, Rifampicin`,
     notes: "EUCAST does not list a clinical breakpoint for RIF in Enterococcus. Combination therapy only; interpret with caution.",
   },
+
+  // ─────────────────────────────────────────── TGC — Tigecycline (E. faecalis only per EUCAST)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "enterococcus", antibioticCode: "TGC",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 0.25, resistantGreaterThanMgL: 0.5,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tigecycline`,
+    flags: { restrictedSpecies: ["enterococcus_faecalis"] },
+    notes: "MIC S≤0.25, R>0.5 (I 0.5). E. faecalis only; E. faecium not tabulated by EUCAST.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "enterococcus", antibioticCode: "TGC",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 18, resistantLessThanMm: 15,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tigecycline`,
+    flags: { restrictedSpecies: ["enterococcus_faecalis"] },
+    notes: "Disk 15 µg. S≥18, R<15. E. faecalis only.",
+  },
+
+  // ─────────────────────────────────────────── CHL — Chloramphenicol (no EUCAST clinical BP)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "enterococcus", antibioticCode: "CHL",
+    method: "mic", indication: "general",
+    interpretationCategories: ["ND"], breakpointStatus: "needs_validation",
+    sourceTableRef: `${SRC}, Chloramphenicol`,
+    notes: "EUCAST does not provide clinical breakpoints for CHL in Enterococcus. Use locally validated criteria or refer to CLSI.",
+  },
+
+  // ─────────────────────────────────────────── HLG — High-level Gentamicin synergy screen
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "enterococcus", antibioticCode: "HLG",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 128, resistantGreaterThanMgL: 128,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Gentamicin (high-level synergy)`,
+    flags: { screeningOnly: true },
+    notes: "Synergy screen. MIC ≤128 mg/L = synergy possible (reported S); >128 = HLAR (no synergy with cell-wall agent).",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "enterococcus", antibioticCode: "HLG",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 8, resistantLessThanMm: 8,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Gentamicin (high-level synergy)`,
+    flags: { screeningOnly: true },
+    notes: "Disk 30 µg gentamicin (high-content). S≥8 mm = synergy possible; <8 mm = HLAR.",
+  },
+
+  // ─────────────────────────────────────────── HLS — High-level Streptomycin synergy screen
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "enterococcus", antibioticCode: "HLS",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 512, resistantGreaterThanMgL: 512,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Streptomycin (high-level synergy)`,
+    flags: { screeningOnly: true },
+    notes: "Synergy screen. MIC ≤512 mg/L = synergy possible; >512 = HLSR (no synergy with cell-wall agent).",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "enterococcus", antibioticCode: "HLS",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 14, resistantLessThanMm: 14,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Streptomycin (high-level synergy)`,
+    flags: { screeningOnly: true },
+    notes: "Disk 300 µg streptomycin (high-content). S≥14 mm = synergy possible; <14 mm = HLSR.",
+  },
+
+  // ─────────────────────────────────────────── QDA — Quinupristin/dalfopristin (E. faecium only)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "enterococcus", antibioticCode: "QDA",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 4,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Quinupristin-dalfopristin`,
+    flags: { restrictedSpecies: ["enterococcus_faecium"] },
+    notes: "MIC S≤1, R>4 (I 2–4). E. faecium only; E. faecalis intrinsically resistant.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "enterococcus", antibioticCode: "QDA",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 22, resistantLessThanMm: 19,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Quinupristin-dalfopristin`,
+    flags: { restrictedSpecies: ["enterococcus_faecium"] },
+    notes: "Disk 15 µg. S≥22, R<19. E. faecium only.",
+  },
 ];
