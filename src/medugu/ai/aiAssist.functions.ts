@@ -32,16 +32,27 @@ const DEFAULT_MODEL = "google/gemini-3-flash-preview";
 
 /** Tasks currently allowed through the AI assist surface. Add new tasks here
  *  only after a regulatory review of that surface. */
-const ALLOWED_TASKS = ["amendment_reason_polish"] as const;
+const ALLOWED_TASKS = [
+  "amendment_reason_polish",
+  "ams_request_reason_polish",
+] as const;
 type AssistTask = (typeof ALLOWED_TASKS)[number];
 
-/** Per-task system prompts. Kept on the server so the client cannot tamper. */
+/** Per-task system prompts. Kept on the server so the client cannot tamper.
+ *  Each prompt is constrained to LANGUAGE POLISHING only — never recommend,
+ *  diagnose, or invent clinical content. */
 const SYSTEM_PROMPTS: Record<AssistTask, string> = {
   amendment_reason_polish:
     "You are a clinical laboratory documentation assistant. The user is writing the REASON for amending a previously released microbiology report. " +
     "Rewrite their draft as ONE concise, professional sentence (max 30 words) suitable for an immutable audit record. " +
     "Preserve every clinical fact and identifier exactly as written — do not invent organisms, antibiotics, susceptibilities, dates, or patient details. " +
     "Do not add interpretation, recommendations, or clinical advice. Output the rewritten sentence only, with no preamble, quotes, or markdown.",
+  ams_request_reason_polish:
+    "You are a clinical documentation assistant for an antimicrobial stewardship workflow. The user is writing the JUSTIFICATION for requesting approval to use a restricted antibiotic. " +
+    "Rewrite their draft as ONE concise, professional sentence (max 35 words) suitable for an audited stewardship request. " +
+    "Preserve every clinical fact, organism, antibiotic name, dose, duration, and identifier exactly as written — do not invent or change any of them. " +
+    "Do NOT recommend antibiotics, alternative regimens, susceptibilities, dosing, or clinical actions. Do not add interpretation or advice beyond the user's own words. " +
+    "Output the rewritten sentence only, with no preamble, quotes, or markdown.",
 };
 
 export interface AiAssistResult {
