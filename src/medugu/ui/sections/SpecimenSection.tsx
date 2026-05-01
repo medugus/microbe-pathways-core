@@ -6,24 +6,6 @@ import { resolveSpecimen } from "../../logic/specimenResolver";
 import { getFamily } from "../../config/specimenFamilies";
 import { SpecimenFieldsForm } from "./SpecimenFieldsForm";
 
-const FIELD_LABELS: Record<string, string> = {
-  setCount: "Set count",
-  bottleType: "Bottle type",
-  drawSite: "Draw site",
-  drawTime: "Draw time",
-  contaminationContext: "Contamination context",
-  neonatalWeight: "Neonatal weight (g)",
-  collectionMethodNote: "Collection method note",
-  catheterInSituDays: "Catheter in-situ (days)",
-  contaminationNotes: "Contamination notes",
-  ventilatorStatus: "Ventilator status",
-  specimenVolumeMl: "Specimen volume (mL)",
-  anatomicSite: "Anatomic site",
-  imageGuidance: "Image guidance",
-  drainSiteDays: "Drain in-situ (days)",
-  screenRound: "Screen round",
-  priorPositive: "Prior positive",
-};
 
 function Pill({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "warn" | "alert" | "ok" }) {
   const cls =
