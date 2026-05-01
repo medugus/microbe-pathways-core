@@ -35,13 +35,26 @@ export interface ReportASTRow {
   releaseClass?: string;
   aware?: string;
   phenotypeFlags?: string[];
-  /** Active breakpoint cutoffs used to derive S/I/R, if any matched. */
+  /**
+   * Active breakpoint cutoffs used to derive S/I/R, sourced from governed AST
+   * row state (breakpointKey + indicationUsed + breakpointFlags). Never
+   * recomputed by the report layer.
+   */
   breakpoint?: {
     standard: string;
-    summary: string; // e.g. "S≥17 / R≤13 mm" or "S≤1 / R≥4 mg/L"
-    susceptible?: number;
-    resistant?: number;
-    unit: "mm" | "mg/L";
+    summary: string; // e.g. "S≥17 / R≤13 mm" or "S≤1 / R≥4 mg/L" — or "(governed)" when raw value not present
+    breakpointKey?: string;
+    indicationUsed?: string;
+    source?: string;
+    flags?: {
+      bracketed?: boolean;
+      screeningOnly?: boolean;
+      restrictedSpecies?: string[];
+      meningitisOnly?: boolean;
+      urinaryOnly?: boolean;
+      oralOnly?: boolean;
+    };
+    speciesViolation?: boolean;
   };
 }
 
