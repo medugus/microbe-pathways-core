@@ -9,7 +9,7 @@ export interface OrganismDef {
     display: string;
     gram: GramClass;
     /** Coarse taxonomic group used by future expert rules. */
-  group?: "enterobacterales" | "non_fermenter" | "staphylococcus" | "streptococcus" | "enterococcus" | "candida" | "other";
+  group?: "enterobacterales" | "non_fermenter" | "staphylococcus" | "streptococcus" | "enterococcus" | "candida" | "fastidious" | "other";
     /** Marks alert organisms for IPC engine hooks. */
   alert?: boolean;
     /** Common skin commensal — used for blood culture contamination scaffolding. */
@@ -35,6 +35,9 @@ export const ORGANISMS: OrganismDef[] = [
   { code: "SVIR",  display: "Viridans group streptococci",      gram: "gram_positive", group: "streptococcus" },
   { code: "EFAE",  display: "Enterococcus faecalis",           gram: "gram_positive", group: "enterococcus" },
   { code: "EFAM",  display: "Enterococcus faecium",            gram: "gram_positive", group: "enterococcus", alert: true },
+  { code: "HINF",  display: "Haemophilus influenzae",           gram: "gram_negative", group: "fastidious" },
+  { code: "HPAR",  display: "Haemophilus parainfluenzae",       gram: "gram_negative", group: "fastidious" },
+  { code: "MCAT",  display: "Moraxella catarrhalis",            gram: "gram_negative", group: "fastidious" },
   { code: "CALB",  display: "Candida albicans",                gram: "yeast",         group: "candida" },
   { code: "CGLA",  display: "Candida glabrata",                gram: "yeast",         group: "candida", alert: true },
   { code: "CAUR",  display: "Candida auris",                   gram: "yeast",         group: "candida", alert: true },
