@@ -3,6 +3,9 @@ import { AMSApprovalCard } from "./AMSApprovalCard";
 
 interface AMSApprovalQueueProps {
   accession: Accession;
+  /** Cloud row id, when the case has been hydrated. Forwarded to cards so the
+   *  AI assist surface (audited) can attach to the correct tenant. */
+  accessionRowId?: string | null;
   restrictedRows: ASTResult[];
   requestNote: Record<string, string>;
   decisionNote: Record<string, string>;
@@ -14,6 +17,7 @@ interface AMSApprovalQueueProps {
 
 export function AMSApprovalQueue({
   accession,
+  accessionRowId,
   restrictedRows,
   requestNote,
   decisionNote,
@@ -32,6 +36,7 @@ export function AMSApprovalQueue({
         <AMSApprovalCard
           key={row.id}
           accession={accession}
+          accessionRowId={accessionRowId}
           row={row}
           requestNote={requestNote[row.id] ?? ""}
           decisionNote={decisionNote}
