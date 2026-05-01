@@ -196,6 +196,33 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
     persist(next);
   }
 
+  function upsertGram(
+    setNo: number,
+    bottleType: string,
+    row: BloodBottleResult | undefined,
+    patch: Partial<BottleGramStain>,
+  ) {
+    const current: BottleGramStain = row?.gramStain ?? { result: "" };
+    const next = { ...current, ...patch };
+    upsert(setNo, bottleType, { gramStain: next });
+  }
+
+  function upsertCall(
+    setNo: number,
+    bottleType: string,
+    row: BloodBottleResult | undefined,
+    patch: Partial<BottleCriticalCall>,
+  ) {
+    const current: BottleCriticalCall = row?.criticalCall ?? {
+      calledBy: "",
+      calledTo: "",
+      calledAt: "",
+      readBack: false,
+    };
+    const next = { ...current, ...patch };
+    upsert(setNo, bottleType, { criticalCall: next });
+  }
+
   function linkedOrganisms(setNo: number, bottleType: string): string[] {
     return accession.isolates
       .filter((iso) =>
