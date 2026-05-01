@@ -19,6 +19,10 @@ function awareChip(aware: string | undefined): { label: string; tone: string } {
 
 interface AMSApprovalCardProps {
   accession: Accession;
+  /** Cloud row id; required for the AI assist surface to be enabled (audit
+   *  events are tenant-scoped to the accession). When null, the polish
+   *  button is disabled with an explanatory tooltip. */
+  accessionRowId?: string | null;
   row: ASTResult;
   requestNote: string;
   decisionNote: Record<string, string>;
@@ -30,6 +34,7 @@ interface AMSApprovalCardProps {
 
 export function AMSApprovalCard({
   accession,
+  accessionRowId,
   row,
   requestNote,
   decisionNote,
