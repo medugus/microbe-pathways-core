@@ -3,6 +3,7 @@
 // No tab-only navigation — sections are collapsible but always reachable.
 
 import { CaseManager } from "./CaseManager";
+import { CommandPalette } from "./CommandPalette";
 import { ContextBar } from "./ContextBar";
 import { SectionRail } from "./SectionRail";
 import { SectionPanel } from "./SectionPanel";
@@ -54,6 +55,7 @@ export function AppShell() {
   return (
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-[minmax(220px,22vw)_1fr] bg-background text-foreground">
       <SoundTriggerGate />
+      <CommandPalette />
       <CaseManager />
 
       <main className="flex min-h-screen min-w-0 flex-col overflow-hidden">
@@ -72,6 +74,7 @@ export function AppShell() {
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2 text-[11px] uppercase">
+                <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] normal-case text-muted-foreground md:inline">⌘K</kbd>
                 <SoundAckChip />
                 <Link
                   to="/settings/sounds"
