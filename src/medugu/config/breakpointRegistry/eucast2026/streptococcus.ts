@@ -64,14 +64,15 @@ export const EUCAST_2026_STREPTOCOCCUS_BREAKPOINTS: EucastBreakpointRecord[] = [
     notes: "Standard IV (1.2 g x4/day): MIC S≤0.5, I=1-2, R>2.",
   },
   // ─── PEN — oral (phenoxymethylpenicillin)
+  // EUCAST v16.0: Note¹ — no numeric MIC breakpoint. Use IV PEN MIC categorisation;
+  // route choice is clinical. Surface as not_applicable so the engine refers users to IV breakpoints.
   {
     ...EUCAST_2026_METADATA, organismGroup: "streptococcus", antibioticCode: "PEN",
     method: "mic", indication: "oral",
-    susceptibleMaxMgL: 0.06, resistantGreaterThanMgL: 2,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, S. pneumoniae, Penicillin V (oral)`,
+    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
+    sourceTableRef: `${SRC}, S. pneumoniae, Phenoxymethylpenicillin (Note 1)`,
     flags: SPNE_ONLY,
-    notes: "Oral penicillin V: MIC S≤0.06, I=0.125-2, R>2.",
+    notes: "EUCAST v16.0: phenoxymethylpenicillin has no numeric breakpoint (Note 1). Categorise from IV PEN MIC rows.",
   },
   // ─── PEN — disk (oxacillin 1µg screen)
   {

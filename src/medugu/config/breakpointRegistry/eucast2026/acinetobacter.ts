@@ -103,31 +103,31 @@ export const EUCAST_2026_ACINETOBACTER_BREAKPOINTS: EucastBreakpointRecord[] = [
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "LVX",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 19,
+    susceptibleMinMm: 999, resistantLessThanMm: 20,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Levofloxacin`,
     flags: ABAU_ONLY,
-    notes: "Disk 5 µg. I≥19, R<19.",
+    notes: "Disk 5 µg. EUCAST v16.0: I≥20, R<20.",
   },
 
-  // ─────────────────────────────────────────── AMK — Amikacin (S/I/R)
+  // ─────────────────────────────────────────── AMK — Amikacin (I/R only per v16.0)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "AMK",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 8, resistantGreaterThanMgL: 16,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Amikacin`,
+    susceptibleMaxMgL: 8, resistantGreaterThanMgL: 8,
+    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Amikacin (systemic)`,
     flags: ABAU_ONLY,
-    notes: "MIC S≤8, I=16, R>16.",
+    notes: "EUCAST v16.0 systemic: bracketed I≤(8), R>(8). No 'S' category.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "AMK",
     method: "disk", indication: "general",
-    susceptibleMinMm: 18, resistantLessThanMm: 15,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Amikacin`,
+    susceptibleMinMm: 999, resistantLessThanMm: 19,
+    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Amikacin (systemic)`,
     flags: ABAU_ONLY,
-    notes: "Disk 30 µg. S≥18, R<15.",
+    notes: "Disk 30 µg. EUCAST v16.0 systemic: bracketed I≥(19), R<(19). No 'S' category.",
   },
 
   // ─────────────────────────────────────────── GEN — Gentamicin (IE per EUCAST v16.0)
