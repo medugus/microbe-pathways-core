@@ -325,7 +325,11 @@ export function findDuplicateBreakpointKeys(
     if ((r.breakpointStatus ?? "active") !== "active") continue;
     // Composite key includes standard so CLSI + EUCAST rows for the same
     // (group, drug, method, indication) are not falsely flagged as duplicates.
-    const k = `${r.standard}|${makeBreakpointKey(r.organismGroup, r.antibioticCode, r.method, r.indication)}`;
+    // Also include restrictedSpecies so two species-restricted rows sharing
+    // the same organismGroup (e.g. PAER vs ABAU under "non_fermenter") are
+    // treated as distinct.
+    const speciesKey = (r.flags?.restrictedSpecies ?? []).slice().sort().join(",") || "*";
+    const k = `${r.standard}|${makeBreakpointKey(r.organismGroup, r.antibioticCode, r.method, r.indication)}|${speciesKey}`;
     seen.set(k, (seen.get(k) ?? 0) + 1);
   }
   return Array.from(seen.entries()).filter(([, n]) => n > 1).map(([k]) => k);
