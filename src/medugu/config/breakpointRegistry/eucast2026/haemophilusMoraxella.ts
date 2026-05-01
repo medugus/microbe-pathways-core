@@ -277,11 +277,10 @@ export const EUCAST_2026_HAEMOPHILUS_MORAXELLA_BREAKPOINTS: EucastBreakpointReco
     notes: "EUCAST: insufficient evidence — no S/I/R breakpoints.",
   },
 
-  // H. parainfluenzae specific note: same numeric breakpoints as HINF where
-  // applicable (covered by HAEM_ALL). No separate HPAR-only rows required
-  // beyond the shared set above.
-  // Reference for HPAR scope:
-  void HPAR_ONLY,
+  // H. parainfluenzae uses the same numeric breakpoints as H. influenzae
+  // where applicable (covered by HAEM_ALL above); HPAR_ONLY is reserved for
+  // future HPAR-specific rows. (referenced: HPAR_ONLY)
+
 
   // ═══════════════════════════════════════════════════════════════════════
   // Moraxella catarrhalis (MCAT)
