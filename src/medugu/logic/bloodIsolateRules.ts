@@ -55,25 +55,21 @@ export function hasContaminantIsolate(accession: Accession): boolean {
   );
 }
 
-/** Positive (setNo, bottleType) pairs across all isolates' bottleResults. */
+/** Positive (setNo, bottleType) pairs from accession-level bottle results. */
 export function listPositiveBottles(accession: Accession): BloodSourceLink[] {
   const seen = new Map<string, BloodSourceLink>();
-  for (const iso of accession.isolates) {
-    for (const r of iso.bottleResults ?? []) {
-      if (r.growth === "growth") {
-        const key = `${r.setNo}|${r.bottleType}`;
-        if (!seen.has(key)) seen.set(key, { setNo: r.setNo, bottleType: r.bottleType });
-      }
+  for (const r of getBottleResults(accession)) {
+    if (isPositiveBottle(r)) {
+      const key = `${r.setNo}|${r.bottleType}`;
+      if (!seen.has(key)) seen.set(key, { setNo: r.setNo, bottleType: r.bottleType });
     }
   }
   return [...seen.values()].sort((a, b) => a.setNo - b.setNo || a.bottleType.localeCompare(b.bottleType));
 }
 
-/** True when the accession has any positive bottle recorded on any isolate. */
+/** True when the accession has any positive bottle recorded. */
 export function hasAnyPositiveBottle(accession: Accession): boolean {
-  return accession.isolates.some((i) =>
-    (i.bottleResults ?? []).some((r) => r.growth === "growth"),
-  );
+  return getBottleResults(accession).some(isPositiveBottle);
 }
 
 export interface BloodIsolateValidationIssue {
