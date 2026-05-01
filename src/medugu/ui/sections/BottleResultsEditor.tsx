@@ -115,8 +115,6 @@ interface SetRow {
 interface Props {
   accession: Accession;
   /**
-   * Optional. When provided, the editor reads/writes only that isolate's
-  /**
    * @deprecated Bottle results are now specimen-scoped. The `isolate` prop is
    * accepted for backward compatibility but ignored — the editor always reads
    * and writes via `accession.specimen.details.bottleResults`.

@@ -439,9 +439,13 @@ export function deriveOperationalQueueItems(
       }
     }
 
+    const warningCodeCounts = new Map<string, number>();
     for (const warning of validation.warnings) {
+      const seenCount = warningCodeCounts.get(warning.code) ?? 0;
+      warningCodeCounts.set(warning.code, seenCount + 1);
+      const idSuffix = seenCount === 0 ? "" : `:${seenCount}`;
       pushItem(queue, {
-        id: `${accession.id}:validation-warning:${warning.code}`,
+        id: `${accession.id}:validation-warning:${warning.code}${idSuffix}`,
         accessionId: accession.id,
         accessionNumber: accession.accessionNumber,
         patientLabel: toPatientLabel(accession),
