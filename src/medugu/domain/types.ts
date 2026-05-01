@@ -158,16 +158,80 @@ export interface BloodSourceLink {
 
 export type BottleGrowthState = "growth" | "no_growth" | "pending";
 
+/**
+ * Bottle lifecycle status (Epic Beaker-style discrete state machine).
+ *   received          → bottle accessioned at the lab, not yet on instrument
+ *   loaded            → placed on continuous-monitoring instrument (BACTEC/BacT-Alert)
+ *   incubating        → actively monitored, no flag
+ *   flagged_positive  → instrument has flagged growth; awaits Gram + subculture
+ *   removed           → unloaded after positive flag (workup in progress)
+ *   terminal_negative → completed full incubation window with no flag
+ *   discontinued      → pulled before terminal end (clinician request, lab error, contam call)
+ */
+export type BottleLifecycleStatus =
+  | "received"
+  | "loaded"
+  | "incubating"
+  | "flagged_positive"
+  | "removed"
+  | "terminal_negative"
+  | "discontinued";
+
+export type BottleTerminationReason =
+  | "no_growth_complete"
+  | "clinician_request"
+  | "contaminated"
+  | "lab_error"
+  | "broken_bottle"
+  | "other";
+
 export interface BloodBottleResult {
   /** 1-based set number, matches Specimen.details.sets[idx].setNo. */
   setNo: number;
   /** Bottle type code (AEROBIC, ANAEROBIC, MYCOLOGY, ...). */
   bottleType: string;
+  /**
+   * Legacy/derived high-level growth call. Kept for backward compatibility with
+   * downstream engines (worklist, export, isolate rules). Auto-derived from
+   * `status` when present: flagged_positive/removed → "growth";
+   * terminal_negative → "no_growth"; everything else → "pending".
+   */
   growth: BottleGrowthState;
+  /**
+   * Discrete bottle lifecycle status (Beaker-style). Optional for backward
+   * compatibility; when absent the UI renders status from `growth`.
+   */
+  status?: BottleLifecycleStatus;
+  /** ISO timestamp the lab received the bottle (pre-load). */
+  receivedAt?: string;
+  /** ISO timestamp the bottle was loaded onto the instrument. */
+  loadedAt?: string;
+  /** ISO timestamp the bottle was unloaded (post-flag or post-terminal). */
+  unloadedAt?: string;
+  /** ISO timestamp the bottle was finalised (negative or discontinued). */
+  terminatedAt?: string;
+  /** Why the bottle was discontinued/terminated (when applicable). */
+  terminationReason?: BottleTerminationReason;
+  /** Per-bottle protocol override in days (e.g. extended-incubation request). */
+  protocolDays?: number;
+  /** Instrument identifier (e.g. BACTEC FX 1). */
+  instrumentId?: string;
+  /** Rack/cell coordinate on the instrument (e.g. "A12"). */
+  instrumentCell?: string;
   /** ISO timestamp the bottle flagged positive (only when growth === "growth"). */
   positiveAt?: string;
-  /** Computed time-to-positivity in hours (positiveAt − set.drawTime). */
+  /**
+   * Time-to-positivity in hours. Beaker convention: positiveAt − loadedAt
+   * (instrument time-on-bottle). Falls back to positiveAt − drawTime when
+   * loadedAt is missing — see drawToPositiveHours for the pre-analytic-inclusive
+   * value.
+   */
   ttpHours?: number;
+  /**
+   * Pre-analytic-inclusive elapsed hours (positiveAt − set.drawTime). Useful
+   * for sepsis / collection-to-positive QA, distinct from instrument TTP.
+   */
+  drawToPositiveHours?: number;
 }
 
 // ---------- AST ----------
