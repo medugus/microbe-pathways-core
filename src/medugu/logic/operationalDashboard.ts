@@ -131,11 +131,8 @@ function isSterileSite(accession: Accession): boolean {
 
 function hasPositiveBloodCulture(accession: Accession): boolean {
   if (accession.specimen.familyCode !== "BLOOD") return false;
-  return accession.isolates.some(
-    (iso) =>
-      iso.organismCode !== "NOGRO" ||
-      (iso.bottleResults ?? []).some((bottle) => bottle.growth === "growth"),
-  );
+  if (accession.isolates.some((iso) => iso.organismCode !== "NOGRO")) return true;
+  return getBottleResults(accession).some(isPositiveBottle);
 }
 
 function hasSignificantResult(accession: Accession): boolean {
