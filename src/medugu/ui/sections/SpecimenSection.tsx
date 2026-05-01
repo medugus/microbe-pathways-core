@@ -66,24 +66,24 @@ export function SpecimenSection() {
 
   return (
     <div className="space-y-5">
-      {/* Coded identity */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Family</div>
-          <div className="font-mono text-sm text-foreground">{family?.display ?? familyCode}</div>
-        </div>
-        <div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Subtype</div>
-          <div className="font-mono text-sm text-foreground">{p.displayName}</div>
-        </div>
-        <div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Container</div>
-          <div className="font-mono text-sm text-foreground">{containerCode ?? "—"}</div>
-        </div>
-        <div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Label (display)</div>
-          <div className="text-sm text-foreground">{freeTextLabel ?? "—"}</div>
-        </div>
+      {/* Compact identity summary — full coded fields were captured at intake.
+          Avoids re-stating Family / Subtype / Container as a duplicate panel. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+        <span className="font-medium text-foreground">{family?.display ?? familyCode}</span>
+        <span className="text-muted-foreground">›</span>
+        <span className="text-foreground">{p.displayName}</span>
+        {containerCode && (
+          <>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-xs text-muted-foreground">container <span className="font-mono">{containerCode}</span></span>
+          </>
+        )}
+        {freeTextLabel && (
+          <>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-xs text-muted-foreground italic">"{freeTextLabel}"</span>
+          </>
+        )}
       </div>
 
       {/* Resolved badges */}
