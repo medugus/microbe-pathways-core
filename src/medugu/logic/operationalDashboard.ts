@@ -5,6 +5,7 @@ import { deriveColonisationContext, isColonisationScreen } from "./ipcColonisati
 import { deriveLocalOutbreakWatch } from "./ipcLocalWatch";
 import { approvalStatusForRow, isRestrictedRow, latestApprovalForRow } from "./amsEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
+import { getBottleResults, isPositiveBottle } from "./bloodBottles";
 
 export type OperationalQueueCategory =
   | "critical_result"
