@@ -105,6 +105,16 @@ export const EUCAST_2026_ENTEROBACTERALES_BREAKPOINTS: EucastBreakpointRecord[] 
     flags: { restrictedSpecies: CXM_LIMITED_SPECIES },
     notes: "Limited species (E. coli, Klebsiella, P. mirabilis).",
   },
+  // IV disk (off-scale S — same as MIC S≤0.001)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "enterobacterales", antibioticCode: "CXM",
+    method: "disk", indication: "iv",
+    susceptibleMinMm: 50, resistantLessThanMm: 19,
+    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Cefuroxime IV, limited species`,
+    flags: { restrictedSpecies: CXM_LIMITED_SPECIES },
+    notes: "Disk 30 µg. EUCAST v16.0 off-scale S≥(50), R<19. Limited species (E. coli, Klebsiella, P. mirabilis).",
+  },
   // Oral UTI
   {
     ...EUCAST_2026_METADATA, organismGroup: "enterobacterales", antibioticCode: "CXM",
