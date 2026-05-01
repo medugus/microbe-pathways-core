@@ -12,8 +12,53 @@
 
 import { useMemo } from "react";
 import { meduguActions } from "../../store/useAccessionStore";
-import type { Accession, BloodBottleResult, BottleGrowthState, Isolate } from "../../domain/types";
+import type {
+  Accession,
+  BloodBottleResult,
+  BottleGrowthState,
+  BottleLifecycleStatus,
+  BottleTerminationReason,
+  Isolate,
+} from "../../domain/types";
 import { BottleIncubationBoard } from "./BottleIncubationBoard";
+
+const STATUS_LABEL: Record<BottleLifecycleStatus, string> = {
+  received: "Received",
+  loaded: "Loaded",
+  incubating: "Incubating",
+  flagged_positive: "Flagged +",
+  removed: "Removed",
+  terminal_negative: "No growth",
+  discontinued: "Discontinued",
+};
+
+const STATUS_OPTIONS: BottleLifecycleStatus[] = [
+  "received",
+  "loaded",
+  "incubating",
+  "flagged_positive",
+  "removed",
+  "terminal_negative",
+  "discontinued",
+];
+
+const TERMINATION_OPTIONS: { value: BottleTerminationReason; label: string }[] = [
+  { value: "no_growth_complete", label: "No growth — full window" },
+  { value: "clinician_request", label: "Clinician request" },
+  { value: "contaminated", label: "Contaminated / discard" },
+  { value: "lab_error", label: "Lab error" },
+  { value: "broken_bottle", label: "Broken bottle" },
+  { value: "other", label: "Other" },
+];
+
+/** Map lifecycle status → legacy growth field so downstream engines keep working. */
+function deriveGrowth(status: BottleLifecycleStatus | undefined, fallback: BottleGrowthState): BottleGrowthState {
+  if (!status) return fallback;
+  if (status === "flagged_positive" || status === "removed") return "growth";
+  if (status === "terminal_negative") return "no_growth";
+  if (status === "discontinued") return "no_growth";
+  return "pending";
+}
 
 const BOTTLE_LABEL: Record<string, string> = {
   AEROBIC: "Aerobic",
