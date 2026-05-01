@@ -24,6 +24,21 @@ const BOTTLE_LABEL: Record<string, string> = {
   ISOLATOR: "Isolator",
 };
 
+// Bench-conventional ordering: anaerobic → aerobic → paeds → specialty.
+// Mirrors BottleIncubationBoard so rows align across views.
+const BOTTLE_SORT_RANK: Record<string, number> = {
+  ANAEROBIC: 0,
+  AEROBIC: 1,
+  PAEDIATRIC: 2,
+  MYCOLOGY: 3,
+  MYCOBACTERIAL: 4,
+  ISOLATOR: 5,
+};
+
+function bottleSortKey(bottle: string): number {
+  return BOTTLE_SORT_RANK[bottle] ?? 99;
+}
+
 interface SetRow {
   setNo: number;
   drawSite: string;
@@ -89,7 +104,12 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
     }
     const next = existing.filter((r) => !(r.setNo === setNo && r.bottleType === bottleType));
     next.push(merged);
-    next.sort((a, b) => a.setNo - b.setNo || a.bottleType.localeCompare(b.bottleType));
+    next.sort(
+      (a, b) =>
+        a.setNo - b.setNo ||
+        bottleSortKey(a.bottleType) - bottleSortKey(b.bottleType) ||
+        a.bottleType.localeCompare(b.bottleType),
+    );
     persist(next);
   }
 
@@ -134,7 +154,9 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
           </thead>
           <tbody>
             {sets.flatMap((set) =>
-              set.bottleTypes.map((bottle) => {
+              [...set.bottleTypes]
+                .sort((a, b) => bottleSortKey(a) - bottleSortKey(b))
+                .map((bottle) => {
                 const row = findRow(set.setNo, bottle);
                 const growth = row?.growth ?? "pending";
                 const linked = linkedOrganisms(set.setNo, bottle);
@@ -204,8 +226,13 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
   );
 }
 
+const LINE_DRAW_SITES_BR = new Set([
+  "CENTRAL_LINE", "PICC", "HICKMAN", "BROVIAC", "GROSHONG",
+  "PORTACATH", "DIALYSIS_CATHETER", "ARTERIAL_LINE", "UMBILICAL",
+]);
+
 function isLineSet(sets: SetRow[], setNo: number): boolean {
   const s = sets.find((x) => x.setNo === setNo);
   if (!s) return false;
-  return s.drawSite === "CENTRAL_LINE" || s.drawSite === "PORTACATH" || s.drawSite === "ARTERIAL_LINE";
+  return LINE_DRAW_SITES_BR.has(s.drawSite);
 }

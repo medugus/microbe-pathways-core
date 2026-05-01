@@ -36,12 +36,23 @@ const DRAW_SITES = [
   { code: "PERIPHERAL_LEFT", display: "Peripheral — left arm" },
   { code: "PERIPHERAL_RIGHT", display: "Peripheral — right arm" },
   { code: "PERIPHERAL_OTHER", display: "Peripheral — other" },
-  { code: "CENTRAL_LINE", display: "Central line" },
-  { code: "ARTERIAL_LINE", display: "Arterial line" },
   { code: "PERIPHERAL_CANNULA", display: "Peripheral cannula" },
-  { code: "PORTACATH", display: "Portacath" },
   { code: "FEMORAL", display: "Femoral" },
+  { code: "ARTERIAL_LINE", display: "Arterial line" },
+  { code: "CENTRAL_LINE", display: "Central line (non-tunnelled)" },
+  { code: "PICC", display: "PICC line" },
+  { code: "HICKMAN", display: "Hickman (tunnelled)" },
+  { code: "BROVIAC", display: "Broviac (tunnelled, paeds)" },
+  { code: "GROSHONG", display: "Groshong (tunnelled)" },
+  { code: "PORTACATH", display: "Portacath / implanted port" },
+  { code: "DIALYSIS_CATHETER", display: "Dialysis catheter" },
+  { code: "UMBILICAL", display: "Umbilical (neonatal)" },
 ];
+
+const LINE_DRAW_SITES = new Set([
+  "CENTRAL_LINE", "PICC", "HICKMAN", "BROVIAC", "GROSHONG",
+  "PORTACATH", "DIALYSIS_CATHETER", "ARTERIAL_LINE", "UMBILICAL",
+]);
 
 export interface BloodSet {
   id: string;
@@ -202,8 +213,7 @@ export function BloodSetsForm({ accession }: Props) {
         )}
 
         {sets.map((s, idx) => {
-          const isLine =
-            s.drawSite === "CENTRAL_LINE" || s.drawSite === "PORTACATH" || s.drawSite === "ARTERIAL_LINE";
+          const isLine = LINE_DRAW_SITES.has(s.drawSite);
           const setNo = idx + 1;
           const errs = setErrorMap[setNo] ?? {};
           const hasError = !!(errs.drawSite || errs.bottles || errs.drawTime);
