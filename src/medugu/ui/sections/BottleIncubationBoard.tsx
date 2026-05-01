@@ -66,9 +66,12 @@ interface BoardSetRow {
 interface BoardBottleResult {
   setNo: number;
   bottleType: string;
-  growth: string; // "pending" | "growth" | "no_growth"
+  growth: string; // legacy: "pending" | "growth" | "no_growth"
+  status?: string; // lifecycle: received|loaded|incubating|flagged_positive|removed|terminal_negative|discontinued
   positiveAt?: string;
   ttpHours?: number;
+  loadedAt?: string;
+  protocolDays?: number;
 }
 
 interface BottleIncubationBoardProps {
