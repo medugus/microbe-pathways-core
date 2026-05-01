@@ -178,4 +178,135 @@ export const EUCAST_2026_STAPHYLOCOCCUS_BREAKPOINTS: EucastBreakpointRecord[] = 
     sourceTableRef: `${SRC}, Linezolid`,
     notes: "Disk 10 µg. S≥21, R<21.",
   },
+
+  // ─────────────────────────────────────────── PEN — Penicillin G
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "PEN",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 0.125, resistantGreaterThanMgL: 0.125,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Benzylpenicillin`,
+    notes: "MIC S≤0.125, R>0.125. Confirm β-lactamase negativity (zone-edge / nitrocefin) before reporting S.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "PEN",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 26, resistantLessThanMm: 26,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Benzylpenicillin`,
+    notes: "Disk 1 unit. S≥26 AND sharp zone edge negative for β-lactamase; R<26 or fuzzy edge.",
+  },
+
+  // ─────────────────────────────────────────── FOX — Cefoxitin (mecA / mecC surrogate)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "FOX",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 4, resistantGreaterThanMgL: 4,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Cefoxitin screen (S. aureus)`,
+    notes: "MIC S≤4, R>4. Surrogate for mecA/mecC. R = MRSA — report all β-lactams (except anti-MRSA cephalosporins) as R.",
+    flags: { restrictedSpecies: ["SAUR"] },
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "FOX",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 22, resistantLessThanMm: 22,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Cefoxitin screen (S. aureus)`,
+    notes: "Disk 30 µg. S≥22, R<22. Surrogate for mecA/mecC. R = MRSA.",
+    flags: { restrictedSpecies: ["SAUR"] },
+  },
+
+  // ─────────────────────────────────────────── OXA — Oxacillin (MIC only for S. aureus; cefoxitin preferred)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "OXA",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 2, resistantGreaterThanMgL: 2,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Oxacillin (S. aureus)`,
+    notes: "MIC S≤2, R>2. Cefoxitin (FOX) is preferred surrogate. Disk diffusion not recommended for S. aureus.",
+    flags: { restrictedSpecies: ["SAUR"] },
+  },
+
+  // ─────────────────────────────────────────── DOX — Doxycycline
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "DOX",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 2,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Doxycycline`,
+    notes: "MIC S≤1, R>2 (I 1<x≤2). Tetracycline-S can be used to infer DOX activity in many cases.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "DOX",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 22, resistantLessThanMm: 19,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Doxycycline`,
+    notes: "Disk 30 µg. S≥22, R<19 (I 19–21).",
+  },
+
+  // ─────────────────────────────────────────── RIF — Rifampicin
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "RIF",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 0.06, resistantGreaterThanMgL: 0.5,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Rifampicin`,
+    notes: "MIC S≤0.06, R>0.5 (I 0.06<x≤0.5). Never use as monotherapy — combination only.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "RIF",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 26, resistantLessThanMm: 23,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Rifampicin`,
+    notes: "Disk 5 µg. S≥26, R<23 (I 23–25). Combination therapy only.",
+  },
+
+  // ─────────────────────────────────────────── FUS — Fusidic acid
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "FUS",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 1,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Fusidic acid`,
+    notes: "MIC S≤1, R>1. Combination therapy advised to prevent on-treatment resistance.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "FUS",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 24, resistantLessThanMm: 24,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Fusidic acid`,
+    notes: "Disk 10 µg. S≥24, R<24.",
+  },
+
+  // ─────────────────────────────────────────── MUP — Mupirocin (topical, decolonisation)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "MUP",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 256,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Mupirocin`,
+    notes: "MIC S≤1, R>256 (low-level R 1<x≤256). Topical use; decolonisation context only.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "MUP",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 30, resistantLessThanMm: 18,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Mupirocin`,
+    notes: "Disk 200 µg. S≥30, R<18 (I 18–29 = low-level resistance).",
+  },
+
+  // ─────────────────────────────────────────── DAP — Daptomycin (MIC only)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "DAP",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 1,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Daptomycin`,
+    notes: "MIC S≤1, R>1. MIC method required (no disk diffusion). Do NOT use for pneumonia (inactivated by surfactant).",
+  },
 ];
