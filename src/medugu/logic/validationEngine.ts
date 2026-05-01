@@ -203,38 +203,35 @@ export function runValidation(accession: Accession): ValidationReport {
 
     // Beaker-style gating: every flagged_positive / removed bottle must have a
     // direct-from-bottle Gram stain AND a documented critical call before
-    // release. Walks every isolate's bottleResults regardless of source link.
-    for (const iso of accession.isolates) {
-      for (const b of iso.bottleResults ?? []) {
-        const isPositive = b.status === "flagged_positive" || b.status === "removed" || b.growth === "growth";
-        if (!isPositive) continue;
-        const tag = `set ${b.setNo} ${b.bottleType.toLowerCase()}`;
-        if (!b.gramStain || !b.gramStain.result) {
-          issues.push(
-            block(
-              `BC_BOTTLE_GRAM_MISSING_${b.setNo}_${b.bottleType}`,
-              "isolate",
-              `Positive blood culture bottle (${tag}) requires a direct-from-bottle Gram stain before release.`,
-            ),
-          );
-        }
-        if (!b.criticalCall || !b.criticalCall.calledAt || !b.criticalCall.calledTo) {
-          issues.push(
-            block(
-              `BC_BOTTLE_CRITCALL_MISSING_${b.setNo}_${b.bottleType}`,
-              "isolate",
-              `Positive blood culture bottle (${tag}) requires a documented critical call (clinician contacted, time, read-back) before release.`,
-            ),
-          );
-        } else if (!b.criticalCall.readBack) {
-          issues.push(
-            warn(
-              `BC_BOTTLE_CRITCALL_NO_READBACK_${b.setNo}_${b.bottleType}`,
-              "isolate",
-              `Critical call for ${tag} recorded without read-back acknowledgement — confirm clinician understood the result.`,
-            ),
-          );
-        }
+    // release. Walks specimen-level bottle rows (single source of truth).
+    for (const b of getBottleResults(accession)) {
+      if (!isPositiveBottle(b)) continue;
+      const tag = `set ${b.setNo} ${b.bottleType.toLowerCase()}`;
+      if (!b.gramStain || !b.gramStain.result) {
+        issues.push(
+          block(
+            `BC_BOTTLE_GRAM_MISSING_${b.setNo}_${b.bottleType}`,
+            "isolate",
+            `Positive blood culture bottle (${tag}) requires a direct-from-bottle Gram stain before release.`,
+          ),
+        );
+      }
+      if (!b.criticalCall || !b.criticalCall.calledAt || !b.criticalCall.calledTo) {
+        issues.push(
+          block(
+            `BC_BOTTLE_CRITCALL_MISSING_${b.setNo}_${b.bottleType}`,
+            "isolate",
+            `Positive blood culture bottle (${tag}) requires a documented critical call (clinician contacted, time, read-back) before release.`,
+          ),
+        );
+      } else if (!b.criticalCall.readBack) {
+        issues.push(
+          warn(
+            `BC_BOTTLE_CRITCALL_NO_READBACK_${b.setNo}_${b.bottleType}`,
+            "isolate",
+            `Critical call for ${tag} recorded without read-back acknowledgement — confirm clinician understood the result.`,
+          ),
+        );
       }
     }
   }
