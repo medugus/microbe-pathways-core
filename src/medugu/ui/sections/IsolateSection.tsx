@@ -288,16 +288,11 @@ export function IsolateSection() {
                   </div>
                 )}
 
-                {showBcLinkage && (
-                  <details className="mt-3 rounded border border-border bg-background/50 p-2 text-xs" open>
-                    <summary className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Per-set / per-bottle growth
-                    </summary>
-                    <div className="mt-2">
-                      <BottleResultsEditor accession={accession} isolate={i} />
-                    </div>
-                  </details>
-                )}
+                {/* Per-bottle growth tracking is rendered ONCE per accession,
+                    above the isolate list — bottle facts (status, Gram,
+                    critical call, TTP) are specimen-level and don't repeat
+                    per organism. See <BottleResultsEditor accession={...} />
+                    rendered above. */}
               </li>
             );
           })}
