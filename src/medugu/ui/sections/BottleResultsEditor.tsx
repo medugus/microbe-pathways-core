@@ -228,7 +228,20 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
       merged.terminatedAt = new Date().toISOString();
     }
 
-    const next = existing.filter((r) => !(r.setNo === setNo && r.bottleType === bottleType));
+    const isoId = ownerIsolateId(setNo, bottleType);
+    if (!isoId) {
+      // No carrier isolate available (accession mode with zero isolates).
+      // Silently no-op rather than crash; the UI gates editing behind an
+      // explicit hint when this happens.
+      return;
+    }
+    // Build the next bottleResults array for the OWNING isolate only,
+    // so accession-mode writes don't accidentally fan out across isolates.
+    const ownerIso = accession.isolates.find((i) => i.id === isoId);
+    const ownerExisting = ownerIso?.bottleResults ?? [];
+    const next = ownerExisting.filter(
+      (r) => !(r.setNo === setNo && r.bottleType === bottleType),
+    );
     next.push(merged);
     next.sort(
       (a, b) =>
@@ -236,7 +249,7 @@ export function BottleResultsEditor({ accession, isolate }: Props) {
         bottleSortKey(a.bottleType) - bottleSortKey(b.bottleType) ||
         a.bottleType.localeCompare(b.bottleType),
     );
-    persist(next);
+    persistFor(isoId, next);
   }
 
   function upsertGram(
