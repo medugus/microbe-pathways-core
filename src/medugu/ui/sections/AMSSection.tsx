@@ -173,6 +173,7 @@ export function AMSSection() {
 
       <AMSApprovalQueue
         accession={currentAccession}
+        accessionRowId={accessionRowId}
         restrictedRows={restrictedRows}
         requestNote={requestNote}
         decisionNote={decisionNote}
