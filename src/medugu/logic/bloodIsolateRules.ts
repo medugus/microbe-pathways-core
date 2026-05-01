@@ -11,6 +11,7 @@
 // and downstream engines do not duplicate business logic.
 
 import type { Accession, BloodSourceLink, Isolate } from "../domain/types";
+import { getBottleResults, isPositiveBottle } from "./bloodBottles";
 
 export const BC_MAX_ISOLATES = 3;
 export const BC_SOFT_LIMIT = 2;
