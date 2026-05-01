@@ -91,6 +91,14 @@ const REQUESTED_NAME_TO_CODE: Record<string, string> = {
   colistin: "CST",
   nitrofurantoin: "NIT",
   fosfomycin: "FOS",
+  penicillin: "PEN",
+  cefoxitin: "FOX",
+  oxacillin: "OXA",
+  doxycycline: "DOX",
+  rifampicin: "RIF",
+  "fusidic acid": "FUS",
+  mupirocin: "MUP",
+  daptomycin: "DAP",
 };
 
 export interface ASTPanelDef {
