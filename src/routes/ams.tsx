@@ -1,17 +1,20 @@
 // AMS queue dashboard — tenant-wide pending restricted-drug approvals.
 //
-// Browser-phase only:
-// - actor identity is a manual placeholder
-// - no real notification transport
-// - SLA / overdue badges are informational hints, not enforcement
-// - no production role-gating yet (RequireAuth only checks signed-in)
+// Workflow is real (not a visibility flag):
+//   - Approver identity is the signed-in profile + tenant role.
+//   - Approve / Deny are gated to ams_pharmacist | consultant | admin.
+//   - Denial requires a structured denial reason code.
+//   - On mount we sweep SLAs (escalate overdue, expire past-grace).
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RequireAuth } from "@/auth/RequireAuth";
 import { meduguActions, useMeduguState } from "../medugu/store/useAccessionStore";
 import { buildAMSQueue } from "../medugu/logic/amsEngine";
 import { getAntibiotic } from "../medugu/config/antibiotics";
+import { AMS_DENIAL_REASONS, getDenialReason } from "../medugu/config/amsDenialReasons";
+import { useAMSActor } from "../medugu/store/useAMSActor";
+import type { AMSDenialReasonCode } from "../medugu/domain/types";
 
 export const Route = createFileRoute("/ams")({
   component: AMSQueuePage,
@@ -28,8 +31,15 @@ function AMSQueuePage() {
 function AMSQueueInner() {
   const state = useMeduguState();
   const navigate = useNavigate();
-  const [actor, setActor] = useState("AMS pharmacist");
+  const actor = useAMSActor();
   const [noteByReq, setNoteByReq] = useState<Record<string, string>>({});
+  const [denialByReq, setDenialByReq] = useState<Record<string, AMSDenialReasonCode>>({});
+  const [sweepResult, setSweepResult] = useState<{ escalated: number; expired: number } | null>(null);
+
+  useEffect(() => {
+    const r = meduguActions.sweepAMSSlas(actor.label);
+    if (r.escalated || r.expired) setSweepResult(r);
+  }, [actor.label]);
 
   const queue = useMemo(() => buildAMSQueue(state.accessions), [state.accessions]);
 
@@ -38,12 +48,25 @@ function AMSQueueInner() {
     requestId: string,
     status: "approved" | "denied",
   ) {
+    if (status === "denied" && !denialByReq[requestId]) return;
     meduguActions.decideAMSApproval(accessionId, requestId, {
       status,
-      actor,
+      actor: actor.label,
+      actorUserId: actor.userId,
+      actorRole: actor.role,
       note: noteByReq[requestId]?.trim() || undefined,
+      denialReasonCode: status === "denied" ? denialByReq[requestId] : undefined,
     });
     setNoteByReq((s) => ({ ...s, [requestId]: "" }));
+    setDenialByReq((s) => {
+      const next = { ...s };
+      delete next[requestId];
+      return next;
+    });
+  }
+
+  function runSweep() {
+    setSweepResult(meduguActions.sweepAMSSlas(actor.label));
   }
 
   function openAccession(accessionCode: string) {
@@ -70,27 +93,38 @@ function AMSQueueInner() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-4 p-6">
-        <div className="callout callout-warning text-[11px]">
-          Browser-phase AMS workflow — actor is a manual placeholder, no external
-          notifications are delivered, SLA values are informational only, and
-          production role enforcement is out of scope for this stage.
-        </div>
-
-        <div className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-card p-3">
-          <label className="text-xs">
-            <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-              Actor (placeholder)
-            </span>
-            <input
-              value={actor}
-              onChange={(e) => setActor(e.target.value)}
-              className="mt-1 w-56 rounded border border-border bg-background px-2 py-1.5 text-sm"
-            />
-          </label>
-          <span className="text-[11px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-card p-3 text-xs">
+          <span className="text-muted-foreground uppercase tracking-wide text-[10px]">
+            Approver
+          </span>
+          <span className="font-medium text-foreground">{actor.label}</span>
+          {actor.role ? (
+            <span className="chip chip-square chip-neutral">{actor.role}</span>
+          ) : (
+            <span className="chip chip-square chip-warning">no tenant role</span>
+          )}
+          {actor.canApprove ? (
+            <span className="chip chip-square chip-success">may approve</span>
+          ) : (
+            <span className="chip chip-square chip-neutral">read-only</span>
+          )}
+          <span className="ml-auto text-[11px] text-muted-foreground">
             {queue.length} pending request(s)
           </span>
+          <button
+            type="button"
+            onClick={runSweep}
+            className="rounded border border-border px-2 py-1 hover:bg-muted"
+          >
+            Run SLA sweep
+          </button>
         </div>
+
+        {sweepResult ? (
+          <div className="callout callout-info text-[11px]">
+            SLA sweep: {sweepResult.escalated} escalated · {sweepResult.expired} expired.
+          </div>
+        ) : null}
 
         {queue.length === 0 ? (
           <p className="rounded-md border border-border bg-card p-6 text-center text-sm text-muted-foreground">
@@ -100,6 +134,7 @@ function AMSQueueInner() {
           <ul className="space-y-2">
             {queue.map((item) => {
               const ab = getAntibiotic(item.request.antibioticCode);
+              const denial = getDenialReason(item.request.denialReasonCode);
               return (
                 <li key={item.request.id} className="rounded-md border border-border bg-card p-3">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -119,6 +154,9 @@ function AMSQueueInner() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {item.request.escalated ? (
+                        <span className="chip chip-square chip-danger uppercase">ESCALATED</span>
+                      ) : null}
                       {item.overdue ? (
                         <span className="chip chip-square chip-danger uppercase">
                           OVERDUE
@@ -143,10 +181,15 @@ function AMSQueueInner() {
                       <div>
                         Requested by{" "}
                         <span className="text-foreground">{item.request.requested.actor}</span>
+                        {item.request.requested.actorRole ? (
+                          <span className="ml-1 chip chip-square chip-neutral">
+                            {item.request.requested.actorRole}
+                          </span>
+                        ) : null}
                         {" · "}
                         {new Date(item.request.requested.at).toLocaleString()}
-                        {item.request.requested.note && (
-                          <div className="italic">"{item.request.requested.note}"</div>
+                        {item.request.clinicalJustification && (
+                          <div className="italic">"{item.request.clinicalJustification}"</div>
                         )}
                       </div>
                     )}
@@ -165,6 +208,9 @@ function AMSQueueInner() {
                         )}
                       </div>
                     )}
+                    {denial ? (
+                      <div>Last denial reason: <span className="chip chip-square chip-danger">{denial.label}</span></div>
+                    ) : null}
                   </div>
 
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -175,18 +221,39 @@ function AMSQueueInner() {
                       }
                       placeholder="Decision note (optional)"
                       className="flex-1 min-w-[200px] rounded border border-border bg-background px-2 py-1 text-xs"
+                      disabled={!actor.canApprove}
                     />
+                    <select
+                      value={denialByReq[item.request.id] ?? ""}
+                      onChange={(e) =>
+                        setDenialByReq((s) => ({
+                          ...s,
+                          [item.request.id]: e.target.value as AMSDenialReasonCode,
+                        }))
+                      }
+                      disabled={!actor.canApprove}
+                      className="rounded border border-border bg-background px-2 py-1 text-xs"
+                      aria-label="Denial reason"
+                    >
+                      <option value="">Denial reason…</option>
+                      {AMS_DENIAL_REASONS.map((r) => (
+                        <option key={r.code} value={r.code}>{r.label}</option>
+                      ))}
+                    </select>
                     <button
                       type="button"
                       onClick={() => decide(item.accessionId, item.request.id, "approved")}
-                      className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90"
+                      disabled={!actor.canApprove}
+                      className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Approve
                     </button>
                     <button
                       type="button"
                       onClick={() => decide(item.accessionId, item.request.id, "denied")}
-                      className="rounded bg-destructive px-3 py-1 text-xs font-medium text-destructive-foreground hover:opacity-90"
+                      disabled={!actor.canApprove || !denialByReq[item.request.id]}
+                      className="rounded bg-destructive px-3 py-1 text-xs font-medium text-destructive-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                      title={!denialByReq[item.request.id] ? "Pick a denial reason" : undefined}
                     >
                       Deny
                     </button>
