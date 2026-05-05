@@ -41,4 +41,5 @@ export const meduguActions = {
   decideAMSApproval: accessionStore.decideAMSApproval,
   expireAMSApproval: accessionStore.expireAMSApproval,
   escalateAMSApproval: accessionStore.escalateAMSApproval,
+  sweepAMSSlas: accessionStore.sweepAMSSlas.bind(accessionStore),
 };
