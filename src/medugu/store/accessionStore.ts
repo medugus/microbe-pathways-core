@@ -571,6 +571,12 @@ export const accessionStore = {
     req: AMSApprovalRequest,
     actor = "local",
   ) {
+    // Hard guard — clinical justification is mandatory in production workflow.
+    if (!(req.clinicalJustification ?? req.requested?.note ?? "").trim()) {
+      // eslint-disable-next-line no-console
+      console.warn("[medugu] AMS request rejected: justification required");
+      return;
+    }
     mutate(accessionId, (a) => {
       const list = [...(a.amsApprovals ?? []), req];
       return appendAudit(
@@ -585,7 +591,8 @@ export const accessionStore = {
             antibioticCode: req.antibioticCode,
             dueBy: req.dueBy,
             requestedBy: req.requested?.actor,
-            note: req.requested?.note,
+            requesterRole: req.requested?.actorRole,
+            justification: req.clinicalJustification ?? req.requested?.note,
           },
         },
         { entity: "stewardship", entityId: req.id },
