@@ -1,16 +1,18 @@
-import type { Accession, ASTResult } from "../../domain/types";
+import type { Accession, AMSDenialReasonCode, ASTResult } from "../../domain/types";
 import { AMSApprovalCard } from "./AMSApprovalCard";
 
 interface AMSApprovalQueueProps {
   accession: Accession;
-  /** Cloud row id, when the case has been hydrated. Forwarded to cards so the
-   *  AI assist surface (audited) can attach to the correct tenant. */
   accessionRowId?: string | null;
   restrictedRows: ASTResult[];
   requestNote: Record<string, string>;
   decisionNote: Record<string, string>;
+  denialCode: Record<string, AMSDenialReasonCode>;
+  canRequest: boolean;
+  canApprove: boolean;
   onRequestNoteChange: (rowId: string, value: string) => void;
   onDecisionNoteChange: (requestId: string, value: string) => void;
+  onDenialCodeChange: (requestId: string, value: AMSDenialReasonCode) => void;
   onRequest: (row: ASTResult) => void;
   onDecide: (requestId: string, status: "approved" | "denied") => void;
 }
@@ -21,8 +23,12 @@ export function AMSApprovalQueue({
   restrictedRows,
   requestNote,
   decisionNote,
+  denialCode,
+  canRequest,
+  canApprove,
   onRequestNoteChange,
   onDecisionNoteChange,
+  onDenialCodeChange,
   onRequest,
   onDecide,
 }: AMSApprovalQueueProps) {
@@ -40,8 +46,12 @@ export function AMSApprovalQueue({
           row={row}
           requestNote={requestNote[row.id] ?? ""}
           decisionNote={decisionNote}
+          denialCode={denialCode}
+          canRequest={canRequest}
+          canApprove={canApprove}
           onRequestNoteChange={(value) => onRequestNoteChange(row.id, value)}
           onDecisionNoteChange={onDecisionNoteChange}
+          onDenialCodeChange={onDenialCodeChange}
           onRequest={onRequest}
           onDecide={onDecide}
         />

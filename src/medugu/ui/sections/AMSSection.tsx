@@ -1,19 +1,31 @@
 // AMSSection — per-accession AMS restricted-drug approval workspace.
-// Browser-phase only: manual actor placeholder, no real notification
-// transport, no production SLA enforcement. Workflow logic remains in
-// logic/amsEngine.ts + logic/stewardshipEngine.ts.
+//
+// Real workflow (no longer a visibility flag):
+//   - Actor identity comes from the signed-in profile + tenant role
+//     (lab_tech/microbiologist may file requests; ams_pharmacist/consultant/
+//     admin may approve or deny). Buttons are role-gated.
+//   - Requests require a non-empty clinical justification.
+//   - Denials require a structured denial reason code.
+//   - Pending requests past dueBy auto-escalate; past 48h grace they expire.
+//   - Every action is written to the durable, tenant-scoped audit_event table
+//     via the store's appendAudit pipeline, with auth.uid() attached.
 
-import { useMemo, useState } from "react";
-import { AMS_BROWSER_PHASE_WARNING, AMS_POLICY } from "../../config/amsConfig";
+import { useEffect, useMemo, useState } from "react";
+import { AMS_POLICY } from "../../config/amsConfig";
 import { AMS_RULES } from "../../config/stewardshipRules";
 import { newId } from "../../domain/ids";
-import type { AMSApprovalRequest, ASTResult } from "../../domain/types";
-import { approvalStatusForRow, computeDueBy, findExpirableRequestIds, isRestrictedRow } from "../../logic/amsEngine";
+import type { AMSApprovalRequest, AMSDenialReasonCode, ASTResult } from "../../domain/types";
+import {
+  approvalStatusForRow,
+  computeDueBy,
+  isRestrictedRow,
+} from "../../logic/amsEngine";
 import { getRuleForAMSRecommendation } from "../../logic/amsRuleGovernance";
 import { resolveSpecimen } from "../../logic/specimenResolver";
 import { evaluateAMSRecommendation, evaluateStewardship } from "../../logic/stewardshipEngine";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
 import { useAccessionRowId } from "../../store/useAccessionRowId";
+import { useAMSActor } from "../../store/useAMSActor";
 import { AMSApprovalQueue } from "./AMSApprovalQueue";
 import { AMSRecommendationCard } from "./ams/AMSRecommendationCard";
 import { AMSRuleGovernancePanel } from "./ams/AMSRuleGovernancePanel";
@@ -22,9 +34,16 @@ import { AMSSummaryStrip } from "./ams/AMSSummaryStrip";
 export function AMSSection() {
   const accession = useActiveAccession();
   const accessionRowId = useAccessionRowId(accession?.accessionNumber ?? null);
-  const [actor, setActor] = useState("AMS pharmacist");
+  const actor = useAMSActor();
   const [requestNote, setRequestNote] = useState<Record<string, string>>({});
   const [decisionNote, setDecisionNote] = useState<Record<string, string>>({});
+  const [denialCode, setDenialCode] = useState<Record<string, AMSDenialReasonCode>>({});
+
+  // Sweep SLAs once per mount so escalations and expirations show up
+  // when the workspace is opened.
+  useEffect(() => {
+    meduguActions.sweepAMSSlas(actor.label);
+  }, [actor.label]);
 
   if (!accession) {
     return (
@@ -85,6 +104,8 @@ export function AMSSection() {
   };
 
   function request(row: ASTResult) {
+    const justification = (requestNote[row.id] ?? "").trim();
+    if (!justification) return; // guarded in store too
     const at = new Date().toISOString();
     const req: AMSApprovalRequest = {
       id: newId("ams"),
@@ -93,54 +114,71 @@ export function AMSSection() {
       antibioticCode: row.antibioticCode,
       status: "pending",
       dueBy: computeDueBy(row.antibioticCode, at),
-      requested: { at, actor, note: requestNote[row.id]?.trim() || undefined },
+      clinicalJustification: justification,
+      requested: {
+        at,
+        actor: actor.label,
+        actorUserId: actor.userId ?? undefined,
+        actorRole: actor.role ?? undefined,
+        note: justification,
+      },
     };
-    meduguActions.requestAMSApproval(currentAccession.id, req, actor);
+    meduguActions.requestAMSApproval(currentAccession.id, req, actor.label);
     setRequestNote((s) => ({ ...s, [row.id]: "" }));
   }
 
   function decide(reqId: string, status: "approved" | "denied") {
+    if (status === "denied" && !denialCode[reqId]) return;
     meduguActions.decideAMSApproval(currentAccession.id, reqId, {
       status,
-      actor,
+      actor: actor.label,
+      actorUserId: actor.userId,
+      actorRole: actor.role,
       note: decisionNote[reqId]?.trim() || undefined,
+      denialReasonCode: status === "denied" ? denialCode[reqId] : undefined,
     });
     setDecisionNote((s) => ({ ...s, [reqId]: "" }));
+    setDenialCode((s) => {
+      const next = { ...s };
+      delete next[reqId];
+      return next;
+    });
   }
 
-  function expirePending() {
-    const ids = findExpirableRequestIds(currentAccession);
-    for (const id of ids) meduguActions.expireAMSApproval(currentAccession.id, id, actor);
+  function runSweep() {
+    meduguActions.sweepAMSSlas(actor.label);
   }
 
   return (
     <div className="space-y-4">
-      <div className="callout callout-warning text-[11px]">{AMS_BROWSER_PHASE_WARNING}</div>
-
       <AMSSummaryStrip counts={summary} />
 
       <AMSRuleGovernancePanel linkedRuleCodes={recommendationRows.map((entry) => entry.governanceRuleCode)} />
 
-      <div className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-background p-3">
-        <label className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-            Actor (placeholder)
-          </span>
-          <input
-            value={actor}
-            onChange={(e) => setActor(e.target.value)}
-            className="mt-1 w-56 rounded border border-border bg-card px-2 py-1.5 text-sm"
-          />
-        </label>
+      <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-background p-3 text-xs">
+        <span className="text-muted-foreground uppercase tracking-wide text-[10px]">
+          Approver identity
+        </span>
+        <span className="font-medium text-foreground">{actor.label}</span>
+        {actor.role ? (
+          <span className="chip chip-square chip-neutral">{actor.role}</span>
+        ) : (
+          <span className="chip chip-square chip-warning">no tenant role</span>
+        )}
+        {actor.canApprove ? (
+          <span className="chip chip-square chip-success">may approve</span>
+        ) : (
+          <span className="chip chip-square chip-neutral">read-only</span>
+        )}
         <button
           type="button"
-          onClick={expirePending}
-          className="rounded border border-border px-3 py-1.5 text-xs hover:bg-muted"
+          onClick={runSweep}
+          className="ml-auto rounded border border-border px-3 py-1.5 hover:bg-muted"
         >
-          Expire overdue requests
+          Run SLA sweep
         </button>
         <span className="text-[11px] text-muted-foreground">
-          SLA: {AMS_POLICY.defaultSlaHours}h (Watch) · {AMS_POLICY.reserveSlaHours}h (Reserve)
+          SLA: {AMS_POLICY.defaultSlaHours}h (Watch) · {AMS_POLICY.reserveSlaHours}h (Reserve) · {AMS_POLICY.expiryGraceHours}h grace
         </span>
       </div>
 
@@ -177,8 +215,14 @@ export function AMSSection() {
         restrictedRows={restrictedRows}
         requestNote={requestNote}
         decisionNote={decisionNote}
+        denialCode={denialCode}
+        canRequest={actor.canRequest}
+        canApprove={actor.canApprove}
         onRequestNoteChange={(rowId, value) => setRequestNote((s) => ({ ...s, [rowId]: value }))}
         onDecisionNoteChange={(requestId, value) => setDecisionNote((s) => ({ ...s, [requestId]: value }))}
+        onDenialCodeChange={(requestId, value) =>
+          setDenialCode((s) => ({ ...s, [requestId]: value }))
+        }
         onRequest={request}
         onDecide={decide}
       />
