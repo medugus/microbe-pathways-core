@@ -4,6 +4,7 @@
 import type {
   Accession,
   AMSApprovalRequest,
+  AMSDenialReasonCode,
   ASTResult,
   AuditEvent,
   Isolate,
@@ -595,18 +596,33 @@ export const accessionStore = {
   decideAMSApproval(
     accessionId: string,
     requestId: string,
-    decision: { status: "approved" | "denied"; actor: string; note?: string },
+    decision: {
+      status: "approved" | "denied";
+      actor: string;
+      actorUserId?: string | null;
+      actorRole?: string | null;
+      note?: string;
+      denialReasonCode?: AMSDenialReasonCode;
+    },
   ) {
     mutate(accessionId, (a) => {
       const list = a.amsApprovals ?? [];
       const before = list.find((r) => r.id === requestId);
       if (!before) return a;
+      if (decision.status === "denied" && !decision.denialReasonCode) {
+        // Hard guard — denial without a structured reason is rejected.
+        return a;
+      }
       const after: AMSApprovalRequest = {
         ...before,
         status: decision.status,
+        denialReasonCode:
+          decision.status === "denied" ? decision.denialReasonCode : before.denialReasonCode,
         decided: {
           at: new Date().toISOString(),
           actor: decision.actor,
+          actorUserId: decision.actorUserId ?? undefined,
+          actorRole: decision.actorRole ?? undefined,
           note: decision.note,
         },
       };
@@ -621,7 +637,12 @@ export const accessionStore = {
           section: "stewardship",
           field: `amsApprovals[${before.antibioticCode}]`,
           oldValue: { status: before.status },
-          newValue: { status: after.status, note: decision.note },
+          newValue: {
+            status: after.status,
+            note: decision.note,
+            denialReasonCode: after.denialReasonCode,
+            actorRole: decision.actorRole,
+          },
           reason: decision.note,
         },
         { entity: "stewardship", entityId: requestId },
@@ -671,7 +692,11 @@ export const accessionStore = {
       const list = a.amsApprovals ?? [];
       const before = list.find((r) => r.id === requestId);
       if (!before || before.escalated) return a;
-      const after: AMSApprovalRequest = { ...before, escalated: true };
+      const after: AMSApprovalRequest = {
+        ...before,
+        escalated: true,
+        escalatedAt: new Date().toISOString(),
+      };
       return appendAudit(
         {
           ...a,
@@ -682,11 +707,38 @@ export const accessionStore = {
           action: "ams.escalated",
           section: "stewardship",
           field: `amsApprovals[${before.antibioticCode}]`,
-          newValue: { escalated: true },
+          newValue: { escalated: true, escalatedAt: after.escalatedAt },
           reason: note,
         },
         { entity: "stewardship", entityId: requestId },
       );
     });
+  },
+
+  /**
+   * Sweep all accessions and:
+   *   - mark any pending request whose dueBy is in the past as escalated
+   *   - mark any pending request past the expiry grace window as expired
+   * Returns counts for telemetry / UI feedback.
+   */
+  sweepAMSSlas(actor = "system"): { escalated: number; expired: number } {
+    let escalated = 0;
+    let expired = 0;
+    const now = Date.now();
+    for (const a of Object.values(state.accessions)) {
+      for (const r of a.amsApprovals ?? []) {
+        if (r.status !== "pending" || !r.dueBy) continue;
+        const due = new Date(r.dueBy).getTime();
+        const ageHours = (now - due) / 3_600_000;
+        if (ageHours >= 48) {
+          this.expireAMSApproval(a.id, r.id, actor);
+          expired += 1;
+        } else if (due < now && !r.escalated) {
+          this.escalateAMSApproval(a.id, r.id, actor, "SLA elapsed");
+          escalated += 1;
+        }
+      }
+    }
+    return { escalated, expired };
   },
 };
