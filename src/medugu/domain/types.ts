@@ -483,9 +483,21 @@ export type AMSApprovalStatus =
 
 export interface AMSApprovalEvent {
   at: string;
-  actor: string;       // placeholder identity in browser-phase
+  actor: string;            // display name resolved from auth profile
+  actorUserId?: string;     // auth.uid() captured at event time
+  actorRole?: string;       // role used to authorise the action
   note?: string;
 }
+
+/** Structured denial reason codes — drives audit + analytics, not free text. */
+export type AMSDenialReasonCode =
+  | "no_clinical_indication"
+  | "alternative_available"
+  | "duration_exceeds_policy"
+  | "insufficient_justification"
+  | "duplicate_therapy"
+  | "awaiting_culture"
+  | "other";
 
 /**
  * One AMS approval request, scoped to a single AST row.
@@ -501,11 +513,17 @@ export interface AMSApprovalRequest {
   status: AMSApprovalStatus;
   /** ISO; computed from policy.slaHours at request time. */
   dueBy?: string;
+  /** Mandatory clinical justification supplied by the requester. */
+  clinicalJustification?: string;
+  /** Structured reason captured when status === "denied". */
+  denialReasonCode?: AMSDenialReasonCode;
   requested?: AMSApprovalEvent;
   decided?: AMSApprovalEvent;       // approve or deny
   expired?: AMSApprovalEvent;
-  /** True when SLA has elapsed without a decision (UI hint, not enforcement). */
+  /** True when SLA has elapsed without a decision. Auto-set by escalation sweep. */
   escalated?: boolean;
+  /** ISO timestamp of escalation. */
+  escalatedAt?: string;
 }
 
 // ---------- Accession (root aggregate) ----------
