@@ -493,3 +493,97 @@ function resolveColonisation(subtypeCode: string, display: string): ResolvedSpec
     syndrome: "colonisation_screen",
   };
 }
+
+// ---------- Stool / enteric ----------
+
+function resolveStool(subtypeCode: string, display: string): ResolvedSpecimenProfile {
+  const isCdiff = subtypeCode === "STOOL_CDIFF";
+  const isOvaParasites = subtypeCode === "STOOL_OVA_PARASITES";
+  const isOutbreak = subtypeCode === "STOOL_OUTBREAK";
+  const isRectalSwab = subtypeCode === "RECTAL_SWAB_ENTERIC";
+
+  const requiredFields: FieldKey[] = ["stoolConsistency"];
+  const optionalFields: FieldKey[] = ["travelHistory", "antibioticExposure", "contaminationNotes"];
+
+  // C. diff testing requires unformed stool documentation; rectal swabs not accepted.
+  const acceptance: AcceptanceRule = isCdiff
+    ? {
+        mode: "rejectable",
+        rejectionReasonCodes: ["STOOL_FORMED_CDIFF", "STOOL_RECTAL_SWAB_CDIFF", "STOOL_INSUFFICIENT"],
+        contaminationContextRequired: false,
+        notes: "C. difficile testing requires unformed stool; rectal swabs and formed stools are rejected.",
+      }
+    : isOvaParasites
+      ? {
+          mode: "qualified",
+          rejectionReasonCodes: ["STOOL_PRESERVATIVE_MISSING", "STOOL_INSUFFICIENT", "STOOL_DELAYED"],
+          contaminationContextRequired: false,
+          notes: "O&P examination ideally needs three serial specimens in fixative.",
+        }
+      : isRectalSwab
+        ? {
+            mode: "qualified",
+            rejectionReasonCodes: ["SWAB_DRY", "SWAB_NO_FAECAL_MATERIAL"],
+            contaminationContextRequired: false,
+            notes: "Rectal swab is suboptimal for routine enteric culture; use only when stool unobtainable.",
+          }
+        : {
+            mode: "qualified",
+            rejectionReasonCodes: ["STOOL_DELAYED", "STOOL_INSUFFICIENT", "STOOL_LEAKED"],
+            contaminationContextRequired: false,
+            notes: isOutbreak
+              ? "Outbreak / cluster screen — link to outbreak ID and notify IPC."
+              : undefined,
+          };
+
+  const microscopy: MicroscopyConfig = isOvaParasites
+    ? {
+        required: ["wetMount"],
+        optional: [],
+        structured: false,
+        gatesCulture: false,
+      }
+    : {
+        required: [],
+        optional: ["wetMount"],
+        structured: false,
+        gatesCulture: false,
+      };
+
+  const panels: WorkbenchPanelKey[] = [];
+  if (isCdiff) panels.push("stool_cdiff_panel");
+  else if (isOvaParasites) panels.push("stool_parasitology_panel");
+  else panels.push("stool_enteric_panel");
+
+  const reportSections: ReportSectionKey[] = isOvaParasites
+    ? ["microscopy", "culture"]
+    : isCdiff
+      ? ["culture"]
+      : ["culture", "ast"];
+
+  let syndrome: SyndromeCode = "infectious_diarrhoea";
+  if (isCdiff) syndrome = "cdiff_infection";
+  else if (isOvaParasites) syndrome = "intestinal_parasitosis";
+
+  return {
+    familyCode: "STOOL",
+    subtypeCode,
+    displayName: display,
+    acceptance,
+    microscopy,
+    requiredFields,
+    optionalFields,
+    reportSections,
+    workbenchPanels: panels,
+    gating: {
+      consultantReleaseRequired: false,
+      criticalCommunicationRequired: false,
+      pathway: "diagnostic",
+      clearanceTracked: false,
+    },
+    quantitative: null,
+    // Outbreak specimens get IPC alert-organism watch; otherwise none by default.
+    ipcFlagHints: isOutbreak ? ["alert_organism_watch"] : [],
+    syndrome,
+  };
+}
