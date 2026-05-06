@@ -1,7 +1,7 @@
 // Coded specimen family + subtype dictionary.
 // Framework-agnostic. Free-text labels are display-only; codes drive logic.
 
-export type FamilyCode = "BLOOD" | "URINE" | "LRT" | "STERILE_FLUID" | "COLONISATION";
+export type FamilyCode = "BLOOD" | "URINE" | "LRT" | "STERILE_FLUID" | "COLONISATION" | "STOOL";
 
 export interface SubtypeDef {
   code: string;
@@ -81,6 +81,17 @@ export const SPECIMEN_FAMILIES: FamilyDef[] = [
       { code: "COL_CRAB_SCREEN", display: "CRAB screen", tags: ["screen", "crab"] },
       { code: "COL_CRPA_SCREEN", display: "CRPA screen", tags: ["screen", "crpa"] },
       { code: "COL_CANDIDA_AURIS", display: "C. auris screen", tags: ["screen", "candida_auris"] },
+    ],
+  },
+  {
+    code: "STOOL",
+    display: "Stool / enteric",
+    subtypes: [
+      { code: "STOOL_ROUTINE", display: "Routine stool culture", tags: ["enteric_panel"] },
+      { code: "STOOL_CDIFF", display: "C. difficile testing", tags: ["enteric_panel", "cdiff"] },
+      { code: "STOOL_OVA_PARASITES", display: "Ova, cysts & parasites", tags: ["parasitology"] },
+      { code: "STOOL_OUTBREAK", display: "Outbreak / cluster screen", tags: ["enteric_panel", "outbreak"] },
+      { code: "RECTAL_SWAB_ENTERIC", display: "Rectal swab (enteric)", tags: ["enteric_panel"] },
     ],
   },
 ];
