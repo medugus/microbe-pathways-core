@@ -95,7 +95,10 @@ export type SyndromeCode =
   | "pericarditis"
   | "pd_peritonitis"
   | "abscess"
-  | "colonisation_screen";
+  | "colonisation_screen"
+  | "infectious_diarrhoea"
+  | "cdiff_infection"
+  | "intestinal_parasitosis";
 
 export type AcceptanceMode = "accept" | "qualified" | "rejectable";
 
