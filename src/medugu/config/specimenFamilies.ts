@@ -83,6 +83,17 @@ export const SPECIMEN_FAMILIES: FamilyDef[] = [
       { code: "COL_CANDIDA_AURIS", display: "C. auris screen", tags: ["screen", "candida_auris"] },
     ],
   },
+  {
+    code: "STOOL",
+    display: "Stool / enteric",
+    subtypes: [
+      { code: "STOOL_ROUTINE", display: "Routine stool culture", tags: ["enteric_panel"] },
+      { code: "STOOL_CDIFF", display: "C. difficile testing", tags: ["enteric_panel", "cdiff"] },
+      { code: "STOOL_OVA_PARASITES", display: "Ova, cysts & parasites", tags: ["parasitology"] },
+      { code: "STOOL_OUTBREAK", display: "Outbreak / cluster screen", tags: ["enteric_panel", "outbreak"] },
+      { code: "RECTAL_SWAB_ENTERIC", display: "Rectal swab (enteric)", tags: ["enteric_panel"] },
+    ],
+  },
 ];
 
 export function getFamily(code: string): FamilyDef | undefined {
