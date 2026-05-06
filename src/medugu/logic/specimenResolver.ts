@@ -68,7 +68,10 @@ export type WorkbenchPanelKey =
   | "quantitative_respiratory_panel"
   | "sterile_fluid_panel"
   | "csf_panel"
-  | "screen_panel";
+  | "screen_panel"
+  | "stool_enteric_panel"
+  | "stool_cdiff_panel"
+  | "stool_parasitology_panel";
 
 export type IPCFlagHint =
   | "alert_organism_watch"
