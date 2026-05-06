@@ -180,6 +180,8 @@ export function resolveSpecimen(
       return { ok: true, profile: resolveSterileFluid(subtypeCode, subtype.display) };
     case "COLONISATION":
       return { ok: true, profile: resolveColonisation(subtypeCode, subtype.display) };
+    case "STOOL":
+      return { ok: true, profile: resolveStool(subtypeCode, subtype.display) };
     default:
       return { ok: false, reason: "unknown_family" };
   }
