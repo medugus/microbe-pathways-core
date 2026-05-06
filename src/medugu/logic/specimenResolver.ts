@@ -32,7 +32,11 @@ export type FieldKey =
   | "drainSiteDays"
   // colonisation
   | "screenRound"
-  | "priorPositive";
+  | "priorPositive"
+  // stool
+  | "stoolConsistency"
+  | "travelHistory"
+  | "antibioticExposure";
 
 export type MicroscopyKey =
   | "gram"
