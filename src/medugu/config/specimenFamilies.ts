@@ -1,7 +1,7 @@
 // Coded specimen family + subtype dictionary.
 // Framework-agnostic. Free-text labels are display-only; codes drive logic.
 
-export type FamilyCode = "BLOOD" | "URINE" | "LRT" | "STERILE_FLUID" | "COLONISATION";
+export type FamilyCode = "BLOOD" | "URINE" | "LRT" | "STERILE_FLUID" | "COLONISATION" | "STOOL";
 
 export interface SubtypeDef {
   code: string;
