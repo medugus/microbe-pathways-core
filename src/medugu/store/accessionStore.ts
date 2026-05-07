@@ -23,7 +23,13 @@ import {
 import { newId } from "../domain/ids";
 import { loadState, saveState, SCHEMA_VERSION } from "./persistence";
 import { hydrateFromCloud, pushAccession } from "./cloudSync";
-import { recordAuditAsync, setAuditContext } from "./cloudAudit";
+import { recordAuditAsync, setAuditContext, getAuditTenantId } from "./cloudAudit";
+import {
+  pushAMSRequest,
+  pushAMSDecision,
+  pushAMSExpiry,
+  pushAMSEscalation,
+} from "./cloudAMS";
 import { evaluateCascadeForAccession } from "../logic/cascadeEngine";
 
 type Listener = () => void;
@@ -579,7 +585,7 @@ export const accessionStore = {
     }
     mutate(accessionId, (a) => {
       const list = [...(a.amsApprovals ?? []), req];
-      return appendAudit(
+      const next = appendAudit(
         { ...a, amsApprovals: list },
         {
           actor,
@@ -597,6 +603,9 @@ export const accessionStore = {
         },
         { entity: "stewardship", entityId: req.id },
       );
+      const tenantId = getAuditTenantId();
+      if (tenantId) void pushAMSRequest(tenantId, a.accessionNumber, req);
+      return next;
     });
   },
 
@@ -633,7 +642,7 @@ export const accessionStore = {
           note: decision.note,
         },
       };
-      return appendAudit(
+      const next = appendAudit(
         {
           ...a,
           amsApprovals: list.map((r) => (r.id === requestId ? after : r)),
@@ -654,6 +663,16 @@ export const accessionStore = {
         },
         { entity: "stewardship", entityId: requestId },
       );
+      const tenantId = getAuditTenantId();
+      if (tenantId) {
+        void pushAMSDecision(tenantId, requestId, {
+          status: decision.status,
+          actorRole: decision.actorRole,
+          note: decision.note,
+          denialReasonCode: decision.denialReasonCode,
+        });
+      }
+      return next;
     });
   },
 
@@ -671,7 +690,7 @@ export const accessionStore = {
         status: "expired",
         expired: { at: new Date().toISOString(), actor },
       };
-      return appendAudit(
+      const next = appendAudit(
         {
           ...a,
           amsApprovals: list.map((r) => (r.id === requestId ? after : r)),
@@ -686,6 +705,9 @@ export const accessionStore = {
         },
         { entity: "stewardship", entityId: requestId },
       );
+      const tenantId = getAuditTenantId();
+      if (tenantId) void pushAMSExpiry(tenantId, requestId);
+      return next;
     });
   },
 
@@ -704,7 +726,7 @@ export const accessionStore = {
         escalated: true,
         escalatedAt: new Date().toISOString(),
       };
-      return appendAudit(
+      const next = appendAudit(
         {
           ...a,
           amsApprovals: list.map((r) => (r.id === requestId ? after : r)),
@@ -719,6 +741,9 @@ export const accessionStore = {
         },
         { entity: "stewardship", entityId: requestId },
       );
+      const tenantId = getAuditTenantId();
+      if (tenantId) void pushAMSEscalation(tenantId, requestId);
+      return next;
     });
   },
 
