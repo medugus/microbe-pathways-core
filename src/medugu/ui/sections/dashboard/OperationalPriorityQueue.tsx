@@ -81,6 +81,22 @@ export function OperationalPriorityQueue({ items }: { items: QueueItem[] }) {
       }
       window.location.hash = sectionId;
       target.scrollIntoView({ behavior: "smooth", block: "start" });
+      setNavHint(`Jumped to ${item.targetSection}.`);
+      const HIGHLIGHT_CLASSES = [
+        "ring-2",
+        "ring-primary",
+        "ring-offset-2",
+        "ring-offset-background",
+        "animate-pulse",
+        "transition-shadow",
+      ];
+      target.classList.add(...HIGHLIGHT_CLASSES);
+      window.setTimeout(() => {
+        target.classList.remove(...HIGHLIGHT_CLASSES);
+        setNavHint((current) =>
+          current === `Jumped to ${item.targetSection}.` ? null : current,
+        );
+      }, 2200);
     }, 0);
   }
 
