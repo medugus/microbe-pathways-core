@@ -73,6 +73,87 @@ export type Database = {
           },
         ]
       }
+      ams_approvals: {
+        Row: {
+          accession_id: string
+          antibiotic_code: string
+          ast_id: string
+          clinical_justification: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decided_note: string | null
+          decided_role: string | null
+          denial_reason_code: string | null
+          due_by: string | null
+          escalated: boolean
+          escalated_at: string | null
+          expired_at: string | null
+          expired_by: string | null
+          id: string
+          isolate_id: string
+          requested_at: string
+          requested_by: string | null
+          requested_note: string | null
+          requested_role: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          accession_id: string
+          antibiotic_code: string
+          ast_id: string
+          clinical_justification?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decided_note?: string | null
+          decided_role?: string | null
+          denial_reason_code?: string | null
+          due_by?: string | null
+          escalated?: boolean
+          escalated_at?: string | null
+          expired_at?: string | null
+          expired_by?: string | null
+          id?: string
+          isolate_id: string
+          requested_at?: string
+          requested_by?: string | null
+          requested_note?: string | null
+          requested_role?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          accession_id?: string
+          antibiotic_code?: string
+          ast_id?: string
+          clinical_justification?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decided_note?: string | null
+          decided_role?: string | null
+          denial_reason_code?: string | null
+          due_by?: string | null
+          escalated?: boolean
+          escalated_at?: string | null
+          expired_at?: string | null
+          expired_by?: string | null
+          id?: string
+          isolate_id?: string
+          requested_at?: string
+          requested_by?: string | null
+          requested_note?: string | null
+          requested_role?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_event: {
         Row: {
           action: string
