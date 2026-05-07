@@ -726,7 +726,7 @@ export const accessionStore = {
         escalated: true,
         escalatedAt: new Date().toISOString(),
       };
-      return appendAudit(
+      const next = appendAudit(
         {
           ...a,
           amsApprovals: list.map((r) => (r.id === requestId ? after : r)),
@@ -741,6 +741,9 @@ export const accessionStore = {
         },
         { entity: "stewardship", entityId: requestId },
       );
+      const tenantId = getAuditTenantId();
+      if (tenantId) void pushAMSEscalation(tenantId, requestId);
+      return next;
     });
   },
 
