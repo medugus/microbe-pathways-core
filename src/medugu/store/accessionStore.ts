@@ -585,7 +585,7 @@ export const accessionStore = {
     }
     mutate(accessionId, (a) => {
       const list = [...(a.amsApprovals ?? []), req];
-      return appendAudit(
+      const next = appendAudit(
         { ...a, amsApprovals: list },
         {
           actor,
@@ -603,6 +603,9 @@ export const accessionStore = {
         },
         { entity: "stewardship", entityId: req.id },
       );
+      const tenantId = getAuditTenantId();
+      if (tenantId) void pushAMSRequest(tenantId, a.accessionNumber, req);
+      return next;
     });
   },
 
