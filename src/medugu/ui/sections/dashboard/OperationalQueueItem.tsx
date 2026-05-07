@@ -20,7 +20,11 @@ export function OperationalQueueItem({
 }) {
   const openLabel = `Open ${item.accessionNumber ?? item.targetAccessionId} in ${item.targetSection}`;
   return (
-    <tr className="hover:bg-muted/40">
+    <tr
+      className="cursor-pointer hover:bg-muted/40"
+      onDoubleClick={() => onOpen(item)}
+      title="Double-click to open"
+    >
       <td className="px-2 py-2 align-top">
         <div className="flex flex-col gap-1">
           <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_STYLE[item.priority]}`}>
