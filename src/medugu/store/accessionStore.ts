@@ -690,7 +690,7 @@ export const accessionStore = {
         status: "expired",
         expired: { at: new Date().toISOString(), actor },
       };
-      return appendAudit(
+      const next = appendAudit(
         {
           ...a,
           amsApprovals: list.map((r) => (r.id === requestId ? after : r)),
@@ -705,6 +705,9 @@ export const accessionStore = {
         },
         { entity: "stewardship", entityId: requestId },
       );
+      const tenantId = getAuditTenantId();
+      if (tenantId) void pushAMSExpiry(tenantId, requestId);
+      return next;
     });
   },
 
