@@ -642,7 +642,7 @@ export const accessionStore = {
           note: decision.note,
         },
       };
-      return appendAudit(
+      const next = appendAudit(
         {
           ...a,
           amsApprovals: list.map((r) => (r.id === requestId ? after : r)),
@@ -663,6 +663,16 @@ export const accessionStore = {
         },
         { entity: "stewardship", entityId: requestId },
       );
+      const tenantId = getAuditTenantId();
+      if (tenantId) {
+        void pushAMSDecision(tenantId, requestId, {
+          status: decision.status,
+          actorRole: decision.actorRole,
+          note: decision.note,
+          denialReasonCode: decision.denialReasonCode,
+        });
+      }
+      return next;
     });
   },
 
