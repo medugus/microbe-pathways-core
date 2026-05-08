@@ -228,40 +228,32 @@ export const EUCAST_2026_STAPHYLOCOCCUS_BREAKPOINTS: EucastBreakpointRecord[] = 
     flags: { restrictedSpecies: ["SAUR"] },
   },
 
-  // ─────────────────────────────────────────── DOX — Doxycycline
+  // ─────────────────────────────────────────── DOX — Doxycycline (MIC only; v16.0 disk = Note)
   {
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "DOX",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 2,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 1,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Doxycycline`,
-    notes: "MIC S≤1, R>2 (I 1<x≤2). Tetracycline-S can be used to infer DOX activity in many cases.",
-  },
-  {
-    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "DOX",
-    method: "disk", indication: "general",
-    susceptibleMinMm: 22, resistantLessThanMm: 19,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Doxycycline`,
-    notes: "Disk 30 µg. S≥22, R<19 (I 19–21).",
+    notes: "MIC S≤1, R>1 (EUCAST v16.0). No defined disk breakpoint — infer from tetracycline disk.",
   },
 
   // ─────────────────────────────────────────── RIF — Rifampicin
   {
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "RIF",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 0.06, resistantGreaterThanMgL: 0.5,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Rifampicin`,
-    notes: "MIC S≤0.06, R>0.5 (I 0.06<x≤0.5). Never use as monotherapy — combination only.",
+    susceptibleMaxMgL: 0.06, resistantGreaterThanMgL: 0.06,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Rifampicin (S. aureus)`,
+    notes: "MIC S≤0.06, R>0.06 (EUCAST v16.0 — no I band). Combination therapy only.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "RIF",
     method: "disk", indication: "general",
-    susceptibleMinMm: 26, resistantLessThanMm: 23,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Rifampicin`,
-    notes: "Disk 5 µg. S≥26, R<23 (I 23–25). Combination therapy only.",
+    susceptibleMinMm: 26, resistantLessThanMm: 26,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Rifampicin (S. aureus)`,
+    notes: "Disk 5 µg. S. aureus S≥26, R<26 (CoNS S≥30, R<30). Combination therapy only.",
   },
 
   // ─────────────────────────────────────────── FUS — Fusidic acid
