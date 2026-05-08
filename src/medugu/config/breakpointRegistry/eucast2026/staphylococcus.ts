@@ -299,6 +299,83 @@ export const EUCAST_2026_STAPHYLOCOCCUS_BREAKPOINTS: EucastBreakpointRecord[] = 
     susceptibleMaxMgL: 1, resistantGreaterThanMgL: 1,
     interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Daptomycin`,
-    notes: "MIC S≤1, R>1. MIC method required (no disk diffusion). Do NOT use for pneumonia (inactivated by surfactant).",
+    notes: "MIC S≤1, R>1. MIC method required (no disk diffusion). Do NOT use for pneumonia (inactivated by surfactant). Breakpoints valid for S. aureus only (v16.0).",
+    flags: { restrictedSpecies: ["SAUR"] },
+  },
+
+  // ─────────────────────────────────────────── AZM — Azithromycin (MIC only)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "AZM",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 2, resistantGreaterThanMgL: 2,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Azithromycin`,
+    notes: "MIC S≤2, R>2. Erythromycin disk used to screen macrolide resistance.",
+  },
+
+  // ─────────────────────────────────────────── CLR — Clarithromycin (MIC only)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "CLR",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 1,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Clarithromycin`,
+    notes: "MIC S≤1, R>1. Erythromycin disk used to screen macrolide resistance.",
+  },
+
+  // ─────────────────────────────────────────── MIN — Minocycline
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "MIN",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 0.5, resistantGreaterThanMgL: 0.5,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Minocycline`,
+    notes: "MIC S≤0.5, R>0.5.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "MIN",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 23, resistantLessThanMm: 23,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Minocycline`,
+    notes: "Disk 30 µg. S≥23, R<23.",
+  },
+
+  // ─────────────────────────────────────────── TGC — Tigecycline (MIC + disk)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "TGC",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 0.5, resistantGreaterThanMgL: 0.5,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tigecycline`,
+    notes: "MIC S≤0.5, R>0.5.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "TGC",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 19, resistantLessThanMm: 19,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tigecycline`,
+    notes: "Disk 15 µg. S≥19, R<19.",
+  },
+
+  // ─────────────────────────────────────────── NIT — Nitrofurantoin (S. saprophyticus uncomplicated UTI)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "NIT",
+    method: "mic", indication: "uti_uncomplicated",
+    susceptibleMaxMgL: 64, resistantGreaterThanMgL: 64,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Nitrofurantoin uncomplicated UTI, S. saprophyticus`,
+    flags: { restrictedSpecies: ["SSAP"], urinaryOnly: true },
+    notes: "Uncomplicated UTI, S. saprophyticus only. MIC S≤64, R>64.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "NIT",
+    method: "disk", indication: "uti_uncomplicated",
+    susceptibleMinMm: 13, resistantLessThanMm: 13,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Nitrofurantoin uncomplicated UTI, S. saprophyticus`,
+    flags: { restrictedSpecies: ["SSAP"], urinaryOnly: true },
+    notes: "Disk 100 µg. S≥13, R<13.",
   },
 ];
