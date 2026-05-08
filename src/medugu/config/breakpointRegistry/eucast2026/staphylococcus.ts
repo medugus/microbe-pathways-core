@@ -228,40 +228,32 @@ export const EUCAST_2026_STAPHYLOCOCCUS_BREAKPOINTS: EucastBreakpointRecord[] = 
     flags: { restrictedSpecies: ["SAUR"] },
   },
 
-  // ─────────────────────────────────────────── DOX — Doxycycline
+  // ─────────────────────────────────────────── DOX — Doxycycline (MIC only; v16.0 disk = Note)
   {
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "DOX",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 2,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 1,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Doxycycline`,
-    notes: "MIC S≤1, R>2 (I 1<x≤2). Tetracycline-S can be used to infer DOX activity in many cases.",
-  },
-  {
-    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "DOX",
-    method: "disk", indication: "general",
-    susceptibleMinMm: 22, resistantLessThanMm: 19,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Doxycycline`,
-    notes: "Disk 30 µg. S≥22, R<19 (I 19–21).",
+    notes: "MIC S≤1, R>1 (EUCAST v16.0). No defined disk breakpoint — infer from tetracycline disk.",
   },
 
   // ─────────────────────────────────────────── RIF — Rifampicin
   {
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "RIF",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 0.06, resistantGreaterThanMgL: 0.5,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Rifampicin`,
-    notes: "MIC S≤0.06, R>0.5 (I 0.06<x≤0.5). Never use as monotherapy — combination only.",
+    susceptibleMaxMgL: 0.06, resistantGreaterThanMgL: 0.06,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Rifampicin (S. aureus)`,
+    notes: "MIC S≤0.06, R>0.06 (EUCAST v16.0 — no I band). Combination therapy only.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "RIF",
     method: "disk", indication: "general",
-    susceptibleMinMm: 26, resistantLessThanMm: 23,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Rifampicin`,
-    notes: "Disk 5 µg. S≥26, R<23 (I 23–25). Combination therapy only.",
+    susceptibleMinMm: 26, resistantLessThanMm: 26,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Rifampicin (S. aureus)`,
+    notes: "Disk 5 µg. S. aureus S≥26, R<26 (CoNS S≥30, R<30). Combination therapy only.",
   },
 
   // ─────────────────────────────────────────── FUS — Fusidic acid
@@ -307,6 +299,83 @@ export const EUCAST_2026_STAPHYLOCOCCUS_BREAKPOINTS: EucastBreakpointRecord[] = 
     susceptibleMaxMgL: 1, resistantGreaterThanMgL: 1,
     interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Daptomycin`,
-    notes: "MIC S≤1, R>1. MIC method required (no disk diffusion). Do NOT use for pneumonia (inactivated by surfactant).",
+    notes: "MIC S≤1, R>1. MIC method required (no disk diffusion). Do NOT use for pneumonia (inactivated by surfactant). Breakpoints valid for S. aureus only (v16.0).",
+    flags: { restrictedSpecies: ["SAUR"] },
+  },
+
+  // ─────────────────────────────────────────── AZM — Azithromycin (MIC only)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "AZM",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 2, resistantGreaterThanMgL: 2,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Azithromycin`,
+    notes: "MIC S≤2, R>2. Erythromycin disk used to screen macrolide resistance.",
+  },
+
+  // ─────────────────────────────────────────── CLR — Clarithromycin (MIC only)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "CLR",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 1, resistantGreaterThanMgL: 1,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Clarithromycin`,
+    notes: "MIC S≤1, R>1. Erythromycin disk used to screen macrolide resistance.",
+  },
+
+  // ─────────────────────────────────────────── MIN — Minocycline
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "MIN",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 0.5, resistantGreaterThanMgL: 0.5,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Minocycline`,
+    notes: "MIC S≤0.5, R>0.5.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "MIN",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 23, resistantLessThanMm: 23,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Minocycline`,
+    notes: "Disk 30 µg. S≥23, R<23.",
+  },
+
+  // ─────────────────────────────────────────── TGC — Tigecycline (MIC + disk)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "TGC",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 0.5, resistantGreaterThanMgL: 0.5,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tigecycline`,
+    notes: "MIC S≤0.5, R>0.5.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "TGC",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 19, resistantLessThanMm: 19,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tigecycline`,
+    notes: "Disk 15 µg. S≥19, R<19.",
+  },
+
+  // ─────────────────────────────────────────── NIT — Nitrofurantoin (S. saprophyticus uncomplicated UTI)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "NIT",
+    method: "mic", indication: "uti_uncomplicated",
+    susceptibleMaxMgL: 64, resistantGreaterThanMgL: 64,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Nitrofurantoin uncomplicated UTI, S. saprophyticus`,
+    flags: { restrictedSpecies: ["SSAP"], urinaryOnly: true },
+    notes: "Uncomplicated UTI, S. saprophyticus only. MIC S≤64, R>64.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "staphylococcus", antibioticCode: "NIT",
+    method: "disk", indication: "uti_uncomplicated",
+    susceptibleMinMm: 13, resistantLessThanMm: 13,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Nitrofurantoin uncomplicated UTI, S. saprophyticus`,
+    flags: { restrictedSpecies: ["SSAP"], urinaryOnly: true },
+    notes: "Disk 100 µg. S≥13, R<13.",
   },
 ];
