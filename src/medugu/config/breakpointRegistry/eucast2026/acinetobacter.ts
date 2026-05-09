@@ -10,12 +10,14 @@
 //   MIC : S if value ≤ susceptibleMaxMgL ; R if value > resistantGreaterThanMgL
 //   Disk: S if value ≥ susceptibleMinMm  ; R if value < resistantLessThanMm
 //
-// Per EUCAST v16.0 (2026), Acinetobacter has very few drugs with a clinical
-// "S" category — most active agents are encoded as "I or R" only (increased
-// exposure required). Several common agents have NO EUCAST breakpoint
-// (TZP, CAZ, FEP, CRO, ATM, AMC, CXM, TOL, CZA, ETP) and are encoded with
-// breakpointStatus "needs_validation" so they are surfaced but never
-// auto-interpreted.
+// Per EUCAST v16.0 (2026), Acinetobacter HAS clinical S categories for:
+//   MEM (non-meningitis), IPM, LVX, SXT, AMK (UTI), GEN (UTI), TOB (UTI), CST.
+// CIP is I/R only (off-scale S). Aminoglycosides for systemic infections are
+// "bracketed" — same numeric thresholds, flagged for guidance.
+//
+// IE rows (TGC, MIN IV, eravacycline, netilmicin, gentamicin/tobramycin in
+// older versions) are encoded as needs_validation so they are surfaced but
+// never auto-interpreted.
 //
 // Intrinsic resistance / "no clinical activity" rows (AMP, AMC, CXM, CRO,
 // ETP, ERY, CLI, VAN, TEC, LZD, FUS, MUP, OXA, FOX, PEN, NIT, FOS, CHL,
@@ -30,44 +32,83 @@ const SRC = "EUCAST v16.0 2026, Acinetobacter spp.";
 const ABAU_ONLY = { restrictedSpecies: ["ABAU"] };
 
 export const EUCAST_2026_ACINETOBACTER_BREAKPOINTS: EucastBreakpointRecord[] = [
-  // ─────────────────────────────────────────── MEM — Meropenem (I/R only)
+  // ─────────────────────────────────────────── MEM — Meropenem, non-meningitis (S/I/R)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "MEM",
-    method: "mic", indication: "general",
-    susceptibleMaxMgL: 0.001, resistantGreaterThanMgL: 8,
-    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Meropenem`,
+    method: "mic", indication: "non_meningitis",
+    susceptibleMaxMgL: 2, resistantGreaterThanMgL: 8,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Meropenem (indications other than meningitis)`,
     flags: ABAU_ONLY,
-    notes: "MIC I≤8, R>8 (no 'S' category — increased exposure required, e.g. 2 g x3 extended infusion).",
+    notes: "MIC S≤2, R>8 (I 4–8 = increased exposure 2 g x3 extended infusion).",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "MEM",
-    method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 18,
-    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
-    sourceTableRef: `${SRC}, Meropenem`,
+    method: "disk", indication: "non_meningitis",
+    susceptibleMinMm: 21, resistantLessThanMm: 15,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Meropenem (indications other than meningitis)`,
     flags: ABAU_ONLY,
-    notes: "Disk 10 µg. I≥18, R<18. No 'S' category.",
+    notes: "Disk 10 µg. S≥21, R<15 (zones 15–20 = I).",
+  },
+  // ─────────────────────────────────────────── MEM — Meropenem, meningitis (S/R)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "MEM",
+    method: "mic", indication: "meningitis",
+    susceptibleMaxMgL: 2, resistantGreaterThanMgL: 2,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Meropenem (meningitis)`,
+    flags: { ...ABAU_ONLY, meningitisOnly: true },
+    notes: "Meningitis: MIC S≤2, R>2 (no I band).",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "MEM",
+    method: "disk", indication: "meningitis",
+    susceptibleMinMm: 21, resistantLessThanMm: 21,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Meropenem (meningitis)`,
+    flags: { ...ABAU_ONLY, meningitisOnly: true },
+    notes: "Meningitis: disk 10 µg. S≥21, R<21.",
   },
 
-  // ─────────────────────────────────────────── IPM — Imipenem (I/R only)
+  // ─────────────────────────────────────────── IPM — Imipenem (S/I/R)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "IPM",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 0.001, resistantGreaterThanMgL: 4,
-    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMaxMgL: 2, resistantGreaterThanMgL: 4,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Imipenem`,
     flags: ABAU_ONLY,
-    notes: "MIC I≤4, R>4. High-dose 1 g x4/day required.",
+    notes: "MIC S≤2, R>4 (I=4 = increased exposure, 1 g x4/day).",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "IPM",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 22,
-    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMinMm: 24, resistantLessThanMm: 21,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Imipenem`,
     flags: ABAU_ONLY,
-    notes: "Disk 10 µg. I≥22, R<22.",
+    notes: "Disk 10 µg. S≥24, R<21 (zones 21–23 = I).",
+  },
+
+  // ─────────────────────────────────────────── DOR — Doripenem (I/R only)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "DOR",
+    method: "mic", indication: "general",
+    susceptibleMaxMgL: 0.001, resistantGreaterThanMgL: 2,
+    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Doripenem`,
+    flags: ABAU_ONLY,
+    notes: "MIC I≤2, R>2. High-dose 1 g x3 prolonged infusion. No 'S' category.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "DOR",
+    method: "disk", indication: "general",
+    susceptibleMinMm: 50, resistantLessThanMm: 22,
+    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Doripenem`,
+    flags: ABAU_ONLY,
+    notes: "Disk 10 µg. EUCAST off-scale S≥50, R<22; report I for zones ≥22. No 'S' category.",
   },
 
   // ─────────────────────────────────────────── CIP — Ciprofloxacin (I/R only)
@@ -78,103 +119,161 @@ export const EUCAST_2026_ACINETOBACTER_BREAKPOINTS: EucastBreakpointRecord[] = [
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Ciprofloxacin`,
     flags: ABAU_ONLY,
-    notes: "MIC I≤1, R>1. High-dose required (e.g. 400 mg x3 IV).",
+    notes: "MIC I≤1, R>1. High-dose required (e.g. 400 mg x3 IV). No 'S' category.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "CIP",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 21,
+    susceptibleMinMm: 50, resistantLessThanMm: 21,
     interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Ciprofloxacin`,
     flags: ABAU_ONLY,
-    notes: "Disk 5 µg. I≥21, R<21.",
+    notes: "Disk 5 µg. EUCAST off-scale S≥50, R<21; report I for zones ≥21. No 'S' category.",
   },
 
-  // ─────────────────────────────────────────── LVX — Levofloxacin (I/R only)
+  // ─────────────────────────────────────────── LVX — Levofloxacin (S/I/R)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "LVX",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 0.001, resistantGreaterThanMgL: 1,
-    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMaxMgL: 0.5, resistantGreaterThanMgL: 1,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Levofloxacin`,
     flags: ABAU_ONLY,
-    notes: "MIC I≤1, R>1.",
+    notes: "MIC S≤0.5, R>1 (I=1 = increased exposure 500 mg bid).",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "LVX",
     method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 20,
-    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMinMm: 23, resistantLessThanMm: 20,
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Levofloxacin`,
     flags: ABAU_ONLY,
-    notes: "Disk 5 µg. EUCAST v16.0: I≥20, R<20.",
+    notes: "Disk 5 µg. S≥23, R<20 (zones 20–22 = I).",
   },
 
-  // ─────────────────────────────────────────── AMK — Amikacin (I/R only per v16.0)
+  // ─────────────────────────────────────────── AMK — Amikacin (systemic bracketed + UTI)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "AMK",
-    method: "mic", indication: "general",
+    method: "mic", indication: "systemic",
     susceptibleMaxMgL: 8, resistantGreaterThanMgL: 8,
-    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Amikacin (systemic)`,
-    flags: ABAU_ONLY,
-    notes: "EUCAST v16.0 systemic: bracketed I≤(8), R>(8). No 'S' category.",
+    flags: { ...ABAU_ONLY, bracketed: true },
+    notes: "Systemic: bracketed MIC S≤(8), R>(8). See EUCAST guidance on bracketed breakpoints.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "AMK",
-    method: "disk", indication: "general",
-    susceptibleMinMm: 999, resistantLessThanMm: 19,
-    interpretationCategories: ["I", "R", "ND"], breakpointStatus: "active",
+    method: "disk", indication: "systemic",
+    susceptibleMinMm: 19, resistantLessThanMm: 19,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Amikacin (systemic)`,
-    flags: ABAU_ONLY,
-    notes: "Disk 30 µg. EUCAST v16.0 systemic: bracketed I≥(19), R<(19). No 'S' category.",
+    flags: { ...ABAU_ONLY, bracketed: true },
+    notes: "Systemic: bracketed disk 30 µg S≥(19), R<(19).",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "AMK",
+    method: "mic", indication: "uti",
+    susceptibleMaxMgL: 8, resistantGreaterThanMgL: 8,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Amikacin (UTI)`,
+    flags: { ...ABAU_ONLY, urinaryOnly: true },
+    notes: "UTI origin: MIC S≤8, R>8.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "AMK",
+    method: "disk", indication: "uti",
+    susceptibleMinMm: 19, resistantLessThanMm: 19,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Amikacin (UTI)`,
+    flags: { ...ABAU_ONLY, urinaryOnly: true },
+    notes: "UTI origin: disk 30 µg S≥19, R<19.",
   },
 
-  // ─────────────────────────────────────────── GEN — Gentamicin (IE per EUCAST v16.0)
+  // ─────────────────────────────────────────── GEN — Gentamicin (NEW in v16.0: bracketed systemic + UTI)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "GEN",
-    method: "mic", indication: "general",
-    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
-    sourceTableRef: `${SRC}, Gentamicin`,
-    flags: ABAU_ONLY,
-    notes: "EUCAST v16.0 lists IE (insufficient evidence) for gentamicin in Acinetobacter spp.; do not infer S/I/R.",
+    method: "mic", indication: "systemic",
+    susceptibleMaxMgL: 4, resistantGreaterThanMgL: 4,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Gentamicin (systemic)`,
+    flags: { ...ABAU_ONLY, bracketed: true },
+    notes: "v16.0: systemic bracketed MIC S≤(4), R>(4). See EUCAST guidance on bracketed breakpoints.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "GEN",
-    method: "disk", indication: "general",
-    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
-    sourceTableRef: `${SRC}, Gentamicin`,
-    flags: ABAU_ONLY,
-    notes: "EUCAST v16.0 lists IE (insufficient evidence) for gentamicin in Acinetobacter spp.; do not infer S/I/R.",
-  },
-
-  // ─────────────────────────────────────────── TOB — Tobramycin (IE per EUCAST v16.0)
-  {
-    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
-    method: "mic", indication: "general",
-    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
-    sourceTableRef: `${SRC}, Tobramycin`,
-    flags: ABAU_ONLY,
-    notes: "EUCAST v16.0 lists IE (insufficient evidence) for tobramycin in Acinetobacter spp.; do not infer S/I/R.",
+    method: "disk", indication: "systemic",
+    susceptibleMinMm: 17, resistantLessThanMm: 17,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Gentamicin (systemic)`,
+    flags: { ...ABAU_ONLY, bracketed: true },
+    notes: "v16.0: systemic bracketed disk 10 µg S≥(17), R<(17).",
   },
   {
-    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
-    method: "disk", indication: "general",
-    interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
-    sourceTableRef: `${SRC}, Tobramycin`,
-    flags: ABAU_ONLY,
-    notes: "EUCAST v16.0 lists IE (insufficient evidence) for tobramycin in Acinetobacter spp.; do not infer S/I/R.",
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "GEN",
+    method: "mic", indication: "uti",
+    susceptibleMaxMgL: 4, resistantGreaterThanMgL: 4,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Gentamicin (UTI)`,
+    flags: { ...ABAU_ONLY, urinaryOnly: true },
+    notes: "v16.0: UTI origin MIC S≤4, R>4.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "GEN",
+    method: "disk", indication: "uti",
+    susceptibleMinMm: 17, resistantLessThanMm: 17,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Gentamicin (UTI)`,
+    flags: { ...ABAU_ONLY, urinaryOnly: true },
+    notes: "v16.0: UTI origin disk 10 µg S≥17, R<17.",
   },
 
-  // ─────────────────────────────────────────── CST — Colistin (MIC only, BMD mandatory)
+  // ─────────────────────────────────────────── TOB — Tobramycin (NEW in v16.0: bracketed systemic + UTI)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
+    method: "mic", indication: "systemic",
+    susceptibleMaxMgL: 4, resistantGreaterThanMgL: 4,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tobramycin (systemic)`,
+    flags: { ...ABAU_ONLY, bracketed: true },
+    notes: "v16.0: systemic bracketed MIC S≤(4), R>(4).",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
+    method: "disk", indication: "systemic",
+    susceptibleMinMm: 17, resistantLessThanMm: 17,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tobramycin (systemic)`,
+    flags: { ...ABAU_ONLY, bracketed: true },
+    notes: "v16.0: systemic bracketed disk 10 µg S≥(17), R<(17).",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
+    method: "mic", indication: "uti",
+    susceptibleMaxMgL: 4, resistantGreaterThanMgL: 4,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tobramycin (UTI)`,
+    flags: { ...ABAU_ONLY, urinaryOnly: true },
+    notes: "v16.0: UTI origin MIC S≤4, R>4.",
+  },
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TOB",
+    method: "disk", indication: "uti",
+    susceptibleMinMm: 17, resistantLessThanMm: 17,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
+    sourceTableRef: `${SRC}, Tobramycin (UTI)`,
+    flags: { ...ABAU_ONLY, urinaryOnly: true },
+    notes: "v16.0: UTI origin disk 10 µg S≥17, R<17.",
+  },
+
+  // ─────────────────────────────────────────── CST — Colistin (MIC only, BMD mandatory, bracketed)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "CST",
     method: "mic", indication: "general",
     susceptibleMaxMgL: 2, resistantGreaterThanMgL: 2,
     interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Colistin`,
-    flags: ABAU_ONLY,
-    notes: "MIC S≤2, R>2. ISO-20776 broth microdilution mandatory; disk diffusion and gradient strips NOT reliable.",
+    flags: { ...ABAU_ONLY, bracketed: true },
+    notes: "Bracketed MIC S≤(2), R>(2). ISO-20776 broth microdilution mandatory; QC with mcr-1 E. coli NCTC 13846. Disk and gradient strips NOT reliable.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "CST",
@@ -182,37 +281,37 @@ export const EUCAST_2026_ACINETOBACTER_BREAKPOINTS: EucastBreakpointRecord[] = [
     interpretationCategories: ["ND"], breakpointStatus: "not_applicable",
     sourceTableRef: `${SRC}, Colistin`,
     flags: ABAU_ONLY,
-    notes: "Disk diffusion and gradient strip methods are NOT reliable for colistin — use BMD only.",
+    notes: "Disk diffusion and gradient strip methods NOT reliable for colistin — use BMD only.",
   },
 
-  // ─────────────────────────────────────────── SXT — Trimethoprim/sulfamethoxazole (S/I/R)
+  // ─────────────────────────────────────────── SXT — Trimethoprim/sulfamethoxazole (S/R only)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "SXT",
     method: "mic", indication: "general",
-    susceptibleMaxMgL: 2, resistantGreaterThanMgL: 4,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMaxMgL: 0.5, resistantGreaterThanMgL: 0.5,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Trimethoprim-sulfamethoxazole`,
     flags: ABAU_ONLY,
-    notes: "MIC S≤2, I=4, R>4 (trimethoprim component).",
+    notes: "MIC S≤0.5, R>0.5 (trimethoprim component, ratio 1:19). No I band per v16.0.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "SXT",
     method: "disk", indication: "general",
-    susceptibleMinMm: 14, resistantLessThanMm: 11,
-    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "active",
+    susceptibleMinMm: 16, resistantLessThanMm: 16,
+    interpretationCategories: ["S", "R", "ND"], breakpointStatus: "active",
     sourceTableRef: `${SRC}, Trimethoprim-sulfamethoxazole`,
     flags: ABAU_ONLY,
-    notes: "Disk 1.25/23.75 µg. S≥14, R<11.",
+    notes: "Disk 1.25/23.75 µg. S≥16, R<16. No I band per v16.0.",
   },
 
-  // ─────────────────────────────────────────── MIN — Minocycline (needs validation)
+  // ─────────────────────────────────────────── MIN — Minocycline (IE per v16.0)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "MIN",
     method: "mic", indication: "general",
     interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "needs_validation",
     sourceTableRef: `${SRC}, Minocycline`,
     flags: ABAU_ONLY,
-    notes: "EUCAST has not set clinical breakpoints for minocycline vs Acinetobacter (2026); refer to local validation / CLSI if needed.",
+    notes: "EUCAST v16.0: IE (insufficient evidence). IV only — oral does not achieve sufficient exposure. Refer to local validation / CLSI if needed.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "MIN",
@@ -220,17 +319,27 @@ export const EUCAST_2026_ACINETOBACTER_BREAKPOINTS: EucastBreakpointRecord[] = [
     interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "needs_validation",
     sourceTableRef: `${SRC}, Minocycline`,
     flags: ABAU_ONLY,
-    notes: "EUCAST has not set clinical breakpoints for minocycline vs Acinetobacter (2026).",
+    notes: "EUCAST v16.0: IE (insufficient evidence) for minocycline vs Acinetobacter.",
   },
 
-  // ─────────────────────────────────────────── CFD — Cefiderocol (needs validation)
+  // ─────────────────────────────────────────── TGC — Tigecycline (IE per v16.0, NOT intrinsic R)
+  {
+    ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "TGC",
+    method: "mic", indication: "general",
+    interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "needs_validation",
+    sourceTableRef: `${SRC}, Tigecycline`,
+    flags: ABAU_ONLY,
+    notes: "EUCAST v16.0: IE (insufficient evidence) — do not auto-interpret. Used in MDR Acinetobacter as last-line; refer to local validation.",
+  },
+
+  // ─────────────────────────────────────────── CFD — Cefiderocol (Note guidance)
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "CFD",
     method: "mic", indication: "general",
     interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "needs_validation",
     sourceTableRef: `${SRC}, Cefiderocol`,
     flags: ABAU_ONLY,
-    notes: "EUCAST 2026 lists PK/PD insufficient evidence for Acinetobacter clinical breakpoint; iron-depleted CAMHB BMD required if tested.",
+    notes: "EUCAST v16.0: no clinical breakpoint. Guidance: MIC ≤0.5 (zone ≥21) likely target; MIC 1–2 acquired mechanisms, may still be option; MIC >2 (zone <17) likely R. Iron-depleted CAMHB BMD required.",
   },
   {
     ...EUCAST_2026_METADATA, organismGroup: "non_fermenter", antibioticCode: "CFD",
@@ -238,18 +347,19 @@ export const EUCAST_2026_ACINETOBACTER_BREAKPOINTS: EucastBreakpointRecord[] = [
     interpretationCategories: ["S", "I", "R", "ND"], breakpointStatus: "needs_validation",
     sourceTableRef: `${SRC}, Cefiderocol`,
     flags: ABAU_ONLY,
-    notes: "Disk diffusion not reliable for cefiderocol vs Acinetobacter; BMD only.",
+    notes: "Disk 30 µg. EUCAST v16.0 guidance only: zone ≥21 likely target, <17 likely R.",
   },
 
   // ───────────────────────────────────────────────────────────────────────
   // Intrinsic / no-breakpoint block list (auto-resolves to "R")
+  // Note: GEN, TOB, DOR, TGC, MIN removed from this list — see explicit rows above.
   // ───────────────────────────────────────────────────────────────────────
   ...(
     [
       // [code, reason]
       ["AMP", "Ampicillin — no clinically useful activity vs Acinetobacter (intrinsic AmpC + impermeability)."],
       ["AMC", "Amoxicillin-clavulanate — clavulanate does not restore activity against Acinetobacter intrinsic AmpC."],
-      ["TZP", "Piperacillin-tazobactam — EUCAST has no clinical breakpoint vs Acinetobacter; do not report S."],
+      ["TZP", "Piperacillin-tazobactam — EUCAST v16.0: IE. No clinical breakpoint vs Acinetobacter; do not report S."],
       ["CXM", "Cefuroxime — 2nd-gen cephalosporin; no anti-Acinetobacter activity."],
       ["CRO", "Ceftriaxone — no clinical breakpoint vs Acinetobacter; intrinsic AmpC/efflux."],
       ["CAZ", "Ceftazidime — EUCAST has no clinical breakpoint vs Acinetobacter."],
@@ -258,7 +368,6 @@ export const EUCAST_2026_ACINETOBACTER_BREAKPOINTS: EucastBreakpointRecord[] = [
       ["ETP", "Ertapenem — group 1 carbapenem; no activity vs non-fermenters including Acinetobacter."],
       ["TOL", "Ceftolozane-tazobactam — no clinical breakpoint and no reliable activity vs Acinetobacter."],
       ["CZA", "Ceftazidime-avibactam — no clinical breakpoint vs Acinetobacter; avibactam does not restore CAZ activity."],
-      ["TGC", "Tigecycline — EUCAST has no clinical breakpoint vs Acinetobacter (PK/PD inadequate at standard dose)."],
       ["NIT", "Nitrofurantoin — no clinically useful activity vs Acinetobacter."],
       ["FOS", "Fosfomycin — no EUCAST clinical breakpoint vs Acinetobacter for systemic infection."],
       ["CHL", "Chloramphenicol — no clinical breakpoint; intrinsic efflux."],
@@ -276,7 +385,6 @@ export const EUCAST_2026_ACINETOBACTER_BREAKPOINTS: EucastBreakpointRecord[] = [
       ["PEN", "Penicillin G — no activity vs Gram-negative non-fermenters."],
       ["DOX", "Doxycycline — no EUCAST clinical breakpoint vs Acinetobacter (2026)."],
       ["TET", "Tetracycline — no EUCAST clinical breakpoint vs Acinetobacter (2026)."],
-      ["DOR", "Doripenem — no EUCAST clinical breakpoint vs Acinetobacter (2026); use IPM/MEM instead."],
       ["HLG", "High-level Gentamicin — enterococcal synergy screen; not applicable to Acinetobacter."],
       ["HLS", "High-level Streptomycin — enterococcal synergy screen; not applicable to Acinetobacter."],
       ["QDA", "Quinupristin/dalfopristin — Gram-positive spectrum; intrinsic R in Gram-negatives."],
