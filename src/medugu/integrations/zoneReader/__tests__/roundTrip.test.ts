@@ -3,7 +3,8 @@ import { buildWorklistExport } from "../exportWorklist";
 import { mapImport } from "../importMapper";
 import { ZONE_READER_CONTRACT_VERSION } from "../types";
 import type { Accession } from "../../../domain/types";
-import { ASTMethod, ASTStandard } from "../../../domain/enums";
+import { ASTMethod } from "../../../domain/enums";
+import type { ASTStandard } from "../../../domain/types";
 
 function makeAccession(): Accession {
   // Minimal stub — only the fields the Zone Reader integration reads.

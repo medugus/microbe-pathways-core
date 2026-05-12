@@ -33,7 +33,7 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
     return {
       antibioticCode: code,
       discContent: undefined,
-      plateHint: ab?.label,
+      plateHint: ab?.display,
     };
   });
 
