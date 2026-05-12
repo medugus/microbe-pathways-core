@@ -32,8 +32,8 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
     const ab = getAntibiotic(code);
     return {
       antibioticCode: code,
-      discContent: ab?.commonDiscContent,
-      plateHint: ab?.plateHint,
+      discContent: undefined,
+      plateHint: ab?.label,
     };
   });
 
