@@ -24,6 +24,7 @@ import { ASTEntryControls } from "./ASTEntryControls";
 import { ASTPanelEntry } from "./ASTPanelEntry";
 import { ASTServerActions } from "./ASTServerActions";
 import { AntibiogramGrid } from "./AntibiogramGrid";
+import { ZoneReaderPanel } from "./ast/ZoneReaderPanel";
 
 type EntryMode = "panel" | "single";
 
@@ -281,6 +282,12 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
       </div>
 
       <ASTReportabilityBoard accession={accession} />
+
+      <ZoneReaderPanel
+        accession={accession}
+        isolateId={activeIsolateId}
+        astPanelId={selectedPanel?.id ?? ""}
+      />
 
       <AntibiogramGrid accession={accession} />
 
