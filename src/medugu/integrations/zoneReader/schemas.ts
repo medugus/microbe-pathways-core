@@ -128,8 +128,11 @@ function normaliseRow(raw: z.infer<typeof rawZoneResultSchema>): ZoneResult {
   const imageReference = raw.imageReference ?? raw.imageUrl ?? raw.imageRef;
   const manualEdited =
     raw.manualEdited ??
-    raw.readerConfidence === "manual" ??
-    (raw.originalValue != null && raw.correctedValue != null && raw.originalValue !== raw.correctedValue);
+    (raw.readerConfidence === "manual"
+      ? true
+      : raw.originalValue != null &&
+        raw.correctedValue != null &&
+        raw.originalValue !== raw.correctedValue);
   const measurementSource: ZoneResult["measurementSource"] =
     raw.measurementSource ?? (manualEdited ? "reader_then_manual" : "reader");
 

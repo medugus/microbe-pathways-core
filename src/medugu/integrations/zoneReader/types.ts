@@ -37,19 +37,19 @@ export interface ExpectedDisc {
   /** Antibiotic code as used by MEDUGU (matches ASTResult.antibioticCode). */
   antibioticCode: string;
   /** Human-readable antibiotic name (nullable — not all panels carry it). */
-  antibioticName?: string;
+  antibioticName?: string | null;
   /** Disc potency, e.g. "30 µg" — informational, not a match key. */
-  discPotency?: string;
+  discPotency?: string | null;
   /** Antibiotic class (penicillin, carbapenem, etc.) when known. */
-  antibioticClass?: string;
+  antibioticClass?: string | null;
   /** WHO AWaRe category (Access / Watch / Reserve) when configured. */
   awareCategory?: "Access" | "Watch" | "Reserve" | null;
   /** Default reportability for this drug on this panel (nullable). */
   reportabilityDefault?: "report" | "suppress" | "conditional" | null;
   /** Plate hint to help the reader operator (informational only). */
-  plateHint?: string;
+  plateHint?: string | null;
   /** @deprecated use discPotency. Kept for v1.0 backward compat. */
-  discContent?: string;
+  discContent?: string | null;
 }
 
 export interface ZoneReaderWorklistExport {
