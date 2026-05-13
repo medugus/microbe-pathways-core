@@ -1,13 +1,29 @@
 # Zone Reader Integration — Contract v1
 
 Skeleton-only contract for exchanging disk-diffusion zone measurements between
-MEDUGU LIMS and an external zone-reader device or app. **No live API** is
-implemented in this version — the round-trip happens via JSON file
-export/import inside the AST section.
+MEDUGU LIMS and an external zone-reader device or app. **No live API** in v1 —
+the round-trip happens via JSON file export/import inside the AST section.
+
+## Authority
+
+**MEDUGU LIMS remains the authority** for:
+
+- S/I/R interpretation
+- Expert rules / phenotype detection
+- Cascade / selective reporting
+- AMS approval workflow
+- IPC signals
+- Validation governance
+- Release seal
+
+The Zone Reader contributes raw zone diameters only. Imported zones are
+written through the existing `meduguActions.updateAST(...)` setter, so every
+downstream engine (`astEngine`, `applyExpertRulesServer`, `cascadeEngine`,
+`amsEngine`, `ipcEngine`, `validationEngine`, `releaseEngine`) runs unchanged.
+The integration never sets `interpretedSIR`, governance fields, cascade flags,
+AMS state, IPC state, validation state, or the release seal directly.
 
 ## Round-trip key
-
-Every row in both directions is keyed on:
 
 ```
 (accessionId, isolateId, astPanelId, antibioticCode)
@@ -15,35 +31,175 @@ Every row in both directions is keyed on:
 
 `method` is fixed to `disk_diffusion`. The Zone Reader does not measure MICs.
 
-## Engines NOT bypassed
+## Sample exported worklist JSON
 
-Imported zones are written to the existing `ASTResult` row via the standard
-`meduguActions.updateAST(...)` setter. Every downstream engine still runs
-unchanged on the resulting state:
+```json
+{
+  "contractVersion": "1.0.0",
+  "sourceSystem": "MEDUGU_LIMS",
+  "generatedAt": "2026-05-12T10:00:00.000Z",
 
-- breakpoint interpretation (`astEngine.ts`)
-- expert rules / phenotype (`applyExpertRulesServer`)
-- cascade / selective reporting (`cascadeEngine.ts`)
-- AMS approval workflow (`amsEngine.ts`)
-- IPC signals (`ipcEngine.ts`)
-- validation governance (`validationEngine.ts`)
-- release seal (`releaseEngine.ts`)
+  "accessionId": "acc-1",
+  "accessionNumber": "ACC-2026-0001",
+  "isolateId": "iso-1",
+  "isolateNo": 1,
 
-The integration does not write `interpretedSIR`, governance, or cascade fields
-directly — it only stages `rawValue`/`zoneMm` and lets the engines do their job.
+  "patientDisplayId": "MRN-001",
+  "patientName": "Ada Lovelace",
+  "ward": "ICU",
 
-## Settings (placeholder)
+  "specimenType": "Blood culture",
+  "specimenCode": "BLOOD_CULTURE",
 
-See `src/medugu/integrations/zoneReader/settings.ts`. Defaults:
+  "organismName": "Escherichia coli",
+  "organismCode": "ECOLI",
+  "organismGroup": null,
 
-- `enabled: true`
-- `lowConfidenceThreshold: 0.75`
-- `enforceReaderWhitelist: false`
-- `maxImportAgeMinutes: 0`
+  "astPanelId": "enterobacterales",
+  "astPanelLabel": "Enterobacterales panel",
+  "astPanelName": "Enterobacterales panel",
+  "standard": "EUCAST",
+
+  "method": "disk_diffusion",
+  "expectedDiscs": [
+    {
+      "antibioticCode": "AMP",
+      "antibioticName": "Ampicillin",
+      "discPotency": null,
+      "antibioticClass": "penicillin",
+      "awareCategory": null,
+      "reportabilityDefault": null,
+      "plateHint": "Ampicillin"
+    },
+    {
+      "antibioticCode": "MEM",
+      "antibioticName": "Meropenem",
+      "discPotency": null,
+      "antibioticClass": "carbapenem",
+      "awareCategory": null,
+      "reportabilityDefault": null,
+      "plateHint": "Meropenem"
+    }
+  ]
+}
+```
+
+Fields marked `null` are nullable when the LIMS does not yet hold the value
+(AWaRe category, disc potency, reportability default, organism group).
+
+## Sample imported result JSON
+
+The Zone Reader app may emit either the canonical field names or the v1.0
+aliases listed below — the schema accepts both and normalises on parse.
+
+```json
+{
+  "contractVersion": "1.0.0",
+  "sourceSystem": "ACME_ZR_1",
+  "readerDeviceId": "ACME-ZR-SN-00871",
+  "readerSoftwareVersion": "3.4.1",
+  "operator": "tech-42",
+  "readAt": "2026-05-12T10:42:13.000Z",
+
+  "accessionId": "acc-1",
+  "accessionNumber": "ACC-2026-0001",
+  "isolateId": "iso-1",
+  "astPanelId": "enterobacterales",
+  "method": "disk_diffusion",
+
+  "results": [
+    {
+      "antibioticCode": "AMP",
+      "zoneDiameterMm": 8,
+      "confidenceNumeric": 0.97,
+      "readerConfidence": "high",
+      "measurementSource": "reader",
+      "plateBarcode": "PLT-0091",
+      "imageReference": "s3://reader/imgs/0091-AMP.png"
+    },
+    {
+      "antibioticCode": "GEN",
+      "zoneDiameterMm": 18,
+      "confidenceNumeric": 0.62,
+      "readerConfidence": "low",
+      "measurementSource": "reader",
+      "notes": "edge of zone fuzzy",
+      "imageReference": "s3://reader/imgs/0091-GEN.png"
+    },
+    {
+      "antibioticCode": "CIP",
+      "zoneDiameterMm": 22,
+      "readerConfidence": "manual",
+      "measurementSource": "reader_then_manual",
+      "manualEdited": true,
+      "originalValue": 19,
+      "correctedValue": 22,
+      "overrideReason": "double zone — measured outer ring",
+      "reviewedBy": "tech-42",
+      "reviewedAt": "2026-05-12T10:41:55.000Z",
+      "imageReference": "s3://reader/imgs/0091-CIP.png"
+    }
+  ]
+}
+```
+
+## Accepted alias fields (input → canonical)
+
+| Reader sends | Normalised to |
+|---|---|
+| `zoneMm` | `zoneDiameterMm` |
+| `confidence` (0–1 number) | `confidenceNumeric` (and `readerConfidence` band derived: ≥0.85 high, ≥0.6 medium, else low) |
+| `readerConfidence` (`high`/`medium`/`low`/`manual`) | `readerConfidence` (no derivation) |
+| `device` | `readerDeviceId` |
+| `measuredAt` | `readAt` |
+| `comment` | `notes` |
+| `imageUrl` / `imageRef` | `imageReference` (mirrored back to `imageUrl`) |
+
+## Normalised internal fields (per result row)
+
+`zoneDiameterMm`, `readerConfidence`, `confidenceNumeric`, `measurementSource`
+(`reader` / `manual` / `reader_then_manual`), `manualEdited`, `originalValue`,
+`correctedValue`, `overrideReason`, `reviewStatus`, `reviewedBy`, `reviewedAt`,
+`readerDeviceId`, `readerSoftwareVersion`, `plateBarcode`, `imageReference`,
+`imageUrl`, `notes`, `readAt`.
+
+## Validation rules
+
+| Code | Severity | Meaning |
+|------|----------|---------|
+| `SCHEMA_PARSE_FAILED` | blocker | Payload failed zod parse / alias normalisation |
+| `ACCESSION_MISMATCH` | blocker | Payload accessionId differs from active accession |
+| `ISOLATE_NOT_FOUND` | blocker | Isolate not present on accession |
+| `PANEL_NOT_FOUND` | blocker | astPanelId not in registry |
+| `WORKLIST_ACCESSION_MISMATCH` | blocker | Round-trip key mismatch vs originating worklist |
+| `WORKLIST_ISOLATE_MISMATCH` | blocker | Round-trip key mismatch vs originating worklist |
+| `WORKLIST_PANEL_MISMATCH` | blocker | Round-trip key mismatch vs originating worklist |
+| `UNSUPPORTED_METHOD` | blocker | Method not `disk_diffusion` |
+| `MISSING_DEVICE_METADATA` | warning | No `readerDeviceId` and no `sourceSystem` declared |
+| `DUPLICATE_ROW` | warning | Same antibiotic appears twice in payload |
+| `ANTIBIOTIC_OFF_PANEL` | warning | Reader reported a drug not on the panel |
+| `IMPLAUSIBLE_ZONE` | warning | Zone outside 6–50 mm |
+| `LOW_CONFIDENCE` | warning | Numeric confidence below threshold or band = `low` |
+| `MANUAL_EDIT_WITHOUT_REASON` | warning | `manualEdited=true` but no `overrideReason` |
+| `MISSING_IMAGE_REFERENCE` | warning | Lab policy requires image reference but none supplied |
+| `OVERWRITE_EXISTING_VALUE` | warning | Existing AST raw zone would be overwritten |
+| `MISSING_EXPECTED_DISC` | warning | Worklist disc absent from result payload |
+| `READER_NOTE` | info | Free-text reader note |
+
+## Per-row review policy
+
+A matched row carries `requiresReview = true` whenever any of these
+`reviewReasons` are present: `low_confidence`, `implausible_zone`,
+`overwrite_existing`, `reader_note`, `manual_edit`,
+`manual_edit_without_reason`, `missing_image_reference`.
+
+The review table will **not** auto-accept any row with `requiresReview = true`.
+"Accept all safe rows" only writes rows whose `reviewReasons` array is empty;
+risky rows must be explicitly accepted (or rejected) one by one.
 
 ## Audit events (placeholder)
 
-Currently routed through `console.debug`. Promote to `cloudAudit` once the
+Currently routed through `console.debug`; promote to `cloudAudit` once the
 codes below are added to the audit-event registry:
 
 - `ZONE_READER_WORKLIST_EXPORTED`
@@ -53,79 +209,12 @@ codes below are added to the audit-event registry:
 - `ZONE_READER_ROW_REJECTED`
 - `ZONE_READER_ROW_OVERRIDDEN`
 
-## Sample exported worklist JSON
+## Settings (placeholder)
 
-```json
-{
-  "contractVersion": "1.0.0",
-  "sourceSystem": "MEDUGU_LIMS",
-  "generatedAt": "2026-05-12T10:00:00.000Z",
-  "accessionId": "acc-1",
-  "accessionNumber": "ACC-2026-0001",
-  "isolateId": "iso-1",
-  "isolateNo": 1,
-  "organismDisplay": "Escherichia coli",
-  "astPanelId": "enterobacterales",
-  "astPanelLabel": "Enterobacterales panel",
-  "method": "disk_diffusion",
-  "expectedDiscs": [
-    { "antibioticCode": "AMP", "plateHint": "Ampicillin" },
-    { "antibioticCode": "AMC", "plateHint": "Amoxicillin/clavulanate" },
-    { "antibioticCode": "TZP", "plateHint": "Piperacillin/tazobactam" },
-    { "antibioticCode": "CRO", "plateHint": "Ceftriaxone" },
-    { "antibioticCode": "MEM", "plateHint": "Meropenem" },
-    { "antibioticCode": "GEN", "plateHint": "Gentamicin" },
-    { "antibioticCode": "CIP", "plateHint": "Ciprofloxacin" }
-  ]
-}
-```
+See `src/medugu/integrations/zoneReader/settings.ts`. Defaults:
 
-## Sample imported result JSON
-
-```json
-{
-  "contractVersion": "1.0.0",
-  "sourceSystem": "ACME_ZR_1",
-  "measuredAt": "2026-05-12T10:42:13.000Z",
-  "accessionId": "acc-1",
-  "accessionNumber": "ACC-2026-0001",
-  "isolateId": "iso-1",
-  "astPanelId": "enterobacterales",
-  "method": "disk_diffusion",
-  "operator": "tech-42",
-  "device": "ACME-ZR-SN-00871",
-  "results": [
-    { "antibioticCode": "AMP", "zoneMm": 8,  "confidence": 0.97 },
-    { "antibioticCode": "AMC", "zoneMm": 19, "confidence": 0.94 },
-    { "antibioticCode": "TZP", "zoneMm": 22, "confidence": 0.91 },
-    { "antibioticCode": "CRO", "zoneMm": 24, "confidence": 0.88 },
-    { "antibioticCode": "MEM", "zoneMm": 28, "confidence": 0.96 },
-    { "antibioticCode": "GEN", "zoneMm": 18, "confidence": 0.62, "notes": "edge of zone fuzzy" },
-    { "antibioticCode": "CIP", "zoneMm": 14, "confidence": 0.93 }
-  ]
-}
-```
-
-The `GEN` row above will be flagged `requiresReview` (`low_confidence` +
-`reader_note`) and must be explicitly accepted by the user. All other rows
-qualify as "accept all safe rows".
-
-## Validation findings
-
-| Code | Severity | Meaning |
-|------|----------|---------|
-| `SCHEMA_PARSE_FAILED` | blocker | Payload failed zod parse |
-| `ACCESSION_MISMATCH` | blocker | Payload accessionId differs from active accession |
-| `ISOLATE_NOT_FOUND` | blocker | Isolate not present on accession |
-| `PANEL_NOT_FOUND` | blocker | astPanelId not in registry |
-| `WORKLIST_ACCESSION_MISMATCH` | blocker | Round-trip key mismatch |
-| `WORKLIST_ISOLATE_MISMATCH` | blocker | Round-trip key mismatch |
-| `WORKLIST_PANEL_MISMATCH` | blocker | Round-trip key mismatch |
-| `UNSUPPORTED_METHOD` | blocker | Method not `disk_diffusion` |
-| `DUPLICATE_ROW` | warning | Same antibiotic appears twice in payload |
-| `ANTIBIOTIC_OFF_PANEL` | warning | Reader reported a drug not on the panel |
-| `IMPLAUSIBLE_ZONE` | warning | Zone outside 5–50 mm |
-| `LOW_CONFIDENCE` | warning | Reader confidence < threshold |
-| `OVERWRITE_EXISTING_VALUE` | warning | Existing AST raw value would be overwritten |
-| `READER_NOTE` | info | Free-text reader note |
-| `WORKLIST_ROW_MISSING_FROM_RESULT` | info | Worklist disc absent from result payload |
+- `enabled: true`
+- `lowConfidenceThreshold: 0.75`
+- `enforceReaderWhitelist: false`
+- `maxImportAgeMinutes: 0`
+- `requireImageReference: false` (passed per call to `mapImport`)

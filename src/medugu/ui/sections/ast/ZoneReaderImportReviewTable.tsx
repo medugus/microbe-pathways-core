@@ -17,6 +17,13 @@ interface Props {
   onReject: (antibioticCode: string) => void;
 }
 
+function confidenceLabel(m: MatchedRow): string {
+  if (typeof m.confidenceNumeric === "number") {
+    return `${(m.confidenceNumeric * 100).toFixed(0)}%${m.readerConfidence ? ` · ${m.readerConfidence}` : ""}`;
+  }
+  return m.readerConfidence ?? "—";
+}
+
 export function ZoneReaderImportReviewTable({
   matched,
   unmatched,
@@ -47,12 +54,8 @@ export function ZoneReaderImportReviewTable({
               {matched.map((m) => (
                 <TableRow key={m.antibioticCode}>
                   <TableCell className="font-mono text-xs">{m.antibioticCode}</TableCell>
-                  <TableCell>{m.zoneMm}</TableCell>
-                  <TableCell>
-                    {typeof m.confidence === "number"
-                      ? `${(m.confidence * 100).toFixed(0)}%`
-                      : "—"}
-                  </TableCell>
+                  <TableCell>{m.zoneDiameterMm}</TableCell>
+                  <TableCell>{confidenceLabel(m)}</TableCell>
                   <TableCell className="text-xs">
                     {m.requiresReview ? (
                       <span className="text-amber-600">{m.reviewReasons.join(", ")}</span>
@@ -83,7 +86,7 @@ export function ZoneReaderImportReviewTable({
           <ul className="text-xs text-muted-foreground">
             {unmatched.map((u) => (
               <li key={u.antibioticCode}>
-                {u.antibioticCode} — {u.zoneMm} mm (no AST row on this isolate/panel)
+                {u.antibioticCode} — {u.zoneDiameterMm} mm (no AST row on this isolate/panel)
               </li>
             ))}
           </ul>
