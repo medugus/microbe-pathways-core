@@ -94,9 +94,9 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     // Goes through the standard AST setter — interpretation, expert rules,
     // cascade, AMS, IPC, validation and release all run unchanged downstream.
     meduguActions.updateAST(accession.id, row.astRowId, {
-      rawValue: row.zoneMm,
+      rawValue: row.zoneDiameterMm,
       rawUnit: "mm",
-      zoneMm: row.zoneMm,
+      zoneMm: row.zoneDiameterMm,
       method: ASTMethod.DiskDiffusion,
     });
     emitZoneReaderAudit({
@@ -105,7 +105,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
       isolateId,
       astPanelId,
       antibioticCode,
-      detail: { zoneMm: row.zoneMm, reviewReasons: row.reviewReasons },
+      detail: { zoneMm: row.zoneDiameterMm, reviewReasons: row.reviewReasons },
     });
     setImportResult({
       ...importResult,

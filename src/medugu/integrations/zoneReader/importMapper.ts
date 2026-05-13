@@ -7,13 +7,12 @@
 // layer is responsible for actually invoking meduguActions.updateAST(...) for
 // each accepted row, so existing breakpoint interpretation, expert rules,
 // cascade, AMS, IPC, validation and release continue to run via the standard
-// AST setters (no engine is bypassed).
+// AST setters (no engine is bypassed). Risky rows (any reviewReason) cannot
+// be auto-accepted in the UI; the user must explicitly accept them.
 
 import type { Accession } from "../../domain/types";
 import { ASTMethod } from "../../domain/enums";
-import {
-  zoneReaderResultImportSchema,
-} from "./schemas";
+import { zoneReaderResultImportSchema } from "./schemas";
 import { validateImport, hasBlockers } from "./validateImport";
 import type {
   ImportFinding,
@@ -29,16 +28,17 @@ export interface MapImportInput {
   /** Either parsed object or raw JSON string from the reader. */
   payload: unknown;
   worklist?: ZoneReaderWorklistExport;
+  requireImageReference?: boolean;
 }
 
 const LOW_CONFIDENCE_THRESHOLD = 0.75;
-const IMPLAUSIBLE_LOW_MM = 5;
+const IMPLAUSIBLE_LOW_MM = 6;
 const IMPLAUSIBLE_HIGH_MM = 50;
 
 export function mapImport(input: MapImportInput): ImportMapResult {
-  const { accession, worklist } = input;
+  const { accession, worklist, requireImageReference } = input;
 
-  // 1. Structural parse.
+  // 1. Structural parse + alias normalisation.
   let parsed: ZoneReaderResultImport;
   try {
     const candidate =
@@ -65,6 +65,7 @@ export function mapImport(input: MapImportInput): ImportMapResult {
     accession,
     payload: parsed,
     worklist,
+    requireImageReference,
   });
 
   if (hasBlockers(findings)) {
@@ -90,23 +91,34 @@ export function mapImport(input: MapImportInput): ImportMapResult {
     matchedCodes.add(r.antibioticCode);
 
     const reviewReasons: string[] = [];
-    if (typeof r.confidence === "number" && r.confidence < LOW_CONFIDENCE_THRESHOLD) {
+    if (typeof r.confidenceNumeric === "number" && r.confidenceNumeric < LOW_CONFIDENCE_THRESHOLD) {
+      reviewReasons.push("low_confidence");
+    } else if (r.readerConfidence === "low") {
       reviewReasons.push("low_confidence");
     }
-    if (r.zoneMm < IMPLAUSIBLE_LOW_MM || r.zoneMm > IMPLAUSIBLE_HIGH_MM) {
+    if (r.zoneDiameterMm < IMPLAUSIBLE_LOW_MM || r.zoneDiameterMm > IMPLAUSIBLE_HIGH_MM) {
       reviewReasons.push("implausible_zone");
     }
-    if (typeof existing.rawValue === "number" && existing.rawValue !== r.zoneMm) {
+    if (typeof existing.rawValue === "number" && existing.rawValue !== r.zoneDiameterMm) {
       reviewReasons.push("overwrite_existing");
     }
     if (r.notes) reviewReasons.push("reader_note");
+    if (r.manualEdited && !r.overrideReason) reviewReasons.push("manual_edit_without_reason");
+    if (r.manualEdited) reviewReasons.push("manual_edit");
+    if (requireImageReference && !r.imageReference && !r.imageUrl) {
+      reviewReasons.push("missing_image_reference");
+    }
 
     matched.push({
       antibioticCode: r.antibioticCode,
       astRowId: existing.id,
-      zoneMm: r.zoneMm,
-      confidence: r.confidence,
+      zoneDiameterMm: r.zoneDiameterMm,
+      readerConfidence: r.readerConfidence,
+      confidenceNumeric: r.confidenceNumeric,
       notes: r.notes,
+      imageReference: r.imageReference ?? r.imageUrl,
+      manualEdited: r.manualEdited,
+      overrideReason: r.overrideReason,
       requiresReview: reviewReasons.length > 0,
       reviewReasons,
     });
