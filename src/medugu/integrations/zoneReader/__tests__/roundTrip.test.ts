@@ -4,6 +4,7 @@
 import { strict as assert } from "node:assert";
 import { buildWorklistExport } from "../exportWorklist";
 import { mapImport } from "../importMapper";
+import { zoneReaderResultImportSchema } from "../schemas";
 import { ZONE_READER_CONTRACT_VERSION } from "../types";
 import type { Accession } from "../../../domain/types";
 import { ASTMethod } from "../../../domain/enums";
