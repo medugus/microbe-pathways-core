@@ -11,9 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as QcPlateRouteImport } from './routes/qc-plate'
+import { Route as MeasureRouteImport } from './routes/measure'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IpcRouteImport } from './routes/ipc'
+import { Route as InterpretRouteImport } from './routes/interpret'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AmsRouteImport } from './routes/ams'
@@ -33,6 +38,21 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcPlateRoute = QcPlateRouteImport.update({
+  id: '/qc-plate',
+  path: '/qc-plate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeasureRoute = MeasureRouteImport.update({
+  id: '/measure',
+  path: '/measure',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -43,9 +63,19 @@ const IpcRoute = IpcRouteImport.update({
   path: '/ipc',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InterpretRoute = InterpretRouteImport.update({
+  id: '/interpret',
+  path: '/interpret',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureRoute = CaptureRouteImport.update({
+  id: '/capture',
+  path: '/capture',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuditRoute = AuditRouteImport.update({
@@ -94,9 +124,14 @@ export interface FileRoutesByFullPath {
   '/ams': typeof AmsRoute
   '/analytics': typeof AnalyticsRoute
   '/audit': typeof AuditRoute
+  '/capture': typeof CaptureRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/interpret': typeof InterpretRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
+  '/measure': typeof MeasureRoute
+  '/qc-plate': typeof QcPlateRoute
+  '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin/config': typeof AdminConfigRoute
@@ -109,9 +144,14 @@ export interface FileRoutesByTo {
   '/ams': typeof AmsRoute
   '/analytics': typeof AnalyticsRoute
   '/audit': typeof AuditRoute
+  '/capture': typeof CaptureRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/interpret': typeof InterpretRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
+  '/measure': typeof MeasureRoute
+  '/qc-plate': typeof QcPlateRoute
+  '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin/config': typeof AdminConfigRoute
@@ -125,9 +165,14 @@ export interface FileRoutesById {
   '/ams': typeof AmsRoute
   '/analytics': typeof AnalyticsRoute
   '/audit': typeof AuditRoute
+  '/capture': typeof CaptureRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/interpret': typeof InterpretRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
+  '/measure': typeof MeasureRoute
+  '/qc-plate': typeof QcPlateRoute
+  '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin/config': typeof AdminConfigRoute
@@ -142,9 +187,14 @@ export interface FileRouteTypes {
     | '/ams'
     | '/analytics'
     | '/audit'
+    | '/capture'
     | '/forgot-password'
+    | '/interpret'
     | '/ipc'
     | '/login'
+    | '/measure'
+    | '/qc-plate'
+    | '/reports'
     | '/reset-password'
     | '/signup'
     | '/admin/config'
@@ -157,9 +207,14 @@ export interface FileRouteTypes {
     | '/ams'
     | '/analytics'
     | '/audit'
+    | '/capture'
     | '/forgot-password'
+    | '/interpret'
     | '/ipc'
     | '/login'
+    | '/measure'
+    | '/qc-plate'
+    | '/reports'
     | '/reset-password'
     | '/signup'
     | '/admin/config'
@@ -172,9 +227,14 @@ export interface FileRouteTypes {
     | '/ams'
     | '/analytics'
     | '/audit'
+    | '/capture'
     | '/forgot-password'
+    | '/interpret'
     | '/ipc'
     | '/login'
+    | '/measure'
+    | '/qc-plate'
+    | '/reports'
     | '/reset-password'
     | '/signup'
     | '/admin/config'
@@ -188,9 +248,14 @@ export interface RootRouteChildren {
   AmsRoute: typeof AmsRoute
   AnalyticsRoute: typeof AnalyticsRoute
   AuditRoute: typeof AuditRoute
+  CaptureRoute: typeof CaptureRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  InterpretRoute: typeof InterpretRoute
   IpcRoute: typeof IpcRoute
   LoginRoute: typeof LoginRoute
+  MeasureRoute: typeof MeasureRoute
+  QcPlateRoute: typeof QcPlateRoute
+  ReportsRoute: typeof ReportsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   AdminConfigRoute: typeof AdminConfigRoute
@@ -215,6 +280,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc-plate': {
+      id: '/qc-plate'
+      path: '/qc-plate'
+      fullPath: '/qc-plate'
+      preLoaderRoute: typeof QcPlateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/measure': {
+      id: '/measure'
+      path: '/measure'
+      fullPath: '/measure'
+      preLoaderRoute: typeof MeasureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -229,11 +315,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IpcRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/interpret': {
+      id: '/interpret'
+      path: '/interpret'
+      fullPath: '/interpret'
+      preLoaderRoute: typeof InterpretRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/forgot-password': {
       id: '/forgot-password'
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capture': {
+      id: '/capture'
+      path: '/capture'
+      fullPath: '/capture'
+      preLoaderRoute: typeof CaptureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/audit': {
@@ -300,9 +400,14 @@ const rootRouteChildren: RootRouteChildren = {
   AmsRoute: AmsRoute,
   AnalyticsRoute: AnalyticsRoute,
   AuditRoute: AuditRoute,
+  CaptureRoute: CaptureRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  InterpretRoute: InterpretRoute,
   IpcRoute: IpcRoute,
   LoginRoute: LoginRoute,
+  MeasureRoute: MeasureRoute,
+  QcPlateRoute: QcPlateRoute,
+  ReportsRoute: ReportsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   AdminConfigRoute: AdminConfigRoute,
@@ -313,3 +418,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
