@@ -194,4 +194,75 @@ export function runZoneReaderRoundTripTests() {
   });
   assert.equal(blocked.ok, false);
   assert.ok(blocked.findings.some((f) => f.code === "ACCESSION_MISMATCH"));
+
+  // 9. measurementSource alias normalisation: "reader" → "auto_reader",
+  //    "manual" → "manual_entry", canonical values pass through unchanged.
+  const srcReader = mapImport({
+    accession,
+    payload: {
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [
+        { antibioticCode: "AMP", zoneDiameterMm: 18, confidence: 0.9, measurementSource: "reader" },
+      ],
+    },
+  });
+  assert.equal(srcReader.matched.length, 1);
+  // The mapper returns MatchedRow which doesn't surface measurementSource directly,
+  // so re-parse via the schema to confirm normalisation at the contract boundary.
+  const { zoneReaderResultImportSchema } = require("../schemas") as typeof import("../schemas");
+  const normReader = zoneReaderResultImportSchema.parse({
+    ...baseImport,
+    readAt: "2026-05-12T10:42:00Z",
+    results: [
+      { antibioticCode: "AMP", zoneDiameterMm: 18, confidence: 0.9, measurementSource: "reader" },
+    ],
+  });
+  assert.equal(normReader.results[0].measurementSource, "auto_reader");
+
+  const normManual = zoneReaderResultImportSchema.parse({
+    ...baseImport,
+    readAt: "2026-05-12T10:42:00Z",
+    results: [
+      { antibioticCode: "AMP", zoneDiameterMm: 18, measurementSource: "manual" },
+    ],
+  });
+  assert.equal(normManual.results[0].measurementSource, "manual_entry");
+  // Manual entry with no numeric confidence → readerConfidence band "manual".
+  assert.equal(normManual.results[0].readerConfidence, "manual");
+
+  const normImported = zoneReaderResultImportSchema.parse({
+    ...baseImport,
+    readAt: "2026-05-12T10:42:00Z",
+    results: [
+      { antibioticCode: "AMP", zoneDiameterMm: 18, confidence: 0.9, measurementSource: "imported" },
+    ],
+  });
+  assert.equal(normImported.results[0].measurementSource, "imported");
+
+  // 10. Confidence band normalisation from numeric.
+  assert.equal(
+    zoneReaderResultImportSchema.parse({
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "AMP", zoneDiameterMm: 18, confidence: 0.95 }],
+    }).results[0].readerConfidence,
+    "high",
+  );
+  assert.equal(
+    zoneReaderResultImportSchema.parse({
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "AMP", zoneDiameterMm: 18, confidence: 0.7 }],
+    }).results[0].readerConfidence,
+    "medium",
+  );
+  assert.equal(
+    zoneReaderResultImportSchema.parse({
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "AMP", zoneDiameterMm: 18, confidence: 0.3 }],
+    }).results[0].readerConfidence,
+    "low",
+  );
 }
