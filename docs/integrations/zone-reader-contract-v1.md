@@ -113,7 +113,7 @@ aliases listed below — the schema accepts both and normalises on parse.
       "zoneDiameterMm": 8,
       "confidenceNumeric": 0.97,
       "readerConfidence": "high",
-      "measurementSource": "reader",
+      "measurementSource": "auto_reader",
       "plateBarcode": "PLT-0091",
       "imageReference": "s3://reader/imgs/0091-AMP.png"
     },
@@ -122,7 +122,7 @@ aliases listed below — the schema accepts both and normalises on parse.
       "zoneDiameterMm": 18,
       "confidenceNumeric": 0.62,
       "readerConfidence": "low",
-      "measurementSource": "reader",
+      "measurementSource": "auto_reader",
       "notes": "edge of zone fuzzy",
       "imageReference": "s3://reader/imgs/0091-GEN.png"
     },
@@ -148,20 +148,23 @@ aliases listed below — the schema accepts both and normalises on parse.
 | Reader sends | Normalised to |
 |---|---|
 | `zoneMm` | `zoneDiameterMm` |
-| `confidence` (0–1 number) | `confidenceNumeric` (and `readerConfidence` band derived: ≥0.85 high, ≥0.6 medium, else low) |
+| `confidence` (0–1 number) | `confidenceNumeric` (+ `readerConfidence` band derived: ≥0.85 → `high`, ≥0.6 → `medium`, else `low`; manual entries with no numeric → `manual`) |
 | `readerConfidence` (`high`/`medium`/`low`/`manual`) | `readerConfidence` (no derivation) |
 | `device` | `readerDeviceId` |
 | `measuredAt` | `readAt` |
 | `comment` | `notes` |
 | `imageUrl` / `imageRef` | `imageReference` (mirrored back to `imageUrl`) |
+| `measurementSource: "reader"` | `measurementSource: "auto_reader"` |
+| `measurementSource: "manual"` | `measurementSource: "manual_entry"` |
 
 ## Normalised internal fields (per result row)
 
-`zoneDiameterMm`, `readerConfidence`, `confidenceNumeric`, `measurementSource`
-(`reader` / `manual` / `reader_then_manual`), `manualEdited`, `originalValue`,
-`correctedValue`, `overrideReason`, `reviewStatus`, `reviewedBy`, `reviewedAt`,
-`readerDeviceId`, `readerSoftwareVersion`, `plateBarcode`, `imageReference`,
-`imageUrl`, `notes`, `readAt`.
+`zoneDiameterMm`, `readerConfidence` (`high` / `medium` / `low` / `manual`),
+`confidenceNumeric`, `measurementSource` (canonical enum: `auto_reader` /
+`manual_entry` / `reader_then_manual` / `imported`), `manualEdited`,
+`originalValue`, `correctedValue`, `overrideReason`, `reviewStatus`,
+`reviewedBy`, `reviewedAt`, `readerDeviceId`, `readerSoftwareVersion`,
+`plateBarcode`, `imageReference`, `imageUrl`, `notes`, `readAt`.
 
 ## Validation rules
 

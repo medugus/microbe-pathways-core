@@ -73,7 +73,25 @@ export const zoneReaderWorklistExportSchema = z.object({
 
 const confidenceBandSchema = z.enum(["high", "medium", "low", "manual"]);
 const reviewStatusSchema = z.enum(["pending", "accepted", "rejected", "overridden"]);
-const measurementSourceSchema = z.enum(["reader", "manual", "reader_then_manual"]);
+const measurementSourceSchema = z.enum([
+  // canonical
+  "auto_reader",
+  "manual_entry",
+  "reader_then_manual",
+  "imported",
+  // accepted v1.0 aliases — normalised in transform
+  "reader",
+  "manual",
+]);
+
+const MEASUREMENT_SOURCE_ALIAS: Record<string, "auto_reader" | "manual_entry" | "reader_then_manual" | "imported"> = {
+  reader: "auto_reader",
+  manual: "manual_entry",
+  auto_reader: "auto_reader",
+  manual_entry: "manual_entry",
+  reader_then_manual: "reader_then_manual",
+  imported: "imported",
+};
 
 /** Tolerant raw row schema — every alias allowed; normalised in transform. */
 const rawZoneResultSchema = z
@@ -122,8 +140,22 @@ function bandFromNumeric(n: number | undefined): ReaderConfidenceBand | undefine
 function normaliseRow(raw: z.infer<typeof rawZoneResultSchema>): ZoneResult {
   const zoneDiameterMm = (raw.zoneDiameterMm ?? raw.zoneMm) as number;
   const confidenceNumeric = raw.confidenceNumeric ?? raw.confidence;
+  // Confidence band normalisation:
+  //   manual_entry / manual_edited (no numeric)  → "manual"
+  //   numeric ≥ 0.85                              → "high"
+  //   0.6 ≤ numeric < 0.85                        → "medium"
+  //   numeric < 0.6                               → "low"
+  // An explicit readerConfidence on the row always wins.
+  const manualEditedHint =
+    raw.manualEdited === true ||
+    raw.readerConfidence === "manual" ||
+    raw.measurementSource === "manual" ||
+    raw.measurementSource === "manual_entry" ||
+    raw.measurementSource === "reader_then_manual";
   const readerConfidence: ReaderConfidenceBand | undefined =
-    raw.readerConfidence ?? bandFromNumeric(confidenceNumeric);
+    raw.readerConfidence ??
+    bandFromNumeric(confidenceNumeric) ??
+    (manualEditedHint ? "manual" : undefined);
   const notes = raw.notes ?? raw.comment;
   const imageReference = raw.imageReference ?? raw.imageUrl ?? raw.imageRef;
   const manualEdited =
@@ -133,8 +165,12 @@ function normaliseRow(raw: z.infer<typeof rawZoneResultSchema>): ZoneResult {
       : raw.originalValue != null &&
         raw.correctedValue != null &&
         raw.originalValue !== raw.correctedValue);
-  const measurementSource: ZoneResult["measurementSource"] =
-    raw.measurementSource ?? (manualEdited ? "reader_then_manual" : "reader");
+  const rawSource = raw.measurementSource;
+  const measurementSource: ZoneResult["measurementSource"] = rawSource
+    ? MEASUREMENT_SOURCE_ALIAS[rawSource]
+    : manualEdited
+      ? "reader_then_manual"
+      : "auto_reader";
 
   return {
     antibioticCode: raw.antibioticCode,

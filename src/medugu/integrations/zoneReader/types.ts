@@ -27,8 +27,27 @@ export type ZoneReaderStandard = "EUCAST" | "CLSI" | "LOCAL";
 /** Reader confidence as a coarse band (alias for numeric 0–1 confidence). */
 export type ReaderConfidenceBand = "high" | "medium" | "low" | "manual";
 
-/** Source of the zone measurement actually written. */
-export type MeasurementSource = "reader" | "manual" | "reader_then_manual";
+/**
+ * Source of the zone measurement actually written.
+ *
+ * Canonical enum (v1):
+ *   - "auto_reader"        — value came directly from the Zone Reader, untouched.
+ *   - "manual_entry"       — value typed in by a human, no reader value at all.
+ *   - "reader_then_manual" — reader produced a value that a human then edited.
+ *   - "imported"           — value came from another upstream system / payload.
+ *
+ * Older v1.0 aliases still accepted on import (and normalised away):
+ *   - "reader" → "auto_reader"
+ *   - "manual" → "manual_entry"
+ */
+export type MeasurementSource =
+  | "auto_reader"
+  | "manual_entry"
+  | "reader_then_manual"
+  | "imported";
+
+/** Aliases accepted on import; never written internally. */
+export type MeasurementSourceAlias = "reader" | "manual";
 
 /** Per-row review lifecycle in the import review table. */
 export type ImportReviewStatus = "pending" | "accepted" | "rejected" | "overridden";
