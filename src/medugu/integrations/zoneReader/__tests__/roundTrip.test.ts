@@ -211,7 +211,6 @@ export function runZoneReaderRoundTripTests() {
   assert.equal(srcReader.matched.length, 1);
   // The mapper returns MatchedRow which doesn't surface measurementSource directly,
   // so re-parse via the schema to confirm normalisation at the contract boundary.
-  const { zoneReaderResultImportSchema } = require("../schemas") as typeof import("../schemas");
   const normReader = zoneReaderResultImportSchema.parse({
     ...baseImport,
     readAt: "2026-05-12T10:42:00Z",
