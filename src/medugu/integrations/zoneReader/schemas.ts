@@ -73,7 +73,25 @@ export const zoneReaderWorklistExportSchema = z.object({
 
 const confidenceBandSchema = z.enum(["high", "medium", "low", "manual"]);
 const reviewStatusSchema = z.enum(["pending", "accepted", "rejected", "overridden"]);
-const measurementSourceSchema = z.enum(["reader", "manual", "reader_then_manual"]);
+const measurementSourceSchema = z.enum([
+  // canonical
+  "auto_reader",
+  "manual_entry",
+  "reader_then_manual",
+  "imported",
+  // accepted v1.0 aliases — normalised in transform
+  "reader",
+  "manual",
+]);
+
+const MEASUREMENT_SOURCE_ALIAS: Record<string, "auto_reader" | "manual_entry" | "reader_then_manual" | "imported"> = {
+  reader: "auto_reader",
+  manual: "manual_entry",
+  auto_reader: "auto_reader",
+  manual_entry: "manual_entry",
+  reader_then_manual: "reader_then_manual",
+  imported: "imported",
+};
 
 /** Tolerant raw row schema — every alias allowed; normalised in transform. */
 const rawZoneResultSchema = z
