@@ -140,8 +140,22 @@ function bandFromNumeric(n: number | undefined): ReaderConfidenceBand | undefine
 function normaliseRow(raw: z.infer<typeof rawZoneResultSchema>): ZoneResult {
   const zoneDiameterMm = (raw.zoneDiameterMm ?? raw.zoneMm) as number;
   const confidenceNumeric = raw.confidenceNumeric ?? raw.confidence;
+  // Confidence band normalisation:
+  //   manual_entry / manual_edited (no numeric)  → "manual"
+  //   numeric ≥ 0.85                              → "high"
+  //   0.6 ≤ numeric < 0.85                        → "medium"
+  //   numeric < 0.6                               → "low"
+  // An explicit readerConfidence on the row always wins.
+  const manualEditedHint =
+    raw.manualEdited === true ||
+    raw.readerConfidence === "manual" ||
+    raw.measurementSource === "manual" ||
+    raw.measurementSource === "manual_entry" ||
+    raw.measurementSource === "reader_then_manual";
   const readerConfidence: ReaderConfidenceBand | undefined =
-    raw.readerConfidence ?? bandFromNumeric(confidenceNumeric);
+    raw.readerConfidence ??
+    bandFromNumeric(confidenceNumeric) ??
+    (manualEditedHint ? "manual" : undefined);
   const notes = raw.notes ?? raw.comment;
   const imageReference = raw.imageReference ?? raw.imageUrl ?? raw.imageRef;
   const manualEdited =
