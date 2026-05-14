@@ -151,8 +151,12 @@ function normaliseRow(raw: z.infer<typeof rawZoneResultSchema>): ZoneResult {
       : raw.originalValue != null &&
         raw.correctedValue != null &&
         raw.originalValue !== raw.correctedValue);
-  const measurementSource: ZoneResult["measurementSource"] =
-    raw.measurementSource ?? (manualEdited ? "reader_then_manual" : "reader");
+  const rawSource = raw.measurementSource;
+  const measurementSource: ZoneResult["measurementSource"] = rawSource
+    ? MEASUREMENT_SOURCE_ALIAS[rawSource]
+    : manualEdited
+      ? "reader_then_manual"
+      : "auto_reader";
 
   return {
     antibioticCode: raw.antibioticCode,
