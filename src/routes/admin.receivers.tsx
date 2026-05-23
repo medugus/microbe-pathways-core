@@ -231,11 +231,6 @@ function ReceiversAdminPage() {
                     <div className="truncate font-mono text-[11px] text-muted-foreground">
                       {r.endpoint_url}
                     </div>
-                    {r.bearer_token && (
-                      <div className="text-[10px] text-muted-foreground">
-                        bearer token configured
-                      </div>
-                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
