@@ -17,6 +17,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Accession, ReleasePackage } from "../domain/types";
 import { ReleaseState } from "../domain/enums";
 import { buildExport, type ExportFormat } from "../logic/exportEngine";
