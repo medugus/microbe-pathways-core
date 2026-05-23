@@ -18,7 +18,6 @@ interface ReceiverRow {
   name: string;
   endpoint_url: string;
   format: "fhir" | "hl7" | "json";
-  bearer_token: string | null;
   enabled: boolean;
   created_at: string;
 }
