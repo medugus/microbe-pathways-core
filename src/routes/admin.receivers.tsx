@@ -50,7 +50,7 @@ function ReceiversAdminPage() {
     setErr(null);
     const { data, error } = await supabase
       .from("receivers")
-      .select("id, tenant_id, name, endpoint_url, format, bearer_token, enabled, created_at")
+      .select("id, tenant_id, name, endpoint_url, format, enabled, created_at")
       .order("created_at", { ascending: false });
     if (error) setErr(error.message);
     setRows((data ?? []) as ReceiverRow[]);
