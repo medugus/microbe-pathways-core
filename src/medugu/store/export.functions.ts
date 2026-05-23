@@ -174,11 +174,21 @@ export async function autoDispatchRelease(
   pkgRow: PackageRow,
   excludedReceiverIds: string[] = [],
 ): Promise<AutoDispatchResult[]> {
-  const { data: receivers, error } = await supabase
+  // Verify visibility via the caller's RLS-scoped client (tenant membership)…
+  const { data: visible, error: visErr } = await supabase
+    .from("receivers")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("enabled", true);
+  if (visErr || !visible || visible.length === 0) return [];
+  const visibleIds = visible.map((r) => r.id as string);
+  // …then load bearer_token server-side via the admin client (column-revoked from authenticated).
+  const { data: receivers, error } = await supabaseAdmin
     .from("receivers")
     .select("id, tenant_id, name, endpoint_url, format, bearer_token, enabled")
     .eq("tenant_id", tenantId)
-    .eq("enabled", true);
+    .eq("enabled", true)
+    .in("id", visibleIds);
   if (error || !receivers || receivers.length === 0) return [];
 
   const excluded = new Set(excludedReceiverIds);
