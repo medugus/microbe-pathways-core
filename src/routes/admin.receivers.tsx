@@ -18,7 +18,6 @@ interface ReceiverRow {
   name: string;
   endpoint_url: string;
   format: "fhir" | "hl7" | "json";
-  bearer_token: string | null;
   enabled: boolean;
   created_at: string;
 }
@@ -51,7 +50,7 @@ function ReceiversAdminPage() {
     setErr(null);
     const { data, error } = await supabase
       .from("receivers")
-      .select("id, tenant_id, name, endpoint_url, format, bearer_token, enabled, created_at")
+      .select("id, tenant_id, name, endpoint_url, format, enabled, created_at")
       .order("created_at", { ascending: false });
     if (error) setErr(error.message);
     setRows((data ?? []) as ReceiverRow[]);
@@ -232,11 +231,6 @@ function ReceiversAdminPage() {
                     <div className="truncate font-mono text-[11px] text-muted-foreground">
                       {r.endpoint_url}
                     </div>
-                    {r.bearer_token && (
-                      <div className="text-[10px] text-muted-foreground">
-                        bearer token configured
-                      </div>
-                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
