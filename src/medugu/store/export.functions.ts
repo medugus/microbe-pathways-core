@@ -238,15 +238,24 @@ export const dispatchExport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<DispatchResult> => {
     const { supabase, userId } = context;
 
-    // 1. Load receiver (RLS-scoped, must be enabled).
-    const { data: receiver, error: rcvErr } = await supabase
+    // 1. Verify receiver visibility under the caller's tenant via RLS-scoped client.
+    const { data: visibleRcv, error: visErr } = await supabase
+      .from("receivers")
+      .select("id, tenant_id, enabled")
+      .eq("id", data.receiverId)
+      .maybeSingle();
+    if (visErr) return { ok: false, reason: `Receiver lookup failed: ${visErr.message}` };
+    if (!visibleRcv) return { ok: false, reason: "Receiver not found or not visible." };
+    if (!visibleRcv.enabled) return { ok: false, reason: "Receiver is disabled." };
+    // Load bearer_token server-side (column-revoked from authenticated).
+    const { data: receiver, error: rcvErr } = await supabaseAdmin
       .from("receivers")
       .select("id, tenant_id, name, endpoint_url, format, bearer_token, enabled")
       .eq("id", data.receiverId)
+      .eq("tenant_id", visibleRcv.tenant_id)
       .maybeSingle();
     if (rcvErr) return { ok: false, reason: `Receiver lookup failed: ${rcvErr.message}` };
-    if (!receiver) return { ok: false, reason: "Receiver not found or not visible." };
-    if (!receiver.enabled) return { ok: false, reason: "Receiver is disabled." };
+    if (!receiver) return { ok: false, reason: "Receiver not found." };
 
     // 2. Load accession (RLS-scoped); must be released or amended.
     const { data: acc, error: accErr } = await supabase
