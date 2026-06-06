@@ -8,7 +8,7 @@ import { emitZoneReaderAudit } from "../../../integrations/zoneReader/auditEvent
 import { getZoneReaderSettings } from "../../../integrations/zoneReader/settings";
 import type {
   ImportMapResult,
-  ZoneReaderWorklistExport,
+  ZoneReaderWorklistEnvelope,
 } from "../../../integrations/zoneReader/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +27,7 @@ const HELPER_TEXT =
 
 export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const settings = getZoneReaderSettings();
-  const [lastWorklist, setLastWorklist] = useState<ZoneReaderWorklistExport | null>(null);
+  const [lastWorklist, setLastWorklist] = useState<ZoneReaderWorklistEnvelope | null>(null);
   const [importResult, setImportResult] = useState<ImportMapResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [pasted, setPasted] = useState("");
@@ -45,7 +45,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     try {
       const result = mapImport({
         accession,
-        worklist: lastWorklist ?? undefined,
+        worklist: lastWorklist?.worklist,
         payload,
       });
       setImportResult(result);
@@ -71,13 +71,13 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
 
   function onExport() {
     try {
-      const w = buildWorklistExport({ accession, isolateId, astPanelId });
-      setLastWorklist(w);
-      const blob = new Blob([JSON.stringify(w, null, 2)], { type: "application/json" });
+      const envelope = buildWorklistExport({ accession, isolateId, astPanelId });
+      setLastWorklist(envelope);
+      const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `zone-reader-worklist-${accession.accessionNumber}-${w.isolateNo}.json`;
+      a.download = `zone-reader-worklist-${accession.accessionNumber}-${envelope.worklist.isolateNo}.json`;
       a.click();
       URL.revokeObjectURL(url);
       emitZoneReaderAudit({
@@ -85,7 +85,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
         accessionId: accession.id,
         isolateId,
         astPanelId,
-        detail: { rowCount: w.expectedDiscs.length },
+        detail: { rowCount: envelope.worklist.expectedDiscs.length },
       });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : String(err));
