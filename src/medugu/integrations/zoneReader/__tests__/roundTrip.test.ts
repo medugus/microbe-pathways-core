@@ -319,18 +319,36 @@ export function runZoneReaderVreExportFixtureTest() {
   assert.equal(envelope.schemaVersion, "1.0.0");
   assert.equal(typeof envelope.createdAt, "string");
   assert.equal(envelope.worklistId, "MB25-COL002:iso_EFAM_1:enterococcus");
-  assert.equal(envelope.contractVersion, "1.0.0");
   assert.equal(envelope.sourceSystem, "MEDUGU_LIMS");
 
   // organismGroup is a string (importer rejects null).
   assert.equal(typeof envelope.organismGroup, "string");
   assert.equal(envelope.organismGroup, "enterococcus");
 
-  // discPotency is a string on every expected disc (importer rejects null).
+  // discPotency is a NON-EMPTY string on every expected disc — placeholder
+  // "unspecified" until a true potency mapping is added.
   assert.ok(envelope.expectedDiscs.length > 0);
   for (const d of envelope.expectedDiscs) {
     assert.equal(typeof d.discPotency, "string");
+    assert.ok(d.discPotency.length > 0);
+    assert.equal(d.discPotency, "unspecified");
   }
+
+  // Disallowed root fields must NOT appear in the export.
+  for (const k of [
+    "contractVersion",
+    "generatedAt",
+    "isolateNo",
+    "patientName",
+    "ward",
+    "specimenCode",
+    "organismDisplay",
+    "astPanelLabel",
+    "method",
+  ]) {
+    assert.equal((envelope as any)[k], undefined, k + " must NOT be present at root");
+  }
+
   // Required root fields
   for (const k of ["sourceSystem","accessionId","accessionNumber","isolateId","specimenType","organismName","organismCode","organismGroup","astPanelId","astPanelName","standard"] as const) {
     assert.ok((envelope as any)[k] !== undefined, k + " must be present at root");
