@@ -279,6 +279,12 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
                 </Button>
               )}
             </div>
+
+            <AlignmentSummary
+              alignment={importResult.alignment}
+              onCreateMissing={() => createMissingDiskRows(importResult.alignment)}
+            />
+
             <ZoneReaderFindingsList findings={importResult.findings} />
             <ZoneReaderImportReviewTable
               matched={importResult.matched}
@@ -288,10 +294,57 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
               onReject={rejectRow}
             />
             <p className="text-[11px] text-muted-foreground">
-              Every imported row requires scientist review. Accepted rows only write the raw zone diameter through the standard AST setter — interpretation, expert rules, cascade, AMS, IPC, validation and release all run downstream unchanged.
+              Strict row matching by (isolateId, antibioticCode, method=disk_diffusion, standard). MIC rows are never auto-converted. Accepted rows only write the raw zone diameter through the standard AST setter — interpretation, expert rules, cascade, AMS, IPC, validation and release all run downstream unchanged.
             </p>
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AlignmentSummary({
+  alignment,
+  onCreateMissing,
+}: {
+  alignment: UnmatchedAlignment[];
+  onCreateMissing: () => void;
+}) {
+  if (alignment.length === 0) return null;
+  const missing = alignment.filter((a) => a.reason === "MISSING_AST_ROW");
+  const methodMismatch = alignment.filter((a) => a.reason === "METHOD_MISMATCH");
+  const standardMismatch = alignment.filter((a) => a.reason === "STANDARD_MISMATCH");
+  const expectedStandard = alignment.find((a) => a.expectedStandard)?.expectedStandard;
+
+  return (
+    <div className="space-y-2 rounded-md border border-amber-500/40 bg-amber-50/40 p-3 text-xs">
+      <p className="font-semibold uppercase tracking-wide text-amber-700">
+        Pre-import row alignment
+      </p>
+      {missing.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-amber-800">
+            Missing AST rows for {missing.map((m) => m.antibioticCode).join(", ")} under
+            disk_diffusion{expectedStandard ? ` / ${expectedStandard}` : ""}.
+          </span>
+          <Button size="sm" variant="outline" onClick={onCreateMissing}>
+            Create {missing.length} disk-diffusion row{missing.length === 1 ? "" : "s"}
+          </Button>
+        </div>
+      )}
+      {methodMismatch.map((m) => (
+        <p key={`mm-${m.antibioticCode}`} className="text-amber-800">
+          {m.antibioticCode} row exists but method mismatch: {m.existingMethod} vs disk_diffusion. MIC rows are not auto-converted.
+        </p>
+      ))}
+      {standardMismatch.map((m) => (
+        <p key={`sm-${m.antibioticCode}`} className="text-amber-800">
+          {m.antibioticCode} disk-diffusion row uses standard {m.existingStandard}, expected {m.expectedStandard}.
+        </p>
+      ))}
+    </div>
+  );
+}
       </CardContent>
     </Card>
   );
