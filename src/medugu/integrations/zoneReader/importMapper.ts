@@ -18,6 +18,7 @@ import type {
   ImportFinding,
   ImportMapResult,
   MatchedRow,
+  UnmatchedAlignment,
   ZoneReaderResultImport,
   ZoneReaderWorklistExport,
   ZoneResult,
