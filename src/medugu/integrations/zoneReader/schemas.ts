@@ -1,19 +1,4 @@
 // Zod schemas for Zone Reader contract v1.
-//
-// Worklist EXPORT schema is strict (we own the producer).
-// Result IMPORT schema is tolerant: it accepts a documented set of aliases
-// from the Zone Reader app and from likely future LIS adapters, then
-// normalises them into the canonical ZoneResult / ZoneReaderResultImport
-// shape declared in ./types.ts.
-//
-// Alias map (input → canonical):
-//   zoneMm                → zoneDiameterMm
-//   confidence (0–1 num)  → confidenceNumeric  (+ readerConfidence band derived)
-//   readerConfidence text → readerConfidence
-//   device                → readerDeviceId
-//   measuredAt            → readAt
-//   notes / comment       → notes
-//   imageUrl              → imageReference (mirrored to imageUrl too)
 
 import { z } from "zod";
 import {
@@ -25,7 +10,7 @@ import {
 } from "./types";
 
 // ------------------------------------------------------------------
-// Worklist export schema (strict producer)
+// Worklist export schema (strict producer) — FLAT, no wrapper
 // ------------------------------------------------------------------
 
 export const expectedDiscSchema = z.object({
@@ -41,10 +26,15 @@ export const expectedDiscSchema = z.object({
   discContent: z.string().nullable().optional(),
 });
 
-export const zoneReaderWorklistBodySchema = z.object({
+/** Flat worklist payload — every field at the JSON root. */
+export const zoneReaderWorklistExportSchema = z.object({
+  schemaVersion: z.literal(ZONE_READER_CONTRACT_VERSION),
   contractVersion: z.literal(ZONE_READER_CONTRACT_VERSION),
   sourceSystem: z.literal(ZONE_READER_SOURCE_SYSTEM),
+  createdAt: z.string().min(1),
+  worklistId: z.string().min(1),
   generatedAt: z.string().min(1),
+
   accessionId: z.string().min(1),
   accessionNumber: z.string().min(1),
   isolateId: z.string().min(1),
@@ -57,25 +47,20 @@ export const zoneReaderWorklistBodySchema = z.object({
   specimenCode: z.string().nullable().optional(),
   organismName: z.string().nullable().optional(),
   organismCode: z.string().nullable().optional(),
-  // Always a string — empty string allowed.
   organismGroup: z.string(),
   organismDisplay: z.string().optional(),
 
   astPanelId: z.string().min(1),
   astPanelLabel: z.string().min(1),
-  astPanelName: z.string().optional(),
-  standard: z.enum(["EUCAST", "CLSI", "LOCAL"]).nullable().optional(),
+  astPanelName: z.string().min(1),
+  standard: z.enum(["EUCAST", "CLSI", "LOCAL"]).nullable(),
 
   method: z.literal("disk_diffusion"),
   expectedDiscs: z.array(expectedDiscSchema).min(1),
 });
 
-/** Top-level envelope: { schemaVersion, createdAt, worklist }. */
-export const zoneReaderWorklistExportSchema = z.object({
-  schemaVersion: z.literal(ZONE_READER_CONTRACT_VERSION),
-  createdAt: z.string().min(1),
-  worklist: zoneReaderWorklistBodySchema,
-});
+/** @deprecated alias kept for back-compat. */
+export const zoneReaderWorklistBodySchema = zoneReaderWorklistExportSchema;
 
 // ------------------------------------------------------------------
 // Result import schema — accepts aliases, normalises to canonical
@@ -84,12 +69,10 @@ export const zoneReaderWorklistExportSchema = z.object({
 const confidenceBandSchema = z.enum(["high", "medium", "low", "manual"]);
 const reviewStatusSchema = z.enum(["pending", "accepted", "rejected", "overridden"]);
 const measurementSourceSchema = z.enum([
-  // canonical
   "auto_reader",
   "manual_entry",
   "reader_then_manual",
   "imported",
-  // accepted v1.0 aliases — normalised in transform
   "reader",
   "manual",
 ]);
@@ -103,14 +86,11 @@ const MEASUREMENT_SOURCE_ALIAS: Record<string, "auto_reader" | "manual_entry" | 
   imported: "imported",
 };
 
-/** Tolerant raw row schema — every alias allowed; normalised in transform. */
 const rawZoneResultSchema = z
   .object({
     antibioticCode: z.string().min(1),
-    // aliases for the diameter
     zoneDiameterMm: z.number().min(0).max(80).optional(),
     zoneMm: z.number().min(0).max(80).optional(),
-    // aliases for confidence
     confidence: z.number().min(0).max(1).optional(),
     confidenceNumeric: z.number().min(0).max(1).optional(),
     readerConfidence: confidenceBandSchema.optional(),
@@ -123,11 +103,9 @@ const rawZoneResultSchema = z
     reviewedBy: z.string().optional(),
     reviewedAt: z.string().optional(),
     plateBarcode: z.string().optional(),
-    // image aliases
     imageReference: z.string().optional(),
     imageUrl: z.string().optional(),
     imageRef: z.string().optional(),
-    // notes aliases
     notes: z.string().optional(),
     comment: z.string().optional(),
   })
@@ -150,12 +128,6 @@ function bandFromNumeric(n: number | undefined): ReaderConfidenceBand | undefine
 function normaliseRow(raw: z.infer<typeof rawZoneResultSchema>): ZoneResult {
   const zoneDiameterMm = (raw.zoneDiameterMm ?? raw.zoneMm) as number;
   const confidenceNumeric = raw.confidenceNumeric ?? raw.confidence;
-  // Confidence band normalisation:
-  //   manual_entry / manual_edited (no numeric)  → "manual"
-  //   numeric ≥ 0.85                              → "high"
-  //   0.6 ≤ numeric < 0.85                        → "medium"
-  //   numeric < 0.6                               → "low"
-  // An explicit readerConfidence on the row always wins.
   const manualEditedHint =
     raw.manualEdited === true ||
     raw.readerConfidence === "manual" ||
@@ -207,7 +179,6 @@ function normaliseRow(raw: z.infer<typeof rawZoneResultSchema>): ZoneResult {
 const rawImportSchema = z.object({
   contractVersion: z.literal(ZONE_READER_CONTRACT_VERSION),
   sourceSystem: z.string().min(1),
-  // aliases for timestamp
   readAt: z.string().min(1).optional(),
   measuredAt: z.string().min(1).optional(),
   accessionId: z.string().min(1),
@@ -216,7 +187,6 @@ const rawImportSchema = z.object({
   astPanelId: z.string().min(1),
   method: z.literal("disk_diffusion"),
   results: z.array(rawZoneResultSchema).min(1),
-  // aliases for device
   readerDeviceId: z.string().optional(),
   device: z.string().optional(),
   readerSoftwareVersion: z.string().optional(),
