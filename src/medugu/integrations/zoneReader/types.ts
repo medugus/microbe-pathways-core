@@ -40,7 +40,13 @@ export type ImportReviewStatus = "pending" | "accepted" | "rejected" | "overridd
 export interface ExpectedDisc {
   antibioticCode: string;
   antibioticName?: string | null;
-  /** Always a string — empty string when unknown. Importer rejects null. */
+  /**
+   * Disc potency string. The Zone Reader importer requires a non-empty
+   * string. When a true potency mapping is not yet available in the
+   * antibiotic dictionary we emit the stable placeholder
+   * {@link DISC_POTENCY_PLACEHOLDER} ("unspecified") rather than an empty
+   * string or a fabricated dose.
+   */
   discPotency: string;
   antibioticClass?: string | null;
   awareCategory?: "Access" | "Watch" | "Reserve" | null;
@@ -51,51 +57,48 @@ export interface ExpectedDisc {
 }
 
 /**
- * Flat top-level worklist payload. The Zone Reader importer expects every
- * field at the JSON root — there is NO `worklist` wrapper.
+ * Stable placeholder used for {@link ExpectedDisc.discPotency} when the
+ * antibiotic dictionary does not yet carry a true potency mapping. Chosen
+ * to be clinically non-misleading — it does NOT name a real dose.
+ */
+export const DISC_POTENCY_PLACEHOLDER = "unspecified" as const;
+
+/**
+ * Flat top-level worklist payload. Field set is intentionally limited to
+ * exactly what the current strict Zone Reader `LimsWorklist` schema accepts
+ * at the JSON root — no extra fields.
  */
 export interface ZoneReaderWorklistExport {
   /** Envelope/schema version, at the JSON root. */
   schemaVersion: typeof ZONE_READER_CONTRACT_VERSION;
-  /** Same value as schemaVersion, kept for back-compat with v1.0 consumers. */
-  contractVersion: typeof ZONE_READER_CONTRACT_VERSION;
   sourceSystem: typeof ZONE_READER_SOURCE_SYSTEM;
   /** ISO timestamp the worklist envelope was created. */
   createdAt: string;
   /** Stable round-trip id derived from accessionId + isolateId + astPanelId. */
   worklistId: string;
-  /** ISO timestamp the worklist was generated (alias of createdAt). */
-  generatedAt: string;
 
   accessionId: string;
   accessionNumber: string;
   isolateId: string;
-  isolateNo: number;
 
   patientDisplayId?: string | null;
-  patientName?: string | null;
-  ward?: string | null;
 
   specimenType?: string | null;
-  specimenCode?: string | null;
 
   organismName?: string | null;
   organismCode?: string | null;
   /** Always a string — empty string when unknown. Importer rejects null. */
   organismGroup: string;
-  /** @deprecated use organismName. */
-  organismDisplay?: string;
 
   astPanelId: string;
-  astPanelLabel: string;
-  /** Alias the Zone Reader app expects; same value as astPanelLabel. */
+  /** Display label for the AST panel. */
   astPanelName: string;
   /** Breakpoint standard in force for this isolate. */
   standard: ZoneReaderStandard | null;
 
-  method: ZoneReaderMethod;
   expectedDiscs: ExpectedDisc[];
 }
+
 
 /**
  * @deprecated Envelope is now flat — alias for {@link ZoneReaderWorklistExport}.

@@ -6,11 +6,13 @@
 import type { Accession } from "../../domain/types";
 import { getASTPanel, getAntibiotic } from "../../config/antibiotics";
 import {
+  DISC_POTENCY_PLACEHOLDER,
   ZONE_READER_CONTRACT_VERSION,
   ZONE_READER_SOURCE_SYSTEM,
   type ZoneReaderStandard,
   type ZoneReaderWorklistExport,
 } from "./types";
+
 
 export interface BuildWorklistInput {
   accession: Accession;

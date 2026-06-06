@@ -26,38 +26,43 @@ export const expectedDiscSchema = z.object({
   discContent: z.string().nullable().optional(),
 });
 
-/** Flat worklist payload — every field at the JSON root. */
-export const zoneReaderWorklistExportSchema = z.object({
-  schemaVersion: z.literal(ZONE_READER_CONTRACT_VERSION),
-  contractVersion: z.literal(ZONE_READER_CONTRACT_VERSION),
-  sourceSystem: z.literal(ZONE_READER_SOURCE_SYSTEM),
-  createdAt: z.string().min(1),
-  worklistId: z.string().min(1),
-  generatedAt: z.string().min(1),
+/**
+ * Flat worklist payload — strict producer schema. Field set mirrors the
+ * Zone Reader importer's `LimsWorklist` schema exactly; unknown root fields
+ * are rejected (`.strict()`), and `discPotency` must be a non-empty string.
+ */
+export const zoneReaderWorklistExportSchema = z
+  .object({
+    schemaVersion: z.literal(ZONE_READER_CONTRACT_VERSION),
+    sourceSystem: z.literal(ZONE_READER_SOURCE_SYSTEM),
+    createdAt: z.string().min(1),
+    worklistId: z.string().min(1),
 
-  accessionId: z.string().min(1),
-  accessionNumber: z.string().min(1),
-  isolateId: z.string().min(1),
-  isolateNo: z.number().int().nonnegative(),
+    accessionId: z.string().min(1),
+    accessionNumber: z.string().min(1),
+    isolateId: z.string().min(1),
 
-  patientDisplayId: z.string().nullable().optional(),
-  patientName: z.string().nullable().optional(),
-  ward: z.string().nullable().optional(),
-  specimenType: z.string().nullable().optional(),
-  specimenCode: z.string().nullable().optional(),
-  organismName: z.string().nullable().optional(),
-  organismCode: z.string().nullable().optional(),
-  organismGroup: z.string(),
-  organismDisplay: z.string().optional(),
+    patientDisplayId: z.string().nullable().optional(),
+    specimenType: z.string().nullable().optional(),
+    organismName: z.string().nullable().optional(),
+    organismCode: z.string().nullable().optional(),
+    organismGroup: z.string().min(1),
 
-  astPanelId: z.string().min(1),
-  astPanelLabel: z.string().min(1),
-  astPanelName: z.string().min(1),
-  standard: z.enum(["EUCAST", "CLSI", "LOCAL"]).nullable(),
+    astPanelId: z.string().min(1),
+    astPanelName: z.string().min(1),
+    standard: z.enum(["EUCAST", "CLSI", "LOCAL"]).nullable(),
 
-  method: z.literal("disk_diffusion"),
-  expectedDiscs: z.array(expectedDiscSchema).min(1),
-});
+    expectedDiscs: z
+      .array(
+        expectedDiscSchema.extend({
+          // Tighten at the producer boundary: discPotency must be non-empty.
+          discPotency: z.string().min(1),
+        }),
+      )
+      .min(1),
+  })
+  .strict();
+
 
 /** @deprecated alias kept for back-compat. */
 export const zoneReaderWorklistBodySchema = zoneReaderWorklistExportSchema;
