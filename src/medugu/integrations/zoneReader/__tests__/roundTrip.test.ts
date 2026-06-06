@@ -63,19 +63,26 @@ export function runZoneReaderRoundTripTests() {
   const accession = makeAccession();
 
   // 1. Successful export/import round trip
-  const w = buildWorklistExport({
+  const envelope = buildWorklistExport({
     accession,
     isolateId: "iso-1",
     astPanelId: "enterobacterales",
     now: new Date("2026-05-12T10:00:00Z"),
   });
+  assert.equal(envelope.schemaVersion, ZONE_READER_CONTRACT_VERSION);
+  assert.equal(envelope.createdAt, "2026-05-12T10:00:00.000Z");
+  const w = envelope.worklist;
   assert.equal(w.contractVersion, ZONE_READER_CONTRACT_VERSION);
   assert.equal(w.standard, "EUCAST");
   assert.equal(w.patientDisplayId, "P-001");
   assert.equal(w.patientName, "Ada Lovelace");
   assert.equal(w.ward, "ICU");
   assert.equal(w.organismName, "Escherichia coli");
+  assert.equal(typeof w.organismGroup, "string");
   assert.ok(w.expectedDiscs.length > 0);
+  for (const d of w.expectedDiscs) {
+    assert.equal(typeof d.discPotency, "string");
+  }
   const ampDisc = w.expectedDiscs.find((d) => d.antibioticCode === "AMP");
   assert.equal(ampDisc?.antibioticClass, "penicillin");
 
