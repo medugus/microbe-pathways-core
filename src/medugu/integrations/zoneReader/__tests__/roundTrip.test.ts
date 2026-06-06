@@ -484,6 +484,124 @@ export function runZoneReaderRoundTripTests() {
       `MatchedRow must not carry ${k}`,
     );
   }
+
+  // 15. Row alignment — MISSING_AST_ROW for an antibiotic with no row at all.
+  //     Strict matching does NOT auto-create rows; it surfaces a structured
+  //     alignment + warning finding.
+  const missingRow = mapImport({
+    accession,
+    payload: {
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "TEC", zoneDiameterMm: 18, confidence: 0.9 }],
+    },
+  });
+  assert.equal(missingRow.ok, true);
+  assert.equal(missingRow.matched.length, 0);
+  assert.equal(missingRow.unmatched.length, 1);
+  assert.equal(missingRow.alignment.length, 1);
+  assert.equal(missingRow.alignment[0].reason, "MISSING_AST_ROW");
+  assert.equal(missingRow.alignment[0].antibioticCode, "TEC");
+  assert.ok(
+    missingRow.findings.some(
+      (f) => f.code === "MISSING_AST_ROW" && f.antibioticCode === "TEC",
+    ),
+    "expected MISSING_AST_ROW finding",
+  );
+
+  // 16. Method mismatch — only a MIC row exists for VAN, reader returns
+  //     disk_diffusion. Must NOT match and must NOT auto-convert.
+  const accVan: Accession = {
+    ...makeAccession(),
+    ast: [
+      ...makeAccession().ast,
+      {
+        id: "ast-van-mic",
+        isolateId: "iso-1",
+        antibioticCode: "VAN",
+        method: ASTMethod.MIC_Broth,
+        standard: "EUCAST",
+        rawValue: 1,
+        governance: {},
+        cascade: {},
+      } as any,
+    ],
+  } as Accession;
+  const methodMismatch = mapImport({
+    accession: accVan,
+    payload: {
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "VAN", zoneDiameterMm: 17, confidence: 0.9 }],
+    },
+  });
+  assert.equal(methodMismatch.ok, true);
+  assert.equal(methodMismatch.matched.length, 0);
+  assert.equal(methodMismatch.alignment[0].reason, "METHOD_MISMATCH");
+  assert.equal(methodMismatch.alignment[0].existingMethod, ASTMethod.MIC_Broth);
+  assert.ok(
+    methodMismatch.findings.some(
+      (f) => f.code === "METHOD_MISMATCH" && f.antibioticCode === "VAN",
+    ),
+  );
+  // The MIC row is left untouched — proof there's no auto-conversion.
+  assert.equal(
+    accVan.ast.find((a) => a.antibioticCode === "VAN")?.method,
+    ASTMethod.MIC_Broth,
+  );
+
+  // 17. After a matching disk-diffusion row is created on the same isolate,
+  //     re-running mapImport now matches cleanly.
+  const accWithDisk: Accession = {
+    ...accVan,
+    ast: [
+      ...accVan.ast,
+      {
+        id: "ast-van-disk",
+        isolateId: "iso-1",
+        antibioticCode: "VAN",
+        method: ASTMethod.DiskDiffusion,
+        standard: "EUCAST",
+        rawValue: undefined,
+        governance: {},
+        cascade: {},
+      } as any,
+    ],
+  } as Accession;
+  const reMatched = mapImport({
+    accession: accWithDisk,
+    payload: {
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "VAN", zoneDiameterMm: 17, confidence: 0.9 }],
+    },
+  });
+  assert.equal(reMatched.ok, true);
+  assert.equal(reMatched.matched.length, 1);
+  assert.equal(reMatched.matched[0].astRowId, "ast-van-disk");
+  assert.equal(reMatched.alignment.length, 0);
+
+  // 18. Standard mismatch — disk row exists but under a different standard
+  //     than the worklist expects.
+  const accCLSI: Accession = {
+    ...makeAccession(),
+    ast: makeAccession().ast.map((r) =>
+      r.antibioticCode === "AMP" ? ({ ...r, standard: "CLSI" } as typeof r) : r,
+    ),
+  } as Accession;
+  const stdMismatch = mapImport({
+    accession: accCLSI,
+    worklist: { ...envelope, standard: "EUCAST" } as typeof envelope,
+    payload: {
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "AMP", zoneDiameterMm: 18, confidence: 0.9 }],
+    },
+  });
+  assert.equal(stdMismatch.matched.length, 0);
+  assert.equal(stdMismatch.alignment[0].reason, "STANDARD_MISMATCH");
+  assert.equal(stdMismatch.alignment[0].existingStandard, "CLSI");
+  assert.equal(stdMismatch.alignment[0].expectedStandard, "EUCAST");
 }
 
 // VRE screen accession fixture — confirms the exported envelope passes the
