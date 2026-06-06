@@ -32,6 +32,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const settings = getZoneReaderSettings();
   const [lastWorklist, setLastWorklist] = useState<ZoneReaderWorklistExport | null>(null);
   const [importResult, setImportResult] = useState<ImportMapResult | null>(null);
+  const [lastPayload, setLastPayload] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [pasted, setPasted] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
