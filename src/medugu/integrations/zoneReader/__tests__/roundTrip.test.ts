@@ -75,17 +75,17 @@ export function runZoneReaderRoundTripTests() {
   assert.equal(envelope.schemaVersion, ZONE_READER_CONTRACT_VERSION);
   assert.equal(envelope.createdAt, "2026-05-12T10:00:00.000Z");
   const w = envelope;
-  assert.equal(w.contractVersion, ZONE_READER_CONTRACT_VERSION);
+  assert.equal(w.sourceSystem, "MEDUGU_LIMS");
   assert.equal(w.standard, "EUCAST");
   assert.equal(w.patientDisplayId, "P-001");
-  assert.equal(w.patientName, "Ada Lovelace");
-  assert.equal(w.ward, "ICU");
   assert.equal(w.organismName, "Escherichia coli");
   assert.equal(typeof w.organismGroup, "string");
   assert.ok(w.expectedDiscs.length > 0);
   for (const d of w.expectedDiscs) {
     assert.equal(typeof d.discPotency, "string");
+    assert.ok(d.discPotency.length > 0);
   }
+
   const ampDisc = w.expectedDiscs.find((d) => d.antibioticCode === "AMP");
   assert.equal(ampDisc?.antibioticClass, "penicillin");
 
@@ -319,18 +319,36 @@ export function runZoneReaderVreExportFixtureTest() {
   assert.equal(envelope.schemaVersion, "1.0.0");
   assert.equal(typeof envelope.createdAt, "string");
   assert.equal(envelope.worklistId, "MB25-COL002:iso_EFAM_1:enterococcus");
-  assert.equal(envelope.contractVersion, "1.0.0");
   assert.equal(envelope.sourceSystem, "MEDUGU_LIMS");
 
   // organismGroup is a string (importer rejects null).
   assert.equal(typeof envelope.organismGroup, "string");
   assert.equal(envelope.organismGroup, "enterococcus");
 
-  // discPotency is a string on every expected disc (importer rejects null).
+  // discPotency is a NON-EMPTY string on every expected disc — placeholder
+  // "unspecified" until a true potency mapping is added.
   assert.ok(envelope.expectedDiscs.length > 0);
   for (const d of envelope.expectedDiscs) {
     assert.equal(typeof d.discPotency, "string");
+    assert.ok(d.discPotency.length > 0);
+    assert.equal(d.discPotency, "unspecified");
   }
+
+  // Disallowed root fields must NOT appear in the export.
+  for (const k of [
+    "contractVersion",
+    "generatedAt",
+    "isolateNo",
+    "patientName",
+    "ward",
+    "specimenCode",
+    "organismDisplay",
+    "astPanelLabel",
+    "method",
+  ]) {
+    assert.equal((envelope as any)[k], undefined, k + " must NOT be present at root");
+  }
+
   // Required root fields
   for (const k of ["sourceSystem","accessionId","accessionNumber","isolateId","specimenType","organismName","organismCode","organismGroup","astPanelId","astPanelName","standard"] as const) {
     assert.ok((envelope as any)[k] !== undefined, k + " must be present at root");

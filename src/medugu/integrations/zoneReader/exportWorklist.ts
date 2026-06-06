@@ -6,11 +6,13 @@
 import type { Accession } from "../../domain/types";
 import { getASTPanel, getAntibiotic } from "../../config/antibiotics";
 import {
+  DISC_POTENCY_PLACEHOLDER,
   ZONE_READER_CONTRACT_VERSION,
   ZONE_READER_SOURCE_SYSTEM,
   type ZoneReaderStandard,
   type ZoneReaderWorklistExport,
 } from "./types";
+
 
 export interface BuildWorklistInput {
   accession: Accession;
@@ -67,8 +69,11 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
     return {
       antibioticCode: code,
       antibioticName: ab?.display ?? null,
-      // Zone Reader importer rejects null for discPotency — empty string when unknown.
-      discPotency: "",
+      // Zone Reader importer requires a non-empty string. No true potency
+      // mapping exists in the antibiotic dictionary yet, so emit the stable
+      // placeholder DISC_POTENCY_PLACEHOLDER ("unspecified") for every disc
+      // rather than fabricate a clinically misleading dose.
+      discPotency: DISC_POTENCY_PLACEHOLDER,
       antibioticClass: ab?.class ?? null,
       awareCategory: null,
       reportabilityDefault: null,
@@ -82,47 +87,36 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
 
   const patient = accession.patient;
   const specimen = accession.specimen;
-  const patientName =
-    patient && (patient.givenName || patient.familyName)
-      ? `${patient.givenName ?? ""} ${patient.familyName ?? ""}`.trim()
-      : null;
 
   const now = (input.now ?? new Date()).toISOString();
   const worklistId = `${accession.id}:${isolate.id}:${panel.id}`;
 
   const envelope: ZoneReaderWorklistExport = {
     schemaVersion: ZONE_READER_CONTRACT_VERSION,
-    contractVersion: ZONE_READER_CONTRACT_VERSION,
     sourceSystem: ZONE_READER_SOURCE_SYSTEM,
     createdAt: now,
     worklistId,
-    generatedAt: now,
 
     accessionId: accession.id,
     accessionNumber: accession.accessionNumber,
     isolateId: isolate.id,
-    isolateNo: isolate.isolateNo,
 
     patientDisplayId: patient?.mrn ?? null,
-    patientName,
-    ward: patient?.ward ?? null,
 
     specimenType: specimen?.freeTextLabel ?? specimen?.subtypeCode ?? null,
-    specimenCode: specimen?.subtypeCode ?? specimen?.familyCode ?? null,
 
     organismName: isolate.organismDisplay ?? null,
     organismCode: isolate.organismCode ?? null,
     organismGroup: deriveOrganismGroup(isolate.organismCode),
-    organismDisplay: isolate.organismDisplay,
 
     astPanelId: panel.id,
-    astPanelLabel: panel.label,
     astPanelName: panel.label,
     standard,
 
-    method: "disk_diffusion",
     expectedDiscs,
   };
+
+
 
   return envelope;
 }

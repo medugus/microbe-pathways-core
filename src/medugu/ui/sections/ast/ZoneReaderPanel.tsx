@@ -77,7 +77,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `zone-reader-worklist-${accession.accessionNumber}-${envelope.isolateNo}.json`;
+      a.download = `zone-reader-worklist-${accession.accessionNumber}-${isolateId}.json`;
       a.click();
       URL.revokeObjectURL(url);
       emitZoneReaderAudit({
