@@ -44,7 +44,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
 
   if (!settings.enabled) return null;
 
-  function runMap(payload: string, source: "file" | "paste") {
+  function runMap(payload: string, source: "file" | "paste" | "rerun") {
     setImportError(null);
     try {
       const result = mapImport({
@@ -53,6 +53,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
         payload,
       });
       setImportResult(result);
+      setLastPayload(payload);
       emitZoneReaderAudit({
         code: result.ok
           ? "ZONE_READER_RESULT_IMPORT_PARSED"
@@ -66,11 +67,46 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
           unmatched: result.unmatched.length,
           missing: result.missing.length,
           findings: result.findings.length,
+          alignmentMissing: result.alignment.filter((a) => a.reason === "MISSING_AST_ROW").length,
+          alignmentMethodMismatch: result.alignment.filter((a) => a.reason === "METHOD_MISMATCH").length,
         },
       });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : String(err));
     }
+  }
+
+  function createMissingDiskRows(alignment: UnmatchedAlignment[]) {
+    const standard: ASTStandard =
+      ((alignment.find((a) => a.expectedStandard)?.expectedStandard ?? lastWorklist?.standard) as
+        | ASTStandard
+        | null
+        | undefined) ?? PRIMARY_STANDARD;
+    const codes = alignment
+      .filter((a) => a.reason === "MISSING_AST_ROW")
+      .map((a) => a.antibioticCode);
+    let added = 0;
+    for (const code of codes) {
+      const row = buildASTResult(accession, {
+        isolateId,
+        antibioticCode: code,
+        method: ASTMethod.DiskDiffusion,
+        standard,
+        rawValue: undefined,
+      });
+      meduguActions.addAST(accession.id, row);
+      added += 1;
+    }
+    emitZoneReaderAudit({
+      code: "ZONE_READER_MISSING_ROWS_CREATED",
+      accessionId: accession.id,
+      isolateId,
+      astPanelId,
+      detail: { added, standard, codes },
+    });
+    // Re-run the mapper against the freshly-augmented accession so the UI
+    // reflects the new matches without forcing the user to re-paste.
+    if (lastPayload) runMap(lastPayload, "rerun");
   }
 
   function onExport() {
