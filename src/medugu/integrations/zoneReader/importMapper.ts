@@ -114,7 +114,7 @@ export function mapImport(input: MapImportInput): ImportMapResult {
   const isolateDiskAst = isolateAllAst.filter((a) => a.method === ASTMethod.DiskDiffusion);
 
   const expectedStandard: string | undefined =
-    (worklist?.standard ?? undefined) ?? isolateDiskAst[0]?.standard ?? undefined;
+    (worklist?.standard ?? undefined) ?? (isolateDiskAst[0]?.standard ?? undefined);
 
   const diskByCode = new Map(isolateDiskAst.map((a) => [a.antibioticCode, a]));
   const anyByCode = new Map(isolateAllAst.map((a) => [a.antibioticCode, a]));
