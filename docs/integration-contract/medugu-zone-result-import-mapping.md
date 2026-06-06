@@ -62,6 +62,24 @@ Provenance / review hints (`readerConfidence`, `confidenceNumeric`,
 `reviewReasons`) are surfaced in the review table and the audit detail —
 they do **not** flow into interpreted AST fields.
 
+### 3a. Override-audit nullability rule (conditional)
+
+The reader-side override-audit fields are intentionally optional/nullable
+on the wire to match how real readers serialise untouched rows:
+
+| Field           | When `manualEdited` is `false` / absent | When `manualEdited` is `true` |
+|-----------------|------------------------------------------|--------------------------------|
+| `originalValue` | nullable / optional                      | **required**, non-null         |
+| `correctedValue`| nullable / optional                      | **required**, non-null         |
+| `overrideReason`| nullable / optional                      | **required**, non-empty string |
+| `reviewedBy`    | nullable / optional                      | **required**, non-empty string |
+| `reviewedAt`    | nullable / optional                      | **required**, non-empty string |
+
+Violations are returned as `MANUAL_EDIT_AUDIT_INCOMPLETE` blockers with a
+companion `SCHEMA_RULE_HINT` info finding explaining the rule. No AST
+rows are written when the rule fails.
+
+
 ## 4. Fields the importer MUST NEVER write directly
 
 The importer is forbidden from setting any of these on `ASTResult` or on
