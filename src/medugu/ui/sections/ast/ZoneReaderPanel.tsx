@@ -8,7 +8,7 @@ import { emitZoneReaderAudit } from "../../../integrations/zoneReader/auditEvent
 import { getZoneReaderSettings } from "../../../integrations/zoneReader/settings";
 import type {
   ImportMapResult,
-  ZoneReaderWorklistEnvelope,
+  ZoneReaderWorklistExport,
 } from "../../../integrations/zoneReader/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +27,7 @@ const HELPER_TEXT =
 
 export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const settings = getZoneReaderSettings();
-  const [lastWorklist, setLastWorklist] = useState<ZoneReaderWorklistEnvelope | null>(null);
+  const [lastWorklist, setLastWorklist] = useState<ZoneReaderWorklistExport | null>(null);
   const [importResult, setImportResult] = useState<ImportMapResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [pasted, setPasted] = useState("");
@@ -45,7 +45,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     try {
       const result = mapImport({
         accession,
-        worklist: lastWorklist?.worklist,
+        worklist: lastWorklist ?? undefined,
         payload,
       });
       setImportResult(result);
@@ -77,7 +77,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `zone-reader-worklist-${accession.accessionNumber}-${envelope.worklist.isolateNo}.json`;
+      a.download = `zone-reader-worklist-${accession.accessionNumber}-${envelope.isolateNo}.json`;
       a.click();
       URL.revokeObjectURL(url);
       emitZoneReaderAudit({
@@ -85,7 +85,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
         accessionId: accession.id,
         isolateId,
         astPanelId,
-        detail: { rowCount: envelope.worklist.expectedDiscs.length },
+        detail: { rowCount: envelope.expectedDiscs.length },
       });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : String(err));
@@ -113,9 +113,6 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     if (!importResult) return;
     const row = importResult.matched.find((m) => m.antibioticCode === antibioticCode);
     if (!row) return;
-    // Only raw zone diameter goes through the standard AST setter.
-    // Interpretation, expert rules, cascade, AMS, IPC, validation, release
-    // all run downstream via existing engines — never written directly here.
     meduguActions.updateAST(accession.id, row.astRowId, {
       rawValue: row.zoneDiameterMm,
       rawUnit: "mm",
