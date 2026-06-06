@@ -193,7 +193,7 @@ export function runZoneReaderRoundTripTests() {
   assert.equal(aliasConfBand.matched[0].readerConfidence, "low");
   assert.ok(aliasConfBand.matched[0].reviewReasons.includes("low_confidence"));
 
-  // 8. Accession mismatch is a blocker
+  // 8. Accession id mismatch is a blocker
   const blocked = mapImport({
     accession,
     payload: {
@@ -205,6 +205,110 @@ export function runZoneReaderRoundTripTests() {
   });
   assert.equal(blocked.ok, false);
   assert.ok(blocked.findings.some((f) => f.code === "ACCESSION_MISMATCH"));
+  assert.equal(blocked.matched.length, 0, "no matched rows on blocker");
+
+  // 8b. Accession number mismatch is a blocker
+  const accNumBad = mapImport({
+    accession,
+    payload: {
+      ...baseImport,
+      accessionNumber: "WRONG-NUMBER",
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "AMP", zoneDiameterMm: 18 }],
+    },
+  });
+  assert.equal(accNumBad.ok, false);
+  assert.ok(accNumBad.findings.some((f) => f.code === "ACCESSION_NUMBER_MISMATCH"));
+
+  // 8c. Isolate mismatch is a blocker
+  const isoBad = mapImport({
+    accession,
+    payload: {
+      ...baseImport,
+      isolateId: "iso-DOES-NOT-EXIST",
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "AMP", zoneDiameterMm: 18 }],
+    },
+  });
+  assert.equal(isoBad.ok, false);
+  assert.ok(isoBad.findings.some((f) => f.code === "ISOLATE_NOT_FOUND"));
+
+  // 8d. AST panel mismatch is a blocker
+  const panelBad = mapImport({
+    accession,
+    payload: {
+      ...baseImport,
+      astPanelId: "not_a_real_panel",
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "AMP", zoneDiameterMm: 18 }],
+    },
+  });
+  assert.equal(panelBad.ok, false);
+  assert.ok(panelBad.findings.some((f) => f.code === "PANEL_NOT_FOUND"));
+
+  // 8e. Unsupported schema/contract version → SCHEMA_PARSE_FAILED, no writes
+  const verBad = mapImport({
+    accession,
+    payload: {
+      ...baseImport,
+      contractVersion: "9.9.9",
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "AMP", zoneDiameterMm: 18 }],
+    },
+  });
+  assert.equal(verBad.ok, false);
+  assert.ok(verBad.findings.some((f) => f.code === "SCHEMA_PARSE_FAILED"));
+  assert.equal(verBad.matched.length, 0);
+
+  // 8f. Cross-worklist mismatch (worklist supplied but identities differ).
+  const wrongWorklist = mapImport({
+    accession,
+    worklist: { ...envelope, isolateId: "iso-OTHER" } as typeof envelope,
+    payload: {
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "AMP", zoneDiameterMm: 18 }],
+    },
+  });
+  assert.equal(wrongWorklist.ok, false);
+  assert.ok(wrongWorklist.findings.some((f) => f.code === "WORKLIST_ISOLATE_MISMATCH"));
+
+  // 8g. Protected boundary — MatchedRow exposes ONLY raw measurement /
+  //     provenance fields. It must not carry interpreted SIR, phenotype,
+  //     cascade, stewardship, IPC, validation or release state.
+  const proofRow = ok.matched[0];
+  const allowedKeys = new Set([
+    "antibioticCode",
+    "astRowId",
+    "zoneDiameterMm",
+    "readerConfidence",
+    "confidenceNumeric",
+    "notes",
+    "imageReference",
+    "manualEdited",
+    "overrideReason",
+    "requiresReview",
+    "reviewReasons",
+  ]);
+  for (const k of Object.keys(proofRow)) {
+    assert.ok(allowedKeys.has(k), `MatchedRow leaks non-raw field: ${k}`);
+  }
+  const forbidden = [
+    "sir",
+    "interpretation",
+    "phenotype",
+    "cascade",
+    "cascadeOverride",
+    "stewardship",
+    "ipc",
+    "validationState",
+    "releaseState",
+    "reported",
+    "amsApproval",
+  ];
+  for (const k of forbidden) {
+    assert.equal((proofRow as any)[k], undefined, `MatchedRow must not carry ${k}`);
+  }
 
   // 9. measurementSource alias normalisation: "reader" → "auto_reader",
   //    "manual" → "manual_entry", canonical values pass through unchanged.
