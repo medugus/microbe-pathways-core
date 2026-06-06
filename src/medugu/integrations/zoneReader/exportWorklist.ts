@@ -116,8 +116,7 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
     expectedDiscs,
   };
 
-    expectedDiscs,
-  };
+
 
   return envelope;
 }
