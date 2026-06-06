@@ -479,7 +479,7 @@ export function runZoneReaderRoundTripTests() {
     "reported",
   ]) {
     assert.equal(
-      (proofRow2 as Record<string, unknown>)[k],
+      (proofRow2 as unknown as Record<string, unknown>)[k],
       undefined,
       `MatchedRow must not carry ${k}`,
     );
