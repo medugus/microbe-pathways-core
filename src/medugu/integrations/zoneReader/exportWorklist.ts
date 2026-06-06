@@ -1,8 +1,7 @@
 // Pure builder for the Zone Reader worklist export.
-// No I/O, no engine calls — given an accession + isolate + panel, produce
-// the envelope shape the Zone Reader importer expects:
 //
-//   { schemaVersion: "1.0.0", createdAt: ISO, worklist: { ... } }
+// Produces a FLAT envelope: every field at the JSON root, no `worklist`
+// wrapper. Matches the Zone Reader importer's strict shape.
 
 import type { Accession } from "../../domain/types";
 import { getASTPanel, getAntibiotic } from "../../config/antibiotics";
@@ -11,7 +10,6 @@ import {
   ZONE_READER_SOURCE_SYSTEM,
   type ZoneReaderStandard,
   type ZoneReaderWorklistExport,
-  type ZoneReaderWorklistEnvelope,
 } from "./types";
 
 export interface BuildWorklistInput {
@@ -56,7 +54,7 @@ function deriveOrganismGroup(organismCode?: string | null): string {
   return "other";
 }
 
-export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorklistEnvelope {
+export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorklistExport {
   const { accession, isolateId, astPanelId } = input;
   const isolate = accession.isolates.find((i) => i.id === isolateId);
   if (!isolate) throw new ZoneReaderExportError(`Isolate ${isolateId} not found on accession`);
@@ -69,8 +67,7 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
     return {
       antibioticCode: code,
       antibioticName: ab?.display ?? null,
-      // Zone Reader importer rejects null for discPotency — emit an empty
-      // string when the LIMS does not hold the potency yet.
+      // Zone Reader importer rejects null for discPotency — empty string when unknown.
       discPotency: "",
       antibioticClass: ab?.class ?? null,
       awareCategory: null,
@@ -91,10 +88,14 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
       : null;
 
   const now = (input.now ?? new Date()).toISOString();
+  const worklistId = `${accession.id}:${isolate.id}:${panel.id}`;
 
-  const worklist: ZoneReaderWorklistExport = {
+  const envelope: ZoneReaderWorklistExport = {
+    schemaVersion: ZONE_READER_CONTRACT_VERSION,
     contractVersion: ZONE_READER_CONTRACT_VERSION,
     sourceSystem: ZONE_READER_SOURCE_SYSTEM,
+    createdAt: now,
+    worklistId,
     generatedAt: now,
 
     accessionId: accession.id,
@@ -111,8 +112,6 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
 
     organismName: isolate.organismDisplay ?? null,
     organismCode: isolate.organismCode ?? null,
-    // Zone Reader importer rejects null for organismGroup — emit "" when
-    // the LIMS cannot derive a coarse group.
     organismGroup: deriveOrganismGroup(isolate.organismCode),
     organismDisplay: isolate.organismDisplay,
 
@@ -125,9 +124,5 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
     expectedDiscs,
   };
 
-  return {
-    schemaVersion: ZONE_READER_CONTRACT_VERSION,
-    createdAt: now,
-    worklist,
-  };
+  return envelope;
 }

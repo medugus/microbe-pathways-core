@@ -74,7 +74,7 @@ export function runZoneReaderRoundTripTests() {
   });
   assert.equal(envelope.schemaVersion, ZONE_READER_CONTRACT_VERSION);
   assert.equal(envelope.createdAt, "2026-05-12T10:00:00.000Z");
-  const w = envelope.worklist;
+  const w = envelope;
   assert.equal(w.contractVersion, ZONE_READER_CONTRACT_VERSION);
   assert.equal(w.standard, "EUCAST");
   assert.equal(w.patientDisplayId, "P-001");
@@ -318,22 +318,28 @@ export function runZoneReaderVreExportFixtureTest() {
   // Envelope shape Zone Reader importer requires.
   assert.equal(envelope.schemaVersion, "1.0.0");
   assert.equal(typeof envelope.createdAt, "string");
-  assert.ok(envelope.worklist);
+  assert.equal(envelope.worklistId, "MB25-COL002:iso_EFAM_1:enterococcus");
+  assert.equal(envelope.contractVersion, "1.0.0");
+  assert.equal(envelope.sourceSystem, "MEDUGU_LIMS");
 
   // organismGroup is a string (importer rejects null).
-  assert.equal(typeof envelope.worklist.organismGroup, "string");
-  assert.equal(envelope.worklist.organismGroup, "enterococcus");
+  assert.equal(typeof envelope.organismGroup, "string");
+  assert.equal(envelope.organismGroup, "enterococcus");
 
   // discPotency is a string on every expected disc (importer rejects null).
-  assert.ok(envelope.worklist.expectedDiscs.length > 0);
-  for (const d of envelope.worklist.expectedDiscs) {
+  assert.ok(envelope.expectedDiscs.length > 0);
+  for (const d of envelope.expectedDiscs) {
     assert.equal(typeof d.discPotency, "string");
+  }
+  // Required root fields
+  for (const k of ["sourceSystem","accessionId","accessionNumber","isolateId","specimenType","organismName","organismCode","organismGroup","astPanelId","astPanelName","standard"] as const) {
+    assert.ok((envelope as any)[k] !== undefined, k + " must be present at root");
   }
 
   // Round-trip identity preserved.
-  assert.equal(envelope.worklist.accessionId, "MB25-COL002");
-  assert.equal(envelope.worklist.isolateId, "iso_EFAM_1");
-  assert.equal(envelope.worklist.astPanelId, "enterococcus");
+  assert.equal(envelope.accessionId, "MB25-COL002");
+  assert.equal(envelope.isolateId, "iso_EFAM_1");
+  assert.equal(envelope.astPanelId, "enterococcus");
 
   // The exported envelope must parse cleanly through the producer schema —
   // this mirrors what the Zone Reader importer enforces on its side.
