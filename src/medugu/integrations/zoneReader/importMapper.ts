@@ -76,7 +76,7 @@ export function mapImport(input: MapImportInput): ImportMapResult {
         message: err instanceof Error ? err.message : String(err),
       });
     }
-    return { ok: false, matched: [], unmatched: [], missing: [], findings };
+    return { ok: false, matched: [], unmatched: [], alignment: [], missing: [], findings };
   }
 
   // 2. Semantic validation.
