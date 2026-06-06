@@ -58,6 +58,10 @@ Recomputed downstream by Medugu's local engines via the standard
 | 8e | Unsupported schema/contract version                  | blocker `SCHEMA_PARSE_FAILED`, no matched rows           |
 | 8f | Worklist identity mismatch                           | blocker `WORKLIST_ISOLATE_MISMATCH`                      |
 | 8g | Protected-fields boundary                            | `MatchedRow` exposes only raw / provenance keys; no SIR, phenotype, cascade, stewardship, IPC, validation, release |
+| 11 | manualEdited=false + null override fields            | passes; `manualEdited=false` mapped                      |
+| 12 | manualEdited=true + complete override quintet        | passes; `overrideReason` mapped                          |
+| 13 | manualEdited=true + missing override fields          | blocker `MANUAL_EDIT_AUDIT_INCOMPLETE` + info `SCHEMA_RULE_HINT` |
+| 14 | Boundary proof on null-audit accept                  | `MatchedRow` still carries no interpreted state          |
 
 All tests currently pass (`bunx tsx` invocation of
 `runZoneReaderRoundTripTests` + `runZoneReaderVreExportFixtureTest` → OK).

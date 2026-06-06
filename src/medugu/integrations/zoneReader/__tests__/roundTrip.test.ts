@@ -379,6 +379,111 @@ export function runZoneReaderRoundTripTests() {
     }).results[0].readerConfidence,
     "low",
   );
+
+  // 11. manualEdited=false: originalValue / correctedValue / overrideReason
+  //     may all be null. This is the real-world export shape.
+  const nullAudit = mapImport({
+    accession,
+    payload: {
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [
+        {
+          antibioticCode: "AMP",
+          zoneDiameterMm: 18,
+          confidence: 0.95,
+          manualEdited: false,
+          originalValue: null,
+          correctedValue: null,
+          overrideReason: null,
+          reviewedBy: null,
+          reviewedAt: null,
+        },
+      ],
+    },
+  });
+  assert.equal(nullAudit.ok, true, "null override fields with manualEdited=false must pass");
+  assert.equal(nullAudit.matched.length, 1);
+  assert.equal(nullAudit.matched[0].manualEdited, false);
+
+  // 12. manualEdited=true with the complete override-audit quintet passes.
+  const completeAudit = mapImport({
+    accession,
+    payload: {
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [
+        {
+          antibioticCode: "AMP",
+          zoneDiameterMm: 19,
+          confidence: 0.95,
+          manualEdited: true,
+          originalValue: 18,
+          correctedValue: 19,
+          overrideReason: "edge of plate",
+          reviewedBy: "tech-1",
+          reviewedAt: "2026-05-12T10:45:00Z",
+        },
+      ],
+    },
+  });
+  assert.equal(completeAudit.ok, true);
+  assert.equal(completeAudit.matched[0].manualEdited, true);
+  assert.equal(completeAudit.matched[0].overrideReason, "edge of plate");
+
+  // 13. manualEdited=true with missing override fields → blocker with the
+  //     MANUAL_EDIT_AUDIT_INCOMPLETE code and a friendly rule hint.
+  const incompleteAudit = mapImport({
+    accession,
+    payload: {
+      ...baseImport,
+      readAt: "2026-05-12T10:42:00Z",
+      results: [
+        {
+          antibioticCode: "AMP",
+          zoneDiameterMm: 19,
+          confidence: 0.95,
+          manualEdited: true,
+          originalValue: null,
+          correctedValue: null,
+          overrideReason: null,
+          reviewedBy: null,
+          reviewedAt: null,
+        },
+      ],
+    },
+  });
+  assert.equal(incompleteAudit.ok, false);
+  assert.ok(
+    incompleteAudit.findings.some((f) => f.code === "MANUAL_EDIT_AUDIT_INCOMPLETE"),
+    "expected MANUAL_EDIT_AUDIT_INCOMPLETE finding",
+  );
+  assert.ok(
+    incompleteAudit.findings.some((f) => f.code === "SCHEMA_RULE_HINT"),
+    "expected SCHEMA_RULE_HINT explanation finding",
+  );
+
+  // 14. Boundary proof — MatchedRow from a passing import still only exposes
+  //     raw measurement / provenance fields; no interpreted SIR, phenotype,
+  //     cascade, stewardship, IPC, validation or release leak through.
+  const proofRow2 = nullAudit.matched[0];
+  for (const k of [
+    "sir",
+    "interpretation",
+    "phenotype",
+    "cascade",
+    "stewardship",
+    "ipc",
+    "validationState",
+    "releaseState",
+    "reported",
+  ]) {
+    assert.equal(
+      (proofRow2 as unknown as Record<string, unknown>)[k],
+      undefined,
+      `MatchedRow must not carry ${k}`,
+    );
+  }
 }
 
 // VRE screen accession fixture — confirms the exported envelope passes the
