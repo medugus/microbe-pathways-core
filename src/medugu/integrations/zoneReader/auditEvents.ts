@@ -12,7 +12,8 @@ export type ZoneReaderAuditCode =
   | "ZONE_READER_RESULT_IMPORT_REJECTED"
   | "ZONE_READER_ROW_ACCEPTED"
   | "ZONE_READER_ROW_REJECTED"
-  | "ZONE_READER_ROW_OVERRIDDEN";
+  | "ZONE_READER_ROW_OVERRIDDEN"
+  | "ZONE_READER_MISSING_ROWS_CREATED";
 
 export interface ZoneReaderAuditEvent {
   code: ZoneReaderAuditCode;
