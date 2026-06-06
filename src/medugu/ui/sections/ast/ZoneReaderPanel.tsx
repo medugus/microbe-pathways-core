@@ -1,13 +1,16 @@
 import { useMemo, useRef, useState } from "react";
-import type { Accession } from "../../../domain/types";
+import type { Accession, ASTStandard } from "../../../domain/types";
 import { ASTMethod } from "../../../domain/enums";
 import { meduguActions } from "../../../store/useAccessionStore";
 import { buildWorklistExport } from "../../../integrations/zoneReader/exportWorklist";
 import { mapImport } from "../../../integrations/zoneReader/importMapper";
 import { emitZoneReaderAudit } from "../../../integrations/zoneReader/auditEvents";
 import { getZoneReaderSettings } from "../../../integrations/zoneReader/settings";
+import { buildASTResult } from "../../../logic/astDrafting";
+import { PRIMARY_STANDARD } from "../../../config/breakpoints";
 import type {
   ImportMapResult,
+  UnmatchedAlignment,
   ZoneReaderWorklistExport,
 } from "../../../integrations/zoneReader/types";
 import { Button } from "@/components/ui/button";
@@ -29,6 +32,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const settings = getZoneReaderSettings();
   const [lastWorklist, setLastWorklist] = useState<ZoneReaderWorklistExport | null>(null);
   const [importResult, setImportResult] = useState<ImportMapResult | null>(null);
+  const [lastPayload, setLastPayload] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [pasted, setPasted] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -40,7 +44,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
 
   if (!settings.enabled) return null;
 
-  function runMap(payload: string, source: "file" | "paste") {
+  function runMap(payload: string, source: "file" | "paste" | "rerun") {
     setImportError(null);
     try {
       const result = mapImport({
@@ -49,6 +53,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
         payload,
       });
       setImportResult(result);
+      setLastPayload(payload);
       emitZoneReaderAudit({
         code: result.ok
           ? "ZONE_READER_RESULT_IMPORT_PARSED"
@@ -62,11 +67,46 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
           unmatched: result.unmatched.length,
           missing: result.missing.length,
           findings: result.findings.length,
+          alignmentMissing: result.alignment.filter((a) => a.reason === "MISSING_AST_ROW").length,
+          alignmentMethodMismatch: result.alignment.filter((a) => a.reason === "METHOD_MISMATCH").length,
         },
       });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : String(err));
     }
+  }
+
+  function createMissingDiskRows(alignment: UnmatchedAlignment[]) {
+    const standard: ASTStandard =
+      ((alignment.find((a) => a.expectedStandard)?.expectedStandard ?? lastWorklist?.standard) as
+        | ASTStandard
+        | null
+        | undefined) ?? PRIMARY_STANDARD;
+    const codes = alignment
+      .filter((a) => a.reason === "MISSING_AST_ROW")
+      .map((a) => a.antibioticCode);
+    let added = 0;
+    for (const code of codes) {
+      const row = buildASTResult(accession, {
+        isolateId,
+        antibioticCode: code,
+        method: ASTMethod.DiskDiffusion,
+        standard,
+        rawValue: undefined,
+      });
+      meduguActions.addAST(accession.id, row);
+      added += 1;
+    }
+    emitZoneReaderAudit({
+      code: "ZONE_READER_MISSING_ROWS_CREATED",
+      accessionId: accession.id,
+      isolateId,
+      astPanelId,
+      detail: { added, standard, codes },
+    });
+    // Re-run the mapper against the freshly-augmented accession so the UI
+    // reflects the new matches without forcing the user to re-paste.
+    if (lastPayload) runMap(lastPayload, "rerun");
   }
 
   function onExport() {
@@ -239,6 +279,12 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
                 </Button>
               )}
             </div>
+
+            <AlignmentSummary
+              alignment={importResult.alignment}
+              onCreateMissing={() => createMissingDiskRows(importResult.alignment)}
+            />
+
             <ZoneReaderFindingsList findings={importResult.findings} />
             <ZoneReaderImportReviewTable
               matched={importResult.matched}
@@ -248,11 +294,54 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
               onReject={rejectRow}
             />
             <p className="text-[11px] text-muted-foreground">
-              Every imported row requires scientist review. Accepted rows only write the raw zone diameter through the standard AST setter — interpretation, expert rules, cascade, AMS, IPC, validation and release all run downstream unchanged.
+              Strict row matching by (isolateId, antibioticCode, method=disk_diffusion, standard). MIC rows are never auto-converted. Accepted rows only write the raw zone diameter through the standard AST setter — interpretation, expert rules, cascade, AMS, IPC, validation and release all run downstream unchanged.
             </p>
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function AlignmentSummary({
+  alignment,
+  onCreateMissing,
+}: {
+  alignment: UnmatchedAlignment[];
+  onCreateMissing: () => void;
+}) {
+  if (alignment.length === 0) return null;
+  const missing = alignment.filter((a) => a.reason === "MISSING_AST_ROW");
+  const methodMismatch = alignment.filter((a) => a.reason === "METHOD_MISMATCH");
+  const standardMismatch = alignment.filter((a) => a.reason === "STANDARD_MISMATCH");
+  const expectedStandard = alignment.find((a) => a.expectedStandard)?.expectedStandard;
+
+  return (
+    <div className="space-y-2 rounded-md border border-amber-500/40 bg-amber-50/40 p-3 text-xs">
+      <p className="font-semibold uppercase tracking-wide text-amber-700">
+        Pre-import row alignment
+      </p>
+      {missing.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-amber-800">
+            Missing AST rows for {missing.map((m) => m.antibioticCode).join(", ")} under
+            disk_diffusion{expectedStandard ? ` / ${expectedStandard}` : ""}.
+          </span>
+          <Button size="sm" variant="outline" onClick={onCreateMissing}>
+            Create {missing.length} disk-diffusion row{missing.length === 1 ? "" : "s"}
+          </Button>
+        </div>
+      )}
+      {methodMismatch.map((m) => (
+        <p key={`mm-${m.antibioticCode}`} className="text-amber-800">
+          {m.antibioticCode} row exists but method mismatch: {m.existingMethod} vs disk_diffusion. MIC rows are not auto-converted.
+        </p>
+      ))}
+      {standardMismatch.map((m) => (
+        <p key={`sm-${m.antibioticCode}`} className="text-amber-800">
+          {m.antibioticCode} disk-diffusion row uses standard {m.existingStandard}, expected {m.expectedStandard}.
+        </p>
+      ))}
+    </div>
   );
 }

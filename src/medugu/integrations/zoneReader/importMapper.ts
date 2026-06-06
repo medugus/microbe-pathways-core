@@ -18,6 +18,7 @@ import type {
   ImportFinding,
   ImportMapResult,
   MatchedRow,
+  UnmatchedAlignment,
   ZoneReaderResultImport,
   ZoneReaderWorklistExport,
   ZoneResult,
@@ -76,7 +77,7 @@ export function mapImport(input: MapImportInput): ImportMapResult {
         message: err instanceof Error ? err.message : String(err),
       });
     }
-    return { ok: false, matched: [], unmatched: [], missing: [], findings };
+    return { ok: false, matched: [], unmatched: [], alignment: [], missing: [], findings };
   }
 
   // 2. Semantic validation.
@@ -88,25 +89,91 @@ export function mapImport(input: MapImportInput): ImportMapResult {
   });
 
   if (hasBlockers(findings)) {
-    return { ok: false, matched: [], unmatched: parsed.results, missing: [], findings };
+    return {
+      ok: false,
+      matched: [],
+      unmatched: parsed.results,
+      alignment: [],
+      missing: [],
+      findings,
+    };
   }
 
-  // 3. Build matched / unmatched / missing.
+  // 3. Build matched / unmatched / missing using STRICT row matching by
+  //    (isolateId, antibioticCode, method=disk_diffusion, standard).
+  //
+  //    Standard is taken from the worklist when supplied; otherwise we use
+  //    the standard already declared by any disk-diffusion AST row on this
+  //    isolate (the lab is operating under one standard at a time). MIC rows
+  //    are NEVER auto-converted into disk-diffusion rows.
   const matched: MatchedRow[] = [];
   const unmatched: ZoneResult[] = [];
+  const alignment: UnmatchedAlignment[] = [];
 
-  const isolateAst = accession.ast.filter(
-    (a) => a.isolateId === parsed.isolateId && a.method === ASTMethod.DiskDiffusion,
-  );
-  const byCode = new Map(isolateAst.map((a) => [a.antibioticCode, a]));
+  const isolateAllAst = accession.ast.filter((a) => a.isolateId === parsed.isolateId);
+  const isolateDiskAst = isolateAllAst.filter((a) => a.method === ASTMethod.DiskDiffusion);
+
+  const worklistStandard = worklist?.standard ?? undefined;
+  const expectedStandard: string | undefined =
+    worklistStandard ?? isolateDiskAst[0]?.standard ?? undefined;
+
+  const diskByCode = new Map(isolateDiskAst.map((a) => [a.antibioticCode, a]));
+  const anyByCode = new Map(isolateAllAst.map((a) => [a.antibioticCode, a]));
   const matchedCodes = new Set<string>();
 
   for (const r of parsed.results) {
-    const existing = byCode.get(r.antibioticCode);
-    if (!existing) {
+    const disk = diskByCode.get(r.antibioticCode);
+    if (!disk) {
+      // Either no row at all, or only a non-disk row exists → method mismatch.
+      const other = anyByCode.get(r.antibioticCode);
       unmatched.push(r);
+      if (other && other.method !== ASTMethod.DiskDiffusion) {
+        alignment.push({
+          antibioticCode: r.antibioticCode,
+          reason: "METHOD_MISMATCH",
+          existingMethod: other.method,
+          expectedStandard,
+        });
+        findings.push({
+          severity: "warning",
+          code: "METHOD_MISMATCH",
+          antibioticCode: r.antibioticCode,
+          message: `${r.antibioticCode} row exists but method mismatch: ${other.method} vs disk_diffusion. MIC rows are not auto-converted — add a disk-diffusion row to accept this reader value.`,
+        });
+      } else {
+        alignment.push({
+          antibioticCode: r.antibioticCode,
+          reason: "MISSING_AST_ROW",
+          expectedStandard,
+        });
+        findings.push({
+          severity: "warning",
+          code: "MISSING_AST_ROW",
+          antibioticCode: r.antibioticCode,
+          message: `Missing AST row for ${r.antibioticCode} under disk_diffusion${expectedStandard ? ` / ${expectedStandard}` : ""}.`,
+        });
+      }
       continue;
     }
+
+    // Disk-diffusion row exists — enforce standard alignment when known.
+    if (expectedStandard && disk.standard && disk.standard !== expectedStandard) {
+      unmatched.push(r);
+      alignment.push({
+        antibioticCode: r.antibioticCode,
+        reason: "STANDARD_MISMATCH",
+        existingStandard: disk.standard,
+        expectedStandard,
+      });
+      findings.push({
+        severity: "warning",
+        code: "STANDARD_MISMATCH",
+        antibioticCode: r.antibioticCode,
+        message: `${r.antibioticCode} disk-diffusion row uses standard ${disk.standard}, expected ${expectedStandard}.`,
+      });
+      continue;
+    }
+
     matchedCodes.add(r.antibioticCode);
 
     const reviewReasons: string[] = [];
@@ -118,7 +185,7 @@ export function mapImport(input: MapImportInput): ImportMapResult {
     if (r.zoneDiameterMm < IMPLAUSIBLE_LOW_MM || r.zoneDiameterMm > IMPLAUSIBLE_HIGH_MM) {
       reviewReasons.push("implausible_zone");
     }
-    if (typeof existing.rawValue === "number" && existing.rawValue !== r.zoneDiameterMm) {
+    if (typeof disk.rawValue === "number" && disk.rawValue !== r.zoneDiameterMm) {
       reviewReasons.push("overwrite_existing");
     }
     if (r.notes) reviewReasons.push("reader_note");
@@ -130,7 +197,7 @@ export function mapImport(input: MapImportInput): ImportMapResult {
 
     matched.push({
       antibioticCode: r.antibioticCode,
-      astRowId: existing.id,
+      astRowId: disk.id,
       zoneDiameterMm: r.zoneDiameterMm,
       readerConfidence: r.readerConfidence,
       confidenceNumeric: r.confidenceNumeric,
@@ -151,5 +218,5 @@ export function mapImport(input: MapImportInput): ImportMapResult {
     }
   }
 
-  return { ok: true, matched, unmatched, missing, findings };
+  return { ok: true, matched, unmatched, alignment, missing, findings };
 }

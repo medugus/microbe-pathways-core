@@ -166,10 +166,28 @@ export interface MatchedRow {
   reviewReasons: string[];
 }
 
+export type UnmatchedReason =
+  | "MISSING_AST_ROW"
+  | "METHOD_MISMATCH"
+  | "STANDARD_MISMATCH";
+
+export interface UnmatchedAlignment {
+  antibioticCode: string;
+  reason: UnmatchedReason;
+  /** The method of an existing row when reason = METHOD_MISMATCH. */
+  existingMethod?: string;
+  /** The standard of an existing row when reason = STANDARD_MISMATCH. */
+  existingStandard?: string;
+  /** The standard the import expects (from worklist when present). */
+  expectedStandard?: string;
+}
+
 export interface ImportMapResult {
   ok: boolean;
   matched: MatchedRow[];
   unmatched: ZoneResult[];
+  /** Structured reasons for each unmatched row (parallel to `unmatched`). */
+  alignment: UnmatchedAlignment[];
   missing: string[];
   findings: ImportFinding[];
 }
