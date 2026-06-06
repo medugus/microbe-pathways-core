@@ -101,18 +101,22 @@ const rawZoneResultSchema = z
     readerConfidence: confidenceBandSchema.optional(),
     measurementSource: measurementSourceSchema.optional(),
     manualEdited: z.boolean().optional(),
-    originalValue: z.number().min(0).max(80).optional(),
-    correctedValue: z.number().min(0).max(80).optional(),
-    overrideReason: z.string().optional(),
+    // Override-audit fields. When manualEdited=false (or absent) these are
+    // optional and may be explicitly null — real Zone Reader exports send
+    // `null` here for untouched rows. When manualEdited=true the full
+    // quintet is required (enforced in the superRefine below).
+    originalValue: z.number().min(0).max(80).nullable().optional(),
+    correctedValue: z.number().min(0).max(80).nullable().optional(),
+    overrideReason: z.string().nullable().optional(),
     reviewStatus: reviewStatusSchema.optional(),
-    reviewedBy: z.string().optional(),
-    reviewedAt: z.string().optional(),
-    plateBarcode: z.string().optional(),
-    imageReference: z.string().optional(),
-    imageUrl: z.string().optional(),
-    imageRef: z.string().optional(),
-    notes: z.string().optional(),
-    comment: z.string().optional(),
+    reviewedBy: z.string().nullable().optional(),
+    reviewedAt: z.string().nullable().optional(),
+    plateBarcode: z.string().nullable().optional(),
+    imageReference: z.string().nullable().optional(),
+    imageUrl: z.string().nullable().optional(),
+    imageRef: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    comment: z.string().nullable().optional(),
   })
   .superRefine((v, ctx) => {
     if (v.zoneDiameterMm == null && v.zoneMm == null) {
@@ -120,6 +124,32 @@ const rawZoneResultSchema = z
         code: z.ZodIssueCode.custom,
         message: "Missing zone diameter — provide zoneDiameterMm or zoneMm.",
       });
+    }
+    if (v.manualEdited === true) {
+      const requireFilled = (
+        field:
+          | "originalValue"
+          | "correctedValue"
+          | "overrideReason"
+          | "reviewedBy"
+          | "reviewedAt",
+      ) => {
+        const value = v[field];
+        if (value == null || (typeof value === "string" && value.length === 0)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [field],
+            message:
+              `When manualEdited=true, ${field} is required. ` +
+              "Override-audit quintet (originalValue, correctedValue, overrideReason, reviewedBy, reviewedAt) must all be present and non-null.",
+          });
+        }
+      };
+      requireFilled("originalValue");
+      requireFilled("correctedValue");
+      requireFilled("overrideReason");
+      requireFilled("reviewedBy");
+      requireFilled("reviewedAt");
     }
   });
 
