@@ -345,7 +345,3 @@ function AlignmentSummary({
     </div>
   );
 }
-      </CardContent>
-    </Card>
-  );
-}
