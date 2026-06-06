@@ -34,12 +34,23 @@ export function validateImport(input: ValidateImportInput): ImportFinding[] {
   const { accession, payload, worklist, requireImageReference } = input;
   const findings: ImportFinding[] = [];
 
-  // 1. Accession identity.
+  // 1. Accession identity (id + number when provided).
   if (payload.accessionId !== accession.id) {
     findings.push({
       severity: "blocker",
       code: "ACCESSION_MISMATCH",
       message: `Payload accessionId ${payload.accessionId} does not match active accession ${accession.id}.`,
+    });
+  }
+  if (
+    typeof payload.accessionNumber === "string" &&
+    payload.accessionNumber.length > 0 &&
+    payload.accessionNumber !== accession.accessionNumber
+  ) {
+    findings.push({
+      severity: "blocker",
+      code: "ACCESSION_NUMBER_MISMATCH",
+      message: `Payload accessionNumber ${payload.accessionNumber} does not match active accession ${accession.accessionNumber}.`,
     });
   }
 
