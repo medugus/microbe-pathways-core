@@ -4,7 +4,10 @@
 import { strict as assert } from "node:assert";
 import { buildWorklistExport } from "../exportWorklist";
 import { mapImport } from "../importMapper";
-import { zoneReaderResultImportSchema } from "../schemas";
+import {
+  zoneReaderResultImportSchema,
+  zoneReaderWorklistExportSchema,
+} from "../schemas";
 import { ZONE_READER_CONTRACT_VERSION } from "../types";
 import type { Accession } from "../../../domain/types";
 import { ASTMethod } from "../../../domain/enums";
@@ -63,19 +66,26 @@ export function runZoneReaderRoundTripTests() {
   const accession = makeAccession();
 
   // 1. Successful export/import round trip
-  const w = buildWorklistExport({
+  const envelope = buildWorklistExport({
     accession,
     isolateId: "iso-1",
     astPanelId: "enterobacterales",
     now: new Date("2026-05-12T10:00:00Z"),
   });
+  assert.equal(envelope.schemaVersion, ZONE_READER_CONTRACT_VERSION);
+  assert.equal(envelope.createdAt, "2026-05-12T10:00:00.000Z");
+  const w = envelope.worklist;
   assert.equal(w.contractVersion, ZONE_READER_CONTRACT_VERSION);
   assert.equal(w.standard, "EUCAST");
   assert.equal(w.patientDisplayId, "P-001");
   assert.equal(w.patientName, "Ada Lovelace");
   assert.equal(w.ward, "ICU");
   assert.equal(w.organismName, "Escherichia coli");
+  assert.equal(typeof w.organismGroup, "string");
   assert.ok(w.expectedDiscs.length > 0);
+  for (const d of w.expectedDiscs) {
+    assert.equal(typeof d.discPotency, "string");
+  }
   const ampDisc = w.expectedDiscs.find((d) => d.antibioticCode === "AMP");
   assert.equal(ampDisc?.antibioticClass, "penicillin");
 
@@ -265,4 +275,67 @@ export function runZoneReaderRoundTripTests() {
     }).results[0].readerConfidence,
     "low",
   );
+}
+
+// VRE screen accession fixture — confirms the exported envelope passes the
+// Zone Reader importer's strict shape (schemaVersion + createdAt + worklist
+// wrapper, non-null organismGroup, non-null discPotency on every disc).
+export function runZoneReaderVreExportFixtureTest() {
+  const accession: Accession = {
+    id: "MB25-COL002",
+    accessionNumber: "MB25-COL002",
+    patient: { mrn: "MRN-COL002", givenName: "VRE", familyName: "Screen", ward: "Onc" },
+    specimen: { familyCode: "STOOL", subtypeCode: "RECTAL_SWAB" },
+    isolates: [
+      {
+        id: "iso_EFAM_1",
+        isolateNo: 1,
+        organismCode: "EFAM",
+        organismDisplay: "Enterococcus faecium",
+      },
+    ],
+    ast: [
+      {
+        id: "ast-vanco",
+        isolateId: "iso_EFAM_1",
+        antibioticCode: "vancomycin",
+        method: ASTMethod.DiskDiffusion,
+        standard: "EUCAST",
+        rawValue: undefined,
+        governance: {},
+        cascade: {},
+      },
+    ],
+  } as unknown as Accession;
+
+  const envelope = buildWorklistExport({
+    accession,
+    isolateId: "iso_EFAM_1",
+    astPanelId: "enterococcus",
+    now: new Date("2026-06-06T09:00:00Z"),
+  });
+
+  // Envelope shape Zone Reader importer requires.
+  assert.equal(envelope.schemaVersion, "1.0.0");
+  assert.equal(typeof envelope.createdAt, "string");
+  assert.ok(envelope.worklist);
+
+  // organismGroup is a string (importer rejects null).
+  assert.equal(typeof envelope.worklist.organismGroup, "string");
+  assert.equal(envelope.worklist.organismGroup, "enterococcus");
+
+  // discPotency is a string on every expected disc (importer rejects null).
+  assert.ok(envelope.worklist.expectedDiscs.length > 0);
+  for (const d of envelope.worklist.expectedDiscs) {
+    assert.equal(typeof d.discPotency, "string");
+  }
+
+  // Round-trip identity preserved.
+  assert.equal(envelope.worklist.accessionId, "MB25-COL002");
+  assert.equal(envelope.worklist.isolateId, "iso_EFAM_1");
+  assert.equal(envelope.worklist.astPanelId, "enterococcus");
+
+  // The exported envelope must parse cleanly through the producer schema —
+  // this mirrors what the Zone Reader importer enforces on its side.
+  zoneReaderWorklistExportSchema.parse(envelope);
 }

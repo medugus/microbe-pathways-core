@@ -57,8 +57,12 @@ export interface ExpectedDisc {
   antibioticCode: string;
   /** Human-readable antibiotic name (nullable — not all panels carry it). */
   antibioticName?: string | null;
-  /** Disc potency, e.g. "30 µg" — informational, not a match key. */
-  discPotency?: string | null;
+  /**
+   * Disc potency, e.g. "30 µg". Always a string in the exported payload —
+   * empty string when unknown — because the Zone Reader importer rejects
+   * `null` here.
+   */
+  discPotency: string;
   /** Antibiotic class (penicillin, carbapenem, etc.) when known. */
   antibioticClass?: string | null;
   /** WHO AWaRe category (Access / Watch / Reserve) when configured. */
@@ -71,6 +75,10 @@ export interface ExpectedDisc {
   discContent?: string | null;
 }
 
+/**
+ * Inner worklist body. The Zone Reader importer expects this wrapped inside
+ * a {@link ZoneReaderWorklistEnvelope}.
+ */
 export interface ZoneReaderWorklistExport {
   /** Schema version for the export envelope. */
   contractVersion: typeof ZONE_READER_CONTRACT_VERSION;
@@ -96,7 +104,11 @@ export interface ZoneReaderWorklistExport {
   // ---- Organism context ----
   organismName?: string | null;
   organismCode?: string | null;
-  organismGroup?: string | null;
+  /**
+   * Organism group. Always a string in the exported payload — empty string
+   * when unknown — because the Zone Reader importer rejects `null` here.
+   */
+  organismGroup: string;
   /** @deprecated use organismName. */
   organismDisplay?: string;
 
@@ -111,6 +123,17 @@ export interface ZoneReaderWorklistExport {
   method: ZoneReaderMethod;
   /** Discs the reader should measure for this isolate. */
   expectedDiscs: ExpectedDisc[];
+}
+
+/**
+ * Top-level envelope written to the Zone Reader Worklist JSON file. The
+ * Zone Reader importer requires `schemaVersion`, `createdAt`, and a
+ * `worklist` wrapper at the top level.
+ */
+export interface ZoneReaderWorklistEnvelope {
+  schemaVersion: typeof ZONE_READER_CONTRACT_VERSION;
+  createdAt: string;
+  worklist: ZoneReaderWorklistExport;
 }
 
 /**

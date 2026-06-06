@@ -31,7 +31,9 @@ import {
 export const expectedDiscSchema = z.object({
   antibioticCode: z.string().min(1),
   antibioticName: z.string().nullable().optional(),
-  discPotency: z.string().nullable().optional(),
+  // Always a string — empty string allowed — to match the Zone Reader
+  // importer, which rejects null here.
+  discPotency: z.string(),
   antibioticClass: z.string().nullable().optional(),
   awareCategory: z.enum(["Access", "Watch", "Reserve"]).nullable().optional(),
   reportabilityDefault: z.enum(["report", "suppress", "conditional"]).nullable().optional(),
@@ -39,7 +41,7 @@ export const expectedDiscSchema = z.object({
   discContent: z.string().nullable().optional(),
 });
 
-export const zoneReaderWorklistExportSchema = z.object({
+export const zoneReaderWorklistBodySchema = z.object({
   contractVersion: z.literal(ZONE_READER_CONTRACT_VERSION),
   sourceSystem: z.literal(ZONE_READER_SOURCE_SYSTEM),
   generatedAt: z.string().min(1),
@@ -55,7 +57,8 @@ export const zoneReaderWorklistExportSchema = z.object({
   specimenCode: z.string().nullable().optional(),
   organismName: z.string().nullable().optional(),
   organismCode: z.string().nullable().optional(),
-  organismGroup: z.string().nullable().optional(),
+  // Always a string — empty string allowed.
+  organismGroup: z.string(),
   organismDisplay: z.string().optional(),
 
   astPanelId: z.string().min(1),
@@ -65,6 +68,13 @@ export const zoneReaderWorklistExportSchema = z.object({
 
   method: z.literal("disk_diffusion"),
   expectedDiscs: z.array(expectedDiscSchema).min(1),
+});
+
+/** Top-level envelope: { schemaVersion, createdAt, worklist }. */
+export const zoneReaderWorklistExportSchema = z.object({
+  schemaVersion: z.literal(ZONE_READER_CONTRACT_VERSION),
+  createdAt: z.string().min(1),
+  worklist: zoneReaderWorklistBodySchema,
 });
 
 // ------------------------------------------------------------------
