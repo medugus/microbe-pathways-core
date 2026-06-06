@@ -45,19 +45,38 @@ export function mapImport(input: MapImportInput): ImportMapResult {
       typeof input.payload === "string" ? JSON.parse(input.payload) : input.payload;
     parsed = zoneReaderResultImportSchema.parse(candidate);
   } catch (err) {
-    return {
-      ok: false,
-      matched: [],
-      unmatched: [],
-      missing: [],
-      findings: [
-        {
+    const findings: ImportFinding[] = [];
+    // Zod errors → one finding per issue, with a friendly hint when the
+    // failure is the manualEdited/override-audit conditional rule.
+    const issues = (err as { issues?: Array<{ path: (string | number)[]; message: string }> })
+      .issues;
+    if (Array.isArray(issues) && issues.length > 0) {
+      for (const issue of issues) {
+        const path = issue.path.join(".");
+        const isAuditField =
+          /^(originalValue|correctedValue|overrideReason|reviewedBy|reviewedAt)$/.test(
+            String(issue.path[issue.path.length - 1] ?? ""),
+          );
+        findings.push({
           severity: "blocker",
-          code: "SCHEMA_PARSE_FAILED",
-          message: err instanceof Error ? err.message : String(err),
-        },
-      ],
-    };
+          code: isAuditField ? "MANUAL_EDIT_AUDIT_INCOMPLETE" : "SCHEMA_PARSE_FAILED",
+          message: `${path || "(root)"}: ${issue.message}`,
+        });
+      }
+      findings.push({
+        severity: "info",
+        code: "SCHEMA_RULE_HINT",
+        message:
+          "Rule: when manualEdited=false (or absent), originalValue / correctedValue / overrideReason / reviewedBy / reviewedAt may be null or omitted. When manualEdited=true, all five MUST be present and non-null.",
+      });
+    } else {
+      findings.push({
+        severity: "blocker",
+        code: "SCHEMA_PARSE_FAILED",
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
+    return { ok: false, matched: [], unmatched: [], missing: [], findings };
   }
 
   // 2. Semantic validation.
