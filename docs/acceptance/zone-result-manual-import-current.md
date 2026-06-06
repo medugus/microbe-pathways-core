@@ -73,3 +73,36 @@ All tests currently pass (`bunx tsx` invocation of
 - Live device sockets / polling
 - `zone_reader_inbound` persistence table
 - `ZONE_READER_WEBHOOK_SECRET`
+
+## Row alignment (added)
+
+Matching rule: strict 4-tuple `(isolateId, antibioticCode, method=disk_diffusion, standard)`.
+
+- `standard` is taken from `worklist.standard` when present; otherwise from the
+  isolate's existing disk-diffusion AST rows.
+- MIC rows are **never** auto-converted into disk-diffusion rows.
+- Unmatched results are classified into `alignment[]` with one of:
+  - `MISSING_AST_ROW` — no AST row at all for `(isolate, antibioticCode)`
+  - `METHOD_MISMATCH` — a row exists but uses a non-disk method
+  - `STANDARD_MISMATCH` — a disk row exists under a different standard
+
+Pre-import messages surfaced in the ZoneReaderPanel:
+
+- "Missing AST rows for AMP, PEN under disk_diffusion / CLSI"
+- "VAN row exists but method mismatch: mic_broth vs disk_diffusion. MIC rows are not auto-converted."
+- "VAN disk-diffusion row uses standard CLSI, expected EUCAST."
+
+The panel exposes a **Create N disk-diffusion rows** button for the
+`MISSING_AST_ROW` set; it uses `buildASTResult` + `meduguActions.addAST` with
+`method=disk_diffusion` and the expected standard (falling back to the
+project's `PRIMARY_STANDARD`). Method mismatches are advisory only — the
+scientist must add a disk row deliberately.
+
+New tests:
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| 15 | Antibiotic with no row at all | `MISSING_AST_ROW` finding + alignment entry |
+| 16 | Only a MIC row exists for same antibiotic | `METHOD_MISMATCH`; MIC row left untouched |
+| 17 | Matches cleanly after a disk row is added | `matched.length === 1`, alignment empty |
+| 18 | Disk row exists under a different standard | `STANDARD_MISMATCH` with `existingStandard` + `expectedStandard` |
