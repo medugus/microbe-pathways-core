@@ -11,6 +11,8 @@ import type {
   ZoneReaderWorklistExport,
 } from "../../../integrations/zoneReader/types";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ZoneReaderImportReviewTable } from "./ZoneReaderImportReviewTable";
 import { ZoneReaderFindingsList } from "./ZoneReaderFindingsList";
 
@@ -20,12 +22,15 @@ interface Props {
   astPanelId: string;
 }
 
+const HELPER_TEXT =
+  "Use this section to export a worklist for the standalone Zone Reader app, then import or paste the returned Zone Result JSON. This is a manual file-based workflow. No live device connection is active.";
+
 export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const settings = getZoneReaderSettings();
-  const [open, setOpen] = useState(false);
   const [lastWorklist, setLastWorklist] = useState<ZoneReaderWorklistExport | null>(null);
   const [importResult, setImportResult] = useState<ImportMapResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [pasted, setPasted] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const canExport = useMemo(
@@ -34,6 +39,35 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   );
 
   if (!settings.enabled) return null;
+
+  function runMap(payload: string, source: "file" | "paste") {
+    setImportError(null);
+    try {
+      const result = mapImport({
+        accession,
+        worklist: lastWorklist ?? undefined,
+        payload,
+      });
+      setImportResult(result);
+      emitZoneReaderAudit({
+        code: result.ok
+          ? "ZONE_READER_RESULT_IMPORT_PARSED"
+          : "ZONE_READER_RESULT_IMPORT_REJECTED",
+        accessionId: accession.id,
+        isolateId,
+        astPanelId,
+        detail: {
+          source,
+          matched: result.matched.length,
+          unmatched: result.unmatched.length,
+          missing: result.missing.length,
+          findings: result.findings.length,
+        },
+      });
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : String(err));
+    }
+  }
 
   function onExport() {
     try {
@@ -59,40 +93,29 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   }
 
   async function onImportFile(file: File) {
-    setImportError(null);
     try {
       const text = await file.text();
-      const result = mapImport({
-        accession,
-        worklist: lastWorklist ?? undefined,
-        payload: text,
-      });
-      setImportResult(result);
-      emitZoneReaderAudit({
-        code: result.ok
-          ? "ZONE_READER_RESULT_IMPORT_PARSED"
-          : "ZONE_READER_RESULT_IMPORT_REJECTED",
-        accessionId: accession.id,
-        isolateId,
-        astPanelId,
-        detail: {
-          matched: result.matched.length,
-          unmatched: result.unmatched.length,
-          missing: result.missing.length,
-          findings: result.findings.length,
-        },
-      });
+      runMap(text, "file");
     } catch (err) {
       setImportError(err instanceof Error ? err.message : String(err));
     }
+  }
+
+  function onParsePaste() {
+    if (!pasted.trim()) {
+      setImportError("Paste Zone Result JSON before parsing.");
+      return;
+    }
+    runMap(pasted, "paste");
   }
 
   function acceptRow(antibioticCode: string) {
     if (!importResult) return;
     const row = importResult.matched.find((m) => m.antibioticCode === antibioticCode);
     if (!row) return;
-    // Goes through the standard AST setter — interpretation, expert rules,
-    // cascade, AMS, IPC, validation and release all run unchanged downstream.
+    // Only raw zone diameter goes through the standard AST setter.
+    // Interpretation, expert rules, cascade, AMS, IPC, validation, release
+    // all run downstream via existing engines — never written directly here.
     meduguActions.updateAST(accession.id, row.astRowId, {
       rawValue: row.zoneDiameterMm,
       rawUnit: "mm",
@@ -137,67 +160,102 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   }
 
   return (
-    <div className="rounded-md border border-border bg-background p-3">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between text-left text-sm font-medium"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span>Zone Reader integration (contract v1)</span>
-        <span className="text-xs text-muted-foreground">{open ? "Hide" : "Show"}</span>
-      </button>
-
-      {open && (
-        <div className="mt-3 space-y-3">
-          <div className="flex flex-wrap gap-2">
+    <Card className="border-primary/30">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-extrabold uppercase tracking-wide">
+          Zone Reader manual integration
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">{HELPER_TEXT}</p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 rounded-md border border-border bg-background p-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              1. Export worklist
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Download a Worklist JSON for the selected isolate + AST panel and load it into the standalone Zone Reader app.
+            </p>
             <Button size="sm" variant="outline" onClick={onExport} disabled={!canExport}>
               Export worklist JSON
             </Button>
-            <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
-              Import result JSON
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/json,.json"
-              hidden
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void onImportFile(f);
-                e.target.value = "";
-              }}
-            />
-            {importResult?.matched.length ? (
-              <Button size="sm" onClick={acceptAllSafe}>
-                Accept all safe rows
-              </Button>
-            ) : null}
+            {!canExport && (
+              <p className="text-[11px] text-muted-foreground">
+                Pick an isolate and AST panel above to enable export.
+              </p>
+            )}
           </div>
 
-          {importError && (
-            <p className="text-xs text-destructive">{importError}</p>
-          )}
-
-          {importResult && (
-            <>
-              <ZoneReaderFindingsList findings={importResult.findings} />
-              <ZoneReaderImportReviewTable
-                matched={importResult.matched}
-                unmatched={importResult.unmatched}
-                missing={importResult.missing}
-                onAccept={acceptRow}
-                onReject={rejectRow}
+          <div className="space-y-2 rounded-md border border-border bg-background p-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              2. Import Zone Result JSON
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Either upload the file Zone Reader exported, or paste its JSON below.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
+                Import result JSON from file
+              </Button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void onImportFile(f);
+                  e.target.value = "";
+                }}
               />
-            </>
-          )}
-
-          <p className="text-[11px] text-muted-foreground">
-            Skeleton only — no live API. Imported zones are written via the
-            existing AST setter, so breakpoint interpretation, expert rules,
-            cascade, AMS, IPC, validation and release all still run.
-          </p>
+            </div>
+            <Textarea
+              value={pasted}
+              onChange={(e) => setPasted(e.target.value)}
+              placeholder='Paste Zone Result JSON here, e.g. { "isolateId": "...", "results": [...] }'
+              className="min-h-[120px] font-mono text-xs"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={onParsePaste} disabled={!pasted.trim()}>
+                Parse pasted result JSON
+              </Button>
+              {pasted && (
+                <Button size="sm" variant="ghost" onClick={() => setPasted("")}>
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
-      )}
-    </div>
+
+        {importError && <p className="text-xs text-destructive">{importError}</p>}
+
+        {importResult && (
+          <div className="space-y-3 rounded-md border border-border bg-background p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                3. Review and accept rows
+              </h4>
+              {importResult.matched.some((m) => !m.requiresReview) && (
+                <Button size="sm" onClick={acceptAllSafe}>
+                  Accept all safe rows
+                </Button>
+              )}
+            </div>
+            <ZoneReaderFindingsList findings={importResult.findings} />
+            <ZoneReaderImportReviewTable
+              matched={importResult.matched}
+              unmatched={importResult.unmatched}
+              missing={importResult.missing}
+              onAccept={acceptRow}
+              onReject={rejectRow}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Every imported row requires scientist review. Accepted rows only write the raw zone diameter through the standard AST setter — interpretation, expert rules, cascade, AMS, IPC, validation and release all run downstream unchanged.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

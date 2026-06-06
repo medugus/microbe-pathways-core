@@ -281,13 +281,13 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
         />
       </div>
 
-      <ASTReportabilityBoard accession={accession} />
-
       <ZoneReaderPanel
         accession={accession}
         isolateId={activeIsolateId}
         astPanelId={selectedPanel?.id ?? ""}
       />
+
+      <ASTReportabilityBoard accession={accession} />
 
       <AntibiogramGrid accession={accession} />
 
