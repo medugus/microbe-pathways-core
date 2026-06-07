@@ -23,6 +23,7 @@ import { Route as AdminZoneReaderRouteImport } from './routes/admin.zone-reader'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminReceiversRouteImport } from './routes/admin.receivers'
 import { Route as AdminConfigRouteImport } from './routes/admin.config'
+import { Route as ApiPublicZoneReaderResultRouteImport } from './routes/api.public.zone-reader.result'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -94,6 +95,12 @@ const AdminConfigRoute = AdminConfigRouteImport.update({
   path: '/admin/config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicZoneReaderResultRoute =
+  ApiPublicZoneReaderResultRouteImport.update({
+    id: '/api/public/zone-reader/result',
+    path: '/api/public/zone-reader/result',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/zone-reader': typeof AdminZoneReaderRoute
   '/settings/sounds': typeof SettingsSoundsRoute
+  '/api/public/zone-reader/result': typeof ApiPublicZoneReaderResultRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +134,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/zone-reader': typeof AdminZoneReaderRoute
   '/settings/sounds': typeof SettingsSoundsRoute
+  '/api/public/zone-reader/result': typeof ApiPublicZoneReaderResultRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +152,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/zone-reader': typeof AdminZoneReaderRoute
   '/settings/sounds': typeof SettingsSoundsRoute
+  '/api/public/zone-reader/result': typeof ApiPublicZoneReaderResultRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/zone-reader'
     | '/settings/sounds'
+    | '/api/public/zone-reader/result'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/zone-reader'
     | '/settings/sounds'
+    | '/api/public/zone-reader/result'
   id:
     | '__root__'
     | '/'
@@ -193,6 +205,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/zone-reader'
     | '/settings/sounds'
+    | '/api/public/zone-reader/result'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,6 +223,7 @@ export interface RootRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   AdminZoneReaderRoute: typeof AdminZoneReaderRoute
   SettingsSoundsRoute: typeof SettingsSoundsRoute
+  ApiPublicZoneReaderResultRoute: typeof ApiPublicZoneReaderResultRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -312,6 +326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/zone-reader/result': {
+      id: '/api/public/zone-reader/result'
+      path: '/api/public/zone-reader/result'
+      fullPath: '/api/public/zone-reader/result'
+      preLoaderRoute: typeof ApiPublicZoneReaderResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -330,6 +351,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   AdminZoneReaderRoute: AdminZoneReaderRoute,
   SettingsSoundsRoute: SettingsSoundsRoute,
+  ApiPublicZoneReaderResultRoute: ApiPublicZoneReaderResultRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
