@@ -1,5 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { __test } from "@/routes/api.public.zone-reader.result";
+// Tests for the public ZoneResult inbound route.
+// Plain node:assert style to match other tests in this folder.
+
+import { strict as assert } from "node:assert";
+import { __test } from "../../../../routes/api.public.zone-reader.result";
 
 const validHex = "a".repeat(64);
 
@@ -22,32 +25,30 @@ function req(
   });
 }
 
-describe("public ZoneResult inbound route", () => {
-  beforeEach(() => {
-    delete process.env.ZONE_READER_INBOUND_TOKEN;
-  });
-  afterEach(() => {
-    delete process.env.ZONE_READER_INBOUND_TOKEN;
-  });
+async function run() {
+  delete process.env.ZONE_READER_INBOUND_TOKEN;
 
-  it("OPTIONS returns 204 with CORS headers (preflight)", async () => {
+  // OPTIONS preflight
+  {
     const res = await __test.handlers.OPTIONS(req("OPTIONS"));
-    expect(res.status).toBe(204);
-    expect(res.headers.get("access-control-allow-methods")).toContain("POST");
-    expect(res.headers.get("access-control-allow-headers")).toContain(
-      "Authorization",
+    assert.equal(res.status, 204);
+    assert.ok(res.headers.get("access-control-allow-methods")?.includes("POST"));
+    assert.ok(
+      res.headers.get("access-control-allow-headers")?.includes("Authorization"),
     );
-  });
+  }
 
-  it("GET returns 200 JSON liveness (route exists, not 404)", async () => {
+  // GET liveness (route exists, not 404)
+  {
     const res = await __test.handlers.GET(req("GET"));
-    expect(res.status).toBe(200);
+    assert.equal(res.status, 200);
     const body = (await res.json()) as { ok: boolean; route: string };
-    expect(body.ok).toBe(true);
-    expect(body.route).toBe("/api/public/zone-reader/result");
-  });
+    assert.equal(body.ok, true);
+    assert.equal(body.route, "/api/public/zone-reader/result");
+  }
 
-  it("POST with valid hex bearer token + JSON body returns 202", async () => {
+  // POST valid hex token + JSON body → 202
+  {
     const res = await __test.handlers.POST(
       req("POST", {
         auth: `Bearer ${validHex}`,
@@ -55,25 +56,24 @@ describe("public ZoneResult inbound route", () => {
         body: { worklistId: "w1", results: [] },
       }),
     );
-    expect(res.status).toBe(202);
+    assert.equal(res.status, 202);
     const body = (await res.json()) as { ok: boolean; accepted: boolean };
-    expect(body.ok).toBe(true);
-    expect(body.accepted).toBe(true);
-  });
+    assert.equal(body.ok, true);
+    assert.equal(body.accepted, true);
+  }
 
-  it("POST with missing Authorization returns 401 JSON", async () => {
+  // POST missing Authorization → 401
+  {
     const res = await __test.handlers.POST(
-      req("POST", {
-        contentType: "application/json",
-        body: { worklistId: "w1" },
-      }),
+      req("POST", { contentType: "application/json", body: {} }),
     );
-    expect(res.status).toBe(401);
+    assert.equal(res.status, 401);
     const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("missing_authorization");
-  });
+    assert.equal(body.error, "missing_authorization");
+  }
 
-  it("POST with malformed Authorization scheme returns 401 JSON", async () => {
+  // POST malformed Authorization scheme → 401
+  {
     const res = await __test.handlers.POST(
       req("POST", {
         auth: "Token abc",
@@ -81,12 +81,13 @@ describe("public ZoneResult inbound route", () => {
         body: {},
       }),
     );
-    expect(res.status).toBe(401);
+    assert.equal(res.status, 401);
     const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("malformed_authorization");
-  });
+    assert.equal(body.error, "malformed_authorization");
+  }
 
-  it("POST with structurally invalid token returns 403 JSON", async () => {
+  // POST structurally invalid token → 403
+  {
     const res = await __test.handlers.POST(
       req("POST", {
         auth: "Bearer not-a-real-token",
@@ -94,12 +95,13 @@ describe("public ZoneResult inbound route", () => {
         body: {},
       }),
     );
-    expect(res.status).toBe(403);
+    assert.equal(res.status, 403);
     const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("invalid_token");
-  });
+    assert.equal(body.error, "invalid_token");
+  }
 
-  it("POST honors ZONE_READER_INBOUND_TOKEN env when set", async () => {
+  // POST honors ZONE_READER_INBOUND_TOKEN when set
+  {
     process.env.ZONE_READER_INBOUND_TOKEN = "server-side-secret";
     const bad = await __test.handlers.POST(
       req("POST", {
@@ -108,7 +110,7 @@ describe("public ZoneResult inbound route", () => {
         body: {},
       }),
     );
-    expect(bad.status).toBe(403);
+    assert.equal(bad.status, 403);
     const good = await __test.handlers.POST(
       req("POST", {
         auth: "Bearer server-side-secret",
@@ -116,17 +118,20 @@ describe("public ZoneResult inbound route", () => {
         body: {},
       }),
     );
-    expect(good.status).toBe(202);
-  });
+    assert.equal(good.status, 202);
+    delete process.env.ZONE_READER_INBOUND_TOKEN;
+  }
 
-  it("POST without JSON content-type returns 415", async () => {
+  // POST without JSON content-type → 415
+  {
     const res = await __test.handlers.POST(
       req("POST", { auth: `Bearer ${validHex}`, body: "raw" }),
     );
-    expect(res.status).toBe(415);
-  });
+    assert.equal(res.status, 415);
+  }
 
-  it("POST with invalid JSON body returns 400", async () => {
+  // POST with invalid JSON → 400
+  {
     const res = await __test.handlers.POST(
       req("POST", {
         auth: `Bearer ${validHex}`,
@@ -134,6 +139,13 @@ describe("public ZoneResult inbound route", () => {
         body: "{not json",
       }),
     );
-    expect(res.status).toBe(400);
-  });
+    assert.equal(res.status, 400);
+  }
+
+  console.log("publicInboundRoute.test ok");
+}
+
+run().catch((err) => {
+  console.error(err);
+  process.exitCode = 1;
 });
