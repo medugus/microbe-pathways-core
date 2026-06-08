@@ -138,6 +138,74 @@ function AdminInner({ tenantId }: { tenantId: string }) {
         </Link>
       </header>
 
+      {onPreview && (
+        <section
+          role="alert"
+          className="space-y-2 rounded-md border-2 border-destructive bg-destructive/10 p-4"
+        >
+          <h2 className="text-sm font-semibold text-destructive">
+            Preview host detected — do not use this origin for live send
+          </h2>
+          <p className="text-xs text-destructive/90">
+            You are viewing this admin page from a preview / non-production
+            origin (<code className="font-mono">{currentOrigin || "unknown"}</code>).
+            Preview URLs are ephemeral and must never be configured in Zone
+            Reader as the live ZoneResult destination. The endpoint URL shown
+            below is intentionally pinned to the stable production host
+            (<code className="font-mono">{productionBase}</code>) and is what
+            Zone Reader must use.
+          </p>
+        </section>
+      )}
+
+      <section className="space-y-3 rounded-md border border-border bg-card p-4">
+        <h2 className="text-sm font-medium">Production base URL</h2>
+        <p className="text-xs text-muted-foreground">
+          Stable, published Medugu host used to build the Zone Reader endpoint
+          URL. This is never derived from the current browser origin, so the
+          value below is safe to hand to Zone Reader even when this page is
+          opened from a preview environment.
+        </p>
+        <div className="text-xs">
+          <div>
+            Built-in default:{" "}
+            <code className="font-mono">{defaultBase}</code>
+          </div>
+          <div>
+            In effect:{" "}
+            <code className="font-mono">{productionBase}</code>
+            {overrideBase ? " (admin override)" : " (default)"}
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="zr-base" className="text-xs">
+            Override (https origin only)
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="zr-base"
+              value={baseDraft}
+              onChange={(e) => setBaseDraft(e.target.value)}
+              placeholder={defaultBase}
+              className="font-mono text-xs"
+            />
+            <Button type="button" onClick={saveBase}>
+              Save
+            </Button>
+            {overrideBase && (
+              <Button type="button" variant="ghost" onClick={clearBase}>
+                Reset
+              </Button>
+            )}
+          </div>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Must be an <code className="font-mono">https://</code> origin
+            (no path). Leave blank and Reset to use the built-in default.
+          </p>
+        </div>
+      </section>
+
+
       <section className="space-y-3 rounded-md border border-border bg-card p-4">
         <h2 className="text-sm font-medium">Inbound endpoint URL</h2>
         <p className="text-xs text-muted-foreground">
