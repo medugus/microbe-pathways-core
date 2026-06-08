@@ -74,6 +74,12 @@ function AdminInner({ tenantId }: { tenantId: string }) {
   const [revealed, setRevealed] = useState(false);
 
   const endpointUrl = zoneReaderInboundConfig.getEndpointUrl();
+  const productionBase = zoneReaderInboundConfig.getProductionBaseUrl();
+  const overrideBase = zoneReaderInboundConfig.getProductionBaseUrlOverride();
+  const defaultBase = zoneReaderInboundConfig.getDefaultProductionBaseUrl();
+  const currentOrigin = zoneReaderInboundConfig.getCurrentOrigin();
+  const onPreview = zoneReaderInboundConfig.isPreviewEnvironment();
+  const [baseDraft, setBaseDraft] = useState(overrideBase ?? "");
   const current = zoneReaderInboundConfig.getToken(tenantId);
 
   async function copy(label: string, value: string) {
@@ -81,6 +87,22 @@ function AdminInner({ tenantId }: { tenantId: string }) {
     toast[ok ? "success" : "error"](
       ok ? `${label} copied` : `Could not copy ${label}`,
     );
+  }
+
+  function saveBase() {
+    const result = zoneReaderInboundConfig.setProductionBaseUrl(baseDraft);
+    if (result.ok) {
+      toast.success("Production base URL saved");
+      setBaseDraft(result.value);
+    } else {
+      toast.error(result.reason);
+    }
+  }
+
+  function clearBase() {
+    zoneReaderInboundConfig.clearProductionBaseUrlOverride();
+    setBaseDraft("");
+    toast.success("Reverted to built-in default");
   }
 
   function generate() {
