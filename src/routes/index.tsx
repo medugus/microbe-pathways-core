@@ -132,65 +132,50 @@ function HubBody() {
           </div>
         </article>
 
-        {/* Zone Reader card */}
-        <article className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
-          <div className="space-y-1">
-            <h2 className="text-base font-semibold">Open Zone Reader</h2>
-            <p className="text-sm text-muted-foreground">
-              External disk-diffusion measurement app. Imports a Medugu LIMS
-              worklist, captures zone diameters, and returns coded ZoneResult
-              rows to this deployment for interpretation and release.
-            </p>
-          </div>
-          <ul className="space-y-1 text-xs text-muted-foreground">
-            <li>• Worklist JSON export from Medugu</li>
-            <li>• Disk-diffusion measurement in Zone Reader</li>
-            <li>• ZoneResult POST back to Medugu inbound endpoint</li>
-            <li>• Medugu interprets, validates, releases</li>
-          </ul>
+        {/* Zone Reader card — hidden entirely when no app URL is configured so
+            a LIMS-only deployment shows no reference to the Zone Reader. */}
+        {appUrl && (
+          <article className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold">Open Zone Reader</h2>
+              <p className="text-sm text-muted-foreground">
+                External disk-diffusion measurement app. Imports a Medugu LIMS
+                worklist, captures zone diameters, and returns coded ZoneResult
+                rows to this deployment for interpretation and release.
+              </p>
+            </div>
+            <ul className="space-y-1 text-xs text-muted-foreground">
+              <li>• Worklist JSON export from Medugu</li>
+              <li>• Disk-diffusion measurement in Zone Reader</li>
+              <li>• ZoneResult POST back to Medugu inbound endpoint</li>
+              <li>• Medugu interprets, validates, releases</li>
+            </ul>
 
-          {onPreview && appUrl && (
-            <p
-              role="alert"
-              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
-            >
-              Preview host detected — do not use this origin for live Zone
-              Reader send. The launch button still opens the configured app,
-              but ZoneResult must target the production Medugu host.
-            </p>
-          )}
+            {onPreview && (
+              <p
+                role="alert"
+                className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+              >
+                Preview host detected — do not use this origin for live Zone
+                Reader send. The launch button still opens the configured app,
+                but ZoneResult must target the production Medugu host.
+              </p>
+            )}
 
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-xs text-muted-foreground">
-              {appUrl ? (
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-xs text-muted-foreground">
                 <code className="font-mono break-all">{appUrl}</code>
-              ) : (
-                <span>
-                  Not configured.{" "}
-                  <Link
-                    to="/admin/zone-reader"
-                    className="text-primary underline-offset-2 hover:underline"
-                  >
-                    Set in admin
-                  </Link>
-                  .
-                </span>
-              )}
-            </span>
-            <Button
-              type="button"
-              onClick={launchZoneReader}
-              disabled={!appUrl}
-              title={
-                appUrl
-                  ? "Opens Zone Reader in a new tab"
-                  : "Set the Zone Reader app URL in admin first"
-              }
-            >
-              Launch Zone Reader ↗
-            </Button>
-          </div>
-        </article>
+              </span>
+              <Button
+                type="button"
+                onClick={launchZoneReader}
+                title="Opens Zone Reader in a new tab"
+              >
+                Launch Zone Reader ↗
+              </Button>
+            </div>
+          </article>
+        )}
       </section>
 
       {/* Integration strip */}
