@@ -80,7 +80,25 @@ function AdminInner({ tenantId }: { tenantId: string }) {
   const currentOrigin = zoneReaderInboundConfig.getCurrentOrigin();
   const onPreview = zoneReaderInboundConfig.isPreviewEnvironment();
   const [baseDraft, setBaseDraft] = useState(overrideBase ?? "");
+  const appUrl = zoneReaderInboundConfig.getAppUrl();
+  const [appUrlDraft, setAppUrlDraft] = useState(appUrl ?? "");
   const current = zoneReaderInboundConfig.getToken(tenantId);
+
+  function saveAppUrl() {
+    const result = zoneReaderInboundConfig.setAppUrl(appUrlDraft);
+    if (result.ok) {
+      toast.success("Zone Reader app URL saved");
+      setAppUrlDraft(result.value);
+    } else {
+      toast.error(result.reason);
+    }
+  }
+
+  function clearAppUrl() {
+    zoneReaderInboundConfig.clearAppUrl();
+    setAppUrlDraft("");
+    toast.success("Zone Reader app URL cleared");
+  }
 
   async function copy(label: string, value: string) {
     const ok = await copyText(value);
