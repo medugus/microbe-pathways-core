@@ -178,36 +178,38 @@ function HubBody() {
         )}
       </section>
 
-      {/* Integration strip */}
-      <section
-        aria-label="Zone Reader integration path"
-        className="rounded-lg border border-dashed border-border bg-muted/30 p-4"
-      >
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Integration path
-        </h3>
-        <ol className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-          <li className="rounded bg-background px-2 py-1 font-medium">
-            1. Worklist export
-          </li>
-          <li className="text-muted-foreground">→</li>
-          <li className="rounded bg-background px-2 py-1 font-medium">
-            2. Measure (Zone Reader)
-          </li>
-          <li className="text-muted-foreground">→</li>
-          <li className="rounded bg-background px-2 py-1 font-medium">
-            3. ZoneResult return
-          </li>
-          <li className="text-muted-foreground">→</li>
-          <li className="rounded bg-background px-2 py-1 font-medium">
-            4. Interpret &amp; release
-          </li>
-        </ol>
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          Inbound endpoint:{" "}
-          <code className="font-mono">{endpointUrl}</code>
-        </p>
-      </section>
+      {/* Integration strip — hidden when no Zone Reader app URL is configured. */}
+      {appUrl && (
+        <section
+          aria-label="Zone Reader integration path"
+          className="rounded-lg border border-dashed border-border bg-muted/30 p-4"
+        >
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Integration path
+          </h3>
+          <ol className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <li className="rounded bg-background px-2 py-1 font-medium">
+              1. Worklist export
+            </li>
+            <li className="text-muted-foreground">→</li>
+            <li className="rounded bg-background px-2 py-1 font-medium">
+              2. Measure (Zone Reader)
+            </li>
+            <li className="text-muted-foreground">→</li>
+            <li className="rounded bg-background px-2 py-1 font-medium">
+              3. ZoneResult return
+            </li>
+            <li className="text-muted-foreground">→</li>
+            <li className="rounded bg-background px-2 py-1 font-medium">
+              4. Interpret &amp; release
+            </li>
+          </ol>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Inbound endpoint:{" "}
+            <code className="font-mono">{endpointUrl}</code>
+          </p>
+        </section>
+      )}
 
       {/* Workflow counts (cheap: derived from in-memory store) */}
       {counts.total > 0 && (
