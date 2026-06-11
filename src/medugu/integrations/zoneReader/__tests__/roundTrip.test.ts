@@ -59,6 +59,9 @@ const baseImport = {
   isolateId: "iso-1",
   astPanelId: "enterobacterales",
   method: "disk_diffusion" as const,
+  standard: "EUCAST" as const,
+  notForClinicalRelease: true as const,
+  releaseAuthority: "LIS" as const,
   device: "ACME-SN-001",
 };
 
