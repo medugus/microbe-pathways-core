@@ -74,9 +74,6 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
       // placeholder DISC_POTENCY_PLACEHOLDER ("unspecified") for every disc
       // rather than fabricate a clinically misleading dose.
       discPotency: DISC_POTENCY_PLACEHOLDER,
-      antibioticClass: ab?.class ?? null,
-      awareCategory: null,
-      reportabilityDefault: null,
       plateHint: ab?.display ?? null,
     };
   });
