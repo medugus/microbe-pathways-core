@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
@@ -25,6 +26,11 @@ import { Route as AdminReceiversRouteImport } from './routes/admin.receivers'
 import { Route as AdminConfigRouteImport } from './routes/admin.config'
 import { Route as ApiPublicZoneReaderResultRouteImport } from './routes/api.public.zone-reader.result'
 
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/workspace': typeof WorkspaceRoute
   '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/workspace': typeof WorkspaceRoute
   '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/workspace': typeof WorkspaceRoute
   '/admin/config': typeof AdminConfigRoute
   '/admin/receivers': typeof AdminReceiversRoute
   '/admin/users': typeof AdminUsersRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
+    | '/workspace'
     | '/admin/config'
     | '/admin/receivers'
     | '/admin/users'
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
+    | '/workspace'
     | '/admin/config'
     | '/admin/receivers'
     | '/admin/users'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
+    | '/workspace'
     | '/admin/config'
     | '/admin/receivers'
     | '/admin/users'
@@ -218,6 +230,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  WorkspaceRoute: typeof WorkspaceRoute
   AdminConfigRoute: typeof AdminConfigRoute
   AdminReceiversRoute: typeof AdminReceiversRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -228,6 +241,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workspace': {
+      id: '/workspace'
+      path: '/workspace'
+      fullPath: '/workspace'
+      preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -346,6 +366,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  WorkspaceRoute: WorkspaceRoute,
   AdminConfigRoute: AdminConfigRoute,
   AdminReceiversRoute: AdminReceiversRoute,
   AdminUsersRoute: AdminUsersRoute,

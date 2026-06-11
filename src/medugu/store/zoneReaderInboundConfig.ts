@@ -21,6 +21,7 @@
 
 const STORAGE_KEY = "medugu.zoneReaderInbound.v1";
 const BASE_URL_KEY = "medugu.zoneReaderInbound.baseUrl.v1";
+const APP_URL_KEY = "medugu.zoneReader.appUrl.v1";
 const ENDPOINT_PATH = "/api/public/zone-reader/result";
 
 // Known stable published host for this deployment. Used as the default when
@@ -190,6 +191,54 @@ export const zoneReaderInboundConfig = {
     const all = readAll();
     delete all[tenantId];
     writeAll(all);
+    notify();
+  },
+
+  /** Admin-configured Zone Reader app URL (https origin, optional path). */
+  getAppUrl(): string | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(APP_URL_KEY);
+      return raw ? raw : null;
+    } catch {
+      return null;
+    }
+  },
+
+  /** Set the Zone Reader app URL. Validates https + URL shape. */
+  setAppUrl(raw: string): { ok: true; value: string } | { ok: false; reason: string } {
+    const trimmed = raw.trim();
+    if (!trimmed) return { ok: false, reason: "Enter an https:// URL." };
+    let normalised: string;
+    try {
+      const u = new URL(trimmed);
+      if (u.protocol !== "https:") {
+        return { ok: false, reason: "URL must use https://." };
+      }
+      // Keep origin + path (drop hash/search) so deployments can host the app
+      // under a subpath if needed.
+      normalised = u.origin + (u.pathname === "/" ? "" : u.pathname.replace(/\/$/, ""));
+    } catch {
+      return { ok: false, reason: "Not a valid URL." };
+    }
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(APP_URL_KEY, normalised);
+      } catch {
+        return { ok: false, reason: "Could not persist app URL (storage full?)." };
+      }
+    }
+    notify();
+    return { ok: true, value: normalised };
+  },
+
+  clearAppUrl() {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.removeItem(APP_URL_KEY);
+    } catch {
+      /* ignore */
+    }
     notify();
   },
 

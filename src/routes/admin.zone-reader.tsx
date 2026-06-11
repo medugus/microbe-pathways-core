@@ -80,7 +80,25 @@ function AdminInner({ tenantId }: { tenantId: string }) {
   const currentOrigin = zoneReaderInboundConfig.getCurrentOrigin();
   const onPreview = zoneReaderInboundConfig.isPreviewEnvironment();
   const [baseDraft, setBaseDraft] = useState(overrideBase ?? "");
+  const appUrl = zoneReaderInboundConfig.getAppUrl();
+  const [appUrlDraft, setAppUrlDraft] = useState(appUrl ?? "");
   const current = zoneReaderInboundConfig.getToken(tenantId);
+
+  function saveAppUrl() {
+    const result = zoneReaderInboundConfig.setAppUrl(appUrlDraft);
+    if (result.ok) {
+      toast.success("Zone Reader app URL saved");
+      setAppUrlDraft(result.value);
+    } else {
+      toast.error(result.reason);
+    }
+  }
+
+  function clearAppUrl() {
+    zoneReaderInboundConfig.clearAppUrl();
+    setAppUrlDraft("");
+    toast.success("Zone Reader app URL cleared");
+  }
 
   async function copy(label: string, value: string) {
     const ok = await copyText(value);
@@ -204,6 +222,54 @@ function AdminInner({ tenantId }: { tenantId: string }) {
           </p>
         </div>
       </section>
+
+      <section className="space-y-3 rounded-md border border-border bg-card p-4">
+        <h2 className="text-sm font-medium">Zone Reader app URL</h2>
+        <p className="text-xs text-muted-foreground">
+          The Zone Reader web app the Hub "Launch Zone Reader" button opens
+          in a new tab. Must be an <code className="font-mono">https://</code>{" "}
+          URL. If unset, the Hub launch button is disabled.
+        </p>
+        <div>
+          <Label htmlFor="zr-app" className="text-xs">
+            App URL
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="zr-app"
+              value={appUrlDraft}
+              onChange={(e) => setAppUrlDraft(e.target.value)}
+              placeholder="https://zone-reader.example.org"
+              className="font-mono text-xs"
+            />
+            <Button type="button" onClick={saveAppUrl}>
+              Save
+            </Button>
+            {appUrl && (
+              <Button type="button" variant="ghost" onClick={clearAppUrl}>
+                Clear
+              </Button>
+            )}
+          </div>
+          {onPreview && appUrl && (
+            <p className="mt-1 text-[11px] text-destructive">
+              Preview host detected — the launch button on the Hub will show
+              a preview-host warning until you open Medugu from the published
+              production URL.
+            </p>
+          )}
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            In effect:{" "}
+            {appUrl ? (
+              <code className="font-mono">{appUrl}</code>
+            ) : (
+              <span>none — launch button disabled</span>
+            )}
+          </p>
+        </div>
+      </section>
+
+
 
 
       <section className="space-y-3 rounded-md border border-border bg-card p-4">
