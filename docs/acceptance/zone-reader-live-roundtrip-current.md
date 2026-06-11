@@ -106,20 +106,27 @@ The importer enforces this boundary at two levels:
    multi-device admin workflows, generate once and distribute through your
    normal secret-sharing channel.
 
-## Current limitation (explicit)
+## Current limitation (explicit) — open issue OI-001
 
-The live inbound endpoint authenticates and parses the payload, returning
-`202 Accepted`, but **server-side persistence is not yet enabled**. In this
-build the actual AST update is performed through the **manual import path** in
-the AST Zone Reader panel (`src/medugu/ui/sections/ast/ZoneReaderPanel.tsx`),
-which uses the same `zoneReaderResultImportSchema`, `mapImport`, and
-`updateAST` pipeline proven above.
+**OI-001 — Server-side persistence of POSTed ZoneResults is not yet enabled.**
+The live inbound endpoint at `/api/public/zone-reader/result` authenticates,
+parses, and returns `202 Accepted`, but it does **not** yet persist the
+payload into the database or drive `mapImport` → `updateAST` server-side.
+That wiring requires the Phase-5 database (and a server-side per-tenant
+token store) and is tracked as **open issue OI-001**.
 
-Therefore:
+Until OI-001 is closed:
+
 - **Auth + parsing round-trip** — proven live.
-- **Full automated POST-to-database persistence** — not proven in this build;
-  the endpoint wiring to `mapImport` → `updateAST` is a future deployment step.
-- **Manual import ingestion** — proven and remains the supported workflow.
+- **Full automated POST-to-database persistence** — **NOT proven**; tracked as
+  OI-001.
+- **Manual import ingestion** in the AST Zone Reader panel
+  (`src/medugu/ui/sections/ast/ZoneReaderPanel.tsx`) — **proven and remains
+  the supported workflow.** It uses the same `zoneReaderResultImportSchema`,
+  `mapImport`, and `updateAST` pipeline; the matching key is
+  `(envelope.isolateId, result.antibioticCode, envelope.method,
+  envelope.standard)`, and every envelope must assert
+  `notForClinicalRelease === true` and `releaseAuthority === "LIS"`.
 
 ## Regression test status
 
