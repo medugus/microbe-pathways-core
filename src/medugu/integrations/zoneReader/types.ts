@@ -48,12 +48,7 @@ export interface ExpectedDisc {
    * string or a fabricated dose.
    */
   discPotency: string;
-  antibioticClass?: string | null;
-  awareCategory?: "Access" | "Watch" | "Reserve" | null;
-  reportabilityDefault?: "report" | "suppress" | "conditional" | null;
   plateHint?: string | null;
-  /** @deprecated use discPotency. */
-  discContent?: string | null;
 }
 
 /**
