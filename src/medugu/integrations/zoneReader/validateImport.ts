@@ -128,6 +128,8 @@ export function validateImport(input: ValidateImportInput): ImportFinding[] {
     });
   }
 
+  // 6. Reader / device metadata.
+  if (!payload.readerDeviceId && !payload.sourceSystem) {
     findings.push({
       severity: "warning",
       code: "MISSING_DEVICE_METADATA",
