@@ -30,6 +30,13 @@ const ENDPOINT_PATH = "/api/public/zone-reader/result";
 // production URL to operators.
 const DEFAULT_PRODUCTION_BASE_URL = "https://medugu-microbe-pathways-core.lovable.app";
 
+/**
+ * Built-in default URL of the Zone Reader web app. The "Launch Zone Reader"
+ * action on the Hub and the AST Zone Reader panel opens this URL in a new
+ * tab when no admin override is set. Must be a real https origin.
+ */
+const DEFAULT_APP_URL = "https://zone-sight-lab.lovable.app/";
+
 interface Shape {
   // tenantId → token
   [tenantId: string]: { token: string; generatedAt: string } | undefined;
