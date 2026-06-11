@@ -133,6 +133,18 @@ export interface ZoneReaderResultImport {
   isolateId: string;
   astPanelId: string;
   method: ZoneReaderMethod;
+  /** Envelope-level breakpoint standard. Used as part of the match key. */
+  standard?: ZoneReaderStandard;
+  /**
+   * Hard assertion from the Zone Reader: this envelope is NOT a clinical
+   * release. Must be exactly `true` for Medugu to accept it.
+   */
+  notForClinicalRelease?: boolean;
+  /**
+   * Hard assertion from the Zone Reader: release authority remains with the
+   * LIS (Medugu). Must be exactly `"LIS"` for Medugu to accept it.
+   */
+  releaseAuthority?: "LIS";
   results: ZoneResult[];
   readerDeviceId?: string;
   device?: string;
