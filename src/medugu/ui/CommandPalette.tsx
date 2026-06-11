@@ -24,7 +24,8 @@ import { SECTION_ORDER } from "./sections";
 import { FileText, LayoutGrid, Compass } from "lucide-react";
 
 const ROUTES: Array<{ to: string; label: string; hint: string }> = [
-  { to: "/", label: "Workspace", hint: "Cases" },
+  { to: "/", label: "Hub", hint: "Home" },
+  { to: "/workspace", label: "Workspace", hint: "Cases" },
   { to: "/ams", label: "AMS approvals", hint: "Stewardship" },
   { to: "/ipc", label: "IPC signals", hint: "Infection control" },
   { to: "/analytics", label: "Analytics", hint: "Trends" },
