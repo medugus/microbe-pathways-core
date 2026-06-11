@@ -239,7 +239,7 @@ function AdminInner({ tenantId }: { tenantId: string }) {
               id="zr-app"
               value={appUrlDraft}
               onChange={(e) => setAppUrlDraft(e.target.value)}
-              placeholder="https://zone-reader.example.org"
+              placeholder={zoneReaderInboundConfig.getDefaultAppUrl()}
               className="font-mono text-xs"
             />
             <Button type="button" onClick={saveAppUrl}>
