@@ -113,9 +113,14 @@ export function mapImport(input: MapImportInput): ImportMapResult {
   const isolateAllAst = accession.ast.filter((a) => a.isolateId === parsed.isolateId);
   const isolateDiskAst = isolateAllAst.filter((a) => a.method === ASTMethod.DiskDiffusion);
 
+  // Match key per row: (envelope.isolateId, result.antibioticCode,
+  // envelope.method, envelope.standard). Envelope standard takes precedence;
+  // worklist standard is the next preference; otherwise we fall back to the
+  // standard already declared by any disk-diffusion AST row on this isolate.
+  const envelopeStandard = parsed.standard ?? undefined;
   const worklistStandard = worklist?.standard ?? undefined;
   const expectedStandard: string | undefined =
-    worklistStandard ?? isolateDiskAst[0]?.standard ?? undefined;
+    envelopeStandard ?? worklistStandard ?? isolateDiskAst[0]?.standard ?? undefined;
 
   const diskByCode = new Map(isolateDiskAst.map((a) => [a.antibioticCode, a]));
   const anyByCode = new Map(isolateAllAst.map((a) => [a.antibioticCode, a]));
