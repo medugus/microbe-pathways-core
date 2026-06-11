@@ -222,6 +222,14 @@ const rawImportSchema = z.object({
   isolateId: z.string().min(1),
   astPanelId: z.string().min(1),
   method: z.literal("disk_diffusion"),
+  // Envelope-level breakpoint standard — part of the canonical match key
+  // (isolateId, antibioticCode, method, standard).
+  standard: z.enum(["EUCAST", "CLSI", "LOCAL"]).optional(),
+  // Hard assertions the Zone Reader MUST stamp on every envelope.
+  // Required to be literally `true` / `"LIS"`; checked in validateImport so
+  // the failure surfaces as a friendly blocker (not a raw zod path error).
+  notForClinicalRelease: z.boolean().optional(),
+  releaseAuthority: z.string().optional(),
   results: z.array(rawZoneResultSchema).min(1),
   readerDeviceId: z.string().optional(),
   device: z.string().optional(),
@@ -251,6 +259,10 @@ export const zoneReaderResultImportSchema = rawImportSchema
       isolateId: v.isolateId,
       astPanelId: v.astPanelId,
       method: v.method,
+      standard: v.standard,
+      notForClinicalRelease: v.notForClinicalRelease,
+      releaseAuthority:
+        v.releaseAuthority === "LIS" ? "LIS" : (v.releaseAuthority as undefined),
       results: v.results.map(normaliseRow),
       readerDeviceId,
       device: readerDeviceId,
