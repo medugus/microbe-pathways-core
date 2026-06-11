@@ -216,10 +216,37 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   return (
     <Card className="border-primary/30">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-extrabold uppercase tracking-wide">
-          Zone Reader manual integration
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">{HELPER_TEXT}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-sm font-extrabold uppercase tracking-wide">
+              Zone Reader manual integration
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">{HELPER_TEXT}</p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={launchZoneReader}
+            disabled={!appUrl}
+            title={
+              appUrl
+                ? "Opens the Zone Reader app in a new tab"
+                : "Set the Zone Reader app URL in /admin/zone-reader first"
+            }
+          >
+            Launch Zone Reader ↗
+          </Button>
+        </div>
+        {appUrl && appUrlOnPreview && (
+          <p
+            role="alert"
+            className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-[11px] text-destructive"
+          >
+            Configured Zone Reader URL looks like a preview host — measurements
+            from a preview deployment must not be used for live ZoneResult send.
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
