@@ -223,20 +223,17 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
             </CardTitle>
             <p className="text-xs text-muted-foreground">{HELPER_TEXT}</p>
           </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={launchZoneReader}
-            disabled={!appUrl}
-            title={
-              appUrl
-                ? "Opens the Zone Reader app in a new tab"
-                : "Set the Zone Reader app URL in /admin/zone-reader first"
-            }
-          >
-            Launch Zone Reader ↗
-          </Button>
+          {appUrl && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={launchZoneReader}
+              title="Opens the Zone Reader app in a new tab"
+            >
+              Launch Zone Reader ↗
+            </Button>
+          )}
         </div>
         {appUrl && appUrlOnPreview && (
           <p
