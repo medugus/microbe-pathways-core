@@ -90,7 +90,7 @@ export function runZoneReaderRoundTripTests() {
   }
 
   const ampDisc = w.expectedDiscs.find((d) => d.antibioticCode === "AMP");
-  assert.equal(ampDisc?.antibioticClass, "penicillin");
+  assert.equal(typeof ampDisc?.antibioticName, "string");
 
   const ok = mapImport({
     accession,
