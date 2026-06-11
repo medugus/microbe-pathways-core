@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Accession, ASTStandard } from "../../../domain/types";
 import { ASTMethod } from "../../../domain/enums";
 import { meduguActions } from "../../../store/useAccessionStore";
@@ -8,6 +8,7 @@ import { emitZoneReaderAudit } from "../../../integrations/zoneReader/auditEvent
 import { getZoneReaderSettings } from "../../../integrations/zoneReader/settings";
 import { buildASTResult } from "../../../logic/astDrafting";
 import { PRIMARY_STANDARD } from "../../../config/breakpoints";
+import { zoneReaderInboundConfig } from "../../../store/zoneReaderInboundConfig";
 import type {
   ImportMapResult,
   UnmatchedAlignment,
@@ -36,6 +37,22 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const [importError, setImportError] = useState<string | null>(null);
   const [pasted, setPasted] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  // Subscribe to inbound-config changes so the Launch button reflects admin
+  // edits to the Zone Reader app URL without a page reload.
+  const [, force] = useState(0);
+  useEffect(
+    () => zoneReaderInboundConfig.subscribe(() => force((n) => n + 1)),
+    [],
+  );
+  const appUrl = zoneReaderInboundConfig.getAppUrl();
+  const appUrlOnPreview = zoneReaderInboundConfig.isAppUrlOnPreviewHost();
+
+  function launchZoneReader() {
+    if (!appUrl) return;
+    window.open(appUrl, "_blank", "noopener,noreferrer");
+  }
+
 
   const canExport = useMemo(
     () => Boolean(isolateId && astPanelId),
@@ -199,10 +216,37 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   return (
     <Card className="border-primary/30">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-extrabold uppercase tracking-wide">
-          Zone Reader manual integration
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">{HELPER_TEXT}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-sm font-extrabold uppercase tracking-wide">
+              Zone Reader manual integration
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">{HELPER_TEXT}</p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={launchZoneReader}
+            disabled={!appUrl}
+            title={
+              appUrl
+                ? "Opens the Zone Reader app in a new tab"
+                : "Set the Zone Reader app URL in /admin/zone-reader first"
+            }
+          >
+            Launch Zone Reader ↗
+          </Button>
+        </div>
+        {appUrl && appUrlOnPreview && (
+          <p
+            role="alert"
+            className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-[11px] text-destructive"
+          >
+            Configured Zone Reader URL looks like a preview host — measurements
+            from a preview deployment must not be used for live ZoneResult send.
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">

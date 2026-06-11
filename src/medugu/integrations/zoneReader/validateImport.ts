@@ -108,6 +108,26 @@ export function validateImport(input: ValidateImportInput): ImportFinding[] {
     });
   }
 
+  // 5b. ZoneResultEnvelope safety assertions. Zone Reader must stamp every
+  //     envelope with notForClinicalRelease=true and releaseAuthority="LIS"
+  //     so it can never be mistaken for an authoritative clinical release.
+  if (payload.notForClinicalRelease !== true) {
+    findings.push({
+      severity: "blocker",
+      code: "MISSING_NOT_FOR_CLINICAL_RELEASE",
+      message:
+        "Envelope must assert notForClinicalRelease === true. Medugu (the LIS) is the sole release authority.",
+    });
+  }
+  if (payload.releaseAuthority !== "LIS") {
+    findings.push({
+      severity: "blocker",
+      code: "INVALID_RELEASE_AUTHORITY",
+      message:
+        'Envelope must assert releaseAuthority === "LIS". Medugu is the sole release authority for clinical results.',
+    });
+  }
+
   // 6. Reader / device metadata.
   if (!payload.readerDeviceId && !payload.sourceSystem) {
     findings.push({

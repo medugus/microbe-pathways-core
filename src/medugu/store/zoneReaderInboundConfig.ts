@@ -30,6 +30,13 @@ const ENDPOINT_PATH = "/api/public/zone-reader/result";
 // production URL to operators.
 const DEFAULT_PRODUCTION_BASE_URL = "https://medugu-microbe-pathways-core.lovable.app";
 
+/**
+ * Built-in default URL of the Zone Reader web app. The "Launch Zone Reader"
+ * action on the Hub and the AST Zone Reader panel opens this URL in a new
+ * tab when no admin override is set. Must be a real https origin.
+ */
+const DEFAULT_APP_URL = "https://zone-sight-lab.lovable.app/";
+
 interface Shape {
   // tenantId → token
   [tenantId: string]: { token: string; generatedAt: string } | undefined;
@@ -194,14 +201,51 @@ export const zoneReaderInboundConfig = {
     notify();
   },
 
-  /** Admin-configured Zone Reader app URL (https origin, optional path). */
+  /** Built-in default Zone Reader app URL. */
+  getDefaultAppUrl(): string {
+    return DEFAULT_APP_URL;
+  },
+
+  /**
+   * Effective Zone Reader app URL — admin override when set, otherwise the
+   * built-in default. Returns `null` only when admin explicitly clears the
+   * value AND no built-in default applies. The default ensures the launch
+   * button is normally enabled out of the box.
+   */
   getAppUrl(): string | null {
+    if (typeof window === "undefined") return DEFAULT_APP_URL;
+    try {
+      const raw = window.localStorage.getItem(APP_URL_KEY);
+      if (raw === "") return null; // explicit "cleared" sentinel
+      return raw ?? DEFAULT_APP_URL;
+    } catch {
+      return DEFAULT_APP_URL;
+    }
+  },
+
+  /** Admin-configured override, or null when no override is set. */
+  getAppUrlOverride(): string | null {
     if (typeof window === "undefined") return null;
     try {
       const raw = window.localStorage.getItem(APP_URL_KEY);
-      return raw ? raw : null;
+      return raw && raw.length > 0 ? raw : null;
     } catch {
       return null;
+    }
+  },
+
+  /**
+   * Is the host of the configured Zone Reader app URL a preview host?
+   * Reuses the same preview detection used for the Medugu origin so the UI
+   * can warn when the launch target itself looks ephemeral.
+   */
+  isAppUrlOnPreviewHost(): boolean {
+    const url = this.getAppUrl();
+    if (!url) return false;
+    try {
+      return isPreviewHost(new URL(url).hostname);
+    } catch {
+      return false;
     }
   },
 

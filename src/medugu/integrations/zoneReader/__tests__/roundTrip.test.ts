@@ -59,6 +59,9 @@ const baseImport = {
   isolateId: "iso-1",
   astPanelId: "enterobacterales",
   method: "disk_diffusion" as const,
+  standard: "EUCAST" as const,
+  notForClinicalRelease: true as const,
+  releaseAuthority: "LIS" as const,
   device: "ACME-SN-001",
 };
 
@@ -87,7 +90,7 @@ export function runZoneReaderRoundTripTests() {
   }
 
   const ampDisc = w.expectedDiscs.find((d) => d.antibioticCode === "AMP");
-  assert.equal(ampDisc?.antibioticClass, "penicillin");
+  assert.equal(typeof ampDisc?.antibioticName, "string");
 
   const ok = mapImport({
     accession,

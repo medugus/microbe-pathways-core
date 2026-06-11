@@ -13,23 +13,21 @@ import {
 // Worklist export schema (strict producer) — FLAT, no wrapper
 // ------------------------------------------------------------------
 
-export const expectedDiscSchema = z.object({
-  antibioticCode: z.string().min(1),
-  antibioticName: z.string().nullable().optional(),
-  // Always a string — empty string allowed — to match the Zone Reader
-  // importer, which rejects null here.
-  discPotency: z.string(),
-  antibioticClass: z.string().nullable().optional(),
-  awareCategory: z.enum(["Access", "Watch", "Reserve"]).nullable().optional(),
-  reportabilityDefault: z.enum(["report", "suppress", "conditional"]).nullable().optional(),
-  plateHint: z.string().nullable().optional(),
-  discContent: z.string().nullable().optional(),
-});
+export const expectedDiscSchema = z
+  .object({
+    antibioticCode: z.string().min(1),
+    antibioticName: z.string().nullable().optional(),
+    // Always a non-empty string. Use the placeholder "unspecified" when no
+    // potency is mapped — never empty, never null.
+    discPotency: z.string().min(1),
+    plateHint: z.string().nullable().optional(),
+  })
+  .strict();
 
 /**
  * Flat worklist payload — strict producer schema. Field set mirrors the
  * Zone Reader importer's `LimsWorklist` schema exactly; unknown root fields
- * are rejected (`.strict()`), and `discPotency` must be a non-empty string.
+ * are rejected (`.strict()`).
  */
 export const zoneReaderWorklistExportSchema = z
   .object({
@@ -52,14 +50,7 @@ export const zoneReaderWorklistExportSchema = z
     astPanelName: z.string().min(1),
     standard: z.enum(["EUCAST", "CLSI", "LOCAL"]).nullable(),
 
-    expectedDiscs: z
-      .array(
-        expectedDiscSchema.extend({
-          // Tighten at the producer boundary: discPotency must be non-empty.
-          discPotency: z.string().min(1),
-        }),
-      )
-      .min(1),
+    expectedDiscs: z.array(expectedDiscSchema).min(1),
   })
   .strict();
 
@@ -231,6 +222,14 @@ const rawImportSchema = z.object({
   isolateId: z.string().min(1),
   astPanelId: z.string().min(1),
   method: z.literal("disk_diffusion"),
+  // Envelope-level breakpoint standard — part of the canonical match key
+  // (isolateId, antibioticCode, method, standard).
+  standard: z.enum(["EUCAST", "CLSI", "LOCAL"]).optional(),
+  // Hard assertions the Zone Reader MUST stamp on every envelope.
+  // Required to be literally `true` / `"LIS"`; checked in validateImport so
+  // the failure surfaces as a friendly blocker (not a raw zod path error).
+  notForClinicalRelease: z.boolean().optional(),
+  releaseAuthority: z.string().optional(),
   results: z.array(rawZoneResultSchema).min(1),
   readerDeviceId: z.string().optional(),
   device: z.string().optional(),
@@ -260,6 +259,10 @@ export const zoneReaderResultImportSchema = rawImportSchema
       isolateId: v.isolateId,
       astPanelId: v.astPanelId,
       method: v.method,
+      standard: v.standard,
+      notForClinicalRelease: v.notForClinicalRelease,
+      releaseAuthority:
+        v.releaseAuthority === "LIS" ? "LIS" : (v.releaseAuthority as undefined),
       results: v.results.map(normaliseRow),
       readerDeviceId,
       device: readerDeviceId,
