@@ -104,7 +104,7 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
 
     organismName: isolate.organismDisplay ?? null,
     organismCode: isolate.organismCode ?? null,
-    organismGroup: deriveOrganismGroup(isolate.organismCode),
+    organismGroup: deriveOrganismGroup(isolate.organismCode) || "unspecified",
 
     astPanelId: panel.id,
     astPanelName: panel.label,
