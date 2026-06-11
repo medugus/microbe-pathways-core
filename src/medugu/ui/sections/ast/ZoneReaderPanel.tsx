@@ -38,6 +38,22 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const [pasted, setPasted] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
 
+  // Subscribe to inbound-config changes so the Launch button reflects admin
+  // edits to the Zone Reader app URL without a page reload.
+  const [, force] = useState(0);
+  useEffect(
+    () => zoneReaderInboundConfig.subscribe(() => force((n) => n + 1)),
+    [],
+  );
+  const appUrl = zoneReaderInboundConfig.getAppUrl();
+  const appUrlOnPreview = zoneReaderInboundConfig.isAppUrlOnPreviewHost();
+
+  function launchZoneReader() {
+    if (!appUrl) return;
+    window.open(appUrl, "_blank", "noopener,noreferrer");
+  }
+
+
   const canExport = useMemo(
     () => Boolean(isolateId && astPanelId),
     [isolateId, astPanelId],
