@@ -89,8 +89,9 @@ describe("Zone Reader worklist window transfer", () => {
       worklist,
     });
     const transferListener = [...listeners][0];
+    expect(transferListener).toBeDefined();
 
-    transferListener({
+    transferListener!({
       source: readerWindow,
       origin: "https://reader.example.test",
       data: { type: ZONE_READER_READY_MESSAGE },
@@ -99,12 +100,13 @@ describe("Zone Reader worklist window transfer", () => {
     const worklistMessage = readerWindow.postMessage.mock.calls.find(
       ([message]) => message.type === "MEDUGU_ZONE_READER_WORKLIST",
     )?.[0];
-    transferListener({
+    expect(worklistMessage).toBeDefined();
+    transferListener!({
       source: readerWindow,
       origin: "https://reader.example.test",
       data: {
         type: ZONE_READER_ACCEPTED_MESSAGE,
-        transferId: worklistMessage.transferId,
+        transferId: worklistMessage!.transferId,
         worklistId: worklist.worklistId,
       },
     } as unknown as MessageEvent);
@@ -116,7 +118,8 @@ describe("Zone Reader worklist window transfer", () => {
       onResult,
     });
     const resultListener = [...listeners][0];
-    await resultListener({
+    expect(resultListener).toBeDefined();
+    await resultListener!({
       source: readerWindow,
       origin: "https://reader.example.test",
       data: {
