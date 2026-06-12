@@ -3,7 +3,10 @@ import type { Accession, ASTStandard } from "../../../domain/types";
 import { ASTMethod } from "../../../domain/enums";
 import { meduguActions } from "../../../store/useAccessionStore";
 import { buildWorklistExport } from "../../../integrations/zoneReader/exportWorklist";
-import { sendWorklistToZoneReader } from "../../../integrations/zoneReader/windowTransfer";
+import {
+  installZoneReaderResultReceiver,
+  sendWorklistToZoneReader,
+} from "../../../integrations/zoneReader/windowTransfer";
 import { mapImport } from "../../../integrations/zoneReader/importMapper";
 import { emitZoneReaderAudit } from "../../../integrations/zoneReader/auditEvents";
 import { getZoneReaderSettings } from "../../../integrations/zoneReader/settings";
@@ -92,12 +95,10 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     [isolateId, astPanelId],
   );
 
-  if (!settings.enabled) return null;
-
-  function runMap(
+  const runMap = useCallback((
     payload: string,
-    source: "file" | "paste" | "queue" | "rerun",
-  ) {
+    source: "file" | "paste" | "queue" | "rerun" | "window",
+  ) => {
     setImportError(null);
     try {
       const result = mapImport({
@@ -126,8 +127,29 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
       });
     } catch (err) {
       setImportError(err instanceof Error ? err.message : String(err));
+      throw err;
     }
-  }
+  }, [accession, astPanelId, isolateId, lastWorklist]);
+
+  useEffect(() => {
+    if (!settings.enabled || !appUrl) return;
+
+    return installZoneReaderResultReceiver({
+      appUrl,
+      onResult: (payload) => {
+        const json = JSON.stringify(payload);
+        setActiveReceiptId(null);
+        setPasted(JSON.stringify(payload, null, 2));
+        runMap(json, "window");
+        setTransferState("sent");
+        setTransferMessage(
+          "Zone Result received from the connected reader and loaded for clinical review.",
+        );
+      },
+    });
+  }, [appUrl, runMap, settings.enabled]);
+
+  if (!settings.enabled) return null;
 
   function createMissingDiskRows(alignment: UnmatchedAlignment[]) {
     const standard: ASTStandard =
