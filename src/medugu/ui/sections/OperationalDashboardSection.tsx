@@ -1,18 +1,25 @@
-import { deriveOperationalDashboard } from "../../logic/operationalDashboard";
+import {
+  deriveOperationalQueueItems,
+  getOperationalSummary,
+} from "../../logic/operationalDashboard";
 import { useMeduguState } from "../../store/useAccessionStore";
 import { OperationalMetricsPanel } from "./dashboard/OperationalMetricsPanel";
 import { OperationalPriorityQueue } from "./dashboard/OperationalPriorityQueue";
 import { OperationalDashboardEmptyState } from "./dashboard/OperationalDashboardEmptyState";
-import {
-  representativeAccessionMap,
-} from "../../logic/representativeAccessions";
+import { representativeAccessionMap } from "../../logic/representativeAccessions";
+import { selectEssentialOpenQueueItems } from "../../logic/essentialOpenQueue";
 
 export function OperationalDashboardSection() {
   const state = useMeduguState();
   const representativeAccessions = representativeAccessionMap(state);
   const representedCount = Object.keys(representativeAccessions).length;
   const totalCount = Object.keys(state.accessions).length;
-  const dashboard = deriveOperationalDashboard(representativeAccessions);
+  const allDerivedItems = deriveOperationalQueueItems(representativeAccessions);
+  const essentialItems = selectEssentialOpenQueueItems(allDerivedItems);
+  const summary = getOperationalSummary(
+    representativeAccessions,
+    essentialItems,
+  );
 
   return (
     <div className="space-y-4">
@@ -28,12 +35,18 @@ export function OperationalDashboardSection() {
         </p>
       </header>
 
-      <OperationalMetricsPanel summary={dashboard.summary} />
+      <OperationalMetricsPanel summary={summary} />
 
-      {dashboard.items.length === 0 ? (
+      {allDerivedItems.length > essentialItems.length && (
+        <p className="text-xs text-muted-foreground">
+          Showcase queue: only the essential open examples are displayed.
+        </p>
+      )}
+
+      {essentialItems.length === 0 ? (
         <OperationalDashboardEmptyState />
       ) : (
-        <OperationalPriorityQueue items={dashboard.items} />
+        <OperationalPriorityQueue items={essentialItems} />
       )}
     </div>
   );
