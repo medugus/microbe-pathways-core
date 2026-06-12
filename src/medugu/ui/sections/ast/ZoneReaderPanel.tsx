@@ -3,6 +3,7 @@ import type { Accession, ASTStandard } from "../../../domain/types";
 import { ASTMethod } from "../../../domain/enums";
 import { meduguActions } from "../../../store/useAccessionStore";
 import { buildWorklistExport } from "../../../integrations/zoneReader/exportWorklist";
+import { sendWorklistToZoneReader } from "../../../integrations/zoneReader/windowTransfer";
 import { mapImport } from "../../../integrations/zoneReader/importMapper";
 import { emitZoneReaderAudit } from "../../../integrations/zoneReader/auditEvents";
 import { getZoneReaderSettings } from "../../../integrations/zoneReader/settings";
@@ -32,7 +33,7 @@ interface Props {
 }
 
 const HELPER_TEXT =
-  "Export worklists to the standalone Zone Reader, then review live receipts here. Manual JSON import remains available as an offline fallback.";
+  "Send the selected isolate and AST panel directly to the standalone Zone Reader, then review returned measurements here. JSON download remains available as a fallback.";
 
 export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const settings = getZoneReaderSettings();
@@ -46,6 +47,10 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const [queueLoading, setQueueLoading] = useState(false);
   const [queueError, setQueueError] = useState<string | null>(null);
   const [activeReceiptId, setActiveReceiptId] = useState<string | null>(null);
+  const [transferState, setTransferState] = useState<
+    "idle" | "sending" | "sent" | "failed"
+  >("idle");
+  const [transferMessage, setTransferMessage] = useState<string | null>(null);
 
   const refreshQueue = useCallback(async () => {
     if (!accession.id || !isolateId) return;
@@ -157,10 +162,48 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     if (lastPayload) runMap(lastPayload, "rerun");
   }
 
+  function buildSelectedWorklist() {
+    const envelope = buildWorklistExport({ accession, isolateId, astPanelId });
+    setLastWorklist(envelope);
+    return envelope;
+  }
+
+  async function onSendToReader() {
+    if (!appUrl) {
+      setTransferState("failed");
+      setTransferMessage("Configure the Zone Reader app URL before sending.");
+      return;
+    }
+
+    setTransferState("sending");
+    setTransferMessage("Opening Zone Reader and transferring the selected worklist...");
+    try {
+      const envelope = buildSelectedWorklist();
+      await sendWorklistToZoneReader({ appUrl, worklist: envelope });
+      setTransferState("sent");
+      setTransferMessage(
+        `Sent ${envelope.expectedDiscs.length} disc(s) to Zone Reader for ${accession.accessionNumber}.`,
+      );
+      emitZoneReaderAudit({
+        code: "ZONE_READER_WORKLIST_SENT",
+        accessionId: accession.id,
+        isolateId,
+        astPanelId,
+        detail: {
+          worklistId: envelope.worklistId,
+          rowCount: envelope.expectedDiscs.length,
+          targetOrigin: new URL(appUrl).origin,
+        },
+      });
+    } catch (err) {
+      setTransferState("failed");
+      setTransferMessage(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   function onExport() {
     try {
-      const envelope = buildWorklistExport({ accession, isolateId, astPanelId });
-      setLastWorklist(envelope);
+      const envelope = buildSelectedWorklist();
       const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -312,7 +355,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="text-sm font-extrabold uppercase tracking-wide">
-              Zone Reader manual integration
+              Zone Reader integration
             </CardTitle>
             <p className="text-xs text-muted-foreground">{HELPER_TEXT}</p>
           </div>
@@ -401,17 +444,48 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 rounded-md border border-border bg-background p-3">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              1. Export worklist
+              1. Send selected worklist
             </h4>
             <p className="text-xs text-muted-foreground">
-              Download a Worklist JSON for the selected isolate + AST panel and load it into the standalone Zone Reader app.
+              Transfer the selected isolate, AST panel, standard, and expected discs directly into Zone Reader.
             </p>
-            <Button size="sm" variant="outline" onClick={onExport} disabled={!canExport}>
-              Export worklist JSON
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                onClick={() => void onSendToReader()}
+                disabled={!canExport || !appUrl || transferState === "sending"}
+              >
+                {transferState === "sending" ? "Sending..." : "Send to Zone Reader"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onExport}
+                disabled={!canExport}
+              >
+                Download JSON
+              </Button>
+            </div>
+            {transferMessage && (
+              <p
+                role="status"
+                className={
+                  transferState === "failed"
+                    ? "text-[11px] text-destructive"
+                    : "text-[11px] text-muted-foreground"
+                }
+              >
+                {transferMessage}
+              </p>
+            )}
+            {!appUrl && (
+              <p className="text-[11px] text-destructive">
+                Configure the Zone Reader app URL in Admin before sending.
+              </p>
+            )}
             {!canExport && (
               <p className="text-[11px] text-muted-foreground">
-                Pick an isolate and AST panel above to enable export.
+                Pick an isolate and AST panel above to enable sending.
               </p>
             )}
           </div>
