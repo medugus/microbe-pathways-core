@@ -29,12 +29,22 @@ create policy "Tenant members can read Zone Reader inbound messages"
   to authenticated
   using (public.is_tenant_member(auth.uid(), tenant_id));
 
-create policy "Tenant admins can review Zone Reader inbound messages"
+create policy "Authorized laboratory roles can review Zone Reader messages"
   on public.zone_reader_inbound_messages
   for update
   to authenticated
-  using (public.has_role(auth.uid(), tenant_id, 'admin'::public.app_role))
-  with check (public.has_role(auth.uid(), tenant_id, 'admin'::public.app_role));
+  using (
+    public.has_role(auth.uid(), tenant_id, 'lab_tech'::public.app_role)
+    or public.has_role(auth.uid(), tenant_id, 'microbiologist'::public.app_role)
+    or public.has_role(auth.uid(), tenant_id, 'consultant'::public.app_role)
+    or public.has_role(auth.uid(), tenant_id, 'admin'::public.app_role)
+  )
+  with check (
+    public.has_role(auth.uid(), tenant_id, 'lab_tech'::public.app_role)
+    or public.has_role(auth.uid(), tenant_id, 'microbiologist'::public.app_role)
+    or public.has_role(auth.uid(), tenant_id, 'consultant'::public.app_role)
+    or public.has_role(auth.uid(), tenant_id, 'admin'::public.app_role)
+  );
 
 revoke insert, delete on public.zone_reader_inbound_messages
   from anon, authenticated;

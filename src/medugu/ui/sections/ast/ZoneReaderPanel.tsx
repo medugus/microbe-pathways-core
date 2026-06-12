@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Accession, ASTStandard } from "../../../domain/types";
 import { ASTMethod } from "../../../domain/enums";
 import { meduguActions } from "../../../store/useAccessionStore";
@@ -9,6 +9,11 @@ import { getZoneReaderSettings } from "../../../integrations/zoneReader/settings
 import { buildASTResult } from "../../../logic/astDrafting";
 import { PRIMARY_STANDARD } from "../../../config/breakpoints";
 import { zoneReaderInboundConfig } from "../../../store/zoneReaderInboundConfig";
+import {
+  listPendingZoneReaderMessages,
+  setZoneReaderMessageStatus,
+  type ZoneReaderInboundMessage,
+} from "../../../integrations/zoneReader/inboundQueue";
 import type {
   ImportMapResult,
   UnmatchedAlignment,
@@ -27,7 +32,7 @@ interface Props {
 }
 
 const HELPER_TEXT =
-  "Use this section to export a worklist for the standalone Zone Reader app, then import or paste the returned Zone Result JSON. This is a manual file-based workflow. No live device connection is active.";
+  "Export worklists to the standalone Zone Reader, then review live receipts here. Manual JSON import remains available as an offline fallback.";
 
 export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const settings = getZoneReaderSettings();
@@ -37,6 +42,29 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const [importError, setImportError] = useState<string | null>(null);
   const [pasted, setPasted] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [queuedResults, setQueuedResults] = useState<ZoneReaderInboundMessage[]>([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [queueError, setQueueError] = useState<string | null>(null);
+  const [activeReceiptId, setActiveReceiptId] = useState<string | null>(null);
+
+  const refreshQueue = useCallback(async () => {
+    if (!accession.id || !isolateId) return;
+    setQueueLoading(true);
+    setQueueError(null);
+    try {
+      setQueuedResults(
+        await listPendingZoneReaderMessages(accession.id, isolateId),
+      );
+    } catch (error) {
+      setQueueError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setQueueLoading(false);
+    }
+  }, [accession.id, isolateId]);
+
+  useEffect(() => {
+    void refreshQueue();
+  }, [refreshQueue]);
 
   // Subscribe to inbound-config changes so the Launch button reflects admin
   // edits to the Zone Reader app URL without a page reload.
@@ -61,7 +89,10 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
 
   if (!settings.enabled) return null;
 
-  function runMap(payload: string, source: "file" | "paste" | "rerun") {
+  function runMap(
+    payload: string,
+    source: "file" | "paste" | "queue" | "rerun",
+  ) {
     setImportError(null);
     try {
       const result = mapImport({
@@ -158,7 +189,37 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     }
   }
 
+  function loadQueuedResult(message: ZoneReaderInboundMessage) {
+    setActiveReceiptId(message.id);
+    runMap(JSON.stringify(message.payload), "queue");
+  }
+
+  async function finishQueuedReview(status: "accepted" | "rejected") {
+    if (!activeReceiptId) return;
+    setImportError(null);
+    try {
+      await setZoneReaderMessageStatus(activeReceiptId, status);
+      emitZoneReaderAudit({
+        code:
+          status === "accepted"
+            ? "ZONE_READER_RECEIPT_ACCEPTED"
+            : "ZONE_READER_RECEIPT_REJECTED",
+        accessionId: accession.id,
+        isolateId,
+        astPanelId,
+        detail: { receiptId: activeReceiptId },
+      });
+      setActiveReceiptId(null);
+      setImportResult(null);
+      setLastPayload(null);
+      await refreshQueue();
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   function onParsePaste() {
+    setActiveReceiptId(null);
     if (!pasted.trim()) {
       setImportError("Paste Zone Result JSON before parsing.");
       return;
@@ -184,10 +245,16 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
       antibioticCode,
       detail: { zoneMm: row.zoneDiameterMm, reviewReasons: row.reviewReasons },
     });
-    setImportResult({
-      ...importResult,
-      matched: importResult.matched.filter((m) => m.antibioticCode !== antibioticCode),
-    });
+    setImportResult((current) =>
+      current
+        ? {
+            ...current,
+            matched: current.matched.filter(
+              (match) => match.antibioticCode !== antibioticCode,
+            ),
+          }
+        : current,
+    );
   }
 
   function rejectRow(antibioticCode: string) {
@@ -199,18 +266,44 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
       astPanelId,
       antibioticCode,
     });
-    setImportResult({
-      ...importResult,
-      matched: importResult.matched.filter((m) => m.antibioticCode !== antibioticCode),
-    });
+    setImportResult((current) =>
+      current
+        ? {
+            ...current,
+            matched: current.matched.filter(
+              (match) => match.antibioticCode !== antibioticCode,
+            ),
+          }
+        : current,
+    );
   }
 
   function acceptAllSafe() {
     if (!importResult) return;
-    for (const row of importResult.matched) {
-      if (row.requiresReview) continue;
-      acceptRow(row.antibioticCode);
+    const safeRows = importResult.matched.filter((row) => !row.requiresReview);
+    for (const row of safeRows) {
+      meduguActions.updateAST(accession.id, row.astRowId, {
+        rawValue: row.zoneDiameterMm,
+        rawUnit: "mm",
+        zoneMm: row.zoneDiameterMm,
+        method: ASTMethod.DiskDiffusion,
+      });
+      emitZoneReaderAudit({
+        code: "ZONE_READER_ROW_ACCEPTED",
+        accessionId: accession.id,
+        isolateId,
+        astPanelId,
+        antibioticCode: row.antibioticCode,
+        detail: { zoneMm: row.zoneDiameterMm, reviewReasons: row.reviewReasons },
+      });
     }
+    const acceptedCodes = new Set(safeRows.map((row) => row.antibioticCode));
+    setImportResult({
+      ...importResult,
+      matched: importResult.matched.filter(
+        (row) => !acceptedCodes.has(row.antibioticCode),
+      ),
+    });
   }
 
   return (
@@ -246,6 +339,65 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
         )}
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wide">
+                Live Zone Result receipts
+              </h4>
+              <p className="text-[11px] text-muted-foreground">
+                Stored measurements remain pending until reviewed through this panel.
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void refreshQueue()}
+              disabled={queueLoading}
+            >
+              {queueLoading ? "Loading..." : "Refresh"}
+            </Button>
+          </div>
+          {queueError && (
+            <p className="text-xs text-destructive">{queueError}</p>
+          )}
+          {!queueLoading && !queueError && queuedResults.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              No pending live results for this accession and isolate.
+            </p>
+          )}
+          {queuedResults.map((message) => {
+            const payload = message.payload as {
+              results?: unknown[];
+              readerDeviceId?: string;
+            };
+            return (
+              <div
+                key={message.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded border bg-background p-2 text-xs"
+              >
+                <div>
+                  <p className="font-medium">
+                    Receipt {message.id.slice(0, 8)}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {payload.results?.length ?? 0} measurement(s) ·{" "}
+                    {payload.readerDeviceId || "unknown reader"} ·{" "}
+                    {new Date(message.receivedAt).toLocaleString()}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => loadQueuedResult(message)}
+                >
+                  Load for review
+                </Button>
+              </div>
+            );
+          })}
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 rounded-md border border-border bg-background p-3">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -337,6 +489,35 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
             <p className="text-[11px] text-muted-foreground">
               Strict row matching by (isolateId, antibioticCode, method=disk_diffusion, standard). MIC rows are never auto-converted. Accepted rows only write the raw zone diameter through the standard AST setter — interpretation, expert rules, cascade, AMS, IPC, validation and release all run downstream unchanged.
             </p>
+            {activeReceiptId && (
+              <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={
+                    importResult.matched.length > 0 ||
+                    importResult.unmatched.length > 0
+                  }
+                  onClick={() => void finishQueuedReview("accepted")}
+                >
+                  Complete receipt review
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => void finishQueuedReview("rejected")}
+                >
+                  Reject receipt
+                </Button>
+                {(importResult.matched.length > 0 ||
+                  importResult.unmatched.length > 0) && (
+                  <span className="text-[11px] text-muted-foreground">
+                    Resolve all matched and unmatched rows before completing the receipt.
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

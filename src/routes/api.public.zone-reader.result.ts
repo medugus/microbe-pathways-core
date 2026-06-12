@@ -246,6 +246,8 @@ export async function handleZoneReaderInbound(
     });
   }
   if (
+    parsed.data.sourceSystem !== "DISKDIFF_READER" ||
+    !parsed.data.standard ||
     parsed.data.notForClinicalRelease !== true ||
     parsed.data.releaseAuthority !== "LIS"
   ) {
@@ -253,7 +255,7 @@ export async function handleZoneReaderInbound(
       ok: false,
       reason: "clinical_authority_boundary_failed",
       details: [
-        'Payload must assert notForClinicalRelease=true and releaseAuthority="LIS".',
+        'Payload must use sourceSystem="DISKDIFF_READER", declare a breakpoint standard, assert notForClinicalRelease=true, and set releaseAuthority="LIS".',
       ],
     });
   }
