@@ -4,12 +4,18 @@ export const ZONE_READER_READY_MESSAGE = "ZONE_READER_READY";
 export const ZONE_READER_WORKLIST_MESSAGE = "MEDUGU_ZONE_READER_WORKLIST";
 export const ZONE_READER_ACCEPTED_MESSAGE = "ZONE_READER_WORKLIST_ACCEPTED";
 export const ZONE_READER_REJECTED_MESSAGE = "ZONE_READER_WORKLIST_REJECTED";
+export const ZONE_READER_RESULT_MESSAGE = "ZONE_READER_RESULT";
+export const ZONE_READER_RESULT_ACCEPTED_MESSAGE = "ZONE_READER_RESULT_ACCEPTED";
+export const ZONE_READER_RESULT_REJECTED_MESSAGE = "ZONE_READER_RESULT_REJECTED";
+
+const registeredReaderWindows = new Set<Window>();
 
 type TransferReply = {
   type?: string;
   transferId?: string;
   worklistId?: string;
   message?: string;
+  payload?: unknown;
 };
 
 export type ZoneReaderTransferResult = {
@@ -119,6 +125,7 @@ export function sendWorklistToZoneReader({
       return;
     }
 
+    registeredReaderWindows.add(readerWindow);
     retryTimer = window.setInterval(sendPayload, 1_000);
     timeoutTimer = window.setTimeout(() => {
       cleanup();
@@ -129,4 +136,56 @@ export function sendWorklistToZoneReader({
       );
     }, timeoutMs);
   });
+}
+
+
+export function installZoneReaderResultReceiver({
+  appUrl,
+  onResult,
+}: {
+  appUrl: string;
+  onResult: (payload: unknown) => void | Promise<void>;
+}) {
+  if (typeof window === "undefined") return () => {};
+
+  const target = buildZoneReaderCaptureUrl(appUrl);
+
+  const onMessage = async (event: MessageEvent<TransferReply>) => {
+    const source = event.source as Window | null;
+    if (
+      !source ||
+      !registeredReaderWindows.has(source) ||
+      event.origin !== target.origin ||
+      event.data?.type !== ZONE_READER_RESULT_MESSAGE ||
+      !event.data.transferId
+    ) {
+      return;
+    }
+
+    try {
+      await onResult(event.data.payload);
+      source.postMessage(
+        {
+          type: ZONE_READER_RESULT_ACCEPTED_MESSAGE,
+          transferId: event.data.transferId,
+          message:
+            "Result received in Medugu LIMS and loaded for clinical review.",
+        },
+        target.origin,
+      );
+      registeredReaderWindows.delete(source);
+    } catch (error) {
+      source.postMessage(
+        {
+          type: ZONE_READER_RESULT_REJECTED_MESSAGE,
+          transferId: event.data.transferId,
+          message: error instanceof Error ? error.message : String(error),
+        },
+        target.origin,
+      );
+    }
+  };
+
+  window.addEventListener("message", onMessage);
+  return () => window.removeEventListener("message", onMessage);
 }
