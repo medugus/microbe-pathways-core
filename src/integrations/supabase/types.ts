@@ -14,68 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      zone_reader_inbound_messages: {
-        Row: {
-          accession_id: string
-          accession_number: string | null
-          ast_panel_id: string
-          content_hash: string
-          contract_version: string
-          id: string
-          isolate_id: string
-          payload: Json
-          read_at: string
-          received_at: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          source_system: string
-          status: string
-          tenant_id: string
-        }
-        Insert: {
-          accession_id: string
-          accession_number?: string | null
-          ast_panel_id: string
-          content_hash: string
-          contract_version: string
-          id?: string
-          isolate_id: string
-          payload: Json
-          read_at: string
-          received_at?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          source_system: string
-          status?: string
-          tenant_id: string
-        }
-        Update: {
-          accession_id?: string
-          accession_number?: string | null
-          ast_panel_id?: string
-          content_hash?: string
-          contract_version?: string
-          id?: string
-          isolate_id?: string
-          payload?: Json
-          read_at?: string
-          received_at?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          source_system?: string
-          status?: string
-          tenant_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "zone_reader_inbound_messages_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       accessions: {
         Row: {
           accession_code: string
