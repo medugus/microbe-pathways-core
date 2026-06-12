@@ -23,7 +23,10 @@ export function buildZoneReaderCaptureUrl(appUrl: string) {
   }
 
   const basePath = url.pathname.replace(/\/+$/, "");
-  url.pathname = `${basePath}/capture`.replace(/\/{2,}/g, "/");
+  url.pathname = (basePath.endsWith("/capture")
+    ? basePath
+    : `${basePath}/capture`
+  ).replace(/\/{2,}/g, "/");
   url.search = "";
   url.hash = "";
   return { url: url.toString(), origin: url.origin };
