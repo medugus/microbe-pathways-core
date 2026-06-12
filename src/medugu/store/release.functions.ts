@@ -15,7 +15,7 @@ import type { Accession, ReleasePackage } from "../domain/types";
 import { ReleaseState } from "../domain/enums";
 import { runValidation } from "../logic/validationEngine";
 import { buildReportPreview } from "../logic/reportPreview";
-import { autoDispatchRelease, type AutoDispatchResult } from "./export.functions";
+import type { AutoDispatchResult } from "./export.functions";
 import { canonicalStringify } from "../utils/canonicalJson";
 
 async function sha256Hex(input: string): Promise<string> {
@@ -148,6 +148,7 @@ export const sealRelease = createServerFn({ method: "POST" })
 
     // Auto-dispatch to every enabled receiver. Failures are reported
     // per-receiver and do NOT roll back the seal.
+    const { autoDispatchRelease } = await import("./export.server");
     const autoDispatch = await autoDispatchRelease(
       supabase,
       userId,
@@ -309,6 +310,7 @@ export const amendRelease = createServerFn({ method: "POST" })
       } as never,
     } as never);
 
+    const { autoDispatchRelease } = await import("./export.server");
     const autoDispatch = await autoDispatchRelease(
       supabase,
       userId,
