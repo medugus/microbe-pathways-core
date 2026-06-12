@@ -148,7 +148,7 @@ export function validateImport(input: ValidateImportInput): ImportFinding[] {
         severity: "warning",
         code: "DUPLICATE_ROW",
         antibioticCode: r.antibioticCode,
-        message: `Duplicate antibiotic ${r.antibioticCode} in payload — last value wins.`,
+        message: `Duplicate antibiotic ${r.antibioticCode} in payload — the last supplied value is retained and requires explicit review.`,
       });
     }
     seen.add(r.antibioticCode);
