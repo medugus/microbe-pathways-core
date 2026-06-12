@@ -125,9 +125,10 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
           alignmentMethodMismatch: result.alignment.filter((a) => a.reason === "METHOD_MISMATCH").length,
         },
       });
+      return result.ok;
     } catch (err) {
       setImportError(err instanceof Error ? err.message : String(err));
-      throw err;
+      return false;
     }
   }, [accession, astPanelId, isolateId, lastWorklist]);
 
@@ -140,7 +141,11 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
         const json = JSON.stringify(payload);
         setActiveReceiptId(null);
         setPasted(JSON.stringify(payload, null, 2));
-        runMap(json, "window");
+        if (!runMap(json, "window")) {
+          throw new Error(
+            "LIMS rejected the returned Zone Result. Review the import error in this panel.",
+          );
+        }
         setTransferState("sent");
         setTransferMessage(
           "Zone Result received from the connected reader and loaded for clinical review.",
