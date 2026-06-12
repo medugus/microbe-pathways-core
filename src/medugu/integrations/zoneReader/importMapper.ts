@@ -36,6 +36,23 @@ const LOW_CONFIDENCE_THRESHOLD = 0.75;
 const IMPLAUSIBLE_LOW_MM = 6;
 const IMPLAUSIBLE_HIGH_MM = 50;
 
+export function collapseDuplicateZoneResults(results: ZoneResult[]) {
+  const duplicateCodes = new Set<string>();
+  const lastResultByCode = new Map<string, ZoneResult>();
+
+  for (const result of results) {
+    if (lastResultByCode.has(result.antibioticCode)) {
+      duplicateCodes.add(result.antibioticCode);
+    }
+    lastResultByCode.set(result.antibioticCode, result);
+  }
+
+  return {
+    results: Array.from(lastResultByCode.values()),
+    duplicateCodes,
+  };
+}
+
 export function mapImport(input: MapImportInput): ImportMapResult {
   const { accession, worklist, requireImageReference } = input;
 
@@ -99,6 +116,8 @@ export function mapImport(input: MapImportInput): ImportMapResult {
     };
   }
 
+  const deduplicated = collapseDuplicateZoneResults(parsed.results);
+
   // 3. Build matched / unmatched / missing using STRICT row matching by
   //    (isolateId, antibioticCode, method=disk_diffusion, standard).
   //
@@ -126,7 +145,7 @@ export function mapImport(input: MapImportInput): ImportMapResult {
   const anyByCode = new Map(isolateAllAst.map((a) => [a.antibioticCode, a]));
   const matchedCodes = new Set<string>();
 
-  for (const r of parsed.results) {
+  for (const r of deduplicated.results) {
     const disk = diskByCode.get(r.antibioticCode);
     if (!disk) {
       // Either no row at all, or only a non-disk row exists → method mismatch.
@@ -182,6 +201,9 @@ export function mapImport(input: MapImportInput): ImportMapResult {
     matchedCodes.add(r.antibioticCode);
 
     const reviewReasons: string[] = [];
+    if (deduplicated.duplicateCodes.has(r.antibioticCode)) {
+      reviewReasons.push("duplicate_antibiotic");
+    }
     if (typeof r.confidenceNumeric === "number" && r.confidenceNumeric < LOW_CONFIDENCE_THRESHOLD) {
       reviewReasons.push("low_confidence");
     } else if (r.readerConfidence === "low") {
