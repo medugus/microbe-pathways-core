@@ -62,17 +62,15 @@ function AdminGate() {
       <div className="p-6 text-sm text-muted-foreground">Checking permissions…</div>
     );
   }
-  return <AdminInner tenantId={tenantId} />;
+  return <AdminInner />;
 }
 
-function AdminInner({ tenantId }: { tenantId: string }) {
+function AdminInner() {
   const [, force] = useState(0);
   useEffect(
     () => zoneReaderInboundConfig.subscribe(() => force((n) => n + 1)),
     [],
   );
-  const [revealed, setRevealed] = useState(false);
-
   const endpointUrl = zoneReaderInboundConfig.getEndpointUrl();
   const productionBase = zoneReaderInboundConfig.getProductionBaseUrl();
   const overrideBase = zoneReaderInboundConfig.getProductionBaseUrlOverride();
@@ -82,7 +80,6 @@ function AdminInner({ tenantId }: { tenantId: string }) {
   const [baseDraft, setBaseDraft] = useState(overrideBase ?? "");
   const appUrl = zoneReaderInboundConfig.getAppUrl();
   const [appUrlDraft, setAppUrlDraft] = useState(appUrl ?? "");
-  const current = zoneReaderInboundConfig.getToken(tenantId);
 
   function saveAppUrl() {
     const result = zoneReaderInboundConfig.setAppUrl(appUrlDraft);
@@ -121,24 +118,6 @@ function AdminInner({ tenantId }: { tenantId: string }) {
     zoneReaderInboundConfig.clearProductionBaseUrlOverride();
     setBaseDraft("");
     toast.success("Reverted to built-in default");
-  }
-
-  function generate() {
-    const next = zoneReaderInboundConfig.generateToken(tenantId);
-    setRevealed(true);
-    toast.success(
-      current
-        ? "New token generated — previous token is now invalid"
-        : "Token generated",
-    );
-    void copyText(next.token);
-  }
-
-  function revoke() {
-    if (!confirm("Revoke the current ZoneResult token? Zone Reader will be unable to send until a new token is generated and pasted in.")) return;
-    zoneReaderInboundConfig.revokeToken(tenantId);
-    setRevealed(false);
-    toast.success("Token revoked");
   }
 
   return (
@@ -304,89 +283,30 @@ function AdminInner({ tenantId }: { tenantId: string }) {
       </section>
 
       <section className="space-y-3 rounded-md border border-border bg-card p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium">Bearer token</h2>
-          {current && (
-            <span className="text-[11px] text-muted-foreground">
-              Generated {new Date(current.generatedAt).toLocaleString()}
-            </span>
-          )}
-        </div>
+        <h2 className="text-sm font-medium">Bearer token</h2>
         <p className="text-xs text-muted-foreground">
-          Zone Reader must send this as <code className="font-mono">Authorization: Bearer &lt;token&gt;</code>.
-          Treat it like a password: only admins should see it; regenerating
-          immediately invalidates the previous value.
+          The inbound token is a deployment secret, not browser configuration.
+          Set <code className="font-mono">ZONE_READER_INBOUND_TOKEN</code> and{" "}
+          <code className="font-mono">ZONE_READER_TENANT_ID</code> on the Medugu
+          server, then place the same token in Zone Reader. The secret is never
+          exposed back to this browser.
         </p>
-
-        {current ? (
-          <div>
-            <Label htmlFor="zr-token" className="text-xs">
-              Current token
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                id="zr-token"
-                readOnly
-                type={revealed ? "text" : "password"}
-                value={current.token}
-                className="font-mono text-xs"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setRevealed((r) => !r)}
-              >
-                {revealed ? "Hide" : "Reveal"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void copy("Token", current.token)}
-              >
-                Copy
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            No token generated yet for this tenant.
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-2 pt-1">
-          <Button type="button" onClick={generate}>
-            {current ? "Regenerate token" : "Generate token"}
-          </Button>
-          {current && (
-            <Button type="button" variant="ghost" onClick={revoke}>
-              Revoke
-            </Button>
-          )}
-        </div>
+        <p className="text-xs text-muted-foreground">
+          Also configure <code className="font-mono">SUPABASE_URL</code> and{" "}
+          <code className="font-mono">SUPABASE_SERVICE_ROLE_KEY</code> so accepted
+          payloads can be written to the durable inbound queue.
+        </p>
       </section>
 
       <section className="space-y-2 rounded-md border border-dashed border-border bg-muted/30 p-4 text-xs text-muted-foreground">
         <p className="font-medium text-foreground">Operator notes</p>
         <ul className="list-disc space-y-1 pl-5">
+          <li>The server token and tenant ID are configured in deployment secrets.</li>
+          <li>Rotate the server secret and Zone Reader token together.</li>
+          <li>Accepted results are queued for review; receipt does not mean clinical release.</li>
           <li>
-            Endpoint URL and token are scoped per tenant. A new tenant starts
-            with no token until an admin generates one.
-          </li>
-          <li>
-            Regenerating the token invalidates the previous value immediately.
-            Update Zone Reader as soon as you regenerate.
-          </li>
-          <li>
-            Token storage is browser-phase (this device only). For multi-device
-            admin workflows, generate the token once and distribute it through
-            your normal secret-sharing channel.
-          </li>
-          <li>
-            See{" "}
-            <code className="font-mono">
-              docs/acceptance/zone-result-live-send-setup-current.md
-            </code>{" "}
-            for the full setup procedure.
+            See <code className="font-mono">docs/integrations/zone-reader-live-ingestion.md</code>
+            {" "}for deployment and receipt details.
           </li>
         </ul>
       </section>

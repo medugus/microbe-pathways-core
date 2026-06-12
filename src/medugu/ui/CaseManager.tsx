@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { meduguActions, useMeduguState } from "../store/useAccessionStore";
 import { NewAccessionDialog } from "./NewAccessionDialog";
+import {
+  REPRESENTATIVE_CASE_LIMIT,
+  selectRepresentativeAccessions,
+} from "../logic/representativeAccessions";
 
 export function CaseManager() {
   const state = useMeduguState();
-  const list = [...state.accessionOrder].reverse().map((id) => state.accessions[id]);
+  const list = selectRepresentativeAccessions(state);
+  const totalCount = Object.keys(state.accessions).length;
+  const isCurated = totalCount > list.length;
   const [intakeOpen, setIntakeOpen] = useState(false);
 
   return (
@@ -33,8 +39,22 @@ export function CaseManager() {
         </button>
       </div>
 
-      <div className="border-b border-sidebar-border px-4 py-2 text-[11px] uppercase tracking-wide text-muted-foreground">
-        Accessions ({list.length})
+      <div
+        className="border-b border-sidebar-border px-4 py-2 text-[11px] text-muted-foreground"
+        title={
+          isCurated
+            ? `Showing a representative ${REPRESENTATIVE_CASE_LIMIT}-case view. All ${totalCount} records remain stored.`
+            : undefined
+        }
+      >
+        <span className="uppercase tracking-wide">
+          Accessions ({list.length}{isCurated ? ` of ${totalCount}` : ""})
+        </span>
+        {isCurated && (
+          <span className="mt-0.5 block normal-case">
+            Representative mix across stages and capabilities
+          </span>
+        )}
       </div>
 
       <ul className="flex-1 overflow-y-auto">

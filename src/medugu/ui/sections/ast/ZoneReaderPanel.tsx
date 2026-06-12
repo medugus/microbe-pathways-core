@@ -1,14 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Accession, ASTStandard } from "../../../domain/types";
 import { ASTMethod } from "../../../domain/enums";
 import { meduguActions } from "../../../store/useAccessionStore";
 import { buildWorklistExport } from "../../../integrations/zoneReader/exportWorklist";
+import {
+  installZoneReaderResultReceiver,
+  sendWorklistToZoneReader,
+} from "../../../integrations/zoneReader/windowTransfer";
 import { mapImport } from "../../../integrations/zoneReader/importMapper";
 import { emitZoneReaderAudit } from "../../../integrations/zoneReader/auditEvents";
 import { getZoneReaderSettings } from "../../../integrations/zoneReader/settings";
 import { buildASTResult } from "../../../logic/astDrafting";
 import { PRIMARY_STANDARD } from "../../../config/breakpoints";
 import { zoneReaderInboundConfig } from "../../../store/zoneReaderInboundConfig";
+import {
+  listPendingZoneReaderMessages,
+  setZoneReaderMessageStatus,
+  type ZoneReaderInboundMessage,
+} from "../../../integrations/zoneReader/inboundQueue";
 import type {
   ImportMapResult,
   UnmatchedAlignment,
@@ -27,7 +36,7 @@ interface Props {
 }
 
 const HELPER_TEXT =
-  "Use this section to export a worklist for the standalone Zone Reader app, then import or paste the returned Zone Result JSON. This is a manual file-based workflow. No live device connection is active.";
+  "Send the selected isolate and AST panel directly to the standalone Zone Reader, then review returned measurements here. JSON download remains available as a fallback.";
 
 export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const settings = getZoneReaderSettings();
@@ -37,6 +46,33 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const [importError, setImportError] = useState<string | null>(null);
   const [pasted, setPasted] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [queuedResults, setQueuedResults] = useState<ZoneReaderInboundMessage[]>([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [queueError, setQueueError] = useState<string | null>(null);
+  const [activeReceiptId, setActiveReceiptId] = useState<string | null>(null);
+  const [transferState, setTransferState] = useState<
+    "idle" | "sending" | "sent" | "failed"
+  >("idle");
+  const [transferMessage, setTransferMessage] = useState<string | null>(null);
+
+  const refreshQueue = useCallback(async () => {
+    if (!accession.id || !isolateId) return;
+    setQueueLoading(true);
+    setQueueError(null);
+    try {
+      setQueuedResults(
+        await listPendingZoneReaderMessages(accession.id, isolateId),
+      );
+    } catch (error) {
+      setQueueError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setQueueLoading(false);
+    }
+  }, [accession.id, isolateId]);
+
+  useEffect(() => {
+    void refreshQueue();
+  }, [refreshQueue]);
 
   // Subscribe to inbound-config changes so the Launch button reflects admin
   // edits to the Zone Reader app URL without a page reload.
@@ -59,9 +95,10 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     [isolateId, astPanelId],
   );
 
-  if (!settings.enabled) return null;
-
-  function runMap(payload: string, source: "file" | "paste" | "rerun") {
+  const runMap = useCallback((
+    payload: string,
+    source: "file" | "paste" | "queue" | "rerun" | "window",
+  ) => {
     setImportError(null);
     try {
       const result = mapImport({
@@ -88,10 +125,36 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
           alignmentMethodMismatch: result.alignment.filter((a) => a.reason === "METHOD_MISMATCH").length,
         },
       });
+      return result.ok;
     } catch (err) {
       setImportError(err instanceof Error ? err.message : String(err));
+      return false;
     }
-  }
+  }, [accession, astPanelId, isolateId, lastWorklist]);
+
+  useEffect(() => {
+    if (!settings.enabled || !appUrl) return;
+
+    return installZoneReaderResultReceiver({
+      appUrl,
+      onResult: (payload) => {
+        const json = JSON.stringify(payload);
+        setActiveReceiptId(null);
+        setPasted(JSON.stringify(payload, null, 2));
+        if (!runMap(json, "window")) {
+          throw new Error(
+            "LIMS rejected the returned Zone Result. Review the import error in this panel.",
+          );
+        }
+        setTransferState("sent");
+        setTransferMessage(
+          "Zone Result received from the connected reader and loaded for clinical review.",
+        );
+      },
+    });
+  }, [appUrl, runMap, settings.enabled]);
+
+  if (!settings.enabled) return null;
 
   function createMissingDiskRows(alignment: UnmatchedAlignment[]) {
     const standard: ASTStandard =
@@ -126,10 +189,48 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     if (lastPayload) runMap(lastPayload, "rerun");
   }
 
+  function buildSelectedWorklist() {
+    const envelope = buildWorklistExport({ accession, isolateId, astPanelId });
+    setLastWorklist(envelope);
+    return envelope;
+  }
+
+  async function onSendToReader() {
+    if (!appUrl) {
+      setTransferState("failed");
+      setTransferMessage("Configure the Zone Reader app URL before sending.");
+      return;
+    }
+
+    setTransferState("sending");
+    setTransferMessage("Opening Zone Reader and transferring the selected worklist...");
+    try {
+      const envelope = buildSelectedWorklist();
+      await sendWorklistToZoneReader({ appUrl, worklist: envelope });
+      setTransferState("sent");
+      setTransferMessage(
+        `Sent ${envelope.expectedDiscs.length} disc(s) to Zone Reader for ${accession.accessionNumber}.`,
+      );
+      emitZoneReaderAudit({
+        code: "ZONE_READER_WORKLIST_SENT",
+        accessionId: accession.id,
+        isolateId,
+        astPanelId,
+        detail: {
+          worklistId: envelope.worklistId,
+          rowCount: envelope.expectedDiscs.length,
+          targetOrigin: new URL(appUrl).origin,
+        },
+      });
+    } catch (err) {
+      setTransferState("failed");
+      setTransferMessage(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   function onExport() {
     try {
-      const envelope = buildWorklistExport({ accession, isolateId, astPanelId });
-      setLastWorklist(envelope);
+      const envelope = buildSelectedWorklist();
       const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -158,7 +259,37 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     }
   }
 
+  function loadQueuedResult(message: ZoneReaderInboundMessage) {
+    setActiveReceiptId(message.id);
+    runMap(JSON.stringify(message.payload), "queue");
+  }
+
+  async function finishQueuedReview(status: "accepted" | "rejected") {
+    if (!activeReceiptId) return;
+    setImportError(null);
+    try {
+      await setZoneReaderMessageStatus(activeReceiptId, status);
+      emitZoneReaderAudit({
+        code:
+          status === "accepted"
+            ? "ZONE_READER_RECEIPT_ACCEPTED"
+            : "ZONE_READER_RECEIPT_REJECTED",
+        accessionId: accession.id,
+        isolateId,
+        astPanelId,
+        detail: { receiptId: activeReceiptId },
+      });
+      setActiveReceiptId(null);
+      setImportResult(null);
+      setLastPayload(null);
+      await refreshQueue();
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   function onParsePaste() {
+    setActiveReceiptId(null);
     if (!pasted.trim()) {
       setImportError("Paste Zone Result JSON before parsing.");
       return;
@@ -184,10 +315,16 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
       antibioticCode,
       detail: { zoneMm: row.zoneDiameterMm, reviewReasons: row.reviewReasons },
     });
-    setImportResult({
-      ...importResult,
-      matched: importResult.matched.filter((m) => m.antibioticCode !== antibioticCode),
-    });
+    setImportResult((current) =>
+      current
+        ? {
+            ...current,
+            matched: current.matched.filter(
+              (match) => match.antibioticCode !== antibioticCode,
+            ),
+          }
+        : current,
+    );
   }
 
   function rejectRow(antibioticCode: string) {
@@ -199,18 +336,44 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
       astPanelId,
       antibioticCode,
     });
-    setImportResult({
-      ...importResult,
-      matched: importResult.matched.filter((m) => m.antibioticCode !== antibioticCode),
-    });
+    setImportResult((current) =>
+      current
+        ? {
+            ...current,
+            matched: current.matched.filter(
+              (match) => match.antibioticCode !== antibioticCode,
+            ),
+          }
+        : current,
+    );
   }
 
   function acceptAllSafe() {
     if (!importResult) return;
-    for (const row of importResult.matched) {
-      if (row.requiresReview) continue;
-      acceptRow(row.antibioticCode);
+    const safeRows = importResult.matched.filter((row) => !row.requiresReview);
+    for (const row of safeRows) {
+      meduguActions.updateAST(accession.id, row.astRowId, {
+        rawValue: row.zoneDiameterMm,
+        rawUnit: "mm",
+        zoneMm: row.zoneDiameterMm,
+        method: ASTMethod.DiskDiffusion,
+      });
+      emitZoneReaderAudit({
+        code: "ZONE_READER_ROW_ACCEPTED",
+        accessionId: accession.id,
+        isolateId,
+        astPanelId,
+        antibioticCode: row.antibioticCode,
+        detail: { zoneMm: row.zoneDiameterMm, reviewReasons: row.reviewReasons },
+      });
     }
+    const acceptedCodes = new Set(safeRows.map((row) => row.antibioticCode));
+    setImportResult({
+      ...importResult,
+      matched: importResult.matched.filter(
+        (row) => !acceptedCodes.has(row.antibioticCode),
+      ),
+    });
   }
 
   return (
@@ -219,7 +382,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="text-sm font-extrabold uppercase tracking-wide">
-              Zone Reader manual integration
+              Zone Reader integration
             </CardTitle>
             <p className="text-xs text-muted-foreground">{HELPER_TEXT}</p>
           </div>
@@ -246,20 +409,110 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
         )}
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wide">
+                Live Zone Result receipts
+              </h4>
+              <p className="text-[11px] text-muted-foreground">
+                Stored measurements remain pending until reviewed through this panel.
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void refreshQueue()}
+              disabled={queueLoading}
+            >
+              {queueLoading ? "Loading..." : "Refresh"}
+            </Button>
+          </div>
+          {queueError && (
+            <p className="text-xs text-destructive">{queueError}</p>
+          )}
+          {!queueLoading && !queueError && queuedResults.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              No pending live results for this accession and isolate.
+            </p>
+          )}
+          {queuedResults.map((message) => {
+            const payload = message.payload as {
+              results?: unknown[];
+              readerDeviceId?: string;
+            };
+            return (
+              <div
+                key={message.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded border bg-background p-2 text-xs"
+              >
+                <div>
+                  <p className="font-medium">
+                    Receipt {message.id.slice(0, 8)}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {payload.results?.length ?? 0} measurement(s) ·{" "}
+                    {payload.readerDeviceId || "unknown reader"} ·{" "}
+                    {new Date(message.receivedAt).toLocaleString()}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => loadQueuedResult(message)}
+                >
+                  Load for review
+                </Button>
+              </div>
+            );
+          })}
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 rounded-md border border-border bg-background p-3">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              1. Export worklist
+              1. Send selected worklist
             </h4>
             <p className="text-xs text-muted-foreground">
-              Download a Worklist JSON for the selected isolate + AST panel and load it into the standalone Zone Reader app.
+              Transfer the selected isolate, AST panel, standard, and expected discs directly into Zone Reader.
             </p>
-            <Button size="sm" variant="outline" onClick={onExport} disabled={!canExport}>
-              Export worklist JSON
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                onClick={() => void onSendToReader()}
+                disabled={!canExport || !appUrl || transferState === "sending"}
+              >
+                {transferState === "sending" ? "Sending..." : "Send to Zone Reader"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onExport}
+                disabled={!canExport}
+              >
+                Download JSON
+              </Button>
+            </div>
+            {transferMessage && (
+              <p
+                role="status"
+                className={
+                  transferState === "failed"
+                    ? "text-[11px] text-destructive"
+                    : "text-[11px] text-muted-foreground"
+                }
+              >
+                {transferMessage}
+              </p>
+            )}
+            {!appUrl && (
+              <p className="text-[11px] text-destructive">
+                Configure the Zone Reader app URL in Admin before sending.
+              </p>
+            )}
             {!canExport && (
               <p className="text-[11px] text-muted-foreground">
-                Pick an isolate and AST panel above to enable export.
+                Pick an isolate and AST panel above to enable sending.
               </p>
             )}
           </div>
@@ -337,6 +590,35 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
             <p className="text-[11px] text-muted-foreground">
               Strict row matching by (isolateId, antibioticCode, method=disk_diffusion, standard). MIC rows are never auto-converted. Accepted rows only write the raw zone diameter through the standard AST setter — interpretation, expert rules, cascade, AMS, IPC, validation and release all run downstream unchanged.
             </p>
+            {activeReceiptId && (
+              <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={
+                    importResult.matched.length > 0 ||
+                    importResult.unmatched.length > 0
+                  }
+                  onClick={() => void finishQueuedReview("accepted")}
+                >
+                  Complete receipt review
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => void finishQueuedReview("rejected")}
+                >
+                  Reject receipt
+                </Button>
+                {(importResult.matched.length > 0 ||
+                  importResult.unmatched.length > 0) && (
+                  <span className="text-[11px] text-muted-foreground">
+                    Resolve all matched and unmatched rows before completing the receipt.
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </CardContent>
