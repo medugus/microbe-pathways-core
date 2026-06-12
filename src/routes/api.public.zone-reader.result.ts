@@ -1,193 +1,316 @@
-// Public inbound ZoneResult endpoint.
-//
-// Path: /api/public/zone-reader/result
-//
-// Scope boundaries (per the current contract):
-//   - This route only accepts a single ZoneResult JSON payload per POST.
-//   - Bearer-token auth is required on POST: `Authorization: Bearer <token>`.
-//   - It does NOT verify webhook signatures, does NOT poll, does NOT open
-//     sockets, and does NOT spawn background jobs.
-//   - The ZoneResult schema itself is NOT modified in this step. We only
-//     shape-check the payload as JSON and reject the obvious bad cases.
-//   - There is no persistent server-side store for per-tenant tokens yet
-//     (admin tokens are browser-phase, see
-//     src/medugu/store/zoneReaderInboundConfig.ts). To still enforce a real
-//     bearer-token gate, the route accepts:
-//       (a) any token matching `ZONE_READER_INBOUND_TOKEN` env var if set, OR
-//       (b) any 64-char hex token if no env var is configured.
-//     Missing / malformed / wrong tokens get explicit JSON 401/403 responses.
-
 import { createFileRoute } from "@tanstack/react-router";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Max-Age": "86400",
-} as const;
-
-const JSON_HEADERS = {
-  "Content-Type": "application/json",
-  ...CORS_HEADERS,
-} as const;
+import { zoneReaderResultImportSchema } from "@/medugu/integrations/zoneReader/schemas";
+import type { ZoneReaderResultImport } from "@/medugu/integrations/zoneReader/types";
 
 const ROUTE_PATH = "/api/public/zone-reader/result";
-const HEX64 = /^[a-f0-9]{64}$/i;
+const TOKEN_ENV = "ZONE_READER_INBOUND_TOKEN";
+const TENANT_ENV = "ZONE_READER_TENANT_ID";
+const SUPABASE_URL_ENV = "SUPABASE_URL";
+const SERVICE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY";
 
-function json(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+type Receipt = {
+  receiptId: string;
+  status: "pending_review";
+  idempotent: boolean;
+};
+
+type InboundDependencies = {
+  expectedToken?: string;
+  tenantId?: string;
+  persist: (
+    payload: ZoneReaderResultImport,
+    contentHash: string,
+    tenantId: string,
+  ) => Promise<Receipt>;
+};
+
+function readEnv(name: string): string {
+  return process.env[name]?.trim() ?? "";
 }
 
-/**
- * Returns:
- *   { ok: true }   if a usable bearer token was presented
- *   { status, body } otherwise — caller should return json(status, body)
- */
-function checkAuth(request: Request):
+function corsHeaders(): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": readEnv("ZONE_READER_ALLOWED_ORIGIN") || "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
+  };
+}
+
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...corsHeaders() },
+  });
+}
+
+function bearerToken(request: Request):
   | { ok: true; token: string }
-  | { ok: false; status: number; body: Record<string, unknown> } {
-  const header = request.headers.get("authorization") ?? "";
+  | { ok: false; response: Response } {
+  const header = request.headers.get("authorization")?.trim() ?? "";
   if (!header) {
     return {
       ok: false,
-      status: 401,
-      body: {
-        error: "missing_authorization",
-        message:
-          "Authorization header is required. Send `Authorization: Bearer <token>`.",
-      },
-    };
-  }
-  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  if (!match) {
-    return {
-      ok: false,
-      status: 401,
-      body: {
-        error: "malformed_authorization",
-        message:
-          "Authorization header must use the Bearer scheme: `Authorization: Bearer <token>`.",
-      },
-    };
-  }
-  const token = match[1].trim();
-  const expected = process.env.ZONE_READER_INBOUND_TOKEN;
-  if (expected && expected.length > 0) {
-    if (token !== expected) {
-      return {
+      response: json(401, {
         ok: false,
-        status: 403,
-        body: { error: "invalid_token", message: "Bearer token is not authorized." },
-      };
-    }
-  } else if (!HEX64.test(token)) {
-    // No server-configured token — fall back to structural check so we never
-    // silently accept "Bearer foo".
-    return {
-      ok: false,
-      status: 403,
-      body: {
-        error: "invalid_token",
-        message:
-          "Bearer token is not in the expected format (64-char hex). Generate a token in /admin/zone-reader.",
-      },
+        reason: "missing_authorization",
+        details: ["Authorization header is required."],
+      }),
     };
   }
-  return { ok: true, token };
+  const match = /^Bearer\s+(.+)$/i.exec(header);
+  if (!match?.[1]?.trim()) {
+    return {
+      ok: false,
+      response: json(401, {
+        ok: false,
+        reason: "malformed_authorization",
+        details: ["Use Authorization: Bearer <token>."],
+      }),
+    };
+  }
+  return { ok: true, token: match[1].trim() };
+}
+
+async function sha256(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+}
+
+async function tokenMatches(provided: string, expected: string): Promise<boolean> {
+  const [providedHash, expectedHash] = await Promise.all([
+    sha256(provided),
+    sha256(expected),
+  ]);
+  let difference = providedHash.length ^ expectedHash.length;
+  const length = Math.max(providedHash.length, expectedHash.length);
+  for (let index = 0; index < length; index += 1) {
+    difference |=
+      (providedHash.charCodeAt(index) || 0) ^
+      (expectedHash.charCodeAt(index) || 0);
+  }
+  return difference === 0;
+}
+
+async function queryExisting(
+  baseUrl: string,
+  serviceKey: string,
+  tenantId: string,
+  contentHash: string,
+): Promise<Receipt | null> {
+  const url = new URL(`${baseUrl}/rest/v1/zone_reader_inbound_messages`);
+  url.searchParams.set("tenant_id", `eq.${tenantId}`);
+  url.searchParams.set("content_hash", `eq.${contentHash}`);
+  url.searchParams.set("select", "id,status");
+  url.searchParams.set("limit", "1");
+  const response = await fetch(url, {
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Supabase lookup failed with status ${response.status}.`);
+  }
+  const rows = (await response.json()) as Array<{
+    id: string;
+    status: "pending_review";
+  }>;
+  return rows[0]
+    ? { receiptId: rows[0].id, status: rows[0].status, idempotent: true }
+    : null;
+}
+
+async function persistToSupabase(
+  payload: ZoneReaderResultImport,
+  contentHash: string,
+  tenantId: string,
+): Promise<Receipt> {
+  const baseUrl = readEnv(SUPABASE_URL_ENV).replace(/\/$/, "");
+  const serviceKey = readEnv(SERVICE_KEY_ENV);
+  if (!baseUrl || !serviceKey) {
+    throw new Error(
+      `${SUPABASE_URL_ENV} and ${SERVICE_KEY_ENV} are required for Zone Reader ingestion.`,
+    );
+  }
+
+  const existing = await queryExisting(baseUrl, serviceKey, tenantId, contentHash);
+  if (existing) return existing;
+
+  const response = await fetch(
+    `${baseUrl}/rest/v1/zone_reader_inbound_messages`,
+    {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        content_hash: contentHash,
+        contract_version: payload.contractVersion,
+        source_system: payload.sourceSystem,
+        accession_id: payload.accessionId,
+        accession_number: payload.accessionNumber ?? null,
+        isolate_id: payload.isolateId,
+        ast_panel_id: payload.astPanelId,
+        read_at: payload.readAt,
+        payload,
+        status: "pending_review",
+      }),
+    },
+  );
+
+  if (response.status === 409) {
+    const duplicate = await queryExisting(baseUrl, serviceKey, tenantId, contentHash);
+    if (duplicate) return duplicate;
+  }
+  if (!response.ok) {
+    throw new Error(`Supabase insert failed with status ${response.status}.`);
+  }
+  const rows = (await response.json()) as Array<{
+    id: string;
+    status: "pending_review";
+  }>;
+  const row = rows[0];
+  if (!row) throw new Error("Supabase did not return an inbound receipt.");
+  return { receiptId: row.id, status: row.status, idempotent: false };
+}
+
+export async function handleZoneReaderInbound(
+  request: Request,
+  dependencies: InboundDependencies = {
+    expectedToken: readEnv(TOKEN_ENV),
+    tenantId: readEnv(TENANT_ENV),
+    persist: persistToSupabase,
+  },
+): Promise<Response> {
+  const expectedToken = dependencies.expectedToken?.trim() ?? "";
+  const tenantId = dependencies.tenantId?.trim() ?? "";
+  if (!expectedToken || !tenantId) {
+    return json(503, {
+      ok: false,
+      reason: "integration_not_configured",
+      details: [
+        `${TOKEN_ENV} and ${TENANT_ENV} must be configured on the server.`,
+      ],
+    });
+  }
+
+  const auth = bearerToken(request);
+  if (!auth.ok) return auth.response;
+  if (!(await tokenMatches(auth.token, expectedToken))) {
+    return json(403, {
+      ok: false,
+      reason: "invalid_token",
+      details: ["Bearer token is not authorized."],
+    });
+  }
+
+  const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!contentType.includes("application/json")) {
+    return json(415, {
+      ok: false,
+      reason: "unsupported_media_type",
+      details: ["Content-Type must be application/json."],
+    });
+  }
+
+  let candidate: unknown;
+  try {
+    candidate = await request.json();
+  } catch {
+    return json(400, {
+      ok: false,
+      reason: "invalid_json",
+      details: ["Request body could not be parsed as JSON."],
+    });
+  }
+
+  const parsed = zoneReaderResultImportSchema.safeParse(candidate);
+  if (!parsed.success) {
+    return json(422, {
+      ok: false,
+      reason: "schema_validation_failed",
+      details: parsed.error.issues.map(
+        (issue) => `${issue.path.join(".") || "payload"}: ${issue.message}`,
+      ),
+    });
+  }
+  if (
+    parsed.data.notForClinicalRelease !== true ||
+    parsed.data.releaseAuthority !== "LIS"
+  ) {
+    return json(422, {
+      ok: false,
+      reason: "clinical_authority_boundary_failed",
+      details: [
+        'Payload must assert notForClinicalRelease=true and releaseAuthority="LIS".',
+      ],
+    });
+  }
+
+  const contentHash = await sha256(JSON.stringify(parsed.data));
+  try {
+    const receipt = await dependencies.persist(
+      parsed.data,
+      contentHash,
+      tenantId,
+    );
+    return json(receipt.idempotent ? 200 : 202, {
+      ok: true,
+      accepted: true,
+      receiptId: receipt.receiptId,
+      auditId: receipt.receiptId,
+      status: receipt.status,
+      idempotent: receipt.idempotent,
+      mappedRowIds: [],
+      message:
+        "Zone Result stored in the Medugu inbound queue. Clinical review is required before AST rows are updated.",
+    });
+  } catch (error) {
+    console.error("Zone Reader inbound persistence failed", error);
+    return json(503, {
+      ok: false,
+      reason: "persistence_unavailable",
+      details: ["Medugu could not durably store the Zone Result. Retry later."],
+    });
+  }
 }
 
 export const Route = createFileRoute("/api/public/zone-reader/result")({
   server: {
     handlers: {
       OPTIONS: async () =>
-        new Response(null, { status: 204, headers: CORS_HEADERS }),
-
+        new Response(null, { status: 204, headers: corsHeaders() }),
       GET: async () =>
         json(200, {
           ok: true,
           route: ROUTE_PATH,
-          methods: ["OPTIONS", "GET", "POST"],
-          message:
-            "ZoneResult inbound endpoint is live. POST a ZoneResult JSON body with `Authorization: Bearer <token>`. GET is a liveness probe only and never accepts payloads.",
+          accepts: "ZoneResult contract v1",
+          persistence: "durable",
+          clinicalAuthority: "LIS",
         }),
-
-      POST: async ({ request }) => {
-        const auth = checkAuth(request);
-        if (!auth.ok) return json(auth.status, auth.body);
-
-        const contentType = request.headers.get("content-type") ?? "";
-        if (!contentType.toLowerCase().includes("application/json")) {
-          return json(415, {
-            error: "unsupported_media_type",
-            message: "Content-Type must be application/json.",
-          });
-        }
-
-        let body: unknown;
-        try {
-          body = await request.json();
-        } catch {
-          return json(400, {
-            error: "invalid_json",
-            message: "Request body could not be parsed as JSON.",
-          });
-        }
-
-        if (!body || typeof body !== "object" || Array.isArray(body)) {
-          return json(400, {
-            error: "invalid_payload",
-            message: "ZoneResult payload must be a JSON object.",
-          });
-        }
-
-        // We intentionally do NOT persist server-side here — manual import via
-        // the AST Zone Reader panel remains the supported workflow. This
-        // endpoint exists so Zone Reader's live-send configuration has a
-        // reachable URL that authenticates correctly.
-        return json(202, {
-          ok: true,
-          accepted: true,
-          route: ROUTE_PATH,
-          message:
-            "ZoneResult payload accepted for ingestion. Server-side persistence is not enabled in this build; operators continue to use the manual import path in the AST Zone Reader panel.",
-        });
-      },
+      POST: async ({ request }) => handleZoneReaderInbound(request),
     },
   },
 });
 
-// Exported for unit tests so we can exercise the handlers without spinning up
-// the router.
 export const __test = {
   ROUTE_PATH,
-  CORS_HEADERS,
   handlers: {
-    OPTIONS: async (_request: Request) =>
-      new Response(null, { status: 204, headers: CORS_HEADERS }),
-    GET: async (_request: Request) =>
-      json(200, {
-        ok: true,
-        route: ROUTE_PATH,
-        methods: ["OPTIONS", "GET", "POST"],
-        message: "live",
-      }),
-    POST: async (request: Request) => {
-      const auth = checkAuth(request);
-      if (!auth.ok) return json(auth.status, auth.body);
-      const contentType = request.headers.get("content-type") ?? "";
-      if (!contentType.toLowerCase().includes("application/json")) {
-        return json(415, { error: "unsupported_media_type" });
-      }
-      let body: unknown;
-      try {
-        body = await request.json();
-      } catch {
-        return json(400, { error: "invalid_json" });
-      }
-      if (!body || typeof body !== "object" || Array.isArray(body)) {
-        return json(400, { error: "invalid_payload" });
-      }
-      return json(202, { ok: true, accepted: true });
-    },
+    OPTIONS: async () =>
+      new Response(null, { status: 204, headers: corsHeaders() }),
+    GET: async () =>
+      json(200, { ok: true, route: ROUTE_PATH, persistence: "durable" }),
+    POST: handleZoneReaderInbound,
   },
 };

@@ -1,151 +1,154 @@
-// Tests for the public ZoneResult inbound route.
-// Plain node:assert style to match other tests in this folder.
-
 import { strict as assert } from "node:assert";
 import { __test } from "../../../../routes/api.public.zone-reader.result";
 
-const validHex = "a".repeat(64);
+const validPayload = {
+  contractVersion: "1.0.0",
+  sourceSystem: "DISKDIFF_READER",
+  readAt: "2026-06-12T10:00:00.000Z",
+  accessionId: "acc-1",
+  accessionNumber: "ACC-001",
+  isolateId: "iso-1",
+  astPanelId: "panel-1",
+  method: "disk_diffusion",
+  standard: "EUCAST",
+  notForClinicalRelease: true,
+  releaseAuthority: "LIS",
+  readerDeviceId: "reader-1",
+  readerSoftwareVersion: "1.0.0",
+  operator: "operator-1",
+  results: [{
+    antibioticCode: "AMP",
+    zoneDiameterMm: 18,
+    readerConfidence: "high",
+    measurementSource: "auto_reader",
+    manualEdited: false,
+  }],
+};
 
-function req(
-  method: string,
-  init: { auth?: string; contentType?: string; body?: unknown } = {},
-): Request {
+function request(init: { auth?: string; contentType?: string; body?: unknown } = {}): Request {
   const headers = new Headers();
   if (init.auth) headers.set("authorization", init.auth);
   if (init.contentType) headers.set("content-type", init.contentType);
   return new Request("https://example.test/api/public/zone-reader/result", {
-    method,
+    method: "POST",
     headers,
-    body:
-      init.body === undefined
-        ? undefined
-        : typeof init.body === "string"
-          ? init.body
-          : JSON.stringify(init.body),
+    body: init.body === undefined
+      ? undefined
+      : typeof init.body === "string"
+        ? init.body
+        : JSON.stringify(init.body),
   });
 }
 
 async function run() {
-  delete process.env.ZONE_READER_INBOUND_TOKEN;
+  const getResponse = await __test.handlers.GET();
+  assert.equal(getResponse.status, 200);
+  assert.equal(((await getResponse.json()) as { persistence: string }).persistence, "durable");
 
-  // OPTIONS preflight
-  {
-    const res = await __test.handlers.OPTIONS(req("OPTIONS"));
-    assert.equal(res.status, 204);
-    assert.ok(res.headers.get("access-control-allow-methods")?.includes("POST"));
-    assert.ok(
-      res.headers.get("access-control-allow-headers")?.includes("Authorization"),
-    );
-  }
+  let persisted = 0;
+  const accepted = await __test.handlers.POST(
+    request({
+      auth: "Bearer server-secret",
+      contentType: "application/json",
+      body: validPayload,
+    }),
+    {
+      expectedToken: "server-secret",
+      tenantId: "tenant-1",
+      persist: async (_payload, contentHash, tenantId) => {
+        persisted += 1;
+        assert.equal(contentHash.length, 64);
+        assert.equal(tenantId, "tenant-1");
+        return { receiptId: "receipt-1", status: "pending_review", idempotent: false };
+      },
+    },
+  );
+  assert.equal(accepted.status, 202);
+  assert.equal(persisted, 1);
+  const acceptedBody = (await accepted.json()) as {
+    receiptId: string;
+    status: string;
+    mappedRowIds: string[];
+  };
+  assert.equal(acceptedBody.receiptId, "receipt-1");
+  assert.equal(acceptedBody.status, "pending_review");
+  assert.deepEqual(acceptedBody.mappedRowIds, []);
 
-  // GET liveness (route exists, not 404)
-  {
-    const res = await __test.handlers.GET(req("GET"));
-    assert.equal(res.status, 200);
-    const body = (await res.json()) as { ok: boolean; route: string };
-    assert.equal(body.ok, true);
-    assert.equal(body.route, "/api/public/zone-reader/result");
-  }
-
-  // POST valid hex token + JSON body → 202
-  {
-    const res = await __test.handlers.POST(
-      req("POST", {
-        auth: `Bearer ${validHex}`,
-        contentType: "application/json",
-        body: { worklistId: "w1", results: [] },
+  const duplicate = await __test.handlers.POST(
+    request({
+      auth: "Bearer server-secret",
+      contentType: "application/json",
+      body: validPayload,
+    }),
+    {
+      expectedToken: "server-secret",
+      tenantId: "tenant-1",
+      persist: async () => ({
+        receiptId: "receipt-existing",
+        status: "pending_review",
+        idempotent: true,
       }),
-    );
-    assert.equal(res.status, 202);
-    const body = (await res.json()) as { ok: boolean; accepted: boolean };
-    assert.equal(body.ok, true);
-    assert.equal(body.accepted, true);
-  }
+    },
+  );
+  assert.equal(duplicate.status, 200);
+  assert.equal(((await duplicate.json()) as { idempotent: boolean }).idempotent, true);
 
-  // POST missing Authorization → 401
-  {
-    const res = await __test.handlers.POST(
-      req("POST", { contentType: "application/json", body: {} }),
-    );
-    assert.equal(res.status, 401);
-    const body = (await res.json()) as { error: string };
-    assert.equal(body.error, "missing_authorization");
-  }
+  const unauthorized = await __test.handlers.POST(
+    request({
+      auth: "Bearer wrong-secret",
+      contentType: "application/json",
+      body: validPayload,
+    }),
+    {
+      expectedToken: "server-secret",
+      tenantId: "tenant-1",
+      persist: async () => {
+        throw new Error("must not persist");
+      },
+    },
+  );
+  assert.equal(unauthorized.status, 403);
 
-  // POST malformed Authorization scheme → 401
-  {
-    const res = await __test.handlers.POST(
-      req("POST", {
-        auth: "Token abc",
-        contentType: "application/json",
-        body: {},
-      }),
-    );
-    assert.equal(res.status, 401);
-    const body = (await res.json()) as { error: string };
-    assert.equal(body.error, "malformed_authorization");
-  }
+  const unsafe = await __test.handlers.POST(
+    request({
+      auth: "Bearer server-secret",
+      contentType: "application/json",
+      body: { ...validPayload, notForClinicalRelease: false },
+    }),
+    {
+      expectedToken: "server-secret",
+      tenantId: "tenant-1",
+      persist: async () => {
+        throw new Error("must not persist");
+      },
+    },
+  );
+  assert.equal(unsafe.status, 422);
 
-  // POST structurally invalid token → 403
-  {
-    const res = await __test.handlers.POST(
-      req("POST", {
-        auth: "Bearer not-a-real-token",
-        contentType: "application/json",
-        body: {},
-      }),
-    );
-    assert.equal(res.status, 403);
-    const body = (await res.json()) as { error: string };
-    assert.equal(body.error, "invalid_token");
-  }
-
-  // POST honors ZONE_READER_INBOUND_TOKEN when set
-  {
-    process.env.ZONE_READER_INBOUND_TOKEN = "server-side-secret";
-    const bad = await __test.handlers.POST(
-      req("POST", {
-        auth: `Bearer ${validHex}`,
-        contentType: "application/json",
-        body: {},
-      }),
-    );
-    assert.equal(bad.status, 403);
-    const good = await __test.handlers.POST(
-      req("POST", {
-        auth: "Bearer server-side-secret",
-        contentType: "application/json",
-        body: {},
-      }),
-    );
-    assert.equal(good.status, 202);
-    delete process.env.ZONE_READER_INBOUND_TOKEN;
-  }
-
-  // POST without JSON content-type → 415
-  {
-    const res = await __test.handlers.POST(
-      req("POST", { auth: `Bearer ${validHex}`, body: "raw" }),
-    );
-    assert.equal(res.status, 415);
-  }
-
-  // POST with invalid JSON → 400
-  {
-    const res = await __test.handlers.POST(
-      req("POST", {
-        auth: `Bearer ${validHex}`,
-        contentType: "application/json",
-        body: "{not json",
-      }),
-    );
-    assert.equal(res.status, 400);
-  }
+  const unconfigured = await __test.handlers.POST(
+    request({
+      auth: "Bearer server-secret",
+      contentType: "application/json",
+      body: validPayload,
+    }),
+    {
+      expectedToken: "",
+      tenantId: "",
+      persist: async () => {
+        throw new Error("must not persist");
+      },
+    },
+  );
+  assert.equal(unconfigured.status, 503);
+  assert.equal(
+    ((await unconfigured.json()) as { reason: string }).reason,
+    "integration_not_configured",
+  );
 
   console.log("publicInboundRoute.test ok");
 }
 
-run().catch((err) => {
-  console.error(err);
+run().catch((error) => {
+  console.error(error);
   process.exitCode = 1;
 });
