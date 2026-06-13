@@ -12,6 +12,7 @@
 
 import type { Accession } from "../../domain/types";
 import { ASTMethod } from "../../domain/enums";
+import { getASTPanel } from "../../config/antibiotics";
 import { zoneReaderResultImportSchema } from "./schemas";
 import { validateImport, hasBlockers } from "./validateImport";
 import type {
@@ -36,21 +37,19 @@ const LOW_CONFIDENCE_THRESHOLD = 0.75;
 const IMPLAUSIBLE_LOW_MM = 6;
 const IMPLAUSIBLE_HIGH_MM = 50;
 
-export function collapseDuplicateZoneResults(results: ZoneResult[]) {
-  const duplicateCodes = new Set<string>();
-  const lastResultByCode = new Map<string, ZoneResult>();
+export function groupDuplicateZoneResults(results: ZoneResult[]) {
+  const groups = new Map<string, ZoneResult[]>();
 
   for (const result of results) {
-    if (lastResultByCode.has(result.antibioticCode)) {
-      duplicateCodes.add(result.antibioticCode);
-    }
-    lastResultByCode.set(result.antibioticCode, result);
+    const candidates = groups.get(result.antibioticCode) ?? [];
+    candidates.push(result);
+    groups.set(result.antibioticCode, candidates);
   }
 
-  return {
-    results: Array.from(lastResultByCode.values()),
-    duplicateCodes,
-  };
+  return Array.from(groups, ([antibioticCode, candidates]) => ({
+    antibioticCode,
+    candidates,
+  }));
 }
 
 export function mapImport(input: MapImportInput): ImportMapResult {
@@ -116,7 +115,8 @@ export function mapImport(input: MapImportInput): ImportMapResult {
     };
   }
 
-  const deduplicated = collapseDuplicateZoneResults(parsed.results);
+  const resultGroups = groupDuplicateZoneResults(parsed.results);
+  const panelCodes = new Set(getASTPanel(parsed.astPanelId)?.codes ?? []);
 
   // 3. Build matched / unmatched / missing using STRICT row matching by
   //    (isolateId, antibioticCode, method=disk_diffusion, standard).
@@ -145,7 +145,16 @@ export function mapImport(input: MapImportInput): ImportMapResult {
   const anyByCode = new Map(isolateAllAst.map((a) => [a.antibioticCode, a]));
   const matchedCodes = new Set<string>();
 
-  for (const r of deduplicated.results) {
+  for (const group of resultGroups) {
+    const r = group.candidates[0];
+
+    // Off-panel reader rows are quarantined for rejection. They must never
+    // generate an AST-row creation suggestion for the selected panel.
+    if (!panelCodes.has(r.antibioticCode)) {
+      unmatched.push(r);
+      continue;
+    }
+
     const disk = diskByCode.get(r.antibioticCode);
     if (!disk) {
       // Either no row at all, or only a non-disk row exists → method mismatch.
@@ -201,7 +210,7 @@ export function mapImport(input: MapImportInput): ImportMapResult {
     matchedCodes.add(r.antibioticCode);
 
     const reviewReasons: string[] = [];
-    if (deduplicated.duplicateCodes.has(r.antibioticCode)) {
+    if (group.candidates.length > 1) {
       reviewReasons.push("duplicate_antibiotic");
     }
     if (typeof r.confidenceNumeric === "number" && r.confidenceNumeric < LOW_CONFIDENCE_THRESHOLD) {
@@ -232,6 +241,13 @@ export function mapImport(input: MapImportInput): ImportMapResult {
       imageReference: r.imageReference ?? r.imageUrl,
       manualEdited: r.manualEdited,
       overrideReason: r.overrideReason,
+      duplicateCandidates:
+        group.candidates.length > 1
+          ? group.candidates.map((candidate, index) => ({
+              candidateId: `${candidate.antibioticCode}-${index + 1}`,
+              zoneDiameterMm: candidate.zoneDiameterMm,
+            }))
+          : undefined,
       requiresReview: reviewReasons.length > 0,
       reviewReasons,
     });

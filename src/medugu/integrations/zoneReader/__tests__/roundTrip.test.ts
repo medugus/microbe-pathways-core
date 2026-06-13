@@ -134,6 +134,7 @@ export function runZoneReaderRoundTripTests() {
   assert.ok(offPanel.findings.some((f) => f.code === "ANTIBIOTIC_OFF_PANEL"));
   assert.equal(offPanel.unmatched.length, 1);
   assert.equal(offPanel.matched.length, 0);
+  assert.equal(offPanel.alignment.length, 0, "off-panel rows must not suggest AST-row creation");
 
   // 4. Duplicate antibiotic flagged
   const dup = mapImport({
@@ -148,6 +149,13 @@ export function runZoneReaderRoundTripTests() {
     },
   });
   assert.ok(dup.findings.some((f) => f.code === "DUPLICATE_ROW"));
+  assert.equal(dup.matched.length, 1);
+  assert.equal(dup.matched[0].zoneDiameterMm, 18, "no implicit last-value-wins");
+  assert.deepEqual(
+    dup.matched[0].duplicateCandidates?.map((candidate) => candidate.zoneDiameterMm),
+    [18, 19],
+  );
+  assert.ok(dup.matched[0].reviewReasons.includes("duplicate_antibiotic"));
 
   // 5. Implausible zone flagged
   const implausible = mapImport({
@@ -290,6 +298,7 @@ export function runZoneReaderRoundTripTests() {
     "imageReference",
     "manualEdited",
     "overrideReason",
+    "duplicateCandidates",
     "requiresReview",
     "reviewReasons",
   ]);
@@ -496,7 +505,7 @@ export function runZoneReaderRoundTripTests() {
     payload: {
       ...baseImport,
       readAt: "2026-05-12T10:42:00Z",
-      results: [{ antibioticCode: "TEC", zoneDiameterMm: 18, confidence: 0.9 }],
+      results: [{ antibioticCode: "AMC", zoneDiameterMm: 18, confidence: 0.9 }],
     },
   });
   assert.equal(missingRow.ok, true);
@@ -504,10 +513,10 @@ export function runZoneReaderRoundTripTests() {
   assert.equal(missingRow.unmatched.length, 1);
   assert.equal(missingRow.alignment.length, 1);
   assert.equal(missingRow.alignment[0].reason, "MISSING_AST_ROW");
-  assert.equal(missingRow.alignment[0].antibioticCode, "TEC");
+  assert.equal(missingRow.alignment[0].antibioticCode, "AMC");
   assert.ok(
     missingRow.findings.some(
-      (f) => f.code === "MISSING_AST_ROW" && f.antibioticCode === "TEC",
+      (f) => f.code === "MISSING_AST_ROW" && f.antibioticCode === "AMC",
     ),
     "expected MISSING_AST_ROW finding",
   );
