@@ -297,14 +297,18 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
     runMap(pasted, "paste");
   }
 
-  function acceptRow(antibioticCode: string) {
+  function acceptRow(antibioticCode: string, selectedZoneDiameterMm?: number) {
     if (!importResult) return;
     const row = importResult.matched.find((m) => m.antibioticCode === antibioticCode);
     if (!row) return;
+    if ((row.duplicateCandidates?.length ?? 0) > 1 && selectedZoneDiameterMm === undefined) {
+      return;
+    }
+    const zoneDiameterMm = selectedZoneDiameterMm ?? row.zoneDiameterMm;
     meduguActions.updateAST(accession.id, row.astRowId, {
-      rawValue: row.zoneDiameterMm,
+      rawValue: zoneDiameterMm,
       rawUnit: "mm",
-      zoneMm: row.zoneDiameterMm,
+      zoneMm: zoneDiameterMm,
       method: ASTMethod.DiskDiffusion,
     });
     emitZoneReaderAudit({
@@ -313,7 +317,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
       isolateId,
       astPanelId,
       antibioticCode,
-      detail: { zoneMm: row.zoneDiameterMm, reviewReasons: row.reviewReasons },
+      detail: { zoneMm: zoneDiameterMm, reviewReasons: row.reviewReasons },
     });
     setImportResult((current) =>
       current
@@ -346,6 +350,46 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
           }
         : current,
     );
+  }
+
+  function rejectUnmatchedRow(antibioticCode: string) {
+    emitZoneReaderAudit({
+      code: "ZONE_READER_UNMATCHED_ROW_REJECTED",
+      accessionId: accession.id,
+      isolateId,
+      astPanelId,
+      antibioticCode,
+    });
+    setImportResult((current) =>
+      current
+        ? {
+            ...current,
+            unmatched: current.unmatched.filter(
+              (row) => row.antibioticCode !== antibioticCode,
+            ),
+            alignment: current.alignment.filter(
+              (row) => row.antibioticCode !== antibioticCode,
+            ),
+          }
+        : current,
+    );
+  }
+
+  function rejectAllUnmatchedRows() {
+    if (!importResult) return;
+    const rejectedCodes = importResult.unmatched.map((row) => row.antibioticCode);
+    emitZoneReaderAudit({
+      code: "ZONE_READER_ALL_UNMATCHED_ROWS_REJECTED",
+      accessionId: accession.id,
+      isolateId,
+      astPanelId,
+      detail: { rejectedCodes },
+    });
+    setImportResult({
+      ...importResult,
+      unmatched: [],
+      alignment: [],
+    });
   }
 
   function acceptAllSafe() {
@@ -586,6 +630,8 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
               missing={importResult.missing}
               onAccept={acceptRow}
               onReject={rejectRow}
+              onRejectUnmatched={rejectUnmatchedRow}
+              onRejectAllUnmatched={rejectAllUnmatchedRows}
             />
             <p className="text-[11px] text-muted-foreground">
               Strict row matching by (isolateId, antibioticCode, method=disk_diffusion, standard). MIC rows are never auto-converted. Accepted rows only write the raw zone diameter through the standard AST setter — interpretation, expert rules, cascade, AMS, IPC, validation and release all run downstream unchanged.

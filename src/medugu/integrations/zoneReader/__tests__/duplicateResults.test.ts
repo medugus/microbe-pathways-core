@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collapseDuplicateZoneResults } from "../importMapper";
+import { groupDuplicateZoneResults } from "../importMapper";
 import type { ZoneResult } from "../types";
 
 function result(antibioticCode: string, zoneDiameterMm: number): ZoneResult {
@@ -11,27 +11,32 @@ function result(antibioticCode: string, zoneDiameterMm: number): ZoneResult {
 }
 
 describe("duplicate Zone Reader results", () => {
-  it("retains one row per antibiotic using the last supplied value", () => {
-    const collapsed = collapseDuplicateZoneResults([
+  it("preserves every supplied value for explicit review", () => {
+    const grouped = groupDuplicateZoneResults([
       result("AMP", 18),
       result("CIP", 24),
       result("AMP", 21),
     ]);
 
-    expect(collapsed.results).toEqual([
-      result("AMP", 21),
-      result("CIP", 24),
+    expect(grouped).toEqual([
+      {
+        antibioticCode: "AMP",
+        candidates: [result("AMP", 18), result("AMP", 21)],
+      },
+      {
+        antibioticCode: "CIP",
+        candidates: [result("CIP", 24)],
+      },
     ]);
-    expect(collapsed.duplicateCodes).toEqual(new Set(["AMP"]));
   });
 
-  it("does not flag unique antibiotic rows", () => {
-    const collapsed = collapseDuplicateZoneResults([
+  it("keeps unique antibiotic rows as single-candidate groups", () => {
+    const grouped = groupDuplicateZoneResults([
       result("AMP", 18),
       result("CIP", 24),
     ]);
 
-    expect(collapsed.results).toHaveLength(2);
-    expect(collapsed.duplicateCodes.size).toBe(0);
+    expect(grouped).toHaveLength(2);
+    expect(grouped.every((group) => group.candidates.length === 1)).toBe(true);
   });
 });

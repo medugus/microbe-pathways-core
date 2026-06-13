@@ -159,6 +159,11 @@ export interface ImportFinding {
   antibioticCode?: string;
 }
 
+export interface DuplicateZoneCandidate {
+  candidateId: string;
+  zoneDiameterMm: number;
+}
+
 export interface MatchedRow {
   antibioticCode: string;
   astRowId: string;
@@ -169,6 +174,7 @@ export interface MatchedRow {
   imageReference?: string;
   manualEdited?: boolean;
   overrideReason?: string;
+  duplicateCandidates?: DuplicateZoneCandidate[];
   requiresReview: boolean;
   reviewReasons: string[];
 }

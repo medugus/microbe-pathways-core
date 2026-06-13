@@ -17,6 +17,17 @@ export interface ZoneReaderInboundMessage {
   payload: Json;
 }
 
+function inboundQueueErrorMessage(error: { message: string; code?: string | null }) {
+  if (
+    error.code === "PGRST205" ||
+    error.message.includes("zone_reader_inbound_messages") ||
+    error.message.includes("schema cache")
+  ) {
+    return "Live Zone Reader receipts are not initialized on this deployment. Apply the Zone Reader inbound migration and refresh the Supabase API schema. Manual JSON import remains available.";
+  }
+  return error.message;
+}
+
 export async function listPendingZoneReaderMessages(
   accessionId: string,
   isolateId: string,
@@ -31,7 +42,7 @@ export async function listPendingZoneReaderMessages(
     .eq("status", "pending_review")
     .order("received_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(inboundQueueErrorMessage(error));
   return (data ?? []).map((row) => ({
     id: row.id,
     accessionId: row.accession_id,
@@ -59,5 +70,5 @@ export async function setZoneReaderMessageStatus(
     .eq("id", id)
     .eq("status", "pending_review");
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(inboundQueueErrorMessage(error));
 }
