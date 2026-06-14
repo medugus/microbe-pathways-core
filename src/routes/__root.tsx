@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/auth/AuthContext";
+import { PoppingOrangesWatermark } from "@/components/PoppingOrangesWatermark";
 
 function NotFoundComponent() {
   return (
@@ -78,6 +79,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <AuthProvider>
+      <PoppingOrangesWatermark />
       <Outlet />
     </AuthProvider>
   );
