@@ -348,14 +348,14 @@
 :root {
   --radius: 0.5rem;
 
-  /* Base neutrals — higher contrast */
-  --bg-app: #eef2f8;
-  --bg-panel: #ffffff;
-  --bg-muted: #dde6f1;
-  --text-main: #06101f;
-  --text-secondary: #2a3b54;
-  --text-muted: #54677e;
-  --border-strong: #8fa1b8;
+  /* Navy Trust / Clinical Slate — light surface variant */
+  --bg-app: #F4F6F6;
+  --bg-panel: #FFFFFF;
+  --bg-muted: #E8EDF3;
+  --text-main: #0F1B3D;
+  --text-secondary: #1E3A5F;
+  --text-muted: #4A5A75;
+  --border-strong: #3B6FA0;
 
   /* shadcn base bindings */
   --background: var(--bg-app);
@@ -365,26 +365,26 @@
   --popover: var(--bg-panel);
   --popover-foreground: var(--text-main);
 
-  /* Core identity — deeper, more saturated */
-  --primary: #0b3a66;
-  --primary-foreground: #ffffff;
+  /* Core identity */
+  --primary: #1E3A5F;
+  --primary-foreground: #FFFFFF;
   --secondary: var(--bg-muted);
   --secondary-foreground: var(--text-main);
   --secondary-teal: #0a5d56;
   --accent: var(--bg-muted);
   --accent-foreground: var(--text-main);
-  --accent-indigo: #3b30d4;
+  --accent-indigo: #3B6FA0;
 
   --muted: var(--bg-muted);
   --muted-foreground: var(--text-muted);
 
   --destructive: #971810;
   --destructive-foreground: #ffffff;
-  --border: #b8c5d6;
-  --input: #b8c5d6;
-  --ring: #0b3a66;
+  --border: #C7D2E0;
+  --input: #C7D2E0;
+  --ring: #3B6FA0;
 
-  /* Semantic states — punchier text on cleaner pale fills */
+  /* Semantic states */
   --success: #0f5d36;
   --success-bg: #d8f1e2;
   --warning: #8a5a10;
@@ -409,12 +409,12 @@
   --released: #0f5d36;
   --amended: #0a5d56;
 
-  /* Charts — more saturated, distinct hues */
-  --chart-1: #0b3a66;
-  --chart-2: #0a5d56;
-  --chart-3: #a8650f;
-  --chart-4: #5b21b6;
-  --chart-5: #9a3208;
+  /* Charts — navy-anchored hues */
+  --chart-1: #1E3A5F;
+  --chart-2: #3B6FA0;
+  --chart-3: #0a5d56;
+  --chart-4: #a8650f;
+  --chart-5: #5b21b6;
 
   /* Sidebar mirrors panel */
   --sidebar: var(--bg-panel);
@@ -426,6 +426,7 @@
   --sidebar-border: var(--border);
   --sidebar-ring: var(--primary);
 }
+
 
 .dark {
   /* Dark mode — deeper bg, brighter ink */
