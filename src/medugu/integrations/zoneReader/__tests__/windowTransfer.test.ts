@@ -98,7 +98,7 @@ describe("Zone Reader worklist window transfer", () => {
     } as unknown as MessageEvent);
 
     const worklistMessage = readerWindow.postMessage.mock.calls.find(
-      ([message]: [{ type: string; transferId: string }]) => message.type === "MEDUGU_ZONE_READER_WORKLIST",
+      (call: any[]) => call[0]?.type === "MEDUGU_ZONE_READER_WORKLIST",
     )?.[0];
     expect(worklistMessage).toBeDefined();
     transferListener!({
