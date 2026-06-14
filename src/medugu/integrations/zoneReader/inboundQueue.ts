@@ -32,7 +32,10 @@ export async function listPendingZoneReaderMessages(
   accessionId: string,
   isolateId: string,
 ): Promise<ZoneReaderInboundMessage[]> {
-  const { data, error } = await supabase
+  const client = supabase as unknown as {
+    from: (table: string) => any;
+  };
+  const { data, error } = await client
     .from("zone_reader_inbound_messages")
     .select(
       "id, accession_id, accession_number, isolate_id, ast_panel_id, received_at, status, payload",
@@ -43,7 +46,7 @@ export async function listPendingZoneReaderMessages(
     .order("received_at", { ascending: false });
 
   if (error) throw new Error(inboundQueueErrorMessage(error));
-  return (data ?? []).map((row) => ({
+  return ((data ?? []) as Array<Record<string, any>>).map((row) => ({
     id: row.id,
     accessionId: row.accession_id,
     accessionNumber: row.accession_number,
@@ -60,7 +63,10 @@ export async function setZoneReaderMessageStatus(
   status: Exclude<ZoneReaderInboundStatus, "pending_review">,
 ): Promise<void> {
   const { data: auth } = await supabase.auth.getUser();
-  const { error } = await supabase
+  const client = supabase as unknown as {
+    from: (table: string) => any;
+  };
+  const { error } = await client
     .from("zone_reader_inbound_messages")
     .update({
       status,
