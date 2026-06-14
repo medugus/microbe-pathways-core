@@ -354,7 +354,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
 
   function rejectUnmatchedRow(antibioticCode: string) {
     emitZoneReaderAudit({
-      code: "ZONE_READER_UNMATCHED_ROW_REJECTED",
+      code: "ZONE_READER_ROW_REJECTED",
       accessionId: accession.id,
       isolateId,
       astPanelId,
