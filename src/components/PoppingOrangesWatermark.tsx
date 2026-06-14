@@ -2,14 +2,24 @@
 // Fixed, pointer-events disabled, low opacity — overlays every page without
 // interfering with input. Respects prefers-reduced-motion via CSS.
 
-const ORANGES = [
+type OrangeSpec = {
+  top?: string;
+  left?: string;
+  right?: string;
+  bottom?: string;
+  size: number;
+  delay: string;
+  dur: string;
+};
+
+const ORANGES: OrangeSpec[] = [
   { top: "6%", left: "4%", size: 110, delay: "0s", dur: "7s" },
   { top: "18%", right: "8%", size: 78, delay: "1.2s", dur: "8s" },
   { top: "52%", left: "2%", size: 60, delay: "2.4s", dur: "9s" },
   { bottom: "10%", right: "5%", size: 130, delay: "0.6s", dur: "7.5s" },
   { bottom: "22%", left: "14%", size: 48, delay: "3s", dur: "10s" },
   { top: "38%", right: "22%", size: 38, delay: "1.8s", dur: "8.5s" },
-] as const;
+];
 
 function Orange({ size }: { size: number }) {
   return (
