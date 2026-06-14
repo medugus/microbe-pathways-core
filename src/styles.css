@@ -429,14 +429,14 @@
 
 
 .dark {
-  /* Dark mode — deeper bg, brighter ink */
-  --bg-app: #04080f;
-  --bg-panel: #0d1626;
-  --bg-muted: #182338;
-  --text-main: #f4f8ff;
-  --text-secondary: #becdde;
-  --text-muted: #8597ae;
-  --border-strong: #3a4a66;
+  /* Dark mode — deep earth, warm ink */
+  --bg-app: #1A1410;
+  --bg-panel: #2D2418;
+  --bg-muted: #3D3224;
+  --text-main: #F5F0E8;
+  --text-secondary: #D4C4A8;
+  --text-muted: #A08B6A;
+  --border-strong: #6B5344;
 
   --background: var(--bg-app);
   --foreground: var(--text-main);
@@ -445,31 +445,31 @@
   --popover: var(--bg-panel);
   --popover-foreground: var(--text-main);
 
-  --primary: #7eb0e6;
-  --primary-foreground: #04080f;
+  --primary: #4ADE80;
+  --primary-foreground: #1A1410;
   --secondary: var(--bg-muted);
   --secondary-foreground: var(--text-main);
   --muted: var(--bg-muted);
   --muted-foreground: var(--text-muted);
   --accent: var(--bg-muted);
   --accent-foreground: var(--text-main);
-  --destructive: #ff8a80;
-  --destructive-foreground: #04080f;
-  --border: #2c3b54;
-  --input: #2c3b54;
-  --ring: #7eb0e6;
+  --destructive: #FDBA74;
+  --destructive-foreground: #1A1410;
+  --border: #4A3B2A;
+  --input: #4A3B2A;
+  --ring: #FBBF24;
 
-  /* Chips: keep pale-on-dark by tinting with low opacity over panel */
-  --success-bg: color-mix(in oklab, #1f7a4c 22%, var(--bg-panel));
-  --warning-bg: color-mix(in oklab, #b7791f 22%, var(--bg-panel));
-  --danger-bg: color-mix(in oklab, #b42318 22%, var(--bg-panel));
-  --info-bg: color-mix(in oklab, #2563eb 22%, var(--bg-panel));
+  /* Chips: warm tints over dark panel */
+  --success-bg: color-mix(in oklab, #1B4D3E 22%, var(--bg-panel));
+  --warning-bg: color-mix(in oklab, #D97706 22%, var(--bg-panel));
+  --danger-bg: color-mix(in oklab, #9A3412 22%, var(--bg-panel));
+  --info-bg: color-mix(in oklab, #155E75 22%, var(--bg-panel));
   --restricted-bg: color-mix(in oklab, #7c3aed 22%, var(--bg-panel));
-  --withheld-bg: color-mix(in oklab, #475467 35%, var(--bg-panel));
-  --ipc-alert-bg: color-mix(in oklab, #c2410c 22%, var(--bg-panel));
-  --ams-pending-bg: color-mix(in oklab, #a16207 22%, var(--bg-panel));
-  --ams-approved-bg: color-mix(in oklab, #166534 22%, var(--bg-panel));
-  --ams-denied-bg: color-mix(in oklab, #9f1239 22%, var(--bg-panel));
+  --withheld-bg: color-mix(in oklab, #5C4033 35%, var(--bg-panel));
+  --ipc-alert-bg: color-mix(in oklab, #C2410C 22%, var(--bg-panel));
+  --ams-pending-bg: color-mix(in oklab, #D97706 22%, var(--bg-panel));
+  --ams-approved-bg: color-mix(in oklab, #1B4D3E 22%, var(--bg-panel));
+  --ams-denied-bg: color-mix(in oklab, #9A3412 22%, var(--bg-panel));
 
   --success: #4ade80;
   --warning: #fbbf24;
@@ -488,7 +488,7 @@
   --sidebar: var(--bg-panel);
   --sidebar-foreground: var(--text-main);
   --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: #0b1220;
+  --sidebar-primary-foreground: #1A1410;
   --sidebar-accent: var(--bg-muted);
   --sidebar-accent-foreground: var(--text-main);
   --sidebar-border: var(--border);
