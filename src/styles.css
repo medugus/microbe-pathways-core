@@ -348,14 +348,14 @@
 :root {
   --radius: 0.5rem;
 
-  /* Navy Trust / Clinical Slate — light surface variant */
-  --bg-app: #F4F6F6;
+  /* Earth & Forest — warm surface variant */
+  --bg-app: #F5F0E8;
   --bg-panel: #FFFFFF;
-  --bg-muted: #E8EDF3;
-  --text-main: #0F1B3D;
-  --text-secondary: #1E3A5F;
-  --text-muted: #4A5A75;
-  --border-strong: #3B6FA0;
+  --bg-muted: #E8DCC4;
+  --text-main: #3D2914;
+  --text-secondary: #5C4033;
+  --text-muted: #8B7355;
+  --border-strong: #A67B5B;
 
   /* shadcn base bindings */
   --background: var(--bg-app);
@@ -366,55 +366,55 @@
   --popover-foreground: var(--text-main);
 
   /* Core identity */
-  --primary: #1E3A5F;
+  --primary: #1B4D3E;
   --primary-foreground: #FFFFFF;
   --secondary: var(--bg-muted);
   --secondary-foreground: var(--text-main);
-  --secondary-teal: #0a5d56;
+  --secondary-teal: #2D6A4F;
   --accent: var(--bg-muted);
   --accent-foreground: var(--text-main);
-  --accent-indigo: #3B6FA0;
+  --accent-indigo: #D97706;
 
   --muted: var(--bg-muted);
   --muted-foreground: var(--text-muted);
 
-  --destructive: #971810;
+  --destructive: #9A3412;
   --destructive-foreground: #ffffff;
-  --border: #C7D2E0;
-  --input: #C7D2E0;
-  --ring: #3B6FA0;
+  --border: #C4A882;
+  --input: #C4A882;
+  --ring: #D97706;
 
   /* Semantic states */
-  --success: #0f5d36;
-  --success-bg: #d8f1e2;
-  --warning: #8a5a10;
-  --warning-bg: #ffe9bf;
-  --danger: #971810;
-  --danger-bg: #fcd7d4;
-  --info: #1547c4;
-  --info-bg: #d8e4ff;
+  --success: #1B4D3E;
+  --success-bg: #D8F3DC;
+  --warning: #92400E;
+  --warning-bg: #FDE68A;
+  --danger: #9A3412;
+  --danger-bg: #FED7AA;
+  --info: #155E75;
+  --info-bg: #CFFAFE;
   --restricted: #5b21b6;
   --restricted-bg: #e9dcff;
-  --withheld: #2f3b4d;
-  --withheld-bg: #e2e7f0;
-  --ipc-alert: #9a3208;
-  --ipc-alert-bg: #ffdfc7;
-  --ams-pending: #7a4a05;
-  --ams-pending-bg: #ffeec2;
-  --ams-approved: #0f5331;
-  --ams-approved-bg: #d8f1e2;
-  --ams-denied: #831038;
-  --ams-denied-bg: #fcd5e6;
-  --draft: #475569;
-  --released: #0f5d36;
-  --amended: #0a5d56;
+  --withheld: #4B3621;
+  --withheld-bg: #E8DCC4;
+  --ipc-alert: #9A3208;
+  --ipc-alert-bg: #FFDFC7;
+  --ams-pending: #92400E;
+  --ams-pending-bg: #FDE68A;
+  --ams-approved: #1B4D3E;
+  --ams-approved-bg: #D8F3DC;
+  --ams-denied: #7F1D1D;
+  --ams-denied-bg: #FECACA;
+  --draft: #78716C;
+  --released: #1B4D3E;
+  --amended: #14532D;
 
-  /* Charts — navy-anchored hues */
-  --chart-1: #1E3A5F;
-  --chart-2: #3B6FA0;
-  --chart-3: #0a5d56;
-  --chart-4: #a8650f;
-  --chart-5: #5b21b6;
+  /* Charts — earth-anchored hues */
+  --chart-1: #1B4D3E;
+  --chart-2: #D97706;
+  --chart-3: #5C4033;
+  --chart-4: #92400E;
+  --chart-5: #155E75;
 
   /* Sidebar mirrors panel */
   --sidebar: var(--bg-panel);
