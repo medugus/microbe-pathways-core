@@ -79,6 +79,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <AuthProvider>
+      <PoppingOrangesWatermark />
       <Outlet />
     </AuthProvider>
   );
