@@ -69,9 +69,9 @@ export function PoppingOrangesWatermark() {
           className="orange-pop absolute"
           style={{
             top: o.top,
-            left: (o as { left?: string }).left,
-            right: (o as { right?: string }).right,
-            bottom: (o as { bottom?: string }).bottom,
+            left: o.left,
+            right: o.right,
+            bottom: o.bottom,
             animationDelay: o.delay,
             animationDuration: o.dur,
             opacity: 0.13,
