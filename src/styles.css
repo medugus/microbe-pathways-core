@@ -374,14 +374,14 @@
 :root {
   --radius: 0.5rem;
 
-  /* Navy & Blue — cool surface palette */
-  --bg-app: #EEF4FB;
+  /* Navy & Blue — cool surface palette, high contrast */
+  --bg-app: #E6EEFA;
   --bg-panel: #FFFFFF;
-  --bg-muted: #DCE7F4;
-  --text-main: #0A1A3A;
-  --text-secondary: #1E3A6A;
-  --text-muted: #5A7AA8;
-  --border-strong: #3B5C8F;
+  --bg-muted: #D2DDF0;
+  --text-main: #020B1C;
+  --text-secondary: #0D2247;
+  --text-muted: #4A6699;
+  --border-strong: #244B82;
 
   /* shadcn base bindings */
   --background: var(--bg-app);
@@ -392,59 +392,59 @@
   --popover-foreground: var(--text-main);
 
   /* Core identity — navy prominent */
-  --primary: #0B2A5B;
+  --primary: #072B5E;
   --primary-foreground: #FFFFFF;
   --secondary: var(--bg-muted);
   --secondary-foreground: var(--text-main);
-  --secondary-teal: #1E40AF;
+  --secondary-teal: #1E3A8A;
   --accent: var(--bg-muted);
   --accent-foreground: var(--text-main);
-  --accent-indigo: #2563EB;
+  --accent-indigo: #1D4ED8;
 
   --muted: var(--bg-muted);
   --muted-foreground: var(--text-muted);
 
-  --destructive: #B91C1C;
+  --destructive: #991B1B;
   --destructive-foreground: #ffffff;
-  --border: #BFD2EA;
-  --input: #BFD2EA;
+  --border: #A8BFE0;
+  --input: #A8BFE0;
   --ring: #1D4ED8;
 
   /* Semantic states */
-  --success: #0F766E;
-  --success-bg: #CCFBF1;
-  --warning: #92400E;
-  --warning-bg: #FDE68A;
+  --success: #065F5A;
+  --success-bg: #C6F6E9;
+  --warning: #7C4A0E;
+  --warning-bg: #FCE799;
   --danger: #991B1B;
-  --danger-bg: #FECACA;
+  --danger-bg: #FFD1D1;
   --info: #1E3A8A;
-  --info-bg: #DBEAFE;
-  --restricted: #5b21b6;
-  --restricted-bg: #e9dcff;
-  --withheld: #334155;
-  --withheld-bg: #E2E8F0;
-  --ipc-alert: #9A3208;
-  --ipc-alert-bg: #FFDFC7;
-  --ams-pending: #92400E;
-  --ams-pending-bg: #FDE68A;
-  --ams-approved: #1E40AF;
-  --ams-approved-bg: #DBEAFE;
-  --ams-denied: #7F1D1D;
-  --ams-denied-bg: #FECACA;
-  --draft: #64748B;
+  --info-bg: #C7DBFF;
+  --restricted: #4C1D95;
+  --restricted-bg: #EDE4FF;
+  --withheld: #1E293B;
+  --withheld-bg: #D6DFEC;
+  --ipc-alert: #7C2D12;
+  --ipc-alert-bg: #FFE0CC;
+  --ams-pending: #7C4A0E;
+  --ams-pending-bg: #FCE799;
+  --ams-approved: #1E3A8A;
+  --ams-approved-bg: #C7DBFF;
+  --ams-denied: #991B1B;
+  --ams-denied-bg: #FFD1D1;
+  --draft: #475569;
   --released: #1D4ED8;
   --amended: #1E3A8A;
 
   /* Watermark tints — navy/blue motifs on cool surface */
   --watermark-primary: #1E3A8A;
-  --watermark-light: #60A5FA;
-  --watermark-deep: #0B2A5B;
+  --watermark-light: #3B82F6;
+  --watermark-deep: #072B5E;
   --watermark-opacity: 0.22;
 
   /* Charts — blue-anchored hues */
-  --chart-1: #0B2A5B;
-  --chart-2: #2563EB;
-  --chart-3: #60A5FA;
+  --chart-1: #072B5E;
+  --chart-2: #1D4ED8;
+  --chart-3: #3B82F6;
   --chart-4: #1E3A8A;
   --chart-5: #0EA5E9;
 
