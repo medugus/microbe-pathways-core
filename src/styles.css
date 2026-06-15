@@ -518,6 +518,12 @@
   --released: #4ade80;
   --amended: #5eead4;
 
+  /* Watermark tints — bright amber so motifs remain legible on dark espresso */
+  --watermark-primary: #FBBF24;
+  --watermark-light: #FDBA74;
+  --watermark-deep: #D97706;
+  --watermark-opacity: 0.16;
+
   --sidebar: var(--bg-panel);
   --sidebar-foreground: var(--text-main);
   --sidebar-primary: var(--primary);
