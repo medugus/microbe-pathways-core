@@ -435,6 +435,12 @@
   --released: #1B4D3E;
   --amended: #14532D;
 
+  /* Watermark tints — stronger on cream so motifs remain visible */
+  --watermark-primary: #B45309;
+  --watermark-light: #FDBA74;
+  --watermark-deep: #78350F;
+  --watermark-opacity: 0.22;
+
   /* Charts — earth-anchored hues */
   --chart-1: #1B4D3E;
   --chart-2: #D97706;
@@ -452,6 +458,7 @@
   --sidebar-border: var(--border);
   --sidebar-ring: var(--primary);
 }
+
 
 
 .dark {
