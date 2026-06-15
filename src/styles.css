@@ -374,14 +374,14 @@
 :root {
   --radius: 0.5rem;
 
-  /* Earth & Forest — warm surface variant */
-  --bg-app: #F5F0E8;
+  /* Navy & Blue — cool surface palette */
+  --bg-app: #EEF4FB;
   --bg-panel: #FFFFFF;
-  --bg-muted: #E8DCC4;
-  --text-main: #3D2914;
-  --text-secondary: #5C4033;
-  --text-muted: #8B7355;
-  --border-strong: #A67B5B;
+  --bg-muted: #DCE7F4;
+  --text-main: #0A1A3A;
+  --text-secondary: #1E3A6A;
+  --text-muted: #5A7AA8;
+  --border-strong: #3B5C8F;
 
   /* shadcn base bindings */
   --background: var(--bg-app);
@@ -391,62 +391,62 @@
   --popover: var(--bg-panel);
   --popover-foreground: var(--text-main);
 
-  /* Core identity */
-  --primary: #1B4D3E;
+  /* Core identity — navy prominent */
+  --primary: #0B2A5B;
   --primary-foreground: #FFFFFF;
   --secondary: var(--bg-muted);
   --secondary-foreground: var(--text-main);
-  --secondary-teal: #2D6A4F;
+  --secondary-teal: #1E40AF;
   --accent: var(--bg-muted);
   --accent-foreground: var(--text-main);
-  --accent-indigo: #D97706;
+  --accent-indigo: #2563EB;
 
   --muted: var(--bg-muted);
   --muted-foreground: var(--text-muted);
 
-  --destructive: #9A3412;
+  --destructive: #B91C1C;
   --destructive-foreground: #ffffff;
-  --border: #C4A882;
-  --input: #C4A882;
-  --ring: #D97706;
+  --border: #BFD2EA;
+  --input: #BFD2EA;
+  --ring: #1D4ED8;
 
   /* Semantic states */
-  --success: #1B4D3E;
-  --success-bg: #D8F3DC;
+  --success: #0F766E;
+  --success-bg: #CCFBF1;
   --warning: #92400E;
   --warning-bg: #FDE68A;
-  --danger: #9A3412;
-  --danger-bg: #FED7AA;
-  --info: #155E75;
-  --info-bg: #CFFAFE;
+  --danger: #991B1B;
+  --danger-bg: #FECACA;
+  --info: #1E3A8A;
+  --info-bg: #DBEAFE;
   --restricted: #5b21b6;
   --restricted-bg: #e9dcff;
-  --withheld: #4B3621;
-  --withheld-bg: #E8DCC4;
+  --withheld: #334155;
+  --withheld-bg: #E2E8F0;
   --ipc-alert: #9A3208;
   --ipc-alert-bg: #FFDFC7;
   --ams-pending: #92400E;
   --ams-pending-bg: #FDE68A;
-  --ams-approved: #1B4D3E;
-  --ams-approved-bg: #D8F3DC;
+  --ams-approved: #1E40AF;
+  --ams-approved-bg: #DBEAFE;
   --ams-denied: #7F1D1D;
   --ams-denied-bg: #FECACA;
-  --draft: #78716C;
-  --released: #1B4D3E;
-  --amended: #14532D;
+  --draft: #64748B;
+  --released: #1D4ED8;
+  --amended: #1E3A8A;
 
-  /* Watermark tints — stronger on cream so motifs remain visible */
-  --watermark-primary: #B45309;
-  --watermark-light: #FDBA74;
-  --watermark-deep: #78350F;
+  /* Watermark tints — navy/blue motifs on cool surface */
+  --watermark-primary: #1E3A8A;
+  --watermark-light: #60A5FA;
+  --watermark-deep: #0B2A5B;
   --watermark-opacity: 0.22;
 
-  /* Charts — earth-anchored hues */
-  --chart-1: #1B4D3E;
-  --chart-2: #D97706;
-  --chart-3: #5C4033;
-  --chart-4: #92400E;
-  --chart-5: #155E75;
+  /* Charts — blue-anchored hues */
+  --chart-1: #0B2A5B;
+  --chart-2: #2563EB;
+  --chart-3: #60A5FA;
+  --chart-4: #1E3A8A;
+  --chart-5: #0EA5E9;
 
   /* Sidebar mirrors panel */
   --sidebar: var(--bg-panel);
@@ -461,15 +461,16 @@
 
 
 
+
 .dark {
-  /* Dark mode — deep earth, warm ink */
-  --bg-app: #1A1410;
-  --bg-panel: #2D2418;
-  --bg-muted: #3D3224;
-  --text-main: #F5F0E8;
-  --text-secondary: #D4C4A8;
-  --text-muted: #A08B6A;
-  --border-strong: #6B5344;
+  /* Dark mode — deep navy, cool ink */
+  --bg-app: #050B1A;
+  --bg-panel: #0B1A33;
+  --bg-muted: #142A4D;
+  --text-main: #E6EEFB;
+  --text-secondary: #A8C0E4;
+  --text-muted: #6E89B5;
+  --border-strong: #2A4475;
 
   --background: var(--bg-app);
   --foreground: var(--text-main);
@@ -478,33 +479,33 @@
   --popover: var(--bg-panel);
   --popover-foreground: var(--text-main);
 
-  --primary: #4ADE80;
-  --primary-foreground: #1A1410;
+  --primary: #60A5FA;
+  --primary-foreground: #050B1A;
   --secondary: var(--bg-muted);
   --secondary-foreground: var(--text-main);
   --muted: var(--bg-muted);
   --muted-foreground: var(--text-muted);
   --accent: var(--bg-muted);
   --accent-foreground: var(--text-main);
-  --destructive: #FDBA74;
-  --destructive-foreground: #1A1410;
-  --border: #4A3B2A;
-  --input: #4A3B2A;
-  --ring: #FBBF24;
+  --destructive: #FCA5A5;
+  --destructive-foreground: #050B1A;
+  --border: #1F365E;
+  --input: #1F365E;
+  --ring: #3B82F6;
 
-  /* Chips: warm tints over dark panel */
-  --success-bg: color-mix(in oklab, #1B4D3E 22%, var(--bg-panel));
+  /* Chips: cool tints over dark navy */
+  --success-bg: color-mix(in oklab, #0F766E 22%, var(--bg-panel));
   --warning-bg: color-mix(in oklab, #D97706 22%, var(--bg-panel));
-  --danger-bg: color-mix(in oklab, #9A3412 22%, var(--bg-panel));
-  --info-bg: color-mix(in oklab, #155E75 22%, var(--bg-panel));
+  --danger-bg: color-mix(in oklab, #991B1B 22%, var(--bg-panel));
+  --info-bg: color-mix(in oklab, #1E3A8A 28%, var(--bg-panel));
   --restricted-bg: color-mix(in oklab, #7c3aed 22%, var(--bg-panel));
-  --withheld-bg: color-mix(in oklab, #5C4033 35%, var(--bg-panel));
+  --withheld-bg: color-mix(in oklab, #334155 35%, var(--bg-panel));
   --ipc-alert-bg: color-mix(in oklab, #C2410C 22%, var(--bg-panel));
   --ams-pending-bg: color-mix(in oklab, #D97706 22%, var(--bg-panel));
-  --ams-approved-bg: color-mix(in oklab, #1B4D3E 22%, var(--bg-panel));
-  --ams-denied-bg: color-mix(in oklab, #9A3412 22%, var(--bg-panel));
+  --ams-approved-bg: color-mix(in oklab, #1E40AF 28%, var(--bg-panel));
+  --ams-denied-bg: color-mix(in oklab, #991B1B 22%, var(--bg-panel));
 
-  --success: #4ade80;
+  --success: #5EEAD4;
   --warning: #fbbf24;
   --danger: #fda29b;
   --info: #93c5fd;
@@ -512,27 +513,28 @@
   --withheld: #cbd5e1;
   --ipc-alert: #fdba74;
   --ams-pending: #fcd34d;
-  --ams-approved: #86efac;
+  --ams-approved: #93c5fd;
   --ams-denied: #fda4af;
   --draft: #94a3b8;
-  --released: #4ade80;
-  --amended: #5eead4;
+  --released: #93c5fd;
+  --amended: #60A5FA;
 
-  /* Watermark tints — bright amber so motifs remain legible on dark espresso */
-  --watermark-primary: #FBBF24;
-  --watermark-light: #FDBA74;
-  --watermark-deep: #D97706;
-  --watermark-opacity: 0.16;
+  /* Watermark tints — bright blue motifs on deep navy */
+  --watermark-primary: #60A5FA;
+  --watermark-light: #93C5FD;
+  --watermark-deep: #1D4ED8;
+  --watermark-opacity: 0.18;
 
   --sidebar: var(--bg-panel);
   --sidebar-foreground: var(--text-main);
   --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: #1A1410;
+  --sidebar-primary-foreground: #050B1A;
   --sidebar-accent: var(--bg-muted);
   --sidebar-accent-foreground: var(--text-main);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--primary);
 }
+
 
 @layer base {
   * {
