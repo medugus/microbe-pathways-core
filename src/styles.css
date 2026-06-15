@@ -463,14 +463,14 @@
 
 
 .dark {
-  /* Dark mode — deep navy, cool ink */
-  --bg-app: #050B1A;
-  --bg-panel: #0B1A33;
-  --bg-muted: #142A4D;
-  --text-main: #E6EEFB;
-  --text-secondary: #A8C0E4;
-  --text-muted: #6E89B5;
-  --border-strong: #2A4475;
+  /* Dark mode — deep navy, cool ink, high contrast */
+  --bg-app: #020617;
+  --bg-panel: #0B1429;
+  --bg-muted: #112240;
+  --text-main: #F0F5FF;
+  --text-secondary: #B0C8F0;
+  --text-muted: #6E8EC4;
+  --border-strong: #2A5080;
 
   --background: var(--bg-app);
   --foreground: var(--text-main);
@@ -480,7 +480,7 @@
   --popover-foreground: var(--text-main);
 
   --primary: #60A5FA;
-  --primary-foreground: #050B1A;
+  --primary-foreground: #020617;
   --secondary: var(--bg-muted);
   --secondary-foreground: var(--text-main);
   --muted: var(--bg-muted);
@@ -488,9 +488,9 @@
   --accent: var(--bg-muted);
   --accent-foreground: var(--text-main);
   --destructive: #FCA5A5;
-  --destructive-foreground: #050B1A;
-  --border: #1F365E;
-  --input: #1F365E;
+  --destructive-foreground: #020617;
+  --border: #1A3055;
+  --input: #1A3055;
   --ring: #3B82F6;
 
   /* Chips: cool tints over dark navy */
@@ -528,7 +528,7 @@
   --sidebar: var(--bg-panel);
   --sidebar-foreground: var(--text-main);
   --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: #050B1A;
+  --sidebar-primary-foreground: #020617;
   --sidebar-accent: var(--bg-muted);
   --sidebar-accent-foreground: var(--text-main);
   --sidebar-border: var(--border);
