@@ -13,7 +13,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RequireAuth } from "@/auth/RequireAuth";
+import { useAuth } from "@/auth/AuthContext";
 import { SessionBar } from "@/auth/SessionBar";
 import { CloudHydrationGate } from "@/medugu/store/CloudHydrationGate";
 import { useMeduguState } from "@/medugu/store/useAccessionStore";
@@ -21,15 +21,22 @@ import { zoneReaderInboundConfig } from "@/medugu/store/zoneReaderInboundConfig"
 import { WorkflowStage } from "@/medugu/domain/enums";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { MarketingLanding } from "@/components/landing/MarketingLanding";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Medugu Hub — AMCE Microbiology" },
+      { title: "Medugu — From culture plate to clinical action" },
       {
         name: "description",
         content:
-          "Medugu hub: open the case workspace or launch Zone Reader for disk-diffusion measurement.",
+          "Audit-grade microbiology workflow with EUCAST 2026, AST expert rules, stewardship, IPC surveillance and sealed release.",
+      },
+      { property: "og:title", content: "Medugu — From culture plate to clinical action" },
+      {
+        property: "og:description",
+        content:
+          "Audit-grade microbiology workflow with EUCAST 2026, AST expert rules, stewardship and sealed release.",
       },
     ],
   }),
@@ -37,15 +44,20 @@ export const Route = createFileRoute("/")({
 });
 
 function HubRoute() {
+  const { loading, session } = useAuth();
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
+  if (!hydrated || loading) return <div className="min-h-screen bg-background" />;
+  if (!session) return <MarketingLanding />;
+
   return (
-    <RequireAuth>
-      <CloudHydrationGate>
-        <div className="min-h-screen bg-background">
-          <SessionBar />
-          <HubBody />
-        </div>
-      </CloudHydrationGate>
-    </RequireAuth>
+    <CloudHydrationGate>
+      <div className="min-h-screen bg-background">
+        <SessionBar />
+        <HubBody />
+      </div>
+    </CloudHydrationGate>
   );
 }
 
