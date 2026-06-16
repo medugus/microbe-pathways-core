@@ -22,6 +22,25 @@ import { WorkflowStage } from "@/medugu/domain/enums";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MarketingLanding } from "@/components/landing/MarketingLanding";
+import {
+  ArrowRight,
+  FlaskConical,
+  Radar,
+  ShieldCheck,
+  Activity,
+  GitBranch,
+  Sparkles,
+  ExternalLink,
+} from "lucide-react";
+
+const DEEP_NAVY = "#020617";
+const CARD_NAVY = "#0F2440";
+const ICE = "#E6EEFB";
+const SKY = "#93C5FD";
+const BLUE_ACCENT = "#3B82F6";
+const ELECTRIC = "#60A5FA";
+const DIM = "#6E89B5";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
