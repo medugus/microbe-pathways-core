@@ -3,6 +3,11 @@ import { routeTree } from "./routeTree.gen";
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
+  if (typeof console !== "undefined") {
+    // eslint-disable-next-line no-console
+    console.error("[Router error boundary]", error);
+  }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
