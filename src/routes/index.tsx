@@ -11,7 +11,7 @@
 // (zone reader URL, preview-host detection) is read from the existing
 // zoneReaderInboundConfig store.
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/auth/AuthContext";
 import { SessionBar } from "@/auth/SessionBar";
