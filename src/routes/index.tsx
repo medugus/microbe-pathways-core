@@ -11,7 +11,7 @@
 // (zone reader URL, preview-host detection) is read from the existing
 // zoneReaderInboundConfig store.
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/auth/AuthContext";
 import { SessionBar } from "@/auth/SessionBar";
@@ -22,6 +22,25 @@ import { WorkflowStage } from "@/medugu/domain/enums";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MarketingLanding } from "@/components/landing/MarketingLanding";
+import {
+  ArrowRight,
+  FlaskConical,
+  Radar,
+  ShieldCheck,
+  Activity,
+  GitBranch,
+  Sparkles,
+  ExternalLink,
+} from "lucide-react";
+
+const DEEP_NAVY = "#020617";
+const CARD_NAVY = "#0F2440";
+const ICE = "#E6EEFB";
+const SKY = "#93C5FD";
+const BLUE_ACCENT = "#3B82F6";
+const ELECTRIC = "#60A5FA";
+const DIM = "#6E89B5";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -53,13 +72,41 @@ function HubRoute() {
 
   return (
     <CloudHydrationGate>
-      <div className="min-h-screen bg-background">
-        <SessionBar />
-        <HubBody />
+      <div
+        className="relative min-h-screen overflow-hidden"
+        style={{ background: DEEP_NAVY, color: ICE }}
+      >
+        <AmbientBackdrop />
+        <div className="relative z-10">
+          <SessionBar />
+          <HubBody />
+        </div>
       </div>
     </CloudHydrationGate>
   );
 }
+
+function AmbientBackdrop() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(60% 50% at 10% 0%, rgba(59,130,246,0.20), transparent 60%), radial-gradient(45% 45% at 92% 18%, rgba(30,58,138,0.40), transparent 65%), radial-gradient(80% 60% at 50% 110%, rgba(59,130,246,0.10), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg, rgba(230,238,251,0.5) 0 1px, transparent 1px 80px), repeating-linear-gradient(90deg, rgba(230,238,251,0.5) 0 1px, transparent 1px 80px)",
+        }}
+      />
+    </div>
+  );
+}
+
 
 const STAGE_LABEL: Record<string, string> = {
   [WorkflowStage.Registered]: "Registered",
@@ -104,129 +151,277 @@ function HubBody() {
     window.open(appUrl, "_blank", "noopener,noreferrer");
   }
 
+  const cardBase: React.CSSProperties = {
+    background: `linear-gradient(180deg, ${CARD_NAVY} 0%, rgba(11,26,51,0.85) 100%)`,
+    border: `1px solid rgba(96,165,250,0.18)`,
+    boxShadow:
+      "0 1px 0 rgba(255,255,255,0.04) inset, 0 30px 60px -30px rgba(0,0,0,0.6)",
+  };
+
   return (
-    <main className="mx-auto max-w-5xl space-y-8 p-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Medugu Hub</h1>
-        <p className="text-sm text-muted-foreground">
-          Pick where to work. Engines, rules, and release governance stay the
-          same across both entry points.
+    <main className="mx-auto max-w-6xl space-y-10 px-6 py-10">
+      {/* Hero header */}
+      <header className="space-y-4">
+        <div
+          className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em]"
+          style={{
+            color: SKY,
+            background: "rgba(59,130,246,0.10)",
+            border: "1px solid rgba(96,165,250,0.25)",
+          }}
+        >
+          <Sparkles className="h-3 w-3" /> Medugu Hub
+        </div>
+        <h1
+          className="text-4xl font-semibold tracking-tight md:text-5xl"
+          style={{ color: ICE }}
+        >
+          Choose your entry point.
+        </h1>
+        <p className="max-w-2xl text-base leading-relaxed" style={{ color: DIM }}>
+          The same engines, rules, and release governance run under both
+          surfaces — pick the one that fits the bench in front of you.
         </p>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      {/* Primary entry cards */}
+      <section className={`grid gap-6 ${appUrl ? "md:grid-cols-2" : ""}`}>
         {/* Case workspace card */}
-        <article className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
-          <div className="space-y-1">
-            <h2 className="text-base font-semibold">Open case workspace</h2>
-            <p className="text-sm text-muted-foreground">
+        <article
+          className="group relative flex flex-col gap-5 overflow-hidden rounded-2xl p-7"
+          style={cardBase}
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-40 blur-3xl transition-opacity group-hover:opacity-70"
+            style={{ background: BLUE_ACCENT }}
+          />
+          <div className="relative flex items-start justify-between">
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              style={{
+                background: "rgba(59,130,246,0.15)",
+                border: "1px solid rgba(96,165,250,0.30)",
+              }}
+            >
+              <FlaskConical className="h-6 w-6" style={{ color: ELECTRIC }} />
+            </div>
+            <span
+              className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
+              style={{
+                color: SKY,
+                background: "rgba(96,165,250,0.10)",
+                border: "1px solid rgba(96,165,250,0.25)",
+              }}
+            >
+              LIMS
+            </span>
+          </div>
+          <div className="relative space-y-2">
+            <h2 className="text-2xl font-semibold tracking-tight" style={{ color: ICE }}>
+              Case workspace
+            </h2>
+            <p className="text-sm leading-relaxed" style={{ color: DIM }}>
               Continuous accession-to-release workflow. Patient and specimen
-              capture, microscopy, isolate identification, AST interpretation
-              with expert rules, stewardship review, IPC signals, validation
-              and governed release.
+              capture, microscopy, isolate ID, AST with expert rules,
+              stewardship review, IPC signals, validation and governed release.
             </p>
           </div>
-          <ul className="space-y-1 text-xs text-muted-foreground">
-            <li>• EUCAST 2026 breakpoint registry</li>
-            <li>• AST expert rules &amp; selective-reporting cascades</li>
-            <li>• Stewardship + IPC engines</li>
-            <li>• Hash-bound, sealed release reports</li>
+          <ul className="relative space-y-2 text-sm" style={{ color: "rgba(230,238,251,0.78)" }}>
+            <FeatureLine icon={<ShieldCheck className="h-4 w-4" />}>
+              EUCAST 2026 breakpoint registry
+            </FeatureLine>
+            <FeatureLine icon={<GitBranch className="h-4 w-4" />}>
+              AST expert rules &amp; selective-reporting cascades
+            </FeatureLine>
+            <FeatureLine icon={<Activity className="h-4 w-4" />}>
+              Stewardship + IPC engines
+            </FeatureLine>
+            <FeatureLine icon={<ShieldCheck className="h-4 w-4" />}>
+              Hash-bound, sealed release reports
+            </FeatureLine>
           </ul>
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-xs text-muted-foreground">
+          <div
+            className="relative mt-2 flex items-center justify-between border-t pt-5"
+            style={{ borderColor: "rgba(96,165,250,0.15)" }}
+          >
+            <span className="text-xs font-medium" style={{ color: DIM }}>
               {counts.total > 0
                 ? `${counts.total} case${counts.total === 1 ? "" : "s"} loaded`
                 : "No cases yet"}
             </span>
-            <Button asChild>
-              <Link to="/workspace">Open case workspace</Link>
+            <Button
+              asChild
+              className="rounded-full px-5"
+              style={{
+                background: ICE,
+                color: DEEP_NAVY,
+                boxShadow: "0 10px 30px -10px rgba(96,165,250,0.5)",
+              }}
+            >
+              <Link to="/workspace">
+                Open workspace <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </article>
 
-        {/* Zone Reader card — hidden entirely when no app URL is configured so
-            a LIMS-only deployment shows no reference to the Zone Reader. */}
+        {/* Zone Reader card */}
         {appUrl && (
-          <article className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
-            <div className="space-y-1">
-              <h2 className="text-base font-semibold">Open Zone Reader</h2>
-              <p className="text-sm text-muted-foreground">
-                External disk-diffusion measurement app. Imports a Medugu LIMS
-                worklist, captures zone diameters, and returns coded ZoneResult
-                rows to this deployment for interpretation and release.
+          <article
+            className="group relative flex flex-col gap-5 overflow-hidden rounded-2xl p-7"
+            style={cardBase}
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full opacity-30 blur-3xl transition-opacity group-hover:opacity-60"
+              style={{ background: "#1E3A8A" }}
+            />
+            <div className="relative flex items-start justify-between">
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-xl"
+                style={{
+                  background: "rgba(96,165,250,0.12)",
+                  border: "1px solid rgba(96,165,250,0.30)",
+                }}
+              >
+                <Radar className="h-6 w-6" style={{ color: ELECTRIC }} />
+              </div>
+              <span
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
+                style={{
+                  color: SKY,
+                  background: "rgba(96,165,250,0.10)",
+                  border: "1px solid rgba(96,165,250,0.25)",
+                }}
+              >
+                Disk diffusion
+              </span>
+            </div>
+            <div className="relative space-y-2">
+              <h2 className="text-2xl font-semibold tracking-tight" style={{ color: ICE }}>
+                Zone Reader
+              </h2>
+              <p className="text-sm leading-relaxed" style={{ color: DIM }}>
+                External measurement app. Imports a Medugu LIMS worklist,
+                captures zone diameters, and returns coded ZoneResult rows for
+                interpretation and release here.
               </p>
             </div>
-            <ul className="space-y-1 text-xs text-muted-foreground">
-              <li>• Worklist JSON export from Medugu</li>
-              <li>• Disk-diffusion measurement in Zone Reader</li>
-              <li>• ZoneResult POST back to Medugu inbound endpoint</li>
-              <li>• Medugu interprets, validates, releases</li>
+            <ul className="relative space-y-2 text-sm" style={{ color: "rgba(230,238,251,0.78)" }}>
+              <FeatureLine icon={<GitBranch className="h-4 w-4" />}>
+                Worklist JSON export from Medugu
+              </FeatureLine>
+              <FeatureLine icon={<Radar className="h-4 w-4" />}>
+                Disk-diffusion measurement in Zone Reader
+              </FeatureLine>
+              <FeatureLine icon={<Activity className="h-4 w-4" />}>
+                ZoneResult POST back to inbound endpoint
+              </FeatureLine>
+              <FeatureLine icon={<ShieldCheck className="h-4 w-4" />}>
+                Medugu interprets, validates, releases
+              </FeatureLine>
             </ul>
 
             {onPreview && (
               <p
                 role="alert"
-                className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                className="relative rounded-lg px-3 py-2 text-xs"
+                style={{
+                  color: "#fda29b",
+                  background: "rgba(220,38,38,0.10)",
+                  border: "1px solid rgba(220,38,38,0.35)",
+                }}
               >
                 Preview host detected — do not use this origin for live Zone
-                Reader send. The launch button still opens the configured app,
-                but ZoneResult must target the production Medugu host.
+                Reader send.
               </p>
             )}
 
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-xs text-muted-foreground">
-                <code className="font-mono break-all">{appUrl}</code>
-              </span>
+            <div
+              className="relative mt-2 flex items-center justify-between gap-4 border-t pt-5"
+              style={{ borderColor: "rgba(96,165,250,0.15)" }}
+            >
+              <code
+                className="truncate font-mono text-[11px]"
+                style={{ color: DIM }}
+                title={appUrl}
+              >
+                {appUrl}
+              </code>
               <Button
                 type="button"
                 onClick={launchZoneReader}
-                title="Opens Zone Reader in a new tab"
+                className="shrink-0 rounded-full px-5"
+                style={{
+                  background: "transparent",
+                  color: ICE,
+                  border: `1px solid ${ELECTRIC}`,
+                }}
               >
-                Launch Zone Reader ↗
+                Launch <ExternalLink className="ml-1 h-4 w-4" />
               </Button>
             </div>
           </article>
         )}
       </section>
 
-      {/* Integration strip — hidden when no Zone Reader app URL is configured. */}
+      {/* Integration strip */}
       {appUrl && (
         <section
           aria-label="Zone Reader integration path"
-          className="rounded-lg border border-dashed border-border bg-muted/30 p-4"
+          className="rounded-2xl p-6"
+          style={{
+            background: "rgba(15,36,64,0.55)",
+            border: "1px dashed rgba(96,165,250,0.30)",
+          }}
         >
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <h3
+            className="text-[11px] font-semibold uppercase tracking-[0.2em]"
+            style={{ color: SKY }}
+          >
             Integration path
           </h3>
-          <ol className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-            <li className="rounded bg-background px-2 py-1 font-medium">
-              1. Worklist export
-            </li>
-            <li className="text-muted-foreground">→</li>
-            <li className="rounded bg-background px-2 py-1 font-medium">
-              2. Measure (Zone Reader)
-            </li>
-            <li className="text-muted-foreground">→</li>
-            <li className="rounded bg-background px-2 py-1 font-medium">
-              3. ZoneResult return
-            </li>
-            <li className="text-muted-foreground">→</li>
-            <li className="rounded bg-background px-2 py-1 font-medium">
-              4. Interpret &amp; release
-            </li>
+          <ol className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
+            {[
+              "Worklist export",
+              "Measure (Zone Reader)",
+              "ZoneResult return",
+              "Interpret & release",
+            ].map((label, i, arr) => (
+              <React.Fragment key={label}>
+                <li
+                  className="rounded-full px-3 py-1.5 font-medium"
+                  style={{
+                    background: "rgba(2,6,23,0.55)",
+                    border: "1px solid rgba(96,165,250,0.20)",
+                    color: ICE,
+                  }}
+                >
+                  <span style={{ color: ELECTRIC }}>{i + 1}.</span> {label}
+                </li>
+                {i < arr.length - 1 && (
+                  <li style={{ color: DIM }}>→</li>
+                )}
+              </React.Fragment>
+            ))}
           </ol>
-          <p className="mt-2 text-[11px] text-muted-foreground">
+          <p className="mt-4 text-[11px]" style={{ color: DIM }}>
             Inbound endpoint:{" "}
-            <code className="font-mono">{endpointUrl}</code>
+            <code className="font-mono" style={{ color: SKY }}>
+              {endpointUrl}
+            </code>
           </p>
         </section>
       )}
 
-      {/* Workflow counts (cheap: derived from in-memory store) */}
+      {/* Workflow counts */}
       {counts.total > 0 && (
-        <section aria-label="Cases by stage" className="space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <section aria-label="Cases by stage" className="space-y-3">
+          <h3
+            className="text-[11px] font-semibold uppercase tracking-[0.2em]"
+            style={{ color: SKY }}
+          >
             Cases by stage
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -234,8 +429,20 @@ function HubBody() {
               const n = counts.byStage.get(stage) ?? 0;
               if (n === 0) return null;
               return (
-                <Badge key={stage} variant="secondary" className="font-normal">
-                  {STAGE_LABEL[stage] ?? stage}: {n}
+                <Badge
+                  key={stage}
+                  variant="outline"
+                  className="rounded-full border-0 px-3 py-1 font-normal"
+                  style={{
+                    background: "rgba(96,165,250,0.10)",
+                    color: ICE,
+                    border: "1px solid rgba(96,165,250,0.25)",
+                  }}
+                >
+                  {STAGE_LABEL[stage] ?? stage}
+                  <span className="ml-2 font-semibold" style={{ color: ELECTRIC }}>
+                    {n}
+                  </span>
                 </Badge>
               );
             })}
@@ -245,3 +452,27 @@ function HubBody() {
     </main>
   );
 }
+
+function FeatureLine({
+  icon,
+  children,
+}: {
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-start gap-2.5">
+      <span
+        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
+        style={{
+          background: "rgba(96,165,250,0.12)",
+          color: ELECTRIC,
+        }}
+      >
+        {icon}
+      </span>
+      <span>{children}</span>
+    </li>
+  );
+}
+
