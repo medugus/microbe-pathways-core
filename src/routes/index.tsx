@@ -234,8 +234,11 @@ function HubBody() {
             <FeatureLine icon={<GitBranch className="h-4 w-4" />}>
               AST expert rules &amp; selective-reporting cascades
             </FeatureLine>
+            <FeatureLine icon={<Sparkles className="h-4 w-4" />}>
+              Antimicrobial Stewardship (AMS)
+            </FeatureLine>
             <FeatureLine icon={<Activity className="h-4 w-4" />}>
-              Stewardship + IPC engines
+              IPC surveillance &amp; signals
             </FeatureLine>
             <FeatureLine icon={<ShieldCheck className="h-4 w-4" />}>
               Hash-bound, sealed release reports
