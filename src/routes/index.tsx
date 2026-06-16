@@ -72,13 +72,41 @@ function HubRoute() {
 
   return (
     <CloudHydrationGate>
-      <div className="min-h-screen bg-background">
-        <SessionBar />
-        <HubBody />
+      <div
+        className="relative min-h-screen overflow-hidden"
+        style={{ background: DEEP_NAVY, color: ICE }}
+      >
+        <AmbientBackdrop />
+        <div className="relative z-10">
+          <SessionBar />
+          <HubBody />
+        </div>
       </div>
     </CloudHydrationGate>
   );
 }
+
+function AmbientBackdrop() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(60% 50% at 10% 0%, rgba(59,130,246,0.20), transparent 60%), radial-gradient(45% 45% at 92% 18%, rgba(30,58,138,0.40), transparent 65%), radial-gradient(80% 60% at 50% 110%, rgba(59,130,246,0.10), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg, rgba(230,238,251,0.5) 0 1px, transparent 1px 80px), repeating-linear-gradient(90deg, rgba(230,238,251,0.5) 0 1px, transparent 1px 80px)",
+        }}
+      />
+    </div>
+  );
+}
+
 
 const STAGE_LABEL: Record<string, string> = {
   [WorkflowStage.Registered]: "Registered",
