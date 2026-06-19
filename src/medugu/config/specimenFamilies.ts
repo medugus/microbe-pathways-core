@@ -74,8 +74,10 @@ export const SPECIMEN_FAMILIES: FamilyDef[] = [
     code: "COLONISATION",
     display: "Colonisation screen",
     subtypes: [
-      { code: "COL_MRSA_NOSE", display: "MRSA nasal screen", tags: ["screen", "mrsa"] },
-      { code: "COL_MRSA_GROIN", display: "MRSA groin screen", tags: ["screen", "mrsa"] },
+      { code: "COL_MRSA_ADMISSION", display: "MRSA admission screen (nares, groin, axilla)", tags: ["screen", "mrsa", "admission"] },
+      { code: "COL_MRSA_NOSE", display: "MRSA nares screen", tags: ["screen", "mrsa", "nares"] },
+      { code: "COL_MRSA_GROIN", display: "MRSA groin screen", tags: ["screen", "mrsa", "groin"] },
+      { code: "COL_MRSA_AXILLA", display: "MRSA axilla screen", tags: ["screen", "mrsa", "axilla"] },
       { code: "COL_VRE_RECTAL", display: "VRE rectal screen", tags: ["screen", "vre"] },
       { code: "COL_CPE_RECTAL", display: "CPE rectal screen", tags: ["screen", "cpe"] },
       { code: "COL_CRAB_SCREEN", display: "CRAB screen", tags: ["screen", "crab"] },
