@@ -1,4 +1,4 @@
-// ExportSection — surfaces governed FHIR / HL7 / normalised-JSON exports.
+// ExportSection - surfaces governed FHIR / HL7 / normalised-JSON exports.
 // Local copy/download remain client-side. The "Dispatch to receiver" panel
 // hands off to the server, which loads the immutable release_packages row,
 // regenerates the payload server-side, POSTs it to the configured receiver
@@ -17,6 +17,7 @@ import { dispatchExport } from "../../store/export.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { ReleaseState } from "../../domain/enums";
 import { soundEngine } from "../../logic/soundEngine";
+import { CompletedReportsPdfPanel } from "./CompletedReportsPdfPanel";
 
 interface ReceiverOpt {
   id: string;
@@ -142,6 +143,8 @@ export function ExportSection() {
 
   return (
     <div className="space-y-4">
+      <CompletedReportsPdfPanel />
+
       <section className="rounded-md border border-border bg-background p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -253,10 +256,10 @@ export function ExportSection() {
                 onChange={(e) => setSelectedReceiver(e.target.value)}
                 className="h-9 rounded-md border border-input bg-background px-2 text-xs"
               >
-                <option value="">Select receiver…</option>
+                <option value="">Select receiver...</option>
                 {receivers.map((r) => (
                   <option key={r.id} value={r.id} disabled={!r.enabled}>
-                    {r.name} · {r.format.toUpperCase()}
+                    {r.name} - {r.format.toUpperCase()}
                     {!r.enabled ? " (disabled)" : ""}
                   </option>
                 ))}
@@ -267,7 +270,7 @@ export function ExportSection() {
                 disabled={!selectedReceiver || dispatching}
                 className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
               >
-                {dispatching ? "Dispatching on server…" : "Dispatch"}
+                {dispatching ? "Dispatching on server..." : "Dispatch"}
               </button>
               {dispatchMsg && (
                 <span
@@ -300,14 +303,14 @@ export function ExportSection() {
                       className="flex items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1 text-[11px]"
                     >
                       <span className="truncate">
-                        <span className="font-mono">{d.format.toUpperCase()}</span> →{" "}
+                        <span className="font-mono">{d.format.toUpperCase()}</span> - {" "}
                         {rcvName}
                       </span>
                       <span
                         className={`font-mono ${ok ? "text-foreground" : "text-destructive"}`}
                       >
                         {d.http_status ?? "ERR"}
-                        {d.error_message ? ` · ${d.error_message.slice(0, 40)}` : ""}
+                        {d.error_message ? ` - ${d.error_message.slice(0, 40)}` : ""}
                       </span>
                       <span className="text-muted-foreground">
                         {new Date(d.dispatched_at).toLocaleString()}
