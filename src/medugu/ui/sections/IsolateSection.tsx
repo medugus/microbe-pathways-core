@@ -2,11 +2,12 @@
 // All business logic lives in logic/isolateHelpers.ts, logic/bloodIsolateRules.ts,
 // and config/organisms.ts. Component stays thin.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
 import {
   ORGANISMS,
   GROWTH_QUANTIFIERS,
+  NON_GROWTH_ORGANISM_CODES,
   SIGNIFICANCE_OPTIONS,
 } from "../../config/organisms";
 import {
@@ -25,6 +26,7 @@ import {
   sourceLinkKey,
   toggleSourceLink,
 } from "../../logic/bloodIsolateRules";
+import { getColonisationScreenPathway } from "../../logic/specimenResolver";
 import { runValidation } from "../../logic/validationEngine";
 import type { Isolate, IsolateSignificance } from "../../domain/types";
 import { BottleResultsEditor } from "./BottleResultsEditor";
@@ -42,6 +44,24 @@ export function IsolateSection() {
     return new Set(v.blockers.filter((b) => b.section === "isolate").map((b) => b.code));
   }, [accession]);
 
+  const screenPathway = useMemo(
+    () => getColonisationScreenPathway(accession?.specimen.familyCode, accession?.specimen.subtypeCode),
+    [accession?.specimen.familyCode, accession?.specimen.subtypeCode],
+  );
+
+  const organismOptions = useMemo(() => {
+    if (!screenPathway) return ORGANISMS;
+    const allowedCodes = new Set(screenPathway.organismCodes);
+    return ORGANISMS.filter((organism) => allowedCodes.has(organism.code));
+  }, [screenPathway]);
+
+  useEffect(() => {
+    const fallbackCode = screenPathway?.defaultOrganismCode ?? organismOptions[0]?.code ?? ORGANISMS[0].code;
+    if (!organismOptions.some((organism) => organism.code === organismCode)) {
+      setOrganismCode(fallbackCode);
+    }
+  }, [organismCode, organismOptions, screenPathway]);
+
   if (!accession) {
     return (
       <div className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -55,17 +75,23 @@ export function IsolateSection() {
   const canAdd = canAddBloodIsolate(accession);
   const atUnusual = isAtUnusualIsolateCount(accession);
   const positiveBottles = isBlood ? listPositiveBottles(accession) : [];
+  const screenAllowedLabels = screenPathway
+    ? organismOptions.map((organism) => `${organism.display} (${organism.code})`).join(", ")
+    : "";
 
   function onAdd() {
     if (!accession) return;
     if (!canAdd) return;
+    const selectedOrganismCode = organismOptions.some((organism) => organism.code === organismCode)
+      ? organismCode
+      : screenPathway?.defaultOrganismCode ?? organismOptions[0]?.code ?? ORGANISMS[0].code;
     const cfu = colonyCount.trim() === "" ? undefined : Number(colonyCount);
-    const iso = buildIsolate(accession, organismCode, {
+    const iso = buildIsolate(accession, selectedOrganismCode, {
       growthQuantifierCode: growthCode || undefined,
       colonyCountCfuPerMl: Number.isFinite(cfu) ? cfu : undefined,
       purityFlag: composition === "pure" ? true : undefined,
       mixedGrowth: composition === "mixed" ? true : undefined,
-      significance: suggestSignificance(accession, organismCode),
+      significance: suggestSignificance(accession, selectedOrganismCode),
     });
     meduguActions.addIsolate(accession.id, iso);
     setColonyCount("");
@@ -120,6 +146,15 @@ export function IsolateSection() {
         </details>
       )}
 
+      {screenPathway && (
+        <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs">
+          <div className="font-medium text-foreground">{screenPathway.label} restricted pathway</div>
+          <p className="mt-1 text-muted-foreground">{screenPathway.organismHelp}</p>
+          <p className="mt-1 text-muted-foreground">Allowed organism entries: {screenAllowedLabels}.</p>
+          <p className="mt-1 text-muted-foreground">{screenPathway.astHelp}</p>
+        </div>
+      )}
+
       {/* Entry row */}
       <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-background p-3 md:grid-cols-6">
         <label className="md:col-span-2 text-xs">
@@ -129,14 +164,13 @@ export function IsolateSection() {
             onChange={(e) => {
               const code = e.target.value;
               setOrganismCode(code);
-              const nonGrowthOrganisms = ["NOGRO", "MIXED", "NORML"];
-              if (!nonGrowthOrganisms.includes(code) && growthCode === "NO_GROWTH") {
+              if (!NON_GROWTH_ORGANISM_CODES.includes(code) && growthCode === "NO_GROWTH") {
                 setGrowthCode("");
               }
             }}
             className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
           >
-            {ORGANISMS.map((o) => (
+            {organismOptions.map((o) => (
               <option key={o.code} value={o.code}>
                 {o.display} ({o.code})
               </option>
@@ -153,8 +187,7 @@ export function IsolateSection() {
             <option value="">—</option>
             {GROWTH_QUANTIFIERS
               .filter((g) => {
-                const nonGrowthOrganisms = ["NOGRO", "MIXED", "NORML"];
-                if (g.code === "NO_GROWTH" && !nonGrowthOrganisms.includes(organismCode)) {
+                if (g.code === "NO_GROWTH" && !NON_GROWTH_ORGANISM_CODES.includes(organismCode)) {
                   return false;
                 }
                 return true;
@@ -229,14 +262,16 @@ export function IsolateSection() {
           {accession.isolates.map((i) => {
             const sigCode = `BC_ISO_${i.isolateNo}_SIGNIFICANCE_MISSING`;
             const srcCode = `BC_ISO_${i.isolateNo}_SOURCE_MISSING`;
+            const screenCode = `COL_SCREEN_ISO_${i.isolateNo}_ORGANISM_RESTRICTED`;
             const sigMissing = isoBlockers.has(sigCode);
             const srcMissing = isoBlockers.has(srcCode);
+            const screenRestricted = isoBlockers.has(screenCode);
             const showBcLinkage = isBlood && i.organismCode !== "NOGRO";
             return (
               <li
                 key={i.id}
                 className={`rounded-md border bg-card p-3 text-sm ${
-                  sigMissing || srcMissing ? "border-destructive" : "border-border"
+                  sigMissing || srcMissing || screenRestricted ? "border-destructive" : "border-border"
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -279,6 +314,12 @@ export function IsolateSection() {
                     </button>
                   </div>
                 </div>
+
+                {screenRestricted && screenPathway && (
+                  <p className="mt-2 text-[11px] text-destructive">
+                    {screenPathway.label} allows only {screenAllowedLabels}. Remove or replace this isolate before release.
+                  </p>
+                )}
 
                 {sigMissing && (
                   <p className="mt-2 text-[11px] text-destructive">
