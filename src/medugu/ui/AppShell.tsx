@@ -69,7 +69,7 @@ export function AppShell() {
                   {accession.accessionNumber}
                 </h2>
                 <p className="truncate text-base font-semibold text-foreground">
-                  {accession.patient.givenName} {accession.patient.familyName} {" "}
+                  {accession.patient.givenName} {accession.patient.familyName} ·{" "}
                   <span className="text-sm font-normal text-muted-foreground">
                     {accession.specimen.freeTextLabel ?? accession.specimen.subtypeCode}
                   </span>
