@@ -99,13 +99,19 @@ export function SoundTriggerGate() {
     }
 
     const prevOutbreak = seenOutbreak.current;
-    for (const pair of outbreak.candidatePairs) {
-      if (!presentOutbreak.has(pair.id)) continue;
-      if (prevOutbreak.has(pair.id)) continue;
+    const newOutbreakPairs = outbreak.candidatePairs.filter(
+      (pair) => presentOutbreak.has(pair.id) && !prevOutbreak.has(pair.id),
+    );
+    if (newOutbreakPairs.length > 0) {
+      const priorityPair =
+        newOutbreakPairs.find((pair) => pair.severity === "high") ?? newOutbreakPairs[0];
       soundEngine.emit({
         cls: "urgent",
-        key: `outbreak:${pair.id}`,
-        label: `${pair.confidenceLabel} outbreak alert: ${pair.first.organismDisplay}`,
+        key: `outbreak:${newOutbreakPairs.map((pair) => pair.id).sort().join("|")}`,
+        label:
+          newOutbreakPairs.length === 1
+            ? `${priorityPair.confidenceLabel} outbreak alert: ${priorityPair.first.organismDisplay}`
+            : `${newOutbreakPairs.length} new outbreak alerts; highest: ${priorityPair.first.organismDisplay}`,
       });
     }
     seenOutbreak.current = presentOutbreak;
