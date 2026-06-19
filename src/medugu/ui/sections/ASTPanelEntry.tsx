@@ -61,7 +61,7 @@ export function ASTPanelEntry({
             <option key={panel.id} value={panel.id}>{panel.label}</option>
           ))}
         </select>
-        <p className="mt-1 text-[11px] text-muted-foreground">Panels are filtered by organism group.</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">Panels are filtered by organism group and screen pathway.</p>
       </label>
       <label className="text-xs">
         <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Method</span>
