@@ -7,11 +7,13 @@
 // - Specimen resolver invalidity remains a blocker.
 
 import type { Accession, ValidationIssue } from "../domain/types";
-import { resolveSpecimen } from "./specimenResolver";
+import { resolveSpecimen, getColonisationScreenPathway, type ColonisationScreenPathway } from "./specimenResolver";
 import { newId } from "../domain/ids";
 import { pendingRestrictedRowCount } from "./amsEngine";
 import { evaluateIPC } from "./ipcEngine";
 import { SPECIMEN_FAMILIES } from "../config/specimenFamilies";
+import { AST_PANELS, getAntibiotic } from "../config/antibiotics";
+import { getOrganism } from "../config/organisms";
 import { validateBloodIsolates } from "./bloodIsolateRules";
 import { deriveIPCValidationIssues } from "./ipcReportGovernance";
 import { getBottleResults, isPositiveBottle } from "./bloodBottles";
@@ -69,6 +71,120 @@ function info(code: string, section: string, message: string): ValidationIssue {
   return { id: newId("vi"), severity: "info", code, section, message };
 }
 
+function organismLabel(code: string): string {
+  const organism = getOrganism(code);
+  return organism ? `${organism.display} (${code})` : code;
+}
+
+function antibioticLabel(code: string): string {
+  const antibiotic = getAntibiotic(code);
+  return antibiotic ? `${antibiotic.display} (${code})` : code;
+}
+
+function getAllowedScreenAstCodes(pathway: ColonisationScreenPathway): Set<string> {
+  const panelIds = new Set(pathway.allowedAstPanelIds);
+  return new Set(
+    AST_PANELS
+      .filter((panel) => panelIds.has(panel.id))
+      .flatMap((panel) => panel.codes),
+  );
+}
+
+function deriveColonisationScreenIssues(accession: Accession): ValidationIssue[] {
+  const pathway = getColonisationScreenPathway(
+    accession.specimen.familyCode,
+    accession.specimen.subtypeCode,
+  );
+  if (!pathway) return [];
+
+  const issues: ValidationIssue[] = [];
+  const allowedOrganismCodes = new Set(pathway.organismCodes);
+  const allowedAstCodes = getAllowedScreenAstCodes(pathway);
+  const requiredAstCodes = new Set(pathway.requiredAstAntibioticCodes);
+  const allowedOrganisms = pathway.organismCodes.map(organismLabel).join(", ");
+  const requiredAst = pathway.requiredAstAntibioticCodes.map(antibioticLabel).join(", ");
+
+  if (accession.isolates.length === 0) {
+    issues.push(
+      block(
+        "COL_SCREEN_RESULT_MISSING",
+        "isolate",
+        `${pathway.label}: record a target organism or an explicit no-growth/negative result before release.`,
+      ),
+    );
+    return issues;
+  }
+
+  for (const isolate of accession.isolates) {
+    const isolateLabel = `#${isolate.isolateNo} ${isolate.organismDisplay}`;
+    const isolateRows = accession.ast.filter((row) => row.isolateId === isolate.id);
+
+    if (!allowedOrganismCodes.has(isolate.organismCode)) {
+      issues.push(
+        block(
+          `COL_SCREEN_ISO_${isolate.isolateNo}_ORGANISM_RESTRICTED`,
+          "isolate",
+          `${pathway.label}: ${isolateLabel} is outside this screen pathway. Allowed organism entries are ${allowedOrganisms}.`,
+        ),
+      );
+      continue;
+    }
+
+    if (isolate.organismCode === pathway.negativeOrganismCode) {
+      if (isolateRows.length > 0) {
+        issues.push(
+          block(
+            `COL_SCREEN_ISO_${isolate.isolateNo}_NEGATIVE_AST_PRESENT`,
+            "ast",
+            `${pathway.label}: no AST should be attached to a no-growth/negative screen result.`,
+          ),
+        );
+      }
+      continue;
+    }
+
+    if (allowedAstCodes.size === 0) {
+      if (isolateRows.length > 0) {
+        issues.push(
+          block(
+            `COL_SCREEN_ISO_${isolate.isolateNo}_AST_NOT_CONFIGURED`,
+            "ast",
+            `${pathway.label}: no antibacterial AST panel is configured for ${isolateLabel}.`,
+          ),
+        );
+      }
+      continue;
+    }
+
+    for (const row of isolateRows) {
+      if (!allowedAstCodes.has(row.antibioticCode)) {
+        issues.push(
+          block(
+            `COL_SCREEN_ISO_${isolate.isolateNo}_${row.antibioticCode}_AST_RESTRICTED`,
+            "ast",
+            `${pathway.label}: ${antibioticLabel(row.antibioticCode)} is outside the confirmation pathway for ${isolateLabel}.`,
+          ),
+        );
+      }
+    }
+
+    if (pathway.positiveOrganismCodes.includes(isolate.organismCode) && requiredAstCodes.size > 0) {
+      const hasConfirmationAst = isolateRows.some((row) => requiredAstCodes.has(row.antibioticCode));
+      if (!hasConfirmationAst) {
+        issues.push(
+          block(
+            `COL_SCREEN_ISO_${isolate.isolateNo}_CONFIRMATION_AST_MISSING`,
+            "ast",
+            `${pathway.label}: ${isolateLabel} requires confirmation AST before release (${requiredAst}).`,
+          ),
+        );
+      }
+    }
+  }
+
+  return issues;
+}
+
 export function runValidation(accession: Accession): ValidationReport {
   const issues: ValidationIssue[] = [];
 
@@ -97,6 +213,8 @@ export function runValidation(accession: Accession): ValidationReport {
       warn("ISO_NONE", "isolate", "No isolate recorded — record an explicit no-growth finding if appropriate."),
     );
   }
+
+  issues.push(...deriveColonisationScreenIssues(accession));
 
   for (const a of accession.ast) {
     if (a.breakpointSpeciesViolation) {
