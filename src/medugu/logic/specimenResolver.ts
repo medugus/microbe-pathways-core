@@ -32,6 +32,7 @@ export type FieldKey =
   | "drainSiteDays"
   // colonisation
   | "screenRound"
+  | "screenSites"
   | "priorPositive"
   // stool
   | "stoolConsistency"
@@ -176,33 +177,25 @@ export interface ColonisationScreenPathway {
   astHelp: string;
 }
 
+const MRSA_SCREEN_PATHWAY: ColonisationScreenPathway = {
+  kind: "mrsa",
+  label: "MRSA screen",
+  organismCodes: ["SAUR", "NOGRO"],
+  positiveOrganismCodes: ["SAUR"],
+  negativeOrganismCode: "NOGRO",
+  defaultOrganismCode: "SAUR",
+  allowedAstPanelIds: ["mrsa_screen"],
+  defaultAstPanelId: "mrsa_screen",
+  requiredAstAntibioticCodes: ["FOX", "OXA"],
+  organismHelp: "MRSA screens accept Staphylococcus aureus detected or an explicit no-growth/negative result only.",
+  astHelp: "If S. aureus is detected, confirm with cefoxitin or oxacillin. Resistant = MRSA; susceptible = S. aureus detected but MRSA not confirmed.",
+};
+
 const COLONISATION_SCREEN_PATHWAYS: Record<string, ColonisationScreenPathway> = {
-  COL_MRSA_NOSE: {
-    kind: "mrsa",
-    label: "MRSA screen",
-    organismCodes: ["SAUR", "NOGRO"],
-    positiveOrganismCodes: ["SAUR"],
-    negativeOrganismCode: "NOGRO",
-    defaultOrganismCode: "SAUR",
-    allowedAstPanelIds: ["mrsa_screen"],
-    defaultAstPanelId: "mrsa_screen",
-    requiredAstAntibioticCodes: ["FOX", "OXA"],
-    organismHelp: "MRSA screens accept Staphylococcus aureus detected or an explicit no-growth/negative result only.",
-    astHelp: "If S. aureus is detected, confirm with cefoxitin or oxacillin. Resistant = MRSA; susceptible = S. aureus detected but MRSA not confirmed.",
-  },
-  COL_MRSA_GROIN: {
-    kind: "mrsa",
-    label: "MRSA screen",
-    organismCodes: ["SAUR", "NOGRO"],
-    positiveOrganismCodes: ["SAUR"],
-    negativeOrganismCode: "NOGRO",
-    defaultOrganismCode: "SAUR",
-    allowedAstPanelIds: ["mrsa_screen"],
-    defaultAstPanelId: "mrsa_screen",
-    requiredAstAntibioticCodes: ["FOX", "OXA"],
-    organismHelp: "MRSA screens accept Staphylococcus aureus detected or an explicit no-growth/negative result only.",
-    astHelp: "If S. aureus is detected, confirm with cefoxitin or oxacillin. Resistant = MRSA; susceptible = S. aureus detected but MRSA not confirmed.",
-  },
+  COL_MRSA_ADMISSION: MRSA_SCREEN_PATHWAY,
+  COL_MRSA_NOSE: MRSA_SCREEN_PATHWAY,
+  COL_MRSA_GROIN: MRSA_SCREEN_PATHWAY,
+  COL_MRSA_AXILLA: MRSA_SCREEN_PATHWAY,
   COL_VRE_RECTAL: {
     kind: "vre",
     label: "VRE screen",
