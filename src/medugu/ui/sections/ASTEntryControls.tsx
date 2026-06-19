@@ -1,4 +1,4 @@
-import { ANTIBIOTICS } from "../../config/antibiotics";
+import { ANTIBIOTICS, type AntibioticDef } from "../../config/antibiotics";
 import { PRIMARY_STANDARD, SECONDARY_STANDARD } from "../../config/breakpoints";
 import { ASTMethod } from "../../domain/enums";
 import type { ASTStandard } from "../../domain/types";
@@ -13,6 +13,7 @@ const METHOD_OPTIONS: { code: ASTMethod; label: string }[] = [
 
 type ASTEntryControlsProps = {
   antibioticCode: string;
+  antibioticOptions?: AntibioticDef[];
   method: ASTMethod;
   standard: ASTStandard;
   rawValue: string;
@@ -26,6 +27,7 @@ type ASTEntryControlsProps = {
 
 export function ASTEntryControls({
   antibioticCode,
+  antibioticOptions = ANTIBIOTICS,
   method,
   standard,
   rawValue,
@@ -36,18 +38,26 @@ export function ASTEntryControls({
   onRawValueChange,
   onAdd,
 }: ASTEntryControlsProps) {
+  const hasAntibioticOptions = antibioticOptions.length > 0;
+  const isAddBlocked = isBloodASTBlocked || !hasAntibioticOptions;
+
   return (
     <>
       <label className="text-xs">
         <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Antibiotic</span>
         <select
-          value={antibioticCode}
+          value={hasAntibioticOptions ? antibioticCode : ""}
           onChange={(e) => onAntibioticCodeChange(e.target.value)}
-          className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
+          disabled={!hasAntibioticOptions}
+          className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {ANTIBIOTICS.map((a) => (
-            <option key={a.code} value={a.code}>{a.display} ({a.code})</option>
-          ))}
+          {hasAntibioticOptions ? (
+            antibioticOptions.map((a) => (
+              <option key={a.code} value={a.code}>{a.display} ({a.code})</option>
+            ))
+          ) : (
+            <option value="">No AST choices for this result</option>
+          )}
         </select>
       </label>
       <label className="text-xs">
@@ -89,14 +99,19 @@ export function ASTEntryControls({
         <button
           type="button"
           onClick={onAdd}
-          disabled={isBloodASTBlocked}
-          className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+          disabled={isAddBlocked}
+          className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Add AST row
         </button>
         {isBloodASTBlocked && (
           <span className="text-[11px] text-destructive">
             Blood culture AST requires organism linkage to a positive bottle.
+          </span>
+        )}
+        {!hasAntibioticOptions && (
+          <span className="text-[11px] text-muted-foreground">
+            No AST is required or configured for this selected screen result.
           </span>
         )}
       </div>
