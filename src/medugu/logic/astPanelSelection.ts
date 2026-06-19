@@ -104,6 +104,9 @@ export function getDefaultASTPanelForIsolate(
   accession?: Accession,
   isolate?: Isolate,
 ): ASTPanelDef | undefined {
+  const org = getIsolateOrganism(isolate);
+  if (!org || org.noAst) return undefined;
+
   const eligible = getEligibleASTPanelsForIsolate(accession, isolate);
   const pathway = getScreenPathway(accession);
   if (eligible.length === 0) {
