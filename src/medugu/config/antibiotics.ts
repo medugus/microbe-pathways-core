@@ -151,6 +151,11 @@ const REQUESTED_NAME_TO_CODE: Record<string, string> = {
 
 export interface ASTPanelDef {
   id:
+    | "mrsa_screen"
+    | "vre_screen"
+    | "cpe_screen"
+    | "crab_screen"
+    | "crpa_screen"
     | "staphylococcus"
     | "streptococcus"
     | "enterococcus"
@@ -188,6 +193,21 @@ function makePanel(
 }
 
 export const AST_PANELS: ASTPanelDef[] = [
+  makePanel("mrsa_screen", "MRSA screen confirmation", [
+    "cefoxitin", "oxacillin",
+  ], ["staphylococcus"]),
+  makePanel("vre_screen", "VRE screen confirmation", [
+    "vancomycin",
+  ], ["enterococcus"]),
+  makePanel("cpe_screen", "CPE/CPO screen confirmation", [
+    "ertapenem", "meropenem", "imipenem",
+  ], ["enterobacterales"]),
+  makePanel("crab_screen", "CRAB screen confirmation", [
+    "meropenem", "imipenem",
+  ], ["non_fermenter"]),
+  makePanel("crpa_screen", "CRPA screen confirmation", [
+    "meropenem", "imipenem",
+  ], ["non_fermenter"]),
   makePanel("staphylococcus", "Staphylococcus panel", [
     "penicillin", "cefoxitin", "oxacillin", "erythromycin", "clindamycin", "gentamicin", "ciprofloxacin",
     "levofloxacin", "trimethoprim-sulfamethoxazole", "tetracycline", "doxycycline", "rifampicin", "fusidic acid",
