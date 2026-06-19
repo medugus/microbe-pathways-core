@@ -30,6 +30,7 @@ const FIELD_LABELS: Record<string, string> = {
   imageGuidance: "Image guidance",
   drainSiteDays: "Drain in-situ (days)",
   screenRound: "Screen round",
+  screenSites: "Screen sites",
   priorPositive: "Prior positive",
 };
 
@@ -116,6 +117,27 @@ const SCREEN_ROUNDS = [
   { code: "CLEARANCE_3", display: "Clearance — round 3" },
 ];
 
+const MRSA_SCREEN_SUBTYPES = [
+  "COL_MRSA_ADMISSION",
+  "COL_MRSA_NOSE",
+  "COL_MRSA_GROIN",
+  "COL_MRSA_AXILLA",
+];
+
+const MRSA_ADMISSION_SCREEN_SITES = [
+  { code: "NARES", display: "Nares" },
+  { code: "GROIN", display: "Groin" },
+  { code: "AXILLA", display: "Axilla" },
+];
+
+const REQUIRED_MRSA_ADMISSION_SITE_CODES = MRSA_ADMISSION_SCREEN_SITES.map((s) => s.code);
+
+function sameStringSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const seen = new Set(a);
+  return b.every((value) => seen.has(value));
+}
+
 interface Props {
   accession: Accession;
   required: FieldKey[];
@@ -141,6 +163,14 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
 
   const familyCode = accession.specimen.familyCode;
   const subtypeCode = accession.specimen.subtypeCode;
+  const screenRound = typeof details.screenRound === "string" ? details.screenRound : "";
+  const currentScreenSites = Array.isArray(details.screenSites)
+    ? details.screenSites.filter((site): site is string => typeof site === "string")
+    : [];
+  const currentScreenSitesKey = currentScreenSites.join("|");
+  const isMrsaScreen = familyCode === "COLONISATION" && MRSA_SCREEN_SUBTYPES.includes(subtypeCode);
+  const isMrsaAdmissionScreen =
+    isMrsaScreen && (subtypeCode === "COL_MRSA_ADMISSION" || screenRound === "ADMISSION");
   const collectionMethodCode =
     typeof details.collectionMethodNote === "string" ? details.collectionMethodNote : "";
   const allowedCollectionMethods = useMemo(
@@ -180,6 +210,38 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
     });
     setCollectionResetWarning(true);
   }, [accession, collectionMethodCode, details, familyCode, subtypeCode]);
+
+  useEffect(() => {
+    if (subtypeCode !== "COL_MRSA_ADMISSION" || screenRound === "ADMISSION") return;
+    meduguActions.upsertAccession({
+      ...accession,
+      specimen: {
+        ...accession.specimen,
+        details: { ...details, screenRound: "ADMISSION" },
+      },
+    });
+  }, [accession, details, screenRound, subtypeCode]);
+
+  useEffect(() => {
+    const nextDetails: Record<string, unknown> = { ...details };
+    if (!isMrsaAdmissionScreen) {
+      if (Array.isArray(details.screenSites)) {
+        delete nextDetails.screenSites;
+        meduguActions.upsertAccession({
+          ...accession,
+          specimen: { ...accession.specimen, details: nextDetails },
+        });
+      }
+      return;
+    }
+
+    if (sameStringSet(currentScreenSites, REQUIRED_MRSA_ADMISSION_SITE_CODES)) return;
+    nextDetails.screenSites = REQUIRED_MRSA_ADMISSION_SITE_CODES;
+    meduguActions.upsertAccession({
+      ...accession,
+      specimen: { ...accession.specimen, details: nextDetails },
+    });
+  }, [accession, currentScreenSitesKey, details, isMrsaAdmissionScreen]);
 
   const renderField = (field: FieldKey) => {
     const label = FIELD_LABELS[field] ?? field;
@@ -309,6 +371,16 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
             onChange={(v) => update(field, v)}
           />
         );
+      case "screenSites":
+        return (
+          <MultiSelect
+            label={label}
+            value={REQUIRED_MRSA_ADMISSION_SITE_CODES}
+            options={MRSA_ADMISSION_SCREEN_SITES}
+            onChange={() => update(field, REQUIRED_MRSA_ADMISSION_SITE_CODES)}
+            help="Admission MRSA screen requires all three swabs: nares, groin and axilla."
+          />
+        );
       case "priorPositive":
         return (
           <CodedSelect
@@ -348,7 +420,10 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
   const isBlood = accession.specimen.familyCode === "BLOOD";
   const BLOOD_HANDLED: FieldKey[] = ["setCount", "bottleType", "drawSite", "drawTime"];
 
-  const visibleRequired = isBlood ? required.filter((f) => !BLOOD_HANDLED.includes(f)) : required;
+  const visibleRequiredBase = isBlood ? required.filter((f) => !BLOOD_HANDLED.includes(f)) : required;
+  const visibleRequired = isMrsaAdmissionScreen && !visibleRequiredBase.includes("screenSites")
+    ? [...visibleRequiredBase, "screenSites" as FieldKey]
+    : visibleRequiredBase;
   const visibleOptional = isBlood ? optional.filter((f) => !BLOOD_HANDLED.includes(f)) : optional;
 
   const allFields = useMemo(
