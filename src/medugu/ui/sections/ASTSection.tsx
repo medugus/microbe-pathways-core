@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { meduguActions, useActiveAccession } from "../../store/useAccessionStore";
 import { ANTIBIOTICS, getASTPanel } from "../../config/antibiotics";
 import { PRIMARY_STANDARD } from "../../config/breakpoints";
+import { getOrganism } from "../../config/organisms";
 import { buildASTResult } from "../../logic/astDrafting";
 import {
   getDefaultASTPanelForIsolate,
@@ -14,6 +15,7 @@ import {
   getEligibleASTPanelsForIsolate,
   isASTPanelEligibleForIsolate,
 } from "../../logic/astPanelSelection";
+import { getColonisationScreenPathway } from "../../logic/specimenResolver";
 import { ASTMethod } from "../../domain/enums";
 import type { Accession, ASTStandard } from "../../domain/types";
 import { applyExpertRulesServer } from "../../store/engines.functions";
@@ -58,6 +60,12 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
   const isolates = accession.isolates;
   const activeIsolateId = isolateId || isolates[0]?.id || "";
   const selectedIsolate = isolates.find((i) => i.id === activeIsolateId);
+  const selectedOrganism = selectedIsolate ? getOrganism(selectedIsolate.organismCode) : undefined;
+  const isNoAstOrganism = !!selectedOrganism?.noAst;
+  const screenPathway = useMemo(
+    () => getColonisationScreenPathway(accession.specimen.familyCode, accession.specimen.subtypeCode),
+    [accession.specimen.familyCode, accession.specimen.subtypeCode],
+  );
   const eligiblePanels = useMemo(
     () => getEligibleASTPanelsForIsolate(accession, selectedIsolate),
     [accession, selectedIsolate],
@@ -66,8 +74,13 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     () => getDefaultASTPanelForIsolate(accession, selectedIsolate),
     [accession, selectedIsolate],
   );
-  const selectedPanel =
-    (panelId ? getASTPanel(panelId) : undefined) ?? fallbackPanel ?? eligiblePanels[0];
+  const requestedPanel = panelId ? getASTPanel(panelId) : undefined;
+  const requestedPanelEligible = requestedPanel
+    ? isASTPanelEligibleForIsolate(requestedPanel, selectedIsolate, accession)
+    : false;
+  const selectedPanel = requestedPanelEligible
+    ? requestedPanel
+    : fallbackPanel ?? eligiblePanels[0];
   const isSelectedPanelEligible = selectedPanel
     ? isASTPanelEligibleForIsolate(selectedPanel, selectedIsolate, accession)
     : false;
@@ -84,12 +97,25 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
 
   const isBloodASTBlocked = isBloodCulture(accession) && !!selectedIsolate && !selectedIsolateHasPositiveLink;
 
+  const singleAntibioticOptions = useMemo(() => {
+    if (isNoAstOrganism) return [];
+    if (!screenPathway) return ANTIBIOTICS;
+
+    const allowedCodes = new Set(eligiblePanels.flatMap((panel) => panel.codes));
+    return ANTIBIOTICS.filter((antibiotic) => allowedCodes.has(antibiotic.code));
+  }, [eligiblePanels, isNoAstOrganism, screenPathway]);
+
+  const singleAntibioticCodeSet = useMemo(
+    () => new Set(singleAntibioticOptions.map((antibiotic) => antibiotic.code)),
+    [singleAntibioticOptions],
+  );
+
   useEffect(() => {
     if (!selectedIsolate) return;
 
     if (!selectedPanel || !isSelectedPanelEligible) {
       const next = fallbackPanel?.id ?? eligiblePanels[0]?.id ?? "";
-      if (next && next !== panelId) {
+      if (next !== panelId) {
         setPanelId(next);
       }
       return;
@@ -106,6 +132,13 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
       setStandard(nextStandard);
     }
   }, [selectedPanel, standard]);
+
+  useEffect(() => {
+    const next = singleAntibioticOptions[0]?.code;
+    if (next && !singleAntibioticCodeSet.has(antibioticCode)) {
+      setAntibioticCode(next);
+    }
+  }, [antibioticCode, singleAntibioticCodeSet, singleAntibioticOptions]);
 
   const panelMeta = useMemo(() => {
     if (!selectedPanel || !activeIsolateId) {
@@ -131,6 +164,7 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
 
   function onAdd() {
     if (!activeIsolateId || isBloodASTBlocked) return;
+    if (!singleAntibioticCodeSet.has(antibioticCode)) return;
 
     const v = rawValue.trim() === "" ? undefined : Number(rawValue);
     const row = buildASTResult(accession, {
@@ -240,27 +274,41 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
           </select>
         </label>
 
+        {screenPathway && (
+          <p className="md:col-span-6 rounded border border-primary/20 bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
+            <span className="font-medium text-foreground">{screenPathway.label} pathway:</span>{" "}
+            {screenPathway.astHelp}
+          </p>
+        )}
+
         {entryMode === "panel" ? (
-          <ASTPanelEntry
-            selectedPanelId={selectedPanel?.id ?? ""}
-            eligiblePanels={eligiblePanels}
-            method={method}
-            standard={standard}
-            panelPendingCount={panelMeta.pendingCodes.length}
-            panelDuplicateCount={panelMeta.duplicateCount}
-            selectedPanelCodes={selectedPanel?.codes ?? []}
-            selectedPanelMissingRequested={selectedPanel?.missingRequested ?? []}
-            panelSummary={panelSummary}
-            isBloodASTBlocked={isBloodASTBlocked}
-            isPanelEligible={isSelectedPanelEligible}
-            onPanelChange={setPanelId}
-            onMethodChange={setMethod}
-            onStandardChange={setStandard}
-            onAddPanel={onAddPanel}
-          />
+          eligiblePanels.length > 0 ? (
+            <ASTPanelEntry
+              selectedPanelId={selectedPanel?.id ?? ""}
+              eligiblePanels={eligiblePanels}
+              method={method}
+              standard={standard}
+              panelPendingCount={panelMeta.pendingCodes.length}
+              panelDuplicateCount={panelMeta.duplicateCount}
+              selectedPanelCodes={selectedPanel?.codes ?? []}
+              selectedPanelMissingRequested={selectedPanel?.missingRequested ?? []}
+              panelSummary={panelSummary}
+              isBloodASTBlocked={isBloodASTBlocked}
+              isPanelEligible={isSelectedPanelEligible}
+              onPanelChange={setPanelId}
+              onMethodChange={setMethod}
+              onStandardChange={setStandard}
+              onAddPanel={onAddPanel}
+            />
+          ) : (
+            <div className="md:col-span-4 flex items-end rounded border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
+              No AST panel is required or configured for this selected screen result.
+            </div>
+          )
         ) : (
           <ASTEntryControls
             antibioticCode={antibioticCode}
+            antibioticOptions={singleAntibioticOptions}
             method={method}
             standard={standard}
             rawValue={rawValue}
