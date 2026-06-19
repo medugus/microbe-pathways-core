@@ -7,6 +7,7 @@ export { ASTSection } from "./ASTSection";
 export { StewardshipSection } from "./StewardshipSection";
 export { AMSSection } from "./AMSSection";
 export { IPCSection } from "./IPCSection";
+export { OutbreakSection } from "./OutbreakSection";
 export { ValidationSection } from "./ValidationSection";
 export { ReleaseSection } from "./ReleaseSection";
 export { ReportSection } from "./ReportSection";
@@ -23,6 +24,7 @@ export const SECTION_ORDER = [
   { key: "stewardship", label: "Stewardship" },
   { key: "ams", label: "AMS approvals" },
   { key: "ipc", label: "IPC" },
+  { key: "outbreak", label: "Outbreak" },
   { key: "validation", label: "Validation" },
   { key: "release", label: "Release" },
   { key: "report", label: "Report" },
