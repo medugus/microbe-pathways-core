@@ -1,6 +1,6 @@
 // Continuous case workspace: case list on the left, persistent context bar
 // on top of a single scrollable surface that stacks every workflow section.
-// No tab-only navigation — sections are collapsible but always reachable.
+// No tab-only navigation - sections are collapsible but always reachable.
 
 import { CaseManager } from "./CaseManager";
 import { CommandPalette } from "./CommandPalette";
@@ -20,6 +20,7 @@ import {
   StewardshipSection,
   AMSSection,
   IPCSection,
+  OutbreakSection,
   ValidationSection,
   ReleaseSection,
   ReportSection,
@@ -40,6 +41,7 @@ const SECTION_COMPONENTS = {
   stewardship: StewardshipSection,
   ams: AMSSection,
   ipc: IPCSection,
+  outbreak: OutbreakSection,
   validation: ValidationSection,
   release: ReleaseSection,
   report: ReportSection,
@@ -67,7 +69,7 @@ export function AppShell() {
                   {accession.accessionNumber}
                 </h2>
                 <p className="truncate text-base font-semibold text-foreground">
-                  {accession.patient.givenName} {accession.patient.familyName} ·{" "}
+                  {accession.patient.givenName} {accession.patient.familyName} {" "}
                   <span className="text-sm font-normal text-muted-foreground">
                     {accession.specimen.freeTextLabel ?? accession.specimen.subtypeCode}
                   </span>
@@ -126,7 +128,8 @@ export function AppShell() {
                         s.key === "patient" ||
                         s.key === "specimen" ||
                         s.key === "isolate" ||
-                        s.key === "ast"
+                        s.key === "ast" ||
+                        s.key === "outbreak"
                       }
                     >
                       <Cmp />
