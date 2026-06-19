@@ -79,6 +79,8 @@ export type IPCFlagHint =
   | "mrsa_screen"
   | "vre_screen"
   | "cpe_screen"
+  | "crab_screen"
+  | "crpa_screen"
   | "candida_auris_screen";
 
 export type SyndromeCode =
@@ -157,6 +159,132 @@ export interface ResolvedSpecimenProfile {
 export type ResolverResult =
   | { ok: true; profile: ResolvedSpecimenProfile }
   | { ok: false; reason: "unknown_family" | "unknown_subtype" };
+
+export type ColonisationScreenKind = "mrsa" | "vre" | "cpe" | "crab" | "crpa" | "candida_auris";
+
+export interface ColonisationScreenPathway {
+  kind: ColonisationScreenKind;
+  label: string;
+  organismCodes: string[];
+  positiveOrganismCodes: string[];
+  negativeOrganismCode: "NOGRO";
+  defaultOrganismCode: string;
+  allowedAstPanelIds: string[];
+  defaultAstPanelId?: string;
+  requiredAstAntibioticCodes: string[];
+  organismHelp: string;
+  astHelp: string;
+}
+
+const COLONISATION_SCREEN_PATHWAYS: Record<string, ColonisationScreenPathway> = {
+  COL_MRSA_NOSE: {
+    kind: "mrsa",
+    label: "MRSA screen",
+    organismCodes: ["SAUR", "NOGRO"],
+    positiveOrganismCodes: ["SAUR"],
+    negativeOrganismCode: "NOGRO",
+    defaultOrganismCode: "SAUR",
+    allowedAstPanelIds: ["mrsa_screen"],
+    defaultAstPanelId: "mrsa_screen",
+    requiredAstAntibioticCodes: ["FOX", "OXA"],
+    organismHelp: "MRSA screens accept Staphylococcus aureus detected or an explicit no-growth/negative result only.",
+    astHelp: "If S. aureus is detected, confirm with cefoxitin or oxacillin. Resistant = MRSA; susceptible = S. aureus detected but MRSA not confirmed.",
+  },
+  COL_MRSA_GROIN: {
+    kind: "mrsa",
+    label: "MRSA screen",
+    organismCodes: ["SAUR", "NOGRO"],
+    positiveOrganismCodes: ["SAUR"],
+    negativeOrganismCode: "NOGRO",
+    defaultOrganismCode: "SAUR",
+    allowedAstPanelIds: ["mrsa_screen"],
+    defaultAstPanelId: "mrsa_screen",
+    requiredAstAntibioticCodes: ["FOX", "OXA"],
+    organismHelp: "MRSA screens accept Staphylococcus aureus detected or an explicit no-growth/negative result only.",
+    astHelp: "If S. aureus is detected, confirm with cefoxitin or oxacillin. Resistant = MRSA; susceptible = S. aureus detected but MRSA not confirmed.",
+  },
+  COL_VRE_RECTAL: {
+    kind: "vre",
+    label: "VRE screen",
+    organismCodes: ["EFAE", "EFAM", "NOGRO"],
+    positiveOrganismCodes: ["EFAE", "EFAM"],
+    negativeOrganismCode: "NOGRO",
+    defaultOrganismCode: "EFAM",
+    allowedAstPanelIds: ["vre_screen"],
+    defaultAstPanelId: "vre_screen",
+    requiredAstAntibioticCodes: ["VAN"],
+    organismHelp: "VRE screens accept Enterococcus faecalis/faecium or an explicit no-growth/negative result only.",
+    astHelp: "If Enterococcus is detected, enter vancomycin to classify VRE versus vancomycin-susceptible Enterococcus.",
+  },
+  COL_CPE_RECTAL: {
+    kind: "cpe",
+    label: "CPE/CPO screen",
+    organismCodes: ["ECOL", "KPNE", "PMIR", "ENTC", "NOGRO"],
+    positiveOrganismCodes: ["ECOL", "KPNE", "PMIR", "ENTC"],
+    negativeOrganismCode: "NOGRO",
+    defaultOrganismCode: "ECOL",
+    allowedAstPanelIds: ["cpe_screen"],
+    defaultAstPanelId: "cpe_screen",
+    requiredAstAntibioticCodes: ["ETP", "MEM", "IPM"],
+    organismHelp: "CPE/CPO screens are restricted to Enterobacterales targets or an explicit no-growth/negative result.",
+    astHelp: "If Enterobacterales are detected, enter ertapenem, meropenem or imipenem to classify carbapenem resistance/carbapenemase suspicion.",
+  },
+  COL_CRAB_SCREEN: {
+    kind: "crab",
+    label: "CRAB screen",
+    organismCodes: ["ABAU", "NOGRO"],
+    positiveOrganismCodes: ["ABAU"],
+    negativeOrganismCode: "NOGRO",
+    defaultOrganismCode: "ABAU",
+    allowedAstPanelIds: ["crab_screen"],
+    defaultAstPanelId: "crab_screen",
+    requiredAstAntibioticCodes: ["MEM", "IPM"],
+    organismHelp: "CRAB screens are restricted to Acinetobacter baumannii complex or an explicit no-growth/negative result.",
+    astHelp: "If Acinetobacter baumannii complex is detected, enter meropenem or imipenem to classify carbapenem resistance.",
+  },
+  COL_CRPA_SCREEN: {
+    kind: "crpa",
+    label: "CRPA screen",
+    organismCodes: ["PAER", "NOGRO"],
+    positiveOrganismCodes: ["PAER"],
+    negativeOrganismCode: "NOGRO",
+    defaultOrganismCode: "PAER",
+    allowedAstPanelIds: ["crpa_screen"],
+    defaultAstPanelId: "crpa_screen",
+    requiredAstAntibioticCodes: ["MEM", "IPM"],
+    organismHelp: "CRPA screens are restricted to Pseudomonas aeruginosa or an explicit no-growth/negative result.",
+    astHelp: "If Pseudomonas aeruginosa is detected, enter meropenem or imipenem to classify carbapenem resistance.",
+  },
+  COL_CANDIDA_AURIS: {
+    kind: "candida_auris",
+    label: "Candida auris screen",
+    organismCodes: ["CAUR", "NOGRO"],
+    positiveOrganismCodes: ["CAUR"],
+    negativeOrganismCode: "NOGRO",
+    defaultOrganismCode: "CAUR",
+    allowedAstPanelIds: [],
+    requiredAstAntibioticCodes: [],
+    organismHelp: "C. auris screens accept Candida auris detected or an explicit no-growth/negative result only.",
+    astHelp: "No antibacterial AST panel is configured for this screen pathway.",
+  },
+};
+
+export function getColonisationScreenPathway(
+  familyCode?: string,
+  subtypeCode?: string,
+): ColonisationScreenPathway | null {
+  if (familyCode !== "COLONISATION" || !subtypeCode) return null;
+  return COLONISATION_SCREEN_PATHWAYS[subtypeCode] ?? null;
+}
+
+export function isAllowedColonisationScreenOrganism(
+  familyCode: string,
+  subtypeCode: string,
+  organismCode: string,
+): boolean {
+  const pathway = getColonisationScreenPathway(familyCode, subtypeCode);
+  return !pathway || pathway.organismCodes.includes(organismCode);
+}
 
 // ---------- Resolver ----------
 
@@ -453,14 +581,16 @@ function resolveSterileFluid(subtypeCode: string, display: string): ResolvedSpec
 // ---------- Colonisation screens ----------
 
 function resolveColonisation(subtypeCode: string, display: string): ResolvedSpecimenProfile {
-  const map: Record<string, IPCFlagHint> = {
-    COL_MRSA_NOSE: "mrsa_screen",
-    COL_MRSA_GROIN: "mrsa_screen",
-    COL_VRE_RECTAL: "vre_screen",
-    COL_CPE_RECTAL: "cpe_screen",
-    COL_CANDIDA_AURIS: "candida_auris_screen",
+  const pathway = getColonisationScreenPathway("COLONISATION", subtypeCode);
+  const hintMap: Record<ColonisationScreenKind, IPCFlagHint> = {
+    mrsa: "mrsa_screen",
+    vre: "vre_screen",
+    cpe: "cpe_screen",
+    crab: "crab_screen",
+    crpa: "crpa_screen",
+    candida_auris: "candida_auris_screen",
   };
-  const ipcHint = map[subtypeCode];
+  const ipcHint = pathway ? hintMap[pathway.kind] : undefined;
 
   return {
     familyCode: "COLONISATION",
