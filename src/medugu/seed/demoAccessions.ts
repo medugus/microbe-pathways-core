@@ -85,6 +85,34 @@ function ast(
   };
 }
 
+function creKlebsiellaClusterAst(isolateId: string): ASTResult[] {
+  return [
+    ast(isolateId, "AMP", 6, "R"),
+    ast(isolateId, "AMC", 10, "R"),
+    ast(isolateId, "CRO", 6, "R"),
+    ast(isolateId, "CAZ", 6, "R"),
+    ast(isolateId, "FEP", 10, "R"),
+    ast(isolateId, "MEM", 8, "R", ASTMethod.MIC_Broth),
+    ast(isolateId, "ETP", 8, "R", ASTMethod.MIC_Broth),
+    ast(isolateId, "CIP", 10, "R"),
+    ast(isolateId, "GEN", 10, "R"),
+    ast(isolateId, "AMK", 18, "S"),
+    ast(isolateId, "CST", 0.5, "S", ASTMethod.MIC_Broth),
+  ];
+}
+
+function mrsaClusterAst(isolateId: string): ASTResult[] {
+  return [
+    ast(isolateId, "FOX", 6, "R"),
+    ast(isolateId, "OXA", 6, "R"),
+    ast(isolateId, "AMP", 8, "R"),
+    ast(isolateId, "ERY", 6, "R"),
+    ast(isolateId, "CLI", 22, "S"),
+    ast(isolateId, "SXT", 24, "S"),
+    ast(isolateId, "VAN", 1, "S", ASTMethod.MIC_Broth),
+  ];
+}
+
 // ---------- Build scenarios ----------
 
 // 1. MRSA bloodstream infection (MB25-EF34GH)
@@ -112,16 +140,7 @@ const mrsa = (() => {
     },
     ...emptyTail(),
     isolates: [i],
-    ast: [
-      ast(i.id, "FOX", 6, "R"),
-      ast(i.id, "OXA", 6, "R"),
-      ast(i.id, "AMP", 8, "R"),
-      ast(i.id, "CRO", 14, "R"),
-      ast(i.id, "VAN", 1, "S", ASTMethod.MIC_Broth),
-      ast(i.id, "ERY", 6, "R"),
-      ast(i.id, "CLI", 22, "S"),
-      ast(i.id, "SXT", 24, "S"),
-    ],
+    ast: mrsaClusterAst(i.id),
     release: { state: ReleaseState.Draft, reportVersion: 0 },
   } as Accession;
 })();
@@ -198,19 +217,7 @@ const cre = (() => {
     },
     ...emptyTail(),
     isolates: [i],
-    ast: [
-      ast(i.id, "AMP", 6, "R"),
-      ast(i.id, "AMC", 10, "R"),
-      ast(i.id, "CRO", 6, "R"),
-      ast(i.id, "CAZ", 6, "R"),
-      ast(i.id, "FEP", 10, "R"),
-      ast(i.id, "MEM", 8, "R", ASTMethod.MIC_Broth),
-      ast(i.id, "ETP", 10, "R", ASTMethod.MIC_Broth),
-      ast(i.id, "CIP", 10, "R"),
-      ast(i.id, "GEN", 10, "R"),
-      ast(i.id, "AMK", 18, "S"),
-      ast(i.id, "CST", 0.5, "S", ASTMethod.MIC_Broth),
-    ],
+    ast: creKlebsiellaClusterAst(i.id),
     release: { state: ReleaseState.Draft, reportVersion: 0 },
   } as Accession;
 })();
@@ -339,15 +346,16 @@ const mrsaScreen = (() => {
     },
     specimen: {
       familyCode: "COLONISATION",
-      subtypeCode: "COL_MRSA_NOSE",
+      subtypeCode: "COL_MRSA_ADMISSION",
       collectedAt: now,
       receivedAt: now,
       containerCode: "SWAB_TRANSPORT",
       freeTextLabel: "MRSA admission screen",
+      details: { screenRound: "ADMISSION", screenSites: ["NARES", "GROIN", "AXILLA"] },
     },
     ...emptyTail(),
     isolates: [i],
-    ast: [ast(i.id, "FOX", 6, "R"), ast(i.id, "OXA", 8, "R"), ast(i.id, "VAN", 1, "S", ASTMethod.MIC_Broth)],
+    ast: mrsaClusterAst(i.id),
     release: { state: ReleaseState.Draft, reportVersion: 0 },
   } as Accession;
 })();
@@ -552,6 +560,253 @@ const crpaScreenNoPrior = (() => ({
   release: { state: ReleaseState.Draft, reportVersion: 0 },
 }) as Accession)();
 
+// 11. Reset-proof outbreak demonstration: 3 linked CRE Klebsiella cases.
+const outbreakKlebsiella1 = (() => {
+  const collected = dayAgo(3);
+  const i = iso(1, "KPNE", "Klebsiella pneumoniae", {
+    id: "iso_out_kpn_1",
+    growthQuantifierCode: "HEAVY",
+    identifiedAt: collected,
+  });
+  return {
+    ...base("MB25-OUT-KPN1", WorkflowStage.IPC, collected),
+    priority: Priority.Stat,
+    patient: {
+      mrn: "AMCE-006101",
+      givenName: "Maryam",
+      familyName: "Bala",
+      sex: Sex.Female,
+      dob: "1966-03-14",
+      ward: "ICU",
+      attendingClinician: "Dr. Lawal",
+    },
+    specimen: {
+      familyCode: "LRT",
+      subtypeCode: "LRT_ETA",
+      collectedAt: collected,
+      receivedAt: collected,
+      containerCode: "STERILE_TRAP",
+      freeTextLabel: "Endotracheal aspirate - outbreak watch",
+      details: { ventilatorStatus: "INVASIVE_VENT" },
+    },
+    ...emptyTail(),
+    isolates: [i],
+    ast: creKlebsiellaClusterAst(i.id),
+    release: { state: ReleaseState.Draft, reportVersion: 0 },
+  } as Accession;
+})();
+
+const outbreakKlebsiella2 = (() => {
+  const collected = dayAgo(2);
+  const i = iso(1, "KPNE", "Klebsiella pneumoniae", {
+    id: "iso_out_kpn_2",
+    growthQuantifierCode: "HEAVY",
+    identifiedAt: collected,
+  });
+  return {
+    ...base("MB25-OUT-KPN2", WorkflowStage.IPC, collected),
+    priority: Priority.Stat,
+    patient: {
+      mrn: "AMCE-006102",
+      givenName: "Godwin",
+      familyName: "Okeke",
+      sex: Sex.Male,
+      dob: "1958-08-22",
+      ward: "ICU",
+      attendingClinician: "Dr. Eze",
+    },
+    specimen: {
+      familyCode: "LRT",
+      subtypeCode: "LRT_ETA",
+      collectedAt: collected,
+      receivedAt: collected,
+      containerCode: "STERILE_TRAP",
+      freeTextLabel: "Endotracheal aspirate - outbreak watch",
+      details: { ventilatorStatus: "INVASIVE_VENT" },
+    },
+    ...emptyTail(),
+    isolates: [i],
+    ast: creKlebsiellaClusterAst(i.id),
+    release: { state: ReleaseState.Draft, reportVersion: 0 },
+  } as Accession;
+})();
+
+const outbreakKlebsiella3 = (() => {
+  const collected = dayAgo(1);
+  const i = iso(1, "KPNE", "Klebsiella pneumoniae", {
+    id: "iso_out_kpn_3",
+    growthQuantifierCode: "MODERATE",
+    identifiedAt: collected,
+  });
+  return {
+    ...base("MB25-OUT-KPN3", WorkflowStage.IPC, collected),
+    priority: Priority.Urgent,
+    patient: {
+      mrn: "AMCE-006103",
+      givenName: "Fatima",
+      familyName: "Musa",
+      sex: Sex.Female,
+      dob: "1974-12-02",
+      ward: "ICU",
+      attendingClinician: "Dr. Omole",
+    },
+    specimen: {
+      familyCode: "LRT",
+      subtypeCode: "LRT_ETA",
+      collectedAt: collected,
+      receivedAt: collected,
+      containerCode: "STERILE_TRAP",
+      freeTextLabel: "Endotracheal aspirate - outbreak watch",
+      details: { ventilatorStatus: "INVASIVE_VENT" },
+    },
+    ...emptyTail(),
+    isolates: [i],
+    ast: creKlebsiellaClusterAst(i.id),
+    release: { state: ReleaseState.Draft, reportVersion: 0 },
+  } as Accession;
+})();
+
+// 12. Reset-proof outbreak demonstration: 4 linked MRSA admission screens.
+const outbreakMrsa1 = (() => {
+  const collected = dayAgo(4);
+  const i = iso(1, "SAUR", "Staphylococcus aureus (MRSA)", {
+    id: "iso_out_mrsa_1",
+    growthQuantifierCode: "LIGHT",
+    identifiedAt: collected,
+  });
+  return {
+    ...base("MB25-OUT-MRSA1", WorkflowStage.IPC, collected),
+    priority: Priority.Routine,
+    patient: {
+      mrn: "AMCE-006201",
+      givenName: "Ifeoma",
+      familyName: "Nwankwo",
+      sex: Sex.Female,
+      dob: "1987-06-11",
+      ward: "Surgical Admission Unit",
+      attendingClinician: "Dr. Ajayi",
+    },
+    specimen: {
+      familyCode: "COLONISATION",
+      subtypeCode: "COL_MRSA_ADMISSION",
+      collectedAt: collected,
+      receivedAt: collected,
+      containerCode: "SWAB_TRANSPORT",
+      freeTextLabel: "MRSA admission screen - outbreak watch",
+      details: { screenRound: "ADMISSION", screenSites: ["NARES", "GROIN", "AXILLA"] },
+    },
+    ...emptyTail(),
+    isolates: [i],
+    ast: mrsaClusterAst(i.id),
+    release: { state: ReleaseState.Draft, reportVersion: 0 },
+  } as Accession;
+})();
+
+const outbreakMrsa2 = (() => {
+  const collected = dayAgo(3);
+  const i = iso(1, "SAUR", "Staphylococcus aureus (MRSA)", {
+    id: "iso_out_mrsa_2",
+    growthQuantifierCode: "LIGHT",
+    identifiedAt: collected,
+  });
+  return {
+    ...base("MB25-OUT-MRSA2", WorkflowStage.IPC, collected),
+    priority: Priority.Routine,
+    patient: {
+      mrn: "AMCE-006202",
+      givenName: "Musa",
+      familyName: "Garba",
+      sex: Sex.Male,
+      dob: "1970-01-20",
+      ward: "Surgical Admission Unit",
+      attendingClinician: "Dr. Ajayi",
+    },
+    specimen: {
+      familyCode: "COLONISATION",
+      subtypeCode: "COL_MRSA_ADMISSION",
+      collectedAt: collected,
+      receivedAt: collected,
+      containerCode: "SWAB_TRANSPORT",
+      freeTextLabel: "MRSA admission screen - outbreak watch",
+      details: { screenRound: "ADMISSION", screenSites: ["NARES", "GROIN", "AXILLA"] },
+    },
+    ...emptyTail(),
+    isolates: [i],
+    ast: mrsaClusterAst(i.id),
+    release: { state: ReleaseState.Draft, reportVersion: 0 },
+  } as Accession;
+})();
+
+const outbreakMrsa3 = (() => {
+  const collected = dayAgo(2);
+  const i = iso(1, "SAUR", "Staphylococcus aureus (MRSA)", {
+    id: "iso_out_mrsa_3",
+    growthQuantifierCode: "LIGHT",
+    identifiedAt: collected,
+  });
+  return {
+    ...base("MB25-OUT-MRSA3", WorkflowStage.IPC, collected),
+    priority: Priority.Routine,
+    patient: {
+      mrn: "AMCE-006203",
+      givenName: "Helen",
+      familyName: "Danjuma",
+      sex: Sex.Female,
+      dob: "1961-10-05",
+      ward: "Surgical Admission Unit",
+      attendingClinician: "Dr. Mensah",
+    },
+    specimen: {
+      familyCode: "COLONISATION",
+      subtypeCode: "COL_MRSA_ADMISSION",
+      collectedAt: collected,
+      receivedAt: collected,
+      containerCode: "SWAB_TRANSPORT",
+      freeTextLabel: "MRSA admission screen - outbreak watch",
+      details: { screenRound: "ADMISSION", screenSites: ["NARES", "GROIN", "AXILLA"] },
+    },
+    ...emptyTail(),
+    isolates: [i],
+    ast: mrsaClusterAst(i.id),
+    release: { state: ReleaseState.Draft, reportVersion: 0 },
+  } as Accession;
+})();
+
+const outbreakMrsa4 = (() => {
+  const collected = dayAgo(1);
+  const i = iso(1, "SAUR", "Staphylococcus aureus (MRSA)", {
+    id: "iso_out_mrsa_4",
+    growthQuantifierCode: "LIGHT",
+    identifiedAt: collected,
+  });
+  return {
+    ...base("MB25-OUT-MRSA4", WorkflowStage.IPC, collected),
+    priority: Priority.Routine,
+    patient: {
+      mrn: "AMCE-006204",
+      givenName: "Samuel",
+      familyName: "Etim",
+      sex: Sex.Male,
+      dob: "1954-04-30",
+      ward: "Surgical Admission Unit",
+      attendingClinician: "Dr. Bello",
+    },
+    specimen: {
+      familyCode: "COLONISATION",
+      subtypeCode: "COL_MRSA_ADMISSION",
+      collectedAt: collected,
+      receivedAt: collected,
+      containerCode: "SWAB_TRANSPORT",
+      freeTextLabel: "MRSA admission screen - outbreak watch",
+      details: { screenRound: "ADMISSION", screenSites: ["NARES", "GROIN", "AXILLA"] },
+    },
+    ...emptyTail(),
+    isolates: [i],
+    ast: mrsaClusterAst(i.id),
+    release: { state: ReleaseState.Draft, reportVersion: 0 },
+  } as Accession;
+})();
+
 export const DEMO_ACCESSIONS: Accession[] = [
   mrsa,
   esbl,
@@ -567,4 +822,11 @@ export const DEMO_ACCESSIONS: Accession[] = [
   candidaAurisScreen,
   crabScreen,
   crpaScreenNoPrior,
+  outbreakKlebsiella1,
+  outbreakKlebsiella2,
+  outbreakKlebsiella3,
+  outbreakMrsa1,
+  outbreakMrsa2,
+  outbreakMrsa3,
+  outbreakMrsa4,
 ];
