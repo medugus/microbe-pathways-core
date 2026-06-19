@@ -1,13 +1,16 @@
 // SoundTriggerGate — observes Medugu state and emits sound events ONLY on
 // new transitions, never on every render. Mounted once near the app shell.
 //
-// What it watches per accession:
+// What it watches:
 //   - validation blockers: PHONE_OUT_REQUIRED, SEAL_MISMATCH (critical),
 //     CONSULTANT_APPROVAL_REQUIRED (urgent)
-//   - IPC decisions: new high-priority rule codes (urgent)
+//   - IPC decisions: new high-priority rule codes (urgent), including
+//     carbapenem-resistant organism alerts and VRE/vancomycin resistance
+//   - outbreak surveillance: new watch/high candidate pairs (urgent)
 //
 // What it intentionally does NOT do:
 //   - Play on routine warnings (missing microscopy, AMS pending, draft AST)
+//   - Play for low-confidence outbreak review pairs
 //   - Mutate workflow state
 //   - Replace any visible chip / banner / status text
 
@@ -15,6 +18,7 @@ import { useEffect, useRef } from "react";
 import { useMeduguState } from "../store/useAccessionStore";
 import { runValidation } from "../logic/validationEngine";
 import { evaluateIPC } from "../logic/ipcEngine";
+import { buildOutbreakSurveillanceReport } from "../logic/outbreakEngine";
 import {
   CRITICAL_VALIDATION_CODES,
   HIGH_PRIORITY_IPC_CODES,
@@ -22,12 +26,17 @@ import {
   soundEngine,
 } from "../logic/soundEngine";
 
+function shouldSoundForOutbreakSeverity(severity: string): boolean {
+  return severity === "watch" || severity === "high";
+}
+
 export function SoundTriggerGate() {
   const state = useMeduguState();
   // Track the codes/rules we have already announced per accession, so we only
   // fire on the transition (absent → present), not on every store update.
   const seenValidation = useRef<Map<string, Set<string>>>(new Map());
   const seenIpc = useRef<Map<string, Set<string>>>(new Map());
+  const seenOutbreak = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     for (const a of Object.values(state.accessions)) {
@@ -79,6 +88,27 @@ export function SoundTriggerGate() {
       }
       seenIpc.current.set(a.id, presentIpc);
     }
+
+    // Outbreak transitions — urgent only for meaningful watch/high pairs.
+    const outbreak = buildOutbreakSurveillanceReport(state.accessions, state.activeAccessionId);
+    const presentOutbreak = new Set<string>();
+    for (const pair of outbreak.candidatePairs) {
+      if (shouldSoundForOutbreakSeverity(pair.severity)) {
+        presentOutbreak.add(pair.id);
+      }
+    }
+
+    const prevOutbreak = seenOutbreak.current;
+    for (const pair of outbreak.candidatePairs) {
+      if (!presentOutbreak.has(pair.id)) continue;
+      if (prevOutbreak.has(pair.id)) continue;
+      soundEngine.emit({
+        cls: "urgent",
+        key: `outbreak:${pair.id}`,
+        label: `${pair.confidenceLabel} outbreak alert: ${pair.first.organismDisplay}`,
+      });
+    }
+    seenOutbreak.current = presentOutbreak;
   }, [state]);
 
   return null;
