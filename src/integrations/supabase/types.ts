@@ -156,45 +156,66 @@ export type Database = {
       }
       audit_event: {
         Row: {
+          accession_id: string | null
           action: string
           actor_label: string | null
           actor_user_id: string | null
           at: string
+          chain_hash: string
           entity: string
           entity_id: string | null
+          event_type: string
           field: string | null
           id: string
           new_value: Json | null
           old_value: Json | null
+          payload: Json
+          payload_hash: string
+          previous_chain_hash: string | null
           reason: string | null
+          source_module: string
           tenant_id: string
         }
         Insert: {
+          accession_id?: string | null
           action: string
           actor_label?: string | null
           actor_user_id?: string | null
           at?: string
+          chain_hash: string
           entity: string
           entity_id?: string | null
+          event_type: string
           field?: string | null
           id?: string
           new_value?: Json | null
           old_value?: Json | null
+          payload: Json
+          payload_hash: string
+          previous_chain_hash?: string | null
           reason?: string | null
+          source_module: string
           tenant_id: string
         }
         Update: {
+          accession_id?: string | null
           action?: string
           actor_label?: string | null
           actor_user_id?: string | null
           at?: string
+          chain_hash?: string
           entity?: string
           entity_id?: string | null
+          event_type?: string
           field?: string | null
           id?: string
           new_value?: Json | null
           old_value?: Json | null
+          payload?: Json
+          payload_hash?: string
+          previous_chain_hash?: string | null
           reason?: string | null
+          source_module?: string
           tenant_id?: string
         }
         Relationships: [
@@ -657,6 +678,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      append_audit_event: {
+        Args: {
+          p_accession_id?: string
+          p_action: string
+          p_actor_label?: string
+          p_entity: string
+          p_entity_id?: string
+          p_field?: string
+          p_new_value?: Json
+          p_old_value?: Json
+          p_payload?: Json
+          p_reason?: string
+          p_source_module?: string
+        }
+        Returns: string
+      }
       current_tenant_id: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -666,6 +703,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      infer_audit_source_module: { Args: { _entity: string }; Returns: string }
       is_tenant_member: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
