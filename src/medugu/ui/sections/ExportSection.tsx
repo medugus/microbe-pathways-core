@@ -17,7 +17,7 @@ import { dispatchExport } from "../../store/export.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { ReleaseState } from "../../domain/enums";
 import { soundEngine } from "../../logic/soundEngine";
-import { CompletedReportsPdfPanel } from "./CompletedReportsPdfPanel";
+import { CompletedReportsPdfPanel } from "./CompletedReportsPdfPanelPro";
 
 interface ReceiverOpt {
   id: string;
