@@ -234,7 +234,10 @@ function HubBody() {
             <FeatureLine icon={<GitBranch className="h-4 w-4" />}>
               AST expert rules &amp; selective-reporting cascades
             </FeatureLine>
-            <FeatureLine icon={<Sparkles className="h-4 w-4" />}>
+            <FeatureLine
+              icon={<Sparkles className="h-4 w-4" />}
+              detail="Bug-drug mismatch alerts, IV-to-oral switch prompts, and de-escalation recommendations surfaced at review."
+            >
               Antimicrobial Stewardship (AMS)
             </FeatureLine>
             <FeatureLine icon={<Activity className="h-4 w-4" />}>
@@ -459,9 +462,11 @@ function HubBody() {
 function FeatureLine({
   icon,
   children,
+  detail,
 }: {
   icon: React.ReactNode;
   children: React.ReactNode;
+  detail?: string;
 }) {
   return (
     <li className="flex items-start gap-2.5">
@@ -474,7 +479,14 @@ function FeatureLine({
       >
         {icon}
       </span>
-      <span>{children}</span>
+      <div>
+        <span>{children}</span>
+        {detail && (
+          <p className="mt-0.5 text-[11px] leading-relaxed" style={{ color: DIM }}>
+            {detail}
+          </p>
+        )}
+      </div>
     </li>
   );
 }
