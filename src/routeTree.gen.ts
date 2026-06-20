@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as IpcRouteImport } from './routes/ipc'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuditRouteImport } from './routes/audit'
+import { Route as AntibiogramRouteImport } from './routes/antibiogram'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AmsRouteImport } from './routes/ams'
 import { Route as IndexRouteImport } from './routes/index'
@@ -59,6 +60,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const AuditRoute = AuditRouteImport.update({
   id: '/audit',
   path: '/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AntibiogramRoute = AntibiogramRouteImport.update({
+  id: '/antibiogram',
+  path: '/antibiogram',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalyticsRoute = AnalyticsRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ams': typeof AmsRoute
   '/analytics': typeof AnalyticsRoute
+  '/antibiogram': typeof AntibiogramRoute
   '/audit': typeof AuditRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/ipc': typeof IpcRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ams': typeof AmsRoute
   '/analytics': typeof AnalyticsRoute
+  '/antibiogram': typeof AntibiogramRoute
   '/audit': typeof AuditRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/ipc': typeof IpcRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ams': typeof AmsRoute
   '/analytics': typeof AnalyticsRoute
+  '/antibiogram': typeof AntibiogramRoute
   '/audit': typeof AuditRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/ipc': typeof IpcRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ams'
     | '/analytics'
+    | '/antibiogram'
     | '/audit'
     | '/forgot-password'
     | '/ipc'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ams'
     | '/analytics'
+    | '/antibiogram'
     | '/audit'
     | '/forgot-password'
     | '/ipc'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ams'
     | '/analytics'
+    | '/antibiogram'
     | '/audit'
     | '/forgot-password'
     | '/ipc'
@@ -224,6 +236,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AmsRoute: typeof AmsRoute
   AnalyticsRoute: typeof AnalyticsRoute
+  AntibiogramRoute: typeof AntibiogramRoute
   AuditRoute: typeof AuditRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   IpcRoute: typeof IpcRoute
@@ -288,6 +301,13 @@ declare module '@tanstack/react-router' {
       path: '/audit'
       fullPath: '/audit'
       preLoaderRoute: typeof AuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/antibiogram': {
+      id: '/antibiogram'
+      path: '/antibiogram'
+      fullPath: '/antibiogram'
+      preLoaderRoute: typeof AntibiogramRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analytics': {
@@ -360,6 +380,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AmsRoute: AmsRoute,
   AnalyticsRoute: AnalyticsRoute,
+  AntibiogramRoute: AntibiogramRoute,
   AuditRoute: AuditRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   IpcRoute: IpcRoute,
@@ -377,3 +398,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

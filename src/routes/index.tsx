@@ -256,19 +256,33 @@ function HubBody() {
                 ? `${counts.total} case${counts.total === 1 ? "" : "s"} loaded`
                 : "No cases yet"}
             </span>
-            <Button
-              asChild
-              className="rounded-full px-5"
-              style={{
-                background: ICE,
-                color: DEEP_NAVY,
-                boxShadow: "0 10px 30px -10px rgba(96,165,250,0.5)",
-              }}
-            >
-              <Link to="/workspace">
-                Open workspace <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full px-4"
+                style={{
+                  background: "transparent",
+                  color: ICE,
+                  border: `1px solid ${ELECTRIC}`,
+                }}
+              >
+                <Link to="/antibiogram">Live antibiogram</Link>
+              </Button>
+              <Button
+                asChild
+                className="rounded-full px-5"
+                style={{
+                  background: ICE,
+                  color: DEEP_NAVY,
+                  boxShadow: "0 10px 30px -10px rgba(96,165,250,0.5)",
+                }}
+              >
+                <Link to="/workspace">
+                  Open workspace <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </article>
 
