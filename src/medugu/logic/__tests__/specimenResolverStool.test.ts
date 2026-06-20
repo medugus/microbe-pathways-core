@@ -1,6 +1,7 @@
 // Unit tests for resolveStool — covers all 5 stool subtypes via resolveSpecimen().
 // Style matches existing __tests__ files: plain assert(), no vitest harness.
 
+import { describe, it } from "vitest";
 import { resolveSpecimen } from "../specimenResolver";
 
 function assert(condition: unknown, message: string): void {
@@ -117,3 +118,6 @@ function getProfile(subtypeCode: string) {
 
 // eslint-disable-next-line no-console
 console.log("specimenResolverStool: all stool subtype assertions passed");
+describe("stool specimen resolver assertion script", () => {
+  it("passes stool subtype resolution checks", () => {});
+});

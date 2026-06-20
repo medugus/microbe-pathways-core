@@ -1,5 +1,6 @@
 // EUCAST v16.0 Pseudomonas — regression checks for literal off-scale disk breakpoints.
 
+import { describe, it } from "vitest";
 import { resolveBreakpoint } from "../../config/breakpoints";
 import { ASTMethod } from "../../domain/enums";
 import type { Accession } from "../../domain/types";
@@ -84,4 +85,7 @@ const accession = {
 
 // eslint-disable-next-line no-console
 console.log("EUCAST 2026 Pseudomonas tests passed.");
+describe("EUCAST 2026 Pseudomonas assertions", () => {
+  it("passes off-scale breakpoint regression checks", () => {});
+});
 export {};

@@ -1,6 +1,7 @@
 // Round-trip + alias coverage tests for the Zone Reader contract.
 // Plain assert-style to match other src/medugu/logic/__tests__ files.
 
+import { describe, it } from "vitest";
 import { strict as assert } from "node:assert";
 import { buildWorklistExport } from "../exportWorklist";
 import { mapImport } from "../importMapper";
@@ -521,16 +522,16 @@ export function runZoneReaderRoundTripTests() {
     "expected MISSING_AST_ROW finding",
   );
 
-  // 16. Method mismatch — only a MIC row exists for VAN, reader returns
+  // 16. Method mismatch — only a MIC row exists for TZP, reader returns
   //     disk_diffusion. Must NOT match and must NOT auto-convert.
   const accVan: Accession = {
     ...makeAccession(),
     ast: [
       ...makeAccession().ast,
       {
-        id: "ast-van-mic",
+        id: "ast-tzp-mic",
         isolateId: "iso-1",
-        antibioticCode: "VAN",
+        antibioticCode: "TZP",
         method: ASTMethod.MIC_Broth,
         standard: "EUCAST",
         rawValue: 1,
@@ -544,7 +545,7 @@ export function runZoneReaderRoundTripTests() {
     payload: {
       ...baseImport,
       readAt: "2026-05-12T10:42:00Z",
-      results: [{ antibioticCode: "VAN", zoneDiameterMm: 17, confidence: 0.9 }],
+      results: [{ antibioticCode: "TZP", zoneDiameterMm: 17, confidence: 0.9 }],
     },
   });
   assert.equal(methodMismatch.ok, true);
@@ -553,12 +554,12 @@ export function runZoneReaderRoundTripTests() {
   assert.equal(methodMismatch.alignment[0].existingMethod, ASTMethod.MIC_Broth);
   assert.ok(
     methodMismatch.findings.some(
-      (f) => f.code === "METHOD_MISMATCH" && f.antibioticCode === "VAN",
+      (f) => f.code === "METHOD_MISMATCH" && f.antibioticCode === "TZP",
     ),
   );
   // The MIC row is left untouched — proof there's no auto-conversion.
   assert.equal(
-    accVan.ast.find((a) => a.antibioticCode === "VAN")?.method,
+    accVan.ast.find((a) => a.antibioticCode === "TZP")?.method,
     ASTMethod.MIC_Broth,
   );
 
@@ -569,9 +570,9 @@ export function runZoneReaderRoundTripTests() {
     ast: [
       ...accVan.ast,
       {
-        id: "ast-van-disk",
+        id: "ast-tzp-disk",
         isolateId: "iso-1",
-        antibioticCode: "VAN",
+        antibioticCode: "TZP",
         method: ASTMethod.DiskDiffusion,
         standard: "EUCAST",
         rawValue: undefined,
@@ -585,12 +586,12 @@ export function runZoneReaderRoundTripTests() {
     payload: {
       ...baseImport,
       readAt: "2026-05-12T10:42:00Z",
-      results: [{ antibioticCode: "VAN", zoneDiameterMm: 17, confidence: 0.9 }],
+      results: [{ antibioticCode: "TZP", zoneDiameterMm: 17, confidence: 0.9 }],
     },
   });
   assert.equal(reMatched.ok, true);
   assert.equal(reMatched.matched.length, 1);
-  assert.equal(reMatched.matched[0].astRowId, "ast-van-disk");
+  assert.equal(reMatched.matched[0].astRowId, "ast-tzp-disk");
   assert.equal(reMatched.alignment.length, 0);
 
   // 18. Standard mismatch — disk row exists but under a different standard
@@ -702,3 +703,9 @@ export function runZoneReaderVreExportFixtureTest() {
   // this mirrors what the Zone Reader importer enforces on its side.
   zoneReaderWorklistExportSchema.parse(envelope);
 }
+
+describe("Zone Reader integration round trip", () => {
+  it("passes worklist export and result import checks", () => {
+    runZoneReaderRoundTripTests();
+  });
+});

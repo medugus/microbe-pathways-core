@@ -1,3 +1,4 @@
+import { describe, it } from "vitest";
 import { ipcAcceptanceScenarioCases, toAccessionsMap } from "../../fixtures/ipcAcceptanceCases";
 import { deriveIPCOfficerQueue } from "../ipcQueue";
 
@@ -53,3 +54,6 @@ Date.now = originalDateNow;
 
 // eslint-disable-next-line no-console
 console.log("[ipcQueue.test] all assertions passed");
+describe("IPC queue assertion script", () => {
+  it("passes queue priority and limitation checks", () => {});
+});

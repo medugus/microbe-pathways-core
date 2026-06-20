@@ -1,6 +1,7 @@
 // EUCAST v16.0 Enterobacterales — indication-aware resolveBreakpoint tests.
 // Plain assert-style, matching the project's other __tests__ files.
 
+import { describe, it } from "vitest";
 import {
   resolveBreakpoint,
   findDuplicateBreakpointKeys,
@@ -156,4 +157,7 @@ assert(syndromeToIndicationChain("uti")[0] === "uti", "uti chain head");
 
 // eslint-disable-next-line no-console
 console.log("EUCAST 2026 Enterobacterales tests passed.");
+describe("EUCAST 2026 Enterobacterales assertions", () => {
+  it("passes registry and panel regression checks", () => {});
+});
 export {};

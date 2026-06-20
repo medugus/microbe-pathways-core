@@ -1,3 +1,4 @@
+import { describe, it } from "vitest";
 import { ipcAcceptanceScenarioCases, toAccessionsMap } from "../../fixtures/ipcAcceptanceCases";
 import { deriveLocalOutbreakWatch } from "../ipcLocalWatch";
 
@@ -32,3 +33,6 @@ Date.now = originalDateNow;
 
 // eslint-disable-next-line no-console
 console.log("[ipcLocalWatch.test] all assertions passed");
+describe("IPC local watch assertion script", () => {
+  it("passes local outbreak watch checks", () => {});
+});

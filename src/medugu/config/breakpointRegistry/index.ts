@@ -286,6 +286,8 @@ export function resolveBreakpoint(input: BreakpointLookup): BreakpointResolution
 
   let matched: AnyBreakpoint | undefined;
   let usedIndication: BreakpointIndication | undefined;
+  let blockedCandidate: AnyBreakpoint | undefined;
+  let blockedIndication: BreakpointIndication | undefined;
   for (const ind of chain) {
     const indMatches = candidates.filter((c) => (c.indication ?? "general") === ind);
     if (indMatches.length === 0) continue;
@@ -295,6 +297,8 @@ export function resolveBreakpoint(input: BreakpointLookup): BreakpointResolution
       usedIndication = ind;
       break;
     }
+    blockedCandidate ??= indMatches[0];
+    blockedIndication ??= ind;
   }
   // Fallback: any active row, regardless of indication, preferring species match.
   if (!matched) {
@@ -302,7 +306,14 @@ export function resolveBreakpoint(input: BreakpointLookup): BreakpointResolution
     if (sorted.length > 0 && speciesScore(sorted[0]) > 0) {
       matched = sorted[0];
       usedIndication = matched.indication;
+    } else {
+      blockedCandidate ??= sorted[0];
+      blockedIndication ??= sorted[0]?.indication;
     }
+  }
+  if (!matched && blockedCandidate) {
+    matched = blockedCandidate;
+    usedIndication = blockedIndication;
   }
   if (!matched) {
     return { status: "no_breakpoint", flags: {}, reason: "No EUCAST row matches this organism within the group." };

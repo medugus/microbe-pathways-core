@@ -6,6 +6,7 @@ import {
   type WorklistPriority,
   type WorklistQueueCategory,
 } from "../../logic/worklistEngine";
+import { ClinicalAssurancePanel } from "./ClinicalAssurancePanel";
 
 type WorklistFilter =
   | "all"
@@ -92,6 +93,8 @@ export function BenchmarkSection() {
         <SummaryCard label="IPC alerts" value={summary.ipcAlerts} tone="text-destructive" />
         <SummaryCard label="Ready for review" value={summary.readyForReview} tone="text-primary" />
       </section>
+
+      <ClinicalAssurancePanel state={state} />
 
       <section className="flex flex-wrap items-center gap-2">
         {(Object.keys(FILTER_LABELS) as WorklistFilter[]).map((key) => (

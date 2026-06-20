@@ -1,3 +1,4 @@
+import { describe, it } from "vitest";
 import { ipcAcceptanceScenarioCases, toAccessionsMap } from "../../fixtures/ipcAcceptanceCases";
 import { deriveColonisationContext } from "../ipcColonisation";
 
@@ -45,3 +46,6 @@ Date.now = originalDateNow;
 
 // eslint-disable-next-line no-console
 console.log("[ipcColonisation.test] all assertions passed");
+describe("IPC colonisation assertion script", () => {
+  it("passes colonisation and clearance checks", () => {});
+});

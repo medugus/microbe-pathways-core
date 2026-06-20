@@ -1,3 +1,4 @@
+import { describe, it } from "vitest";
 import { ipcAcceptanceScenarioCases } from "../../fixtures/ipcAcceptanceCases";
 import { evaluateIPC } from "../ipcEngine";
 
@@ -54,3 +55,6 @@ Date.now = originalDateNow;
 
 // eslint-disable-next-line no-console
 console.log("[ipcEngine.test] all assertions passed");
+describe("IPC engine assertion script", () => {
+  it("passes IPC alert acceptance checks", () => {});
+});

@@ -1,3 +1,4 @@
+import { describe, it } from "vitest";
 import { IPC_RULES } from "../../config/ipcRules";
 import type { IPCSignal } from "../../domain/types";
 import { IPCFlag } from "../../domain/enums";
@@ -48,3 +49,6 @@ Date.now = originalDateNow;
 
 // eslint-disable-next-line no-console
 console.log("[ipcRuleGovernance.test] all assertions passed");
+describe("IPC rule governance assertion script", () => {
+  it("passes rule governance checks", () => {});
+});

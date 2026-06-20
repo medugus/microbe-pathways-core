@@ -1,3 +1,4 @@
+import { describe, it } from "vitest";
 import { strict as assert } from "node:assert";
 import { __test } from "../../../../routes/api.public.zone-reader.result";
 
@@ -145,10 +146,12 @@ async function run() {
     "integration_not_configured",
   );
 
+  // eslint-disable-next-line no-console
   console.log("publicInboundRoute.test ok");
 }
 
-run().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+describe("public Zone Reader inbound route", () => {
+  it("accepts, deduplicates and rejects inbound result payloads correctly", async () => {
+    await run();
+  });
 });
