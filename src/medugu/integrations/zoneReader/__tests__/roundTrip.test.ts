@@ -82,7 +82,9 @@ export function runZoneReaderRoundTripTests() {
   assert.equal(w.sourceSystem, "MEDUGU_LIMS");
   assert.equal(w.standard, "EUCAST");
   assert.equal(w.patientDisplayId, "P-001");
+  assert.equal(w.specimenType, "BLOOD_CULTURE");
   assert.equal(w.organismName, "Escherichia coli");
+  assert.equal(w.organismCode, "ECOLI");
   assert.equal(typeof w.organismGroup, "string");
   assert.ok(w.expectedDiscs.length > 0);
   for (const d of w.expectedDiscs) {
@@ -92,6 +94,8 @@ export function runZoneReaderRoundTripTests() {
 
   const ampDisc = w.expectedDiscs.find((d) => d.antibioticCode === "AMP");
   assert.equal(typeof ampDisc?.antibioticName, "string");
+  assert.equal(ampDisc?.discPotency, "10 ug");
+  assert.equal(w.expectedDiscs.find((d) => d.antibioticCode === "CIP")?.discPotency, "5 ug");
 
   const ok = mapImport({
     accession,
@@ -665,14 +669,15 @@ export function runZoneReaderVreExportFixtureTest() {
   assert.equal(typeof envelope.organismGroup, "string");
   assert.equal(envelope.organismGroup, "enterococcus");
 
-  // discPotency is a NON-EMPTY string on every expected disc — placeholder
-  // "unspecified" until a true potency mapping is added.
+  // discPotency is a NON-EMPTY string on every expected disc, with real
+  // EUCAST-style values when the dictionary contains the antibiotic.
   assert.ok(envelope.expectedDiscs.length > 0);
   for (const d of envelope.expectedDiscs) {
     assert.equal(typeof d.discPotency, "string");
     assert.ok(d.discPotency.length > 0);
-    assert.equal(d.discPotency, "unspecified");
   }
+  assert.equal(envelope.expectedDiscs.find((d) => d.antibioticCode === "VAN")?.discPotency, "5 ug");
+  assert.equal(envelope.expectedDiscs.find((d) => d.antibioticCode === "AMP")?.discPotency, "10 ug");
 
   // Disallowed root fields must NOT appear in the export.
   for (const k of [

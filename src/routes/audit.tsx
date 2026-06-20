@@ -29,6 +29,10 @@ interface AuditRow {
   reason: string | null;
   old_value: unknown;
   new_value: unknown;
+  accession_id?: string | null;
+  source_module?: string | null;
+  payload_hash?: string | null;
+  chain_hash?: string | null;
 }
 
 export const Route = createFileRoute("/audit")({
@@ -86,7 +90,12 @@ function AuditViewer() {
     return rows.filter((r) => {
       if (entityFilter !== "all" && r.entity !== entityFilter) return false;
       if (actionQuery && !r.action.toLowerCase().includes(actionQuery.toLowerCase())) return false;
-      if (accessionQuery && !(r.entity_id ?? "").toLowerCase().includes(accessionQuery.toLowerCase())) return false;
+      if (
+        accessionQuery &&
+        !`${r.entity_id ?? ""} ${r.accession_id ?? ""}`.toLowerCase().includes(accessionQuery.toLowerCase())
+      ) {
+        return false;
+      }
       return true;
     });
   }, [rows, entityFilter, actionQuery, accessionQuery]);
@@ -161,6 +170,8 @@ function AuditViewer() {
                 <th className="p-2 font-medium">Entity</th>
                 <th className="p-2 font-medium">Field</th>
                 <th className="p-2 font-medium">Entity ID</th>
+                <th className="p-2 font-medium">Source</th>
+                <th className="p-2 font-medium">Payload hash</th>
                 <th className="p-2 font-medium">Reason</th>
               </tr>
             </thead>
@@ -173,12 +184,16 @@ function AuditViewer() {
                   <td className="p-2">{r.entity}</td>
                   <td className="p-2 font-mono text-muted-foreground">{r.field ?? "—"}</td>
                   <td className="p-2 font-mono text-muted-foreground">{r.entity_id ?? "—"}</td>
+                  <td className="p-2 font-mono text-muted-foreground">{r.source_module ?? "—"}</td>
+                  <td className="p-2 font-mono text-muted-foreground">
+                    {r.payload_hash ? r.payload_hash.slice(0, 12) : "—"}
+                  </td>
                   <td className="p-2 text-muted-foreground">{r.reason ?? "—"}</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-4 text-center text-muted-foreground">
+                  <td colSpan={9} className="p-4 text-center text-muted-foreground">
                     No matching events.
                   </td>
                 </tr>

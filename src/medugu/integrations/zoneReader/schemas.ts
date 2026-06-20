@@ -40,15 +40,15 @@ export const zoneReaderWorklistExportSchema = z
     accessionNumber: z.string().min(1),
     isolateId: z.string().min(1),
 
-    patientDisplayId: z.string().nullable().optional(),
-    specimenType: z.string().nullable().optional(),
-    organismName: z.string().nullable().optional(),
-    organismCode: z.string().nullable().optional(),
+    patientDisplayId: z.string().min(1),
+    specimenType: z.string().min(1),
+    organismName: z.string().min(1),
+    organismCode: z.string().min(1),
     organismGroup: z.string().min(1),
 
     astPanelId: z.string().min(1),
     astPanelName: z.string().min(1),
-    standard: z.enum(["EUCAST", "CLSI", "LOCAL"]).nullable(),
+    standard: z.enum(["EUCAST", "CLSI", "LOCAL"]),
 
     expectedDiscs: z.array(expectedDiscSchema).min(1),
   })

@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Accession, ASTStandard } from "../../../domain/types";
 import { ASTMethod } from "../../../domain/enums";
 import { meduguActions } from "../../../store/useAccessionStore";
-import { buildWorklistExport } from "../../../integrations/zoneReader/exportWorklist";
+import {
+  buildWorklistExport,
+  getWorklistExportWarnings,
+  type ZoneReaderWorklistWarning,
+} from "../../../integrations/zoneReader/exportWorklist";
 import {
   installZoneReaderResultReceiver,
   sendWorklistToZoneReader,
@@ -41,6 +45,7 @@ const HELPER_TEXT =
 export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   const settings = getZoneReaderSettings();
   const [lastWorklist, setLastWorklist] = useState<ZoneReaderWorklistExport | null>(null);
+  const [worklistWarnings, setWorklistWarnings] = useState<ZoneReaderWorklistWarning[]>([]);
   const [importResult, setImportResult] = useState<ImportMapResult | null>(null);
   const [lastPayload, setLastPayload] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -192,6 +197,7 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
   function buildSelectedWorklist() {
     const envelope = buildWorklistExport({ accession, isolateId, astPanelId });
     setLastWorklist(envelope);
+    setWorklistWarnings(getWorklistExportWarnings(envelope));
     return envelope;
   }
 
@@ -548,6 +554,19 @@ export function ZoneReaderPanel({ accession, isolateId, astPanelId }: Props) {
               >
                 {transferMessage}
               </p>
+            )}
+            {worklistWarnings.length > 0 && (
+              <div
+                role="alert"
+                className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-[11px] text-amber-800"
+              >
+                <p className="font-medium">Worklist identity warning</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                  {worklistWarnings.map((warning) => (
+                    <li key={`${warning.field}-${warning.message}`}>{warning.message}</li>
+                  ))}
+                </ul>
+              </div>
             )}
             {!appUrl && (
               <p className="text-[11px] text-destructive">

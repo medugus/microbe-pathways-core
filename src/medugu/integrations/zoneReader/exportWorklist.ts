@@ -5,6 +5,8 @@
 
 import type { Accession } from "../../domain/types";
 import { getASTPanel, getAntibiotic } from "../../config/antibiotics";
+import { PRIMARY_STANDARD } from "../../config/breakpoints";
+import { getDiscPotency } from "../../config/discPotencies";
 import {
   DISC_POTENCY_PLACEHOLDER,
   ZONE_READER_CONTRACT_VERSION,
@@ -25,6 +27,22 @@ export interface BuildWorklistInput {
 }
 
 export class ZoneReaderExportError extends Error {}
+
+export interface ZoneReaderWorklistWarning {
+  field: "patientDisplayId" | "specimenType" | "organismName" | "organismCode" | "standard";
+  message: string;
+}
+
+const FALLBACK_PATIENT_DISPLAY_ID = "unknown-patient";
+const FALLBACK_SPECIMEN_TYPE = "unknown-specimen";
+const FALLBACK_ORGANISM_NAME = "unknown organism";
+const FALLBACK_ORGANISM_CODE = "UNKNOWN_ORGANISM";
+
+function nonEmpty(value: unknown, fallback: string): string {
+  if (typeof value !== "string") return fallback;
+  const trimmed = value.trim();
+  return trimmed || fallback;
+}
 
 /** Coarse organism-group derivation from an organism code. */
 function deriveOrganismGroup(organismCode?: string | null): string {
@@ -69,18 +87,16 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
     return {
       antibioticCode: code,
       antibioticName: ab?.display ?? null,
-      // Zone Reader importer requires a non-empty string. No true potency
-      // mapping exists in the antibiotic dictionary yet, so emit the stable
-      // placeholder DISC_POTENCY_PLACEHOLDER ("unspecified") for every disc
-      // rather than fabricate a clinically misleading dose.
-      discPotency: DISC_POTENCY_PLACEHOLDER,
+      discPotency: getDiscPotency(code) ?? DISC_POTENCY_PLACEHOLDER,
       plateHint: ab?.display ?? null,
     };
   });
 
   const standardFromAst = accession.ast.find((a) => a.isolateId === isolateId)?.standard;
-  const standard: ZoneReaderStandard | null =
-    input.standard ?? (standardFromAst as ZoneReaderStandard | undefined) ?? null;
+  const standard: ZoneReaderStandard =
+    input.standard ??
+    (standardFromAst as ZoneReaderStandard | undefined) ??
+    (PRIMARY_STANDARD as ZoneReaderStandard);
 
   const patient = accession.patient;
   const specimen = accession.specimen;
@@ -98,12 +114,12 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
     accessionNumber: accession.accessionNumber,
     isolateId: isolate.id,
 
-    patientDisplayId: patient?.mrn ?? null,
+    patientDisplayId: nonEmpty(patient?.mrn, FALLBACK_PATIENT_DISPLAY_ID),
 
-    specimenType: specimen?.freeTextLabel ?? specimen?.subtypeCode ?? null,
+    specimenType: nonEmpty(specimen?.freeTextLabel ?? specimen?.subtypeCode, FALLBACK_SPECIMEN_TYPE),
 
-    organismName: isolate.organismDisplay ?? null,
-    organismCode: isolate.organismCode ?? null,
+    organismName: nonEmpty(isolate.organismDisplay, FALLBACK_ORGANISM_NAME),
+    organismCode: nonEmpty(isolate.organismCode, FALLBACK_ORGANISM_CODE),
     organismGroup: deriveOrganismGroup(isolate.organismCode) || "unspecified",
 
     astPanelId: panel.id,
@@ -116,4 +132,35 @@ export function buildWorklistExport(input: BuildWorklistInput): ZoneReaderWorkli
 
 
   return envelope;
+}
+
+export function getWorklistExportWarnings(
+  worklist: ZoneReaderWorklistExport,
+): ZoneReaderWorklistWarning[] {
+  const warnings: ZoneReaderWorklistWarning[] = [];
+  if (worklist.patientDisplayId === FALLBACK_PATIENT_DISPLAY_ID) {
+    warnings.push({
+      field: "patientDisplayId",
+      message: "Patient display identifier was missing; Zone Reader received unknown-patient.",
+    });
+  }
+  if (worklist.specimenType === FALLBACK_SPECIMEN_TYPE) {
+    warnings.push({
+      field: "specimenType",
+      message: "Specimen type was missing; Zone Reader received unknown-specimen.",
+    });
+  }
+  if (worklist.organismName === FALLBACK_ORGANISM_NAME) {
+    warnings.push({
+      field: "organismName",
+      message: "Organism name was missing; Zone Reader received unknown organism.",
+    });
+  }
+  if (worklist.organismCode === FALLBACK_ORGANISM_CODE) {
+    warnings.push({
+      field: "organismCode",
+      message: "Organism code was missing; organism-specific breakpoints may not resolve.",
+    });
+  }
+  return warnings;
 }

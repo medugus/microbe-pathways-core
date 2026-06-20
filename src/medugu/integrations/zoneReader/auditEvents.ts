@@ -1,10 +1,10 @@
-// Zone Reader audit-event placeholders.
+// Zone Reader audit events.
 //
-// Skeleton only — wires intent + payload shapes. Persistence is delegated to
-// the existing audit pipeline (see store/cloudAudit.ts). For now the helpers
-// console.log so the integration can be exercised end-to-end without a DB
-// migration; swap the body for cloudAudit.recordEvent(...) once the event
-// codes below are added to the audit_event registry.
+// These are routed through the same durable append-only audit pipeline as
+// release, IPC and AMS actions. The console trace remains as a developer aid,
+// but the authoritative sink is public.audit_event via store/cloudAudit.ts.
+
+import { recordAuditAsync } from "../../store/cloudAudit";
 
 export type ZoneReaderAuditCode =
   | "ZONE_READER_WORKLIST_EXPORTED"
@@ -31,7 +31,24 @@ export interface ZoneReaderAuditEvent {
 
 export function emitZoneReaderAudit(event: Omit<ZoneReaderAuditEvent, "at"> & { at?: string }): ZoneReaderAuditEvent {
   const full: ZoneReaderAuditEvent = { at: new Date().toISOString(), ...event };
-  // Placeholder sink. Replace with cloudAudit pipeline when wiring the live integration.
+  recordAuditAsync({
+    action: full.code,
+    entity: "zone_reader",
+    entityId: full.isolateId ?? full.accessionId,
+    accessionId: full.accessionId,
+    sourceModule: "zone_reader",
+    actorLabel: full.actor ?? null,
+    field: full.antibioticCode ? `zoneReader[${full.antibioticCode}]` : null,
+    newValue: {
+      isolateId: full.isolateId,
+      astPanelId: full.astPanelId,
+      antibioticCode: full.antibioticCode,
+      detail: full.detail ?? null,
+    },
+    payload: {
+      zoneReaderEvent: full,
+    },
+  });
   if (typeof console !== "undefined") {
     // eslint-disable-next-line no-console
     console.debug("[zone-reader-audit]", full);

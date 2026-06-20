@@ -43,7 +43,7 @@ export interface ExpectedDisc {
   /**
    * Disc potency string. The Zone Reader importer requires a non-empty
    * string. When a true potency mapping is not yet available in the
-   * antibiotic dictionary we emit the stable placeholder
+ * disc potency dictionary we emit the stable placeholder
    * {@link DISC_POTENCY_PLACEHOLDER} ("unspecified") rather than an empty
    * string or a fabricated dose.
    */
@@ -53,7 +53,7 @@ export interface ExpectedDisc {
 
 /**
  * Stable placeholder used for {@link ExpectedDisc.discPotency} when the
- * antibiotic dictionary does not yet carry a true potency mapping. Chosen
+ * disc potency dictionary does not yet carry a true potency mapping. Chosen
  * to be clinically non-misleading — it does NOT name a real dose.
  */
 export const DISC_POTENCY_PLACEHOLDER = "unspecified" as const;
@@ -76,12 +76,12 @@ export interface ZoneReaderWorklistExport {
   accessionNumber: string;
   isolateId: string;
 
-  patientDisplayId?: string | null;
+  patientDisplayId: string;
 
-  specimenType?: string | null;
+  specimenType: string;
 
-  organismName?: string | null;
-  organismCode?: string | null;
+  organismName: string;
+  organismCode: string;
   /** Always a string — empty string when unknown. Importer rejects null. */
   organismGroup: string;
 
@@ -89,7 +89,7 @@ export interface ZoneReaderWorklistExport {
   /** Display label for the AST panel. */
   astPanelName: string;
   /** Breakpoint standard in force for this isolate. */
-  standard: ZoneReaderStandard | null;
+  standard: ZoneReaderStandard;
 
   expectedDiscs: ExpectedDisc[];
 }
