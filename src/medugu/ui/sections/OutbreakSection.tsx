@@ -16,6 +16,7 @@ import type {
   OutbreakTimelinePoint,
 } from "../../logic/outbreakEngine";
 import { meduguActions, useMeduguState } from "../../store/useAccessionStore";
+import { OutbreakIncidentRegister } from "./OutbreakIncidentRegister";
 
 function severityClass(severity: OutbreakCandidatePair["severity"]): string {
   if (severity === "high") return "border-destructive bg-destructive/10 text-destructive";
@@ -114,6 +115,8 @@ export function OutbreakSection() {
           tone={metricTone(report.summary.activeAccessionPairCount, "watch")}
         />
       </div>
+
+      <OutbreakIncidentRegister pair={selectedPair} summary={report.summary} />
 
       {report.candidatePairs.length === 0 ? (
         <div className="rounded-md border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
