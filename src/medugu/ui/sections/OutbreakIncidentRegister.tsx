@@ -87,7 +87,10 @@ export function OutbreakIncidentRegister({
   const [error, setError] = useState<string | null>(null);
 
   const openIncidentCount = useMemo(
-    () => incidents.filter((incident) => !["resolved", "dismissed"].includes(incident.status)).length,
+    () =>
+      incidents.filter(
+        (incident) => incident.status !== "resolved" && incident.status !== "dismissed",
+      ).length,
     [incidents],
   );
 
