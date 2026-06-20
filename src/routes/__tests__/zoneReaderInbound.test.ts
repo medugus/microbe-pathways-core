@@ -77,9 +77,10 @@ describe("Zone Reader inbound API", () => {
       receiptId: "receipt-1",
       status: "pending_review",
     });
-    expect(persisted?.tenantId).toBe("tenant-1");
-    expect(persisted?.hash).toMatch(/^[a-f0-9]{64}$/);
-    expect(persisted?.payload.results[0]?.zoneDiameterMm).toBe(22);
+    expect(persisted).not.toBeNull();
+    expect(persisted!.tenantId).toBe("tenant-1");
+    expect(persisted!.hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(persisted!.payload.results[0]?.zoneDiameterMm).toBe(22);
   });
 
   it("rejects payloads that try to cross the clinical authority boundary", async () => {
