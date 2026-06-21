@@ -30,8 +30,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+const DEFAULT_GATEWAY_URL = "https://api.openai.com/v1/chat/completions";
+const DEFAULT_MODEL = "gpt-4.1-mini";
 
 const SYSTEM_PROMPT =
   "You are a microbiology lab WORKLOAD triage assistant. You DO NOT make clinical decisions. " +
@@ -88,6 +88,16 @@ function isAiAssistEnabled(): boolean {
   return v === "1" || v === "true";
 }
 
+function getAiGatewayConfig(): { url: string; apiKey: string; model: string } | null {
+  const apiKey = process.env.AI_API_KEY ?? process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  return {
+    url: process.env.AI_GATEWAY_URL ?? DEFAULT_GATEWAY_URL,
+    apiKey,
+    model: process.env.AI_MODEL ?? DEFAULT_MODEL,
+  };
+}
+
 export const triageWorklist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { cases: Array<{ id: string; summary: string }>; accessionRowIds?: Record<string, string> }) =>
@@ -104,8 +114,8 @@ export const triageWorklist = createServerFn({ method: "POST" })
     if (!isAiAssistEnabled()) {
       return { ok: false, scored: [], reason: "AI assist is disabled by configuration." };
     }
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) {
+    const aiConfig = getAiGatewayConfig();
+    if (!aiConfig) {
       return { ok: false, scored: [], reason: "AI gateway is not configured." };
     }
 
@@ -115,14 +125,14 @@ export const triageWorklist = createServerFn({ method: "POST" })
 
     let parsed: z.infer<typeof ResponseShape> | null = null;
     try {
-      const resp = await fetch(GATEWAY_URL, {
+      const resp = await fetch(aiConfig.url, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${aiConfig.apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: DEFAULT_MODEL,
+          model: aiConfig.model,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: JSON.stringify(userPayload) },
@@ -198,7 +208,7 @@ export const triageWorklist = createServerFn({ method: "POST" })
           entity_id: rowId,
           field: "worklist_triage_score",
           old_value: null,
-          new_value: { bucket: item.bucket, rationale: item.rationale, model: DEFAULT_MODEL },
+          new_value: { bucket: item.bucket, rationale: item.rationale, model: aiConfig.model },
           reason: null,
         });
       }
@@ -207,5 +217,5 @@ export const triageWorklist = createServerFn({ method: "POST" })
       console.warn("[triageWorklist] audit write failed", err);
     }
 
-    return { ok: true, scored, model: DEFAULT_MODEL };
+    return { ok: true, scored, model: aiConfig.model };
   });

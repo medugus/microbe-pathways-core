@@ -3,7 +3,7 @@
 // SCOPE: This module is intentionally a MOCK transport. No payload ever
 // leaves the browser/server boundary — we do NOT POST to any external
 // receiver. Its purpose is to model the dispatch lifecycle so the UI's
-// retry-on-failure flow can be exercised end-to-end inside Lovable.
+// retry-on-failure flow can be exercised end-to-end in hosted preview builds.
 //
 // Source-of-truth invariants (must NOT change in this file):
 //  - Payloads are regenerated from the immutable release_packages row only.

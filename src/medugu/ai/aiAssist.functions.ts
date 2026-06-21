@@ -1,4 +1,4 @@
-// AI assist server function — generic, audited gateway to Lovable AI.
+// AI assist server function — generic, audited OpenAI-compatible gateway.
 //
 // Purpose
 // -------
@@ -27,8 +27,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+const DEFAULT_GATEWAY_URL = "https://api.openai.com/v1/chat/completions";
+const DEFAULT_MODEL = "gpt-4.1-mini";
 
 /** Tasks currently allowed through the AI assist surface. Add new tasks here
  *  only after a regulatory review of that surface. */
@@ -72,6 +72,16 @@ function isAiAssistEnabled(): boolean {
   return v === "1" || v === "true";
 }
 
+function getAiGatewayConfig(): { url: string; apiKey: string; model: string } | null {
+  const apiKey = process.env.AI_API_KEY ?? process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  return {
+    url: process.env.AI_GATEWAY_URL ?? DEFAULT_GATEWAY_URL,
+    apiKey,
+    model: process.env.AI_MODEL ?? DEFAULT_MODEL,
+  };
+}
+
 export const aiAssist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { task: AssistTask; draft: string; accessionRowId?: string }) =>
@@ -88,20 +98,20 @@ export const aiAssist = createServerFn({ method: "POST" })
     if (!isAiAssistEnabled()) {
       return { ok: false, text: "", reason: "AI assist is disabled by configuration." };
     }
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) {
+    const aiConfig = getAiGatewayConfig();
+    if (!aiConfig) {
       return { ok: false, text: "", reason: "AI gateway is not configured." };
     }
 
     const system = SYSTEM_PROMPTS[data.task];
-    const model = DEFAULT_MODEL;
+    const model = aiConfig.model;
 
     let text = "";
     try {
-      const resp = await fetch(GATEWAY_URL, {
+      const resp = await fetch(aiConfig.url, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${aiConfig.apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

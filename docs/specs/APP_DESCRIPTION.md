@@ -270,14 +270,14 @@ asks the Zone Reader to suppress, escalate, or release anything.
 - The endpoint URL is built from a stable **production base URL** in
   this strict order: (1) admin override stored in `localStorage` key
   `medugu.zoneReaderInbound.baseUrl.v1` (validated HTTPS origin only —
-  path/query/hash discarded); (2) hardcoded
-  `DEFAULT_PRODUCTION_BASE_URL =
-  "https://medugu-microbe-pathways-core.lovable.app"`.
+  path/query/hash discarded); (2) deployment variable
+  `VITE_MEDUGU_PUBLIC_BASE_URL`; (3) visible fallback
+  `https://lims.example.com` until the real production URL is configured.
   **`window.location.origin` is never used to build the endpoint** —
   only to detect a preview host for the warning banner.
 - Preview-host detection (`localhost`, `127.0.0.1`, `*.local`,
-  `*.lovableproject.com`, hostnames containing `id-preview--` or
-  `-preview--`) renders a destructive-styled `role="alert"` banner:
+  hostnames containing `id-preview--`, `preview--`, or `-preview--`)
+  renders a destructive-styled `role="alert"` banner:
   **"Preview host detected — do not use this origin for live send."**
 
 ---
@@ -350,8 +350,8 @@ bump and a migration path.
   Tailwind v4 (via `src/styles.css` with semantic tokens — no raw
   colour classes in components).
 - **UI primitives:** shadcn/ui components under `src/components/ui/`.
-- **Backend:** Lovable Cloud (Postgres + auth + storage + edge
-  runtime). Server functions via `createServerFn` from
+- **Backend:** Supabase (Postgres + Auth + RLS + storage) with
+  Cloudflare Workers hosting the TanStack Start runtime. Server functions via `createServerFn` from
   `@tanstack/react-start`; webhooks and inbound endpoints via
   `createFileRoute` under `src/routes/api/public/*`.
 - **Runtime:** Cloudflare Worker (`nodejs_compat`). No
@@ -374,7 +374,6 @@ src/
 │                        # session bar, admin server functions
 ├── components/ui/       # shadcn primitives
 ├── integrations/
-│   ├── lovable/         # Lovable integration shims
 │   └── supabase/        # Auto-generated; do not edit client.ts /
 │                        # client.server.ts / types.ts
 ├── medugu/

@@ -97,7 +97,7 @@ The importer enforces this boundary at two levels:
 ## Admin setup requirements
 
 1. **Stable public endpoint required.** Zone Reader must be configured with the
-   **published production URL** (e.g. `https://medugu-microbe-pathways-core.lovable.app`).
+   **published production URL** (for example, your Cloudflare Worker/custom-domain URL).
    Preview / dev URLs must not be used — they are ephemeral and may change.
 2. **Bearer token is admin-controlled.** Navigate to `/admin/zone-reader` as an
    admin, generate a token, and paste it into Zone Reader's `Authorization`

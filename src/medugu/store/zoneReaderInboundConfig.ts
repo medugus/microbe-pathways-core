@@ -15,8 +15,8 @@
 // Production-safety hardening:
 //   - the operator-facing "live endpoint URL" is NEVER derived from
 //     window.location.origin alone. It is derived from an admin-configured
-//     stable production base URL, falling back to the known published Medugu
-//     host. Preview origins (id-preview--*, *.lovableproject.com, localhost)
+//     stable production base URL, falling back to the configured deployment
+//     host. Preview origins (id-preview--*, preview--*, localhost)
 //     must never be handed to Zone Reader for live send.
 
 const STORAGE_KEY = "medugu.zoneReaderInbound.v1";
@@ -24,18 +24,48 @@ const BASE_URL_KEY = "medugu.zoneReaderInbound.baseUrl.v1";
 const APP_URL_KEY = "medugu.zoneReader.appUrl.v1";
 const ENDPOINT_PATH = "/api/public/zone-reader/result";
 
-// Known stable published host for this deployment. Used as the default when
-// no admin override is set. This is intentionally a constant, not derived
-// from window.location, so a preview environment still surfaces the
-// production URL to operators.
-const DEFAULT_PRODUCTION_BASE_URL = "https://medugu-microbe-pathways-core.lovable.app";
+const FALLBACK_PRODUCTION_BASE_URL = "https://lims.example.com";
+const FALLBACK_ZONE_READER_APP_URL = "https://reader.example.com/";
+
+function normaliseHttpsOrigin(raw: string | undefined, fallback: string): string {
+  if (!raw) return fallback;
+  try {
+    const url = new URL(raw.trim());
+    if (url.protocol !== "https:") return fallback;
+    return url.origin;
+  } catch {
+    return fallback;
+  }
+}
+
+function normaliseHttpsAppUrl(raw: string | undefined, fallback: string): string {
+  if (!raw) return fallback;
+  try {
+    const url = new URL(raw.trim());
+    if (url.protocol !== "https:") return fallback;
+    return url.href.endsWith("/") ? url.href : `${url.href}/`;
+  } catch {
+    return fallback;
+  }
+}
+
+// Stable production hosts are deployment configuration. Set these as
+// Cloudflare/GitHub environment variables for each deployment. The fallback is
+// intentionally obvious so a missing production URL is visible during setup.
+const DEFAULT_PRODUCTION_BASE_URL = normaliseHttpsOrigin(
+  import.meta.env.VITE_MEDUGU_PUBLIC_BASE_URL,
+  FALLBACK_PRODUCTION_BASE_URL,
+);
 
 /**
  * Built-in default URL of the Zone Reader web app. The "Launch Zone Reader"
  * action on the Hub and the AST Zone Reader panel opens this URL in a new
  * tab when no admin override is set. Must be a real https origin.
  */
-const DEFAULT_APP_URL = "https://zone-sight-lab.lovable.app/";
+const DEFAULT_APP_URL = normaliseHttpsAppUrl(
+  import.meta.env.VITE_ZONE_READER_PUBLIC_URL,
+  FALLBACK_ZONE_READER_APP_URL,
+);
 
 interface Shape {
   // tenantId → token
@@ -99,9 +129,9 @@ export function isPreviewHost(host?: string): boolean {
   const h = host ?? window.location.hostname;
   if (!h) return false;
   if (h === "localhost" || h === "127.0.0.1" || h.endsWith(".local")) return true;
-  if (h.endsWith(".lovableproject.com")) return true;
   if (h.includes("id-preview--")) return true;
   if (h.includes("-preview--")) return true;
+  if (h.includes("preview--")) return true;
   return false;
 }
 

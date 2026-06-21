@@ -8,8 +8,8 @@ beyond what is already documented, no background jobs.
 
 The admin Zone Reader page previously derived the operator-facing live
 endpoint URL from `window.location.origin`. When opened from a preview
-host (`id-preview--*.lovable.app`, `*.lovableproject.com`, localhost),
-the page would surface a preview URL that operators could mistakenly
+host (`id-preview--*`, `preview--*`, localhost), the page would surface
+a preview URL that operators could mistakenly
 configure in Zone Reader as the live ZoneResult destination. Preview
 URLs are ephemeral and must never be used for live send.
 
@@ -17,9 +17,9 @@ URLs are ephemeral and must never be used for live send.
 
 1. The endpoint URL handed to Zone Reader is now built from a **stable
    production base URL**, never from `window.location.origin`.
-2. The base URL has a **built-in default** equal to the known published
-   Medugu host:
-   `https://medugu-microbe-pathways-core.lovable.app`
+2. The base URL has a deployment default from
+   `VITE_MEDUGU_PUBLIC_BASE_URL`, falling back visibly to
+   `https://lims.example.com` until configured.
 3. Admins may **override** the base URL from `/admin/zone-reader`. The
    override is validated (https origin only) and persisted in
    `localStorage` (`medugu.zoneReaderInbound.baseUrl.v1`).
@@ -39,9 +39,9 @@ In order:
 
 1. Admin override stored in `localStorage` under
    `medugu.zoneReaderInbound.baseUrl.v1`, if set and valid.
-2. Otherwise, the built-in constant
-   `DEFAULT_PRODUCTION_BASE_URL = "https://medugu-microbe-pathways-core.lovable.app"`
-   in `src/medugu/store/zoneReaderInboundConfig.ts`.
+2. Otherwise, the deployment variable `VITE_MEDUGU_PUBLIC_BASE_URL`.
+3. Otherwise, the visible fallback `https://lims.example.com` in
+   `src/medugu/store/zoneReaderInboundConfig.ts`.
 
 `window.location.origin` is **never** used to build the endpoint URL.
 It is only read for the preview-host warning banner.
@@ -56,8 +56,7 @@ Override validation:
 `isPreviewHost()` in `src/medugu/store/zoneReaderInboundConfig.ts`
 returns true when `window.location.hostname`:
 - equals `localhost` or `127.0.0.1`, or ends with `.local`
-- ends with `.lovableproject.com`
-- contains `id-preview--` or `-preview--`
+- contains `id-preview--`, `preview--`, or `-preview--`
 
 ## Warning shown on preview hosts
 

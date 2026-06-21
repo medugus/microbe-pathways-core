@@ -26,7 +26,7 @@ The SRS covers:
 - the integration surfaces (Zone Reader contract v1, FHIR/HL7/JSON
   export),
 - the admin surfaces and the authentication/authorisation model
-  (Lovable Cloud).
+  (Supabase Auth + RLS).
 
 ### 1.3 Definitions
 - **Accession**: a coded case from specimen receipt to release.
@@ -55,7 +55,8 @@ The SRS covers:
 ## 2. Overall Description
 
 ### 2.1 Product perspective
-Medugu is a single-page application backed by Lovable Cloud. The
+Medugu is a TanStack Start application backed by Supabase and deployed
+to a Cloudflare Worker. The
 domain core is **framework-agnostic** and is consumed by the React UI
 today; in Phase 5 it is consumed by both the React UI and the backend
 modular monolith without code change.
@@ -202,8 +203,8 @@ modular monolith without code change.
 | SR-093 | Unmatched rows shall include a structured `UnmatchedAlignment` reason from `MISSING_AST_ROW` \| `METHOD_MISMATCH` \| `STANDARD_MISMATCH`. | Unit test. | UR-063, UR-064 |
 | SR-094 | The public route `/api/public/zone-reader/result` shall be live for GET, OPTIONS, POST. GET returns endpoint metadata; OPTIONS returns CORS preflight; POST validates bearer token, schema-parses the payload, and returns `202 Accepted` (no server-side persistence in current build). | `publicInboundRoute.test.ts`. | UR-065 |
 | SR-095 | The admin Zone Reader page (`/admin/zone-reader`) shall expose: full endpoint URL (built from stable production base URL), bearer token (view/regenerate), production base URL override (HTTPS-origin validated), preview-host warning banner. | UI test. | UR-066, UR-067, UR-113 |
-| SR-096 | The production base URL shall be derived in this strict order: (1) admin override in `localStorage` key `medugu.zoneReaderInbound.baseUrl.v1` (validated HTTPS origin); (2) hardcoded `DEFAULT_PRODUCTION_BASE_URL = "https://medugu-microbe-pathways-core.lovable.app"`. `window.location.origin` shall **never** be used to build the endpoint. | Unit test. | UR-067 |
-| SR-097 | Preview-host detection (`localhost`/`127.0.0.1`/`*.local`, `*.lovableproject.com`, hostnames containing `id-preview--` or `-preview--`) shall render a destructive `role="alert"` banner: "Preview host detected — do not use this origin for live send". | UI snapshot. | UR-067, UR-134 |
+| SR-096 | The production base URL shall be derived in this strict order: (1) admin override in `localStorage` key `medugu.zoneReaderInbound.baseUrl.v1` (validated HTTPS origin); (2) deployment variable `VITE_MEDUGU_PUBLIC_BASE_URL`; (3) visible fallback `https://lims.example.com` until the real production URL is configured. `window.location.origin` shall **never** be used to build the endpoint. | Unit test. | UR-067 |
+| SR-097 | Preview-host detection (`localhost`/`127.0.0.1`/`*.local`, hostnames containing `id-preview--`, `preview--`, or `-preview--`) shall render a destructive `role="alert"` banner: "Preview host detected — do not use this origin for live send". | UI snapshot. | UR-067, UR-134 |
 
 ### 3.11 Admin & Configuration
 
@@ -332,7 +333,7 @@ modular monolith without code change.
 
 ---
 
-## 7. Engineering Constraints (Lovable / TanStack Start)
+## 7. Engineering Constraints (TanStack Start / Cloudflare)
 
 - Routes live under `src/routes/`; never `src/pages/`.
 - `src/routeTree.gen.ts` is generated; edits in this build are limited

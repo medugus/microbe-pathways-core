@@ -140,7 +140,7 @@ whether the lab is a tertiary reference centre or a district hospital.
 - Admin surfaces: users & roles, receivers, configuration, Zone Reader
   inbound configuration (production base URL hardening, bearer token
   management, preview-host warning).
-- Authentication & roles (Lovable Cloud): admin-only routes, per-tenant
+- Authentication & roles (Supabase Auth + RLS): admin-only routes, per-tenant
   data, no anonymous sign-ups.
 
 ### 5.2 Out of scope (current build)
@@ -264,7 +264,7 @@ inbound configuration with admin-only token control.
 2. Confirms or overrides the production base URL (HTTPS origin only).
 3. Generates/copies the bearer token.
 4. Configures Zone Reader to POST to
-   `https://medugu-microbe-pathways-core.lovable.app/api/public/zone-reader/result`
+   `<configured Medugu production URL>/api/public/zone-reader/result`
    with `Authorization: Bearer <token>`.
 5. Preview hosts display a destructive-styled warning banner; admin
    must not use preview URLs for live send.
@@ -306,8 +306,8 @@ inbound configuration with admin-only token control.
 - **Cloudflare Worker runtime** for server functions and SSR; no Node
   built-ins that require a full process (no `child_process`, `sharp`,
   `puppeteer`, native bindings).
-- **Lovable Cloud** is the backend; the Supabase brand is never exposed
-  to users.
+- **Supabase** is the backend for Postgres, Auth, RLS, and storage.
+  Cloudflare Workers host the TanStack Start runtime.
 - **No anonymous sign-ups**; admin-only routes are enforced
   server-side via `requireSupabaseAuth` + role check (`has_role`).
 - **Roles live in a separate `user_roles` table**, never on the profile
@@ -317,8 +317,8 @@ inbound configuration with admin-only token control.
 
 ## 10. Dependencies
 
-- Lovable Cloud (Postgres + auth + storage + edge runtime).
-- Lovable AI Gateway for triage and assist surfaces.
+- Supabase (Postgres + Auth + RLS + storage).
+- OpenAI-compatible AI gateway for triage and assist surfaces.
 - Zone Reader v1 contract (`docs/integrations/zone-reader-contract-v1.md`).
 - EUCAST and CLSI source tables (committed as scaffolds; thresholds are
   marked `needs_validation` until official tables are cited).

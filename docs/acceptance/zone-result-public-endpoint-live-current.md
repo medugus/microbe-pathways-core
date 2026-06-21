@@ -17,8 +17,8 @@ workflow until server-side persistence is enabled.
 | Auth on `OPTIONS` / `GET` | None (preflight + liveness only) |
 
 The route is registered through TanStack Start's file-based routing under
-the `/api/public/*` prefix, which bypasses Lovable's published-site auth
-gate for external callers (Zone Reader devices, automation, etc.).
+the `/api/public/*` prefix, allowing external callers such as Zone Reader
+devices and automation to reach the bearer-protected endpoint.
 
 ## Method behavior
 
