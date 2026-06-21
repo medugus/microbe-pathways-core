@@ -49,19 +49,6 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::CLOUDFLARE_API_TOKEN is empty or missing"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::CLOUDFLARE_ACCOUNT_ID is empty or missing"; exit 1; }
-      - name: Verify Cloudflare API token
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          token_response="$(curl -sS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" https://api.cloudflare.com/client/v4/user/tokens/verify)"
-          node -e "const r=JSON.parse(process.argv[1]); if (!r.success) { console.error('::error::Cloudflare rejected CLOUDFLARE_API_TOKEN. Create a fresh Workers API token and paste only the raw token value.'); process.exit(1); }" "$token_response"
-      - name: Verify Cloudflare Workers account access
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          workers_response="$(curl -sS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/services?per_page=1")"
-          node -e "const r=JSON.parse(process.argv[1]); if (!r.success) { console.error('::error::Cloudflare token cannot access Workers on CLOUDFLARE_ACCOUNT_ID. Check the raw account ID and Workers Scripts edit/write permission.'); process.exit(1); }" "$workers_response"
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
