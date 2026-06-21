@@ -21,9 +21,11 @@ import type {
   Accession,
   BloodBottleResult,
   BottleCriticalCall,
+  BottleDirectAST,
   BottleGramStain,
   BottleGrowthState,
   BottleLifecycleStatus,
+  BottleMaldiTof,
   BottleTerminationReason,
   Isolate,
 } from "../../domain/types";
@@ -69,6 +71,20 @@ const TERMINATION_OPTIONS: { value: BottleTerminationReason; label: string }[] =
   { value: "lab_error", label: "Lab error" },
   { value: "broken_bottle", label: "Broken bottle" },
   { value: "other", label: "Other" },
+];
+
+const MALDI_CONFIDENCE_OPTIONS: Array<NonNullable<BottleMaldiTof["confidence"]>> = [
+  "high",
+  "acceptable",
+  "low",
+  "failed",
+];
+
+const DIRECT_AST_METHOD_OPTIONS: Array<NonNullable<BottleDirectAST["method"]>> = [
+  "EUCAST_RAST",
+  "direct_disk_diffusion",
+  "direct_MIC",
+  "other",
 ];
 
 /** Map lifecycle status → legacy growth field so downstream engines keep working. */
@@ -140,6 +156,10 @@ function hoursBetween(start?: string, end?: string): number | undefined {
   const t1 = new Date(end).getTime();
   if (!Number.isFinite(t0) || !Number.isFinite(t1) || t1 < t0) return undefined;
   return Math.round(((t1 - t0) / 36e5) * 10) / 10;
+}
+
+function gramShowsOrganism(result?: string): boolean {
+  return !!result && result !== "NO_ORGANISMS";
 }
 
 export function BottleResultsEditor({ accession }: Props) {
@@ -232,6 +252,32 @@ export function BottleResultsEditor({ accession }: Props) {
     upsert(setNo, bottleType, { gramStain: next });
   }
 
+  function upsertMaldi(
+    setNo: number,
+    bottleType: string,
+    row: BloodBottleResult | undefined,
+    patch: Partial<BottleMaldiTof>,
+  ) {
+    const current: BottleMaldiTof = row?.maldiTof ?? { performed: false };
+    const next = { ...current, ...patch };
+    upsert(setNo, bottleType, { maldiTof: next });
+  }
+
+  function upsertDirectAst(
+    setNo: number,
+    bottleType: string,
+    row: BloodBottleResult | undefined,
+    patch: Partial<BottleDirectAST>,
+  ) {
+    const current: BottleDirectAST = row?.directAst ?? {
+      performed: false,
+      method: "EUCAST_RAST",
+      standard: "EUCAST",
+    };
+    const next = { ...current, ...patch };
+    upsert(setNo, bottleType, { directAst: next });
+  }
+
   function upsertCall(
     setNo: number,
     bottleType: string,
@@ -304,6 +350,7 @@ export function BottleResultsEditor({ accession }: Props) {
                       : "received");
                 const isPositive = status === "flagged_positive" || status === "removed";
                 const isTerminal = status === "terminal_negative" || status === "discontinued";
+                const directGramShowsOrganism = gramShowsOrganism(row?.gramStain?.result);
                 const linked = linkedOrganisms(set.setNo, bottle);
                 return (
                   <Fragment key={`${set.setNo}-${bottle}`}>
@@ -451,6 +498,197 @@ export function BottleResultsEditor({ accession }: Props) {
                               }
                               className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs"
                             />
+                          </div>
+
+                          {/* Direct MALDI-TOF */}
+                          <div className="space-y-1 rounded border border-border bg-background p-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                Direct MALDI-TOF
+                              </p>
+                              <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                <input
+                                  type="checkbox"
+                                  checked={!!row?.maldiTof?.performed}
+                                  onChange={(e) =>
+                                    upsertMaldi(set.setNo, bottle, row, { performed: e.target.checked })
+                                  }
+                                />
+                                Available / performed
+                              </label>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <input
+                                type="text"
+                                placeholder="Organism ID from MALDI"
+                                value={row?.maldiTof?.organismDisplay ?? ""}
+                                disabled={!row?.maldiTof?.performed}
+                                onChange={(e) =>
+                                  upsertMaldi(set.setNo, bottle, row, { organismDisplay: e.target.value })
+                                }
+                                className="min-w-[12rem] flex-1 rounded border border-border bg-background px-1.5 py-1 text-xs disabled:opacity-50"
+                              />
+                              <select
+                                value={row?.maldiTof?.confidence ?? ""}
+                                disabled={!row?.maldiTof?.performed}
+                                onChange={(e) =>
+                                  upsertMaldi(set.setNo, bottle, row, {
+                                    confidence: (e.target.value || undefined) as BottleMaldiTof["confidence"],
+                                  })
+                                }
+                                className="rounded border border-border bg-background px-1.5 py-1 text-xs disabled:opacity-50"
+                              >
+                                <option value="">confidence</option>
+                                {MALDI_CONFIDENCE_OPTIONS.map((confidence) => (
+                                  <option key={confidence} value={confidence}>
+                                    {confidence.replaceAll("_", " ")}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                type="text"
+                                placeholder="Score"
+                                value={row?.maldiTof?.score ?? ""}
+                                disabled={!row?.maldiTof?.performed}
+                                onChange={(e) =>
+                                  upsertMaldi(set.setNo, bottle, row, { score: e.target.value })
+                                }
+                                className="w-20 rounded border border-border bg-background px-1.5 py-1 text-xs disabled:opacity-50"
+                              />
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <input
+                                type="text"
+                                placeholder="Tech ID"
+                                value={row?.maldiTof?.performedBy ?? ""}
+                                disabled={!row?.maldiTof?.performed}
+                                onChange={(e) =>
+                                  upsertMaldi(set.setNo, bottle, row, { performedBy: e.target.value })
+                                }
+                                className="w-24 rounded border border-border bg-background px-1.5 py-1 text-xs disabled:opacity-50"
+                              />
+                              <input
+                                type="datetime-local"
+                                value={row?.maldiTof?.performedAt && row.maldiTof.performedAt.length >= 16 ? row.maldiTof.performedAt.slice(0, 16) : row?.maldiTof?.performedAt ?? ""}
+                                disabled={!row?.maldiTof?.performed}
+                                onChange={(e) =>
+                                  upsertMaldi(set.setNo, bottle, row, { performedAt: e.target.value })
+                                }
+                                className="rounded border border-border bg-background px-1.5 py-1 text-xs disabled:opacity-50"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Direct susceptibility */}
+                          <div className="space-y-1 rounded border border-border bg-background p-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                Direct sensitivity
+                              </p>
+                              <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+                                EUCAST RAST / direct from bottle
+                              </span>
+                            </div>
+                            {!directGramShowsOrganism ? (
+                              <p className="text-[11px] text-muted-foreground">
+                                Enter a direct Gram result showing organisms to enable direct sensitivity from the positive bottle.
+                              </p>
+                            ) : (
+                              <>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                    <input
+                                      type="checkbox"
+                                      checked={!!row?.directAst?.performed}
+                                      onChange={(e) =>
+                                        upsertDirectAst(set.setNo, bottle, row, { performed: e.target.checked })
+                                      }
+                                    />
+                                    Started / performed
+                                  </label>
+                                  <select
+                                    value={row?.directAst?.method ?? "EUCAST_RAST"}
+                                    onChange={(e) =>
+                                      upsertDirectAst(set.setNo, bottle, row, {
+                                        method: e.target.value as BottleDirectAST["method"],
+                                        standard: e.target.value === "EUCAST_RAST" ? "EUCAST" : row?.directAst?.standard ?? "EUCAST",
+                                      })
+                                    }
+                                    className="rounded border border-border bg-background px-1.5 py-1 text-xs"
+                                  >
+                                    {DIRECT_AST_METHOD_OPTIONS.map((method) => (
+                                      <option key={method} value={method}>
+                                        {method.replaceAll("_", " ")}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    value={row?.directAst?.standard ?? "EUCAST"}
+                                    onChange={(e) =>
+                                      upsertDirectAst(set.setNo, bottle, row, {
+                                        standard: e.target.value as BottleDirectAST["standard"],
+                                      })
+                                    }
+                                    className="rounded border border-border bg-background px-1.5 py-1 text-xs"
+                                  >
+                                    <option value="EUCAST">EUCAST</option>
+                                    <option value="CLSI">CLSI</option>
+                                  </select>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <input
+                                    type="text"
+                                    placeholder="Panel / drug set"
+                                    value={row?.directAst?.panelName ?? ""}
+                                    onChange={(e) =>
+                                      upsertDirectAst(set.setNo, bottle, row, { panelName: e.target.value })
+                                    }
+                                    className="min-w-[10rem] flex-1 rounded border border-border bg-background px-1.5 py-1 text-xs"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Tech ID"
+                                    value={row?.directAst?.performedBy ?? ""}
+                                    onChange={(e) =>
+                                      upsertDirectAst(set.setNo, bottle, row, { performedBy: e.target.value })
+                                    }
+                                    className="w-24 rounded border border-border bg-background px-1.5 py-1 text-xs"
+                                  />
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <input
+                                    type="datetime-local"
+                                    value={row?.directAst?.startedAt && row.directAst.startedAt.length >= 16 ? row.directAst.startedAt.slice(0, 16) : row?.directAst?.startedAt ?? ""}
+                                    onChange={(e) =>
+                                      upsertDirectAst(set.setNo, bottle, row, { startedAt: e.target.value })
+                                    }
+                                    className="rounded border border-border bg-background px-1.5 py-1 text-xs"
+                                    title="Started at"
+                                  />
+                                  <input
+                                    type="datetime-local"
+                                    value={row?.directAst?.readAt && row.directAst.readAt.length >= 16 ? row.directAst.readAt.slice(0, 16) : row?.directAst?.readAt ?? ""}
+                                    onChange={(e) =>
+                                      upsertDirectAst(set.setNo, bottle, row, { readAt: e.target.value })
+                                    }
+                                    className="rounded border border-border bg-background px-1.5 py-1 text-xs"
+                                    title="Read at"
+                                  />
+                                </div>
+                                <input
+                                  type="text"
+                                  placeholder="Direct sensitivity summary (preliminary)"
+                                  value={row?.directAst?.resultSummary ?? ""}
+                                  onChange={(e) =>
+                                    upsertDirectAst(set.setNo, bottle, row, { resultSummary: e.target.value })
+                                  }
+                                  className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs"
+                                />
+                                <p className="text-[10px] text-muted-foreground">
+                                  Preliminary direct result. Final reportable AST still belongs in the AST section after isolate linkage.
+                                </p>
+                              </>
+                            )}
                           </div>
 
                           {/* Critical call */}

@@ -30,6 +30,7 @@ import {
 } from "./sections";
 import { useActiveAccession, useMeduguState } from "../store/useAccessionStore";
 import { useConfigState } from "../store/configStore";
+import { isBloodCulture } from "../logic/bloodIsolateRules";
 
 const SECTION_COMPONENTS = {
   operations: OperationalDashboardSection,
@@ -53,6 +54,10 @@ export function AppShell() {
   const accession = useActiveAccession();
   const state = useMeduguState();
   const config = useConfigState();
+  const visibleSections =
+    accession && isBloodCulture(accession)
+      ? SECTION_ORDER.filter((s) => s.key !== "microscopy")
+      : SECTION_ORDER;
 
   return (
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-[minmax(220px,22vw)_1fr] bg-background text-foreground">
@@ -116,7 +121,7 @@ export function AppShell() {
           <div className="flex-1 overflow-y-auto">
             {accession ? (
               <div className="space-y-4 p-6">
-                {SECTION_ORDER.map((s) => {
+                {visibleSections.map((s) => {
                   const Cmp = SECTION_COMPONENTS[s.key];
                   return (
                     <SectionPanel
@@ -143,7 +148,7 @@ export function AppShell() {
               </div>
             )}
           </div>
-          <SectionRail />
+          <SectionRail sections={visibleSections} />
         </div>
 
         <footer className="border-t border-border bg-card px-4 py-1.5 text-[10px] text-muted-foreground">

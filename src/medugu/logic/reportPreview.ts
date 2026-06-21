@@ -74,6 +74,29 @@ export interface ReportBottleRow {
     performedBy?: string;
     performedAt?: string;
   };
+  /** Direct-from-bottle MALDI-TOF identification, when available. */
+  maldiTof?: {
+    performed: boolean;
+    organismCode?: string;
+    organismDisplay?: string;
+    confidence?: string;
+    score?: string;
+    performedBy?: string;
+    performedAt?: string;
+    notes?: string;
+  };
+  /** Preliminary direct / rapid susceptibility workup from positive-bottle broth. */
+  directAst?: {
+    performed: boolean;
+    method?: string;
+    standard?: string;
+    panelName?: string;
+    startedAt?: string;
+    readAt?: string;
+    performedBy?: string;
+    resultSummary?: string;
+    notes?: string;
+  };
   /** Critical-call documentation (when bottle flagged positive). */
   criticalCall?: {
     calledBy: string;
@@ -166,6 +189,31 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
           morphology: r.gramStain.morphology,
           performedBy: r.gramStain.performedBy,
           performedAt: r.gramStain.performedAt,
+        }
+      : undefined,
+    maldiTof: r.maldiTof?.performed
+      ? {
+          performed: true,
+          organismCode: r.maldiTof.organismCode,
+          organismDisplay: r.maldiTof.organismDisplay,
+          confidence: r.maldiTof.confidence,
+          score: r.maldiTof.score,
+          performedBy: r.maldiTof.performedBy,
+          performedAt: r.maldiTof.performedAt,
+          notes: r.maldiTof.notes,
+        }
+      : undefined,
+    directAst: r.directAst?.performed
+      ? {
+          performed: true,
+          method: r.directAst.method,
+          standard: r.directAst.standard,
+          panelName: r.directAst.panelName,
+          startedAt: r.directAst.startedAt,
+          readAt: r.directAst.readAt,
+          performedBy: r.directAst.performedBy,
+          resultSummary: r.directAst.resultSummary,
+          notes: r.directAst.notes,
         }
       : undefined,
     criticalCall: r.criticalCall && (r.criticalCall.calledAt || r.criticalCall.calledTo)
@@ -284,6 +332,7 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
     .map((decision) => {
       const signal = accession.ipc.find((s) => s.ruleCode === decision.ruleCode);
       if (!signal) return null;
+      if (signal.archivedAt) return null;
       const rule = IPC_RULES.find((r) => r.ruleCode === decision.ruleCode);
       if (!shouldShowIPCOnClinicianReport(signal, rule)) return null;
       return {

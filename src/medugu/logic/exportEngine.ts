@@ -551,6 +551,27 @@ export interface NormalisedExport {
         performedBy?: string;
         performedAt?: string;
       };
+      maldiTof?: {
+        performed: boolean;
+        organismCode?: string;
+        organismDisplay?: string;
+        confidence?: string;
+        score?: string;
+        performedBy?: string;
+        performedAt?: string;
+        notes?: string;
+      };
+      directAst?: {
+        performed: boolean;
+        method?: string;
+        standard?: string;
+        panelName?: string;
+        startedAt?: string;
+        readAt?: string;
+        performedBy?: string;
+        resultSummary?: string;
+        notes?: string;
+      };
       criticalCall?: {
         calledBy: string;
         calledTo: string;
@@ -674,6 +695,8 @@ export function buildNormalisedJson(accession: Accession): NormalisedExport {
         ttpHours: r.ttpHours,
         drawToPositiveHours: r.drawToPositiveHours,
         gramStain: r.gramStain,
+        maldiTof: r.maldiTof,
+        directAst: r.directAst,
         criticalCall: r.criticalCall,
       });
     }

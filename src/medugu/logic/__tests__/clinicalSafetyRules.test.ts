@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { IPCSignal } from "../../domain/types";
 import { DEMO_ACCESSIONS } from "../../seed/demoAccessions";
+import { IPCFlag } from "../../domain/enums";
 import { evaluateIsolate } from "../astEngine";
+import { deriveIPCReleaseContext } from "../ipcReportGovernance";
+import { buildReportPreview } from "../reportPreview";
 import {
   getColonisationScreenPathway,
   isAllowedColonisationScreenOrganism,
@@ -79,5 +83,41 @@ describe("clinical safety rules", () => {
       expect.arrayContaining(["CRE", "carbapenemase_suspected"]),
     );
     expect(result.fired.map((rule) => rule.ruleCode)).toContain("ENB_CRE");
+  });
+
+  it("projects blood-culture positive-bottle workup without ordinary microscopy", () => {
+    const blood = accession("MB25-EF34GH");
+    const doc = buildReportPreview(blood);
+    const aerobic = doc.bloodBottles?.find((bottle) => bottle.setNo === 1 && bottle.bottleType === "AEROBIC");
+
+    expect(blood.specimen.familyCode).toBe("BLOOD");
+    expect(blood.microscopy).toEqual([]);
+    expect(aerobic).toMatchObject({
+      growth: "growth",
+      gramStain: { result: "GPC_CLUSTERS" },
+      maldiTof: { performed: true, organismDisplay: "Staphylococcus aureus" },
+      directAst: { performed: true, method: "EUCAST_RAST", standard: "EUCAST" },
+    });
+  });
+
+  it("does not treat archived IPC notifications as open release clutter", () => {
+    const signal: IPCSignal = {
+      id: "ipc_test_archived",
+      flag: IPCFlag.MDRO,
+      organismCode: "SAUR",
+      ruleCode: "MRSA_ALERT",
+      message: "MRSA signal",
+      raisedAt: "2026-04-25T12:00:00.000Z",
+      archivedAt: "2026-04-25T12:05:00.000Z",
+      notifiedAt: "2026-04-25T12:05:00.000Z",
+      notificationMethod: "email",
+    };
+
+    const blood = accession("MB25-EF34GH");
+    const archived = { ...blood, ipc: [signal] };
+    const open = { ...blood, ipc: [{ ...signal, archivedAt: undefined, notifiedAt: undefined }] };
+
+    expect(deriveIPCReleaseContext(archived)).toBeNull();
+    expect(deriveIPCReleaseContext(open)?.signalCount).toBe(1);
   });
 });

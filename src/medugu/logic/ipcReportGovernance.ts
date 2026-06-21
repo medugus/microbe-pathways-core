@@ -22,7 +22,7 @@ function getRuleForSignal(signal: IPCSignal): IPCRule | undefined {
 }
 
 function isOpenSignal(signal: IPCSignal): boolean {
-  return !signal.acknowledgedAt;
+  return !signal.acknowledgedAt && !signal.archivedAt;
 }
 
 function isHighPrioritySignal(signal: IPCSignal, rule?: IPCRule): boolean {

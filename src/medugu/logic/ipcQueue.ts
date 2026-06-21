@@ -153,6 +153,7 @@ export function deriveIPCOfficerQueue(
     for (const decision of report.decisions) {
       const signalKey = `${decision.ruleCode}|${decision.organismCode ?? ""}`;
       const signal = signalMap.get(signalKey);
+      if (signal?.archivedAt) continue;
       const organismLabel = decision.organismCode
         ? getOrganism(decision.organismCode)?.display ?? decision.organismCode
         : undefined;

@@ -197,6 +197,7 @@ function PrintableReportPack({ reports, generatedAt }: { reports: PrintableRepor
 
 function PrintableReport({ report, ordinal }: { report: PrintableReport; ordinal: number }) {
   const { accession, doc, sourceLabel, releasedAt } = report;
+  const isBloodReport = !!(doc.bloodSets?.length || doc.bloodBottles?.length);
   return (
     <article className="pdf-report-page">
       <header className="pdf-report-header">
@@ -248,10 +249,12 @@ function PrintableReport({ report, ordinal }: { report: PrintableReport; ordinal
         </section>
       )}
 
-      <section className="pdf-section">
-        <h3>Microscopy</h3>
-        <p>{doc.microscopySummary}</p>
-      </section>
+      {!isBloodReport && (
+        <section className="pdf-section">
+          <h3>Microscopy</h3>
+          <p>{doc.microscopySummary}</p>
+        </section>
+      )}
 
       <section className="pdf-section">
         <h3>Culture and susceptibility</h3>

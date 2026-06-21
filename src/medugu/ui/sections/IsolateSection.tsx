@@ -98,6 +98,12 @@ export function IsolateSection() {
     setComposition("");
   }
 
+  function goToBottleWorkup() {
+    document
+      .getElementById("blood-culture-bottle-workup")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="space-y-5">
       {isBlood && (
@@ -131,6 +137,7 @@ export function IsolateSection() {
           isolate card via SourceLinkPicker below. */}
       {isBlood && (
         <details
+          id="blood-culture-bottle-workup"
           className="rounded-md border border-border bg-background/40 p-3"
           open
         >
@@ -329,22 +336,37 @@ export function IsolateSection() {
                 )}
 
                 {showBcLinkage && (
-                  <div className={`mt-3 rounded border p-2 ${srcMissing ? "border-destructive bg-destructive/5" : "border-border bg-background/40"}`}>
+                  <div
+                    className={`mt-3 rounded border p-2 ${srcMissing ? "border-destructive bg-destructive/5" : "border-border bg-background/40"}`}
+                  >
                     <div className="mb-1.5 flex items-center justify-between">
                       <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                         Linked positive bottle(s) for this organism
                       </span>
                       {srcMissing && (
-                        <span className="text-[11px] text-destructive">
+                        <button
+                          type="button"
+                          onClick={goToBottleWorkup}
+                          className="rounded border border-destructive/40 bg-destructive/10 px-2 py-1 text-[11px] text-destructive hover:bg-destructive/15"
+                        >
                           Link this organism to at least one positive blood culture bottle before AST entry.
-                        </span>
+                        </button>
                       )}
                     </div>
                     {positiveBottles.length === 0 ? (
-                      <p className="text-[11px] text-muted-foreground">
-                        No positive bottles recorded yet. Mark at least one bottle as "growth" in per-bottle tracking
-                        below to link this isolate to its source.
-                      </p>
+                      <div className="space-y-2 text-[11px] text-muted-foreground">
+                        <p>
+                          No positive bottles recorded yet. Mark at least one bottle as "Flagged +" or "Removed"
+                          in per-bottle tracking to link this isolate to its source.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={goToBottleWorkup}
+                          className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-muted"
+                        >
+                          Go to positive bottle entry
+                        </button>
+                      </div>
                     ) : (
                       <SourceLinkPicker accession={accession.id} isolate={i} positives={positiveBottles} />
                     )}

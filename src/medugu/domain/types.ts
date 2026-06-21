@@ -239,6 +239,10 @@ export interface BloodBottleResult {
    * removed bottle — Beaker convention.
    */
   gramStain?: BottleGramStain;
+  /** Direct-from-positive-bottle MALDI-TOF identification, when available. */
+  maldiTof?: BottleMaldiTof;
+  /** Direct AST / EUCAST RAST workup started from positive-bottle broth. */
+  directAst?: BottleDirectAST;
   /**
    * Critical-call documentation for the positive-flag notification (clinician
    * call-out). Required before release for any flagged_positive bottle.
@@ -255,6 +259,33 @@ export interface BottleGramStain {
   performedBy?: string;
   /** ISO timestamp. */
   performedAt?: string;
+}
+
+/** MALDI-TOF read directly from a positive blood culture bottle, if validated locally. */
+export interface BottleMaldiTof {
+  performed: boolean;
+  organismCode?: string;
+  organismDisplay?: string;
+  confidence?: "high" | "acceptable" | "low" | "failed";
+  score?: string;
+  performedBy?: string;
+  performedAt?: string;
+  notes?: string;
+}
+
+/** Rapid/direct susceptibility workup from positive blood culture broth. */
+export interface BottleDirectAST {
+  performed: boolean;
+  /** EUCAST RAST is the governed default; free text keeps local protocol flexibility. */
+  method?: "EUCAST_RAST" | "direct_disk_diffusion" | "direct_MIC" | "other";
+  standard?: "EUCAST" | "CLSI";
+  panelName?: string;
+  startedAt?: string;
+  readAt?: string;
+  performedBy?: string;
+  /** Summary only; final AST rows still live in accession.ast after isolate linkage. */
+  resultSummary?: string;
+  notes?: string;
 }
 
 /** Critical-result phone call from lab → clinician at positive-flag time. */
@@ -426,6 +457,13 @@ export interface IPCSignal {
   raisedAt: string;
   acknowledgedBy?: string;
   acknowledgedAt?: string;
+  notifiedBy?: string;
+  notifiedAt?: string;
+  notificationTarget?: string;
+  notificationMethod?: "email" | "task" | "phone" | "other";
+  archivedBy?: string;
+  archivedAt?: string;
+  archiveReason?: string;
 }
 
 // ---------- Validation ----------

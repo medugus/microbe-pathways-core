@@ -236,6 +236,13 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     }
   }
 
+  function goToBloodBottleLinking() {
+    const target =
+      document.getElementById("blood-culture-bottle-workup") ??
+      document.getElementById("sec-isolate");
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   if (isolates.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -299,6 +306,7 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
               onMethodChange={setMethod}
               onStandardChange={setStandard}
               onAddPanel={onAddPanel}
+              onManageBloodSources={goToBloodBottleLinking}
             />
           ) : (
             <div className="md:col-span-4 flex items-end rounded border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
@@ -318,6 +326,7 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
             onStandardChange={setStandard}
             onRawValueChange={setRawValue}
             onAdd={onAdd}
+            onManageBloodSources={goToBloodBottleLinking}
           />
         )}
 

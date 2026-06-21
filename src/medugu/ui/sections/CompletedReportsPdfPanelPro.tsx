@@ -263,6 +263,7 @@ function CoverMetric({ label, value }: { label: string; value: number }) {
 
 function ClinicalReportPage({ report, ordinal }: { report: PrintableReport; ordinal: number }) {
   const { accession, doc, sourceLabel, releasedAt } = report;
+  const isBloodReport = !!(doc.bloodSets?.length || doc.bloodBottles?.length);
   return (
     <article className="pdf-report-page">
       <header className="pdf-report-header">
@@ -314,10 +315,12 @@ function ClinicalReportPage({ report, ordinal }: { report: PrintableReport; ordi
         </section>
       )}
 
-      <section className="pdf-section">
-        <h3>Microscopy</h3>
-        <p>{doc.microscopySummary}</p>
-      </section>
+      {!isBloodReport && (
+        <section className="pdf-section">
+          <h3>Microscopy</h3>
+          <p>{doc.microscopySummary}</p>
+        </section>
+      )}
 
       <section className="pdf-section">
         <h3>Culture And Susceptibility</h3>

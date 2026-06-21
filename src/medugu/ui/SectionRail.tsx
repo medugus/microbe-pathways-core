@@ -2,8 +2,13 @@
 // continuous workspace without losing context of the others.
 
 import { SECTION_ORDER } from "./sections";
+import type { SectionKey } from "./sections";
 
-export function SectionRail() {
+interface SectionRailProps {
+  sections?: readonly { key: SectionKey; label: string }[];
+}
+
+export function SectionRail({ sections = SECTION_ORDER }: SectionRailProps) {
   return (
     <nav
       aria-label="Workspace sections"
@@ -13,7 +18,7 @@ export function SectionRail() {
         Jump to
       </div>
       <ul className="space-y-1">
-        {SECTION_ORDER.map((s) => (
+        {sections.map((s) => (
           <li key={s.key}>
             <a
               href={`#sec-${s.key}`}

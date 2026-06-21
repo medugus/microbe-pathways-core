@@ -11,6 +11,8 @@ interface IPCSignalCardProps {
   ward?: string;
   ruleVersion?: string;
   generatedByRuleCode?: string;
+  notificationTarget?: string;
+  onNotifyIPC?: () => void;
 }
 
 function severityForDecision(d: IPCDecision): "high" | "review" | "routine" {
@@ -37,6 +39,8 @@ export function IPCSignalCard({
   ward,
   ruleVersion,
   generatedByRuleCode,
+  notificationTarget,
+  onNotifyIPC,
 }: IPCSignalCardProps) {
   const severity = severityForDecision(decision);
   const status = statusForSignal(signal);
@@ -89,6 +93,20 @@ export function IPCSignalCard({
         acknowledgedAt={signal?.acknowledgedAt}
         acknowledgedBy={signal?.acknowledgedBy}
       />
+      {onNotifyIPC && (
+        <div className="flex flex-wrap items-center gap-2 rounded border border-primary/20 bg-primary/5 p-2">
+          <button
+            type="button"
+            onClick={onNotifyIPC}
+            className="rounded bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Notify IPC
+          </button>
+          <span className="text-[11px] text-muted-foreground">
+            Opens email to {notificationTarget ?? "IPC"} and archives this signal under items sent to IPC.
+          </span>
+        </div>
+      )}
       <IPCRuleExplanation decision={decision} specimenContext={specimenContext} ward={ward} ruleVersion={ruleVersion} />
     </article>
   );

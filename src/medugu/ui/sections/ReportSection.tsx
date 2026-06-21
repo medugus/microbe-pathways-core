@@ -21,6 +21,11 @@ export function ReportSection() {
     );
   }
   const doc = buildReportPreview(accession);
+  const isBloodReport = accession.specimen.familyCode === "BLOOD";
+  const positiveBloodBottles =
+    doc.bloodBottles?.filter(
+      (b) => b.growth === "growth" || b.status === "flagged_positive" || b.status === "removed",
+    ) ?? [];
 
   return (
     <div className="space-y-4">
@@ -86,10 +91,87 @@ export function ReportSection() {
           </section>
         )}
 
-        <section className="mt-3">
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Microscopy</div>
-          <p className="text-sm text-foreground">{doc.microscopySummary}</p>
-        </section>
+        {isBloodReport && positiveBloodBottles.length > 0 && (
+          <section className="mt-3">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              Positive bottle workup
+            </div>
+            <table className="mt-1 w-full text-xs">
+              <thead className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="py-1 pr-2 text-left">Bottle</th>
+                  <th className="py-1 pr-2 text-left">Direct Gram</th>
+                  <th className="py-1 pr-2 text-left">MALDI-TOF</th>
+                  <th className="py-1 pr-2 text-left">Direct sensitivity</th>
+                </tr>
+              </thead>
+              <tbody>
+                {positiveBloodBottles.map((b) => (
+                  <tr key={`${b.setNo}-${b.bottleType}`} className="border-t border-border align-top">
+                    <td className="py-1 pr-2 font-mono text-foreground">
+                      Set {b.setNo} · {b.bottleType.toLowerCase()}
+                      {b.ttpHours !== undefined && (
+                        <span className="block text-[10px] text-muted-foreground">TTP {b.ttpHours} h</span>
+                      )}
+                    </td>
+                    <td className="py-1 pr-2 text-foreground">
+                      {b.gramStain ? (
+                        <>
+                          {b.gramStain.result.replaceAll("_", " ")}
+                          {b.gramStain.morphology && (
+                            <span className="block text-[10px] text-muted-foreground">
+                              {b.gramStain.morphology}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">pending</span>
+                      )}
+                    </td>
+                    <td className="py-1 pr-2 text-foreground">
+                      {b.maldiTof ? (
+                        <>
+                          {b.maldiTof.organismDisplay || "performed"}
+                          {(b.maldiTof.confidence || b.maldiTof.score) && (
+                            <span className="block text-[10px] text-muted-foreground">
+                              {[b.maldiTof.confidence, b.maldiTof.score].filter(Boolean).join(" · ")}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">not recorded</span>
+                      )}
+                    </td>
+                    <td className="py-1 pr-2 text-foreground">
+                      {b.directAst ? (
+                        <>
+                          {b.directAst.panelName || b.directAst.method || "direct AST"}
+                          <span className="ml-1 text-[10px] uppercase text-muted-foreground">
+                            {b.directAst.standard ?? "EUCAST"}
+                          </span>
+                          {b.directAst.resultSummary && (
+                            <span className="block text-[10px] text-muted-foreground">
+                              {b.directAst.resultSummary}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">not recorded</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
+
+        {!isBloodReport && (
+          <section className="mt-3">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Microscopy</div>
+            <p className="text-sm text-foreground">{doc.microscopySummary}</p>
+          </section>
+        )}
 
         <section className="mt-3">
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Culture & susceptibility</div>

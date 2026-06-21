@@ -117,7 +117,12 @@ function mrsaClusterAst(isolateId: string): ASTResult[] {
 
 // 1. MRSA bloodstream infection (MB25-EF34GH)
 const mrsa = (() => {
-  const i = iso(1, "SAUR", "Staphylococcus aureus", { growthQuantifierCode: "HEAVY" });
+  const drawTime = dayAgo(2);
+  const positiveTime = dayAgo(1);
+  const i = iso(1, "SAUR", "Staphylococcus aureus", {
+    growthQuantifierCode: "HEAVY",
+    bloodSourceLinks: [{ setNo: 1, bottleType: "AEROBIC" }],
+  });
   return {
     ...base("MB25-EF34GH", WorkflowStage.AST),
     priority: Priority.Urgent,
@@ -137,6 +142,67 @@ const mrsa = (() => {
       receivedAt: now,
       containerCode: "BC_BOTTLE_AEROBIC",
       freeTextLabel: "Blood culture, central line",
+      details: {
+        sets: [
+          {
+            drawSite: "CENTRAL_LINE",
+            lumenLabel: "Central line lumen",
+            bottleTypes: ["AEROBIC", "ANAEROBIC"],
+            drawTime,
+          },
+        ],
+        bottleResults: [
+          {
+            setNo: 1,
+            bottleType: "AEROBIC",
+            growth: "growth",
+            status: "flagged_positive",
+            loadedAt: drawTime,
+            positiveAt: positiveTime,
+            ttpHours: 24,
+            drawToPositiveHours: 24,
+            gramStain: {
+              result: "GPC_CLUSTERS",
+              morphology: "Gram-positive cocci in clusters",
+              performedBy: "demo",
+              performedAt: positiveTime,
+            },
+            maldiTof: {
+              performed: true,
+              organismCode: "SAUR",
+              organismDisplay: "Staphylococcus aureus",
+              confidence: "high",
+              score: "2.25",
+              performedBy: "demo",
+              performedAt: positiveTime,
+            },
+            directAst: {
+              performed: true,
+              method: "EUCAST_RAST",
+              standard: "EUCAST",
+              panelName: "Staphylococcus direct RAST",
+              startedAt: positiveTime,
+              readAt: now,
+              performedBy: "demo",
+              resultSummary: "Cefoxitin resistant; glycopeptide MIC pending.",
+            },
+            criticalCall: {
+              calledBy: "demo",
+              calledTo: "ICU registrar",
+              calledAt: positiveTime,
+              readBack: true,
+              notes: "Positive blood culture: GPC in clusters, likely Staphylococcus species.",
+            },
+          },
+          {
+            setNo: 1,
+            bottleType: "ANAEROBIC",
+            growth: "pending",
+            status: "incubating",
+            loadedAt: drawTime,
+          },
+        ],
+      },
     },
     ...emptyTail(),
     isolates: [i],

@@ -12,6 +12,7 @@ Add these repository variables:
 - `VITE_MEDUGU_PUBLIC_BASE_URL`, for example `https://lims.example.com`
 - `VITE_ZONE_READER_PUBLIC_URL`, for example `https://reader.example.com`
 - `VITE_MEDUGU_REQUIRE_AUTH=false` for prelaunch no-login mode; change to `true` when real Supabase Auth users/profiles are ready.
+- `VITE_MEDUGU_IPC_EMAIL`, for the IPC "Notify IPC" email draft button
 - `SUPABASE_PROJECT_REF`, only if using the Supabase migration workflow
 
 Add these repository secrets:

@@ -27,6 +27,7 @@ type ASTPanelEntryProps = {
   onMethodChange: (value: ASTMethod) => void;
   onStandardChange: (value: ASTStandard) => void;
   onAddPanel: () => void;
+  onManageBloodSources?: () => void;
 };
 
 export function ASTPanelEntry({
@@ -45,6 +46,7 @@ export function ASTPanelEntry({
   onMethodChange,
   onStandardChange,
   onAddPanel,
+  onManageBloodSources,
 }: ASTPanelEntryProps) {
   const isAddPanelBlocked = isBloodASTBlocked || !isPanelEligible;
 
@@ -96,9 +98,13 @@ export function ASTPanelEntry({
           Add panel
         </button>
         {isBloodASTBlocked && (
-          <span className="ml-2 text-[11px] text-destructive">
-            Blood culture AST requires organism linkage to a positive bottle.
-          </span>
+          <button
+            type="button"
+            onClick={onManageBloodSources}
+            className="ml-2 rounded border border-destructive/40 bg-destructive/10 px-2 py-1 text-[11px] text-destructive hover:bg-destructive/15"
+          >
+            Link this organism to at least one positive blood culture bottle before AST entry.
+          </button>
         )}
         {!isPanelEligible && (
           <span className="ml-2 text-[11px] text-destructive">

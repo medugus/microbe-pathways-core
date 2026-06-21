@@ -23,6 +23,7 @@ type ASTEntryControlsProps = {
   onStandardChange: (value: ASTStandard) => void;
   onRawValueChange: (value: string) => void;
   onAdd: () => void;
+  onManageBloodSources?: () => void;
 };
 
 export function ASTEntryControls({
@@ -37,6 +38,7 @@ export function ASTEntryControls({
   onStandardChange,
   onRawValueChange,
   onAdd,
+  onManageBloodSources,
 }: ASTEntryControlsProps) {
   const hasAntibioticOptions = antibioticOptions.length > 0;
   const isAddBlocked = isBloodASTBlocked || !hasAntibioticOptions;
@@ -105,9 +107,13 @@ export function ASTEntryControls({
           Add AST row
         </button>
         {isBloodASTBlocked && (
-          <span className="text-[11px] text-destructive">
-            Blood culture AST requires organism linkage to a positive bottle.
-          </span>
+          <button
+            type="button"
+            onClick={onManageBloodSources}
+            className="rounded border border-destructive/40 bg-destructive/10 px-2 py-1 text-[11px] text-destructive hover:bg-destructive/15"
+          >
+            Link this organism to at least one positive blood culture bottle before AST entry.
+          </button>
         )}
         {!hasAntibioticOptions && (
           <span className="text-[11px] text-muted-foreground">
