@@ -57,6 +57,7 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [appliedSummary, setAppliedSummary] = useState<string | null>(null);
+  const [zoneReaderOpen, setZoneReaderOpen] = useState(false);
 
   const isolates = accession.isolates;
   const activeIsolateId = isolateId || isolates[0]?.id || "";
@@ -352,11 +353,43 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
         />
       </div>
 
-      <ZoneReaderPanel
-        accession={accession}
-        isolateId={activeIsolateId}
-        astPanelId={selectedPanel?.id ?? ""}
-      />
+      <section className="overflow-hidden rounded-md border border-border bg-background">
+        <button
+          type="button"
+          onClick={() => setZoneReaderOpen((open) => !open)}
+          className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/40"
+          aria-expanded={zoneReaderOpen}
+        >
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs text-muted-foreground">
+                {zoneReaderOpen ? "v" : ">"}
+              </span>
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-foreground">
+                Zone Reader exchange
+              </h4>
+              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                optional
+              </span>
+            </div>
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+              Send worklist to Zone Reader and import returned zone measurements when needed.
+            </p>
+          </div>
+          <span className="shrink-0 text-[11px] text-muted-foreground">
+            {zoneReaderOpen ? "Hide" : "Open"}
+          </span>
+        </button>
+        {zoneReaderOpen && (
+          <div className="border-t border-border p-3">
+            <ZoneReaderPanel
+              accession={accession}
+              isolateId={activeIsolateId}
+              astPanelId={selectedPanel?.id ?? ""}
+            />
+          </div>
+        )}
+      </section>
 
       <ASTReportabilityBoard accession={accession} />
 
