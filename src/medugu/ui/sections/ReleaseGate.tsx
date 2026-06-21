@@ -1,5 +1,6 @@
 import type { Accession } from "../../domain/types";
 import type { ValidationReport } from "../../logic/validationEngine";
+import { navigateToValidationIssue, targetForValidationIssue } from "../validationNavigation";
 
 interface ReleaseGateProps {
   accession: Accession;
@@ -33,16 +34,32 @@ export function ReleaseGate({
             {validationReport.blockers.length}
           </div>
           <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-            {validationReport.blockers.slice(0, 6).map((b) => (
-              <li key={b.id}>· {b.message}</li>
-            ))}
+            {validationReport.blockers.slice(0, 6).map((b) => {
+              const target = targetForValidationIssue(b);
+              return (
+                <li key={b.id}>
+                  <button
+                    type="button"
+                    onClick={() => navigateToValidationIssue(b)}
+                    className="block w-full rounded px-1 py-0.5 text-left hover:bg-muted"
+                  >
+                    <span>· {b.message}</span>
+                    <span className="ml-1 text-[10px] uppercase tracking-wide opacity-70">
+                      Go to {target.label}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
         <div className="rounded-md border border-border bg-card p-3">
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Phone-out</div>
           <div className="mt-1 text-sm text-foreground">
-            {accession.phoneOuts.length === 0 ? "none recorded" : `${accession.phoneOuts.length} event(s)`}
+            {accession.phoneOuts.length === 0
+              ? "none recorded"
+              : `${accession.phoneOuts.length} event(s)`}
           </div>
           {validationReport.phoneOutRequiredPending && (
             <>
@@ -61,18 +78,25 @@ export function ReleaseGate({
         </div>
 
         <div className="rounded-md border border-border bg-card p-3">
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Consultant</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            Consultant
+          </div>
           {validationReport.consultantReleaseRequired ? (
             accession.release.consultantApproval ? (
               <div className="mt-1 text-xs text-foreground">
-                Approved by <span className="font-medium">{accession.release.consultantApproval.approvedBy}</span>
+                Approved by{" "}
+                <span className="font-medium">
+                  {accession.release.consultantApproval.approvedBy}
+                </span>
                 <div className="text-[10px] text-muted-foreground">
                   {new Date(accession.release.consultantApproval.approvedAt).toLocaleString()}
                 </div>
               </div>
             ) : (
               <div className="mt-1 space-y-1.5">
-                <p className="text-[11px] text-destructive">Required for {accession.specimen.subtypeCode}.</p>
+                <p className="text-[11px] text-destructive">
+                  Required for {accession.specimen.subtypeCode}.
+                </p>
                 <input
                   value={consultantName}
                   onChange={(e) => setConsultantName(e.target.value)}
@@ -103,10 +127,11 @@ export function ReleaseGate({
 
       {validationReport.amsPendingRestrictedCount > 0 && (
         <section className="callout callout-warning text-[11px]">
-          <strong>{validationReport.amsPendingRestrictedCount}</strong> restricted antimicrobial row(s) are still hidden
-          from the clinician report pending AMS approval. Open the <span className="font-mono">AMS approvals</span>{" "}
-          section to request, approve, or deny. Release will proceed but those rows will remain suppressed in the
-          released report and exports until approved (a later amendment will be required to surface them).
+          <strong>{validationReport.amsPendingRestrictedCount}</strong> restricted antimicrobial
+          row(s) are still hidden from the clinician report pending AMS approval. Open the{" "}
+          <span className="font-mono">AMS approvals</span> section to request, approve, or deny.
+          Release will proceed but those rows will remain suppressed in the released report and
+          exports until approved (a later amendment will be required to surface them).
         </section>
       )}
     </>

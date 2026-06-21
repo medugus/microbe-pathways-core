@@ -2,6 +2,7 @@
 
 import { useActiveAccession } from "../../store/useAccessionStore";
 import { runValidation } from "../../logic/validationEngine";
+import { navigateToValidationIssue, targetForValidationIssue } from "../validationNavigation";
 
 export function ValidationSection() {
   const accession = useActiveAccession();
@@ -45,9 +46,7 @@ export function ValidationSection() {
           </span>
         )}
         {v.phoneOutRequiredPending && (
-          <span className="chip chip-square chip-danger">
-            phone-out required (blocking)
-          </span>
+          <span className="chip chip-square chip-danger">phone-out required (blocking)</span>
         )}
         {v.amsPendingRestrictedCount > 0 && (
           <span className="chip chip-square chip-ams-pending">
@@ -65,25 +64,37 @@ export function ValidationSection() {
               {sev === "block" ? "Blockers" : sev === "warn" ? "Warnings" : "Information"}
             </h4>
             <ul className="space-y-1.5">
-              {list.map((i) => (
-                <li
-                  key={i.id}
-                  className={`rounded-md border px-3 py-2 text-sm ${
-                    sev === "block"
-                      ? "border-destructive/30 bg-destructive/10 text-destructive"
-                      : sev === "warn"
-                      ? "border-border bg-muted text-foreground"
-                      : "border-border bg-background text-muted-foreground"
-                  }`}
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span>{i.message}</span>
-                    <code className="text-[10px] opacity-70">
-                      {i.section} · {i.code}
-                    </code>
-                  </div>
-                </li>
-              ))}
+              {list.map((i) => {
+                const target = targetForValidationIssue(i);
+                return (
+                  <li
+                    key={i.id}
+                    className={`rounded-md border text-sm ${
+                      sev === "block"
+                        ? "border-destructive/30 bg-destructive/10 text-destructive"
+                        : sev === "warn"
+                          ? "border-border bg-muted text-foreground"
+                          : "border-border bg-background text-muted-foreground"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => navigateToValidationIssue(i)}
+                      className="block w-full px-3 py-2 text-left hover:bg-background/50"
+                    >
+                      <span className="flex items-baseline justify-between gap-3">
+                        <span>{i.message}</span>
+                        <code className="shrink-0 text-[10px] opacity-70">
+                          {i.section} · {i.code}
+                        </code>
+                      </span>
+                      <span className="mt-1 block text-[10px] font-medium uppercase tracking-wide opacity-70">
+                        Go to {target.label}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         );

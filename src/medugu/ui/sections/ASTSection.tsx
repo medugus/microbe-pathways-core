@@ -27,6 +27,7 @@ import { ASTPanelEntry } from "./ASTPanelEntry";
 import { ASTServerActions } from "./ASTServerActions";
 import { AntibiogramGrid } from "./AntibiogramGrid";
 import { ZoneReaderPanel } from "./ast/ZoneReaderPanel";
+import { navigateToWorkspaceTarget } from "../validationNavigation";
 
 type EntryMode = "panel" | "single";
 
@@ -63,7 +64,8 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
   const selectedOrganism = selectedIsolate ? getOrganism(selectedIsolate.organismCode) : undefined;
   const isNoAstOrganism = !!selectedOrganism?.noAst;
   const screenPathway = useMemo(
-    () => getColonisationScreenPathway(accession.specimen.familyCode, accession.specimen.subtypeCode),
+    () =>
+      getColonisationScreenPathway(accession.specimen.familyCode, accession.specimen.subtypeCode),
     [accession.specimen.familyCode, accession.specimen.subtypeCode],
   );
   const eligiblePanels = useMemo(
@@ -80,7 +82,7 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     : false;
   const selectedPanel = requestedPanelEligible
     ? requestedPanel
-    : fallbackPanel ?? eligiblePanels[0];
+    : (fallbackPanel ?? eligiblePanels[0]);
   const isSelectedPanelEligible = selectedPanel
     ? isASTPanelEligibleForIsolate(selectedPanel, selectedIsolate, accession)
     : false;
@@ -90,12 +92,12 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     return new Set(listPositiveBottles(accession).map((p) => sourceLinkKey(p.setNo, p.bottleType)));
   }, [accession]);
 
-  const selectedIsolateHasPositiveLink =
-    !!selectedIsolate?.bloodSourceLinks?.some((l) =>
-      bloodPositiveSources.has(sourceLinkKey(l.setNo, l.bottleType)),
-    );
+  const selectedIsolateHasPositiveLink = !!selectedIsolate?.bloodSourceLinks?.some((l) =>
+    bloodPositiveSources.has(sourceLinkKey(l.setNo, l.bottleType)),
+  );
 
-  const isBloodASTBlocked = isBloodCulture(accession) && !!selectedIsolate && !selectedIsolateHasPositiveLink;
+  const isBloodASTBlocked =
+    isBloodCulture(accession) && !!selectedIsolate && !selectedIsolateHasPositiveLink;
 
   const singleAntibioticOptions = useMemo(() => {
     if (isNoAstOrganism) return [];
@@ -124,7 +126,14 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     if (!panelId && selectedPanel.id) {
       setPanelId(selectedPanel.id);
     }
-  }, [eligiblePanels, fallbackPanel, isSelectedPanelEligible, panelId, selectedIsolate, selectedPanel]);
+  }, [
+    eligiblePanels,
+    fallbackPanel,
+    isSelectedPanelEligible,
+    panelId,
+    selectedIsolate,
+    selectedPanel,
+  ]);
 
   useEffect(() => {
     const nextStandard = getDefaultASTStandardForPanel(selectedPanel);
@@ -237,10 +246,11 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
   }
 
   function goToBloodBottleLinking() {
-    const target =
-      document.getElementById("blood-culture-bottle-workup") ??
-      document.getElementById("sec-isolate");
-    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    navigateToWorkspaceTarget({
+      sectionId: "sec-isolate",
+      anchorId: "blood-culture-bottle-workup",
+      label: "Blood bottle workup",
+    });
   }
 
   if (isolates.length === 0) {
@@ -255,7 +265,9 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
     <div className="space-y-5">
       <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-background p-3 md:grid-cols-6">
         <label className="text-xs md:col-span-2">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Entry mode</span>
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+            Entry mode
+          </span>
           <select
             value={entryMode}
             onChange={(e) => setEntryMode(e.target.value as EntryMode)}
@@ -267,7 +279,9 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
         </label>
 
         <label className="text-xs md:col-span-2">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Isolate</span>
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+            Isolate
+          </span>
           <select
             value={activeIsolateId}
             onChange={(e) => setIsolateId(e.target.value)}
@@ -349,10 +363,10 @@ function ASTSectionBody({ accession }: { accession: Accession }) {
       <AntibiogramGrid accession={accession} />
 
       <p className="text-[11px] text-muted-foreground">
-        Antibiogram view — antibiotics down, isolates across. S/I/R cells are
-        color-coded with raw value below. Click a cell to edit interpretation or
-        governance; phenotype + cascade decisions are written by the server expert
-        engine. Use consultant override (per row) to deviate, with reason audited.
+        Antibiogram view — antibiotics down, isolates across. S/I/R cells are color-coded with raw
+        value below. Click a cell to edit interpretation or governance; phenotype + cascade
+        decisions are written by the server expert engine. Use consultant override (per row) to
+        deviate, with reason audited.
       </p>
     </div>
   );

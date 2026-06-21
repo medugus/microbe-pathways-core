@@ -10,11 +10,7 @@ import {
   NON_GROWTH_ORGANISM_CODES,
   SIGNIFICANCE_OPTIONS,
 } from "../../config/organisms";
-import {
-  buildIsolate,
-  describeGrowth,
-  suggestSignificance,
-} from "../../logic/isolateHelpers";
+import { buildIsolate, describeGrowth, suggestSignificance } from "../../logic/isolateHelpers";
 import {
   BC_MAX_ISOLATES,
   canAddBloodIsolate,
@@ -30,6 +26,7 @@ import { getColonisationScreenPathway } from "../../logic/specimenResolver";
 import { runValidation } from "../../logic/validationEngine";
 import type { Isolate, IsolateSignificance } from "../../domain/types";
 import { BottleResultsEditor } from "./BottleResultsEditor";
+import { navigateToWorkspaceTarget } from "../validationNavigation";
 
 export function IsolateSection() {
   const accession = useActiveAccession();
@@ -45,7 +42,8 @@ export function IsolateSection() {
   }, [accession]);
 
   const screenPathway = useMemo(
-    () => getColonisationScreenPathway(accession?.specimen.familyCode, accession?.specimen.subtypeCode),
+    () =>
+      getColonisationScreenPathway(accession?.specimen.familyCode, accession?.specimen.subtypeCode),
     [accession?.specimen.familyCode, accession?.specimen.subtypeCode],
   );
 
@@ -56,7 +54,8 @@ export function IsolateSection() {
   }, [screenPathway]);
 
   useEffect(() => {
-    const fallbackCode = screenPathway?.defaultOrganismCode ?? organismOptions[0]?.code ?? ORGANISMS[0].code;
+    const fallbackCode =
+      screenPathway?.defaultOrganismCode ?? organismOptions[0]?.code ?? ORGANISMS[0].code;
     if (!organismOptions.some((organism) => organism.code === organismCode)) {
       setOrganismCode(fallbackCode);
     }
@@ -84,7 +83,7 @@ export function IsolateSection() {
     if (!canAdd) return;
     const selectedOrganismCode = organismOptions.some((organism) => organism.code === organismCode)
       ? organismCode
-      : screenPathway?.defaultOrganismCode ?? organismOptions[0]?.code ?? ORGANISMS[0].code;
+      : (screenPathway?.defaultOrganismCode ?? organismOptions[0]?.code ?? ORGANISMS[0].code);
     const cfu = colonyCount.trim() === "" ? undefined : Number(colonyCount);
     const iso = buildIsolate(accession, selectedOrganismCode, {
       growthQuantifierCode: growthCode || undefined,
@@ -99,9 +98,11 @@ export function IsolateSection() {
   }
 
   function goToBottleWorkup() {
-    document
-      .getElementById("blood-culture-bottle-workup")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    navigateToWorkspaceTarget({
+      sectionId: "sec-isolate",
+      anchorId: "blood-culture-bottle-workup",
+      label: "Blood bottle workup",
+    });
   }
 
   return (
@@ -118,8 +119,8 @@ export function IsolateSection() {
           </div>
           {atUnusual && (
             <p className="mt-2 rounded border border-amber-500/40 bg-amber-500/10 p-2 text-amber-700 dark:text-amber-300">
-              Three blood-culture isolates are unusual and often represent contamination or mixed growth.
-              Review clinical significance for each isolate before release.
+              Three blood-culture isolates are unusual and often represent contamination or mixed
+              growth. Review clinical significance for each isolate before release.
             </p>
           )}
           {isoBlockers.has("BC_ISO_MISSING_FOR_POSITIVE") && (
@@ -143,9 +144,7 @@ export function IsolateSection() {
         >
           <summary className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Per-set / per-bottle growth
-            {accession.isolates.length === 0
-              ? " (add an isolate to record bottle results)"
-              : ""}
+            {accession.isolates.length === 0 ? " (add an isolate to record bottle results)" : ""}
           </summary>
           <div className="mt-2">
             <BottleResultsEditor accession={accession} />
@@ -155,9 +154,13 @@ export function IsolateSection() {
 
       {screenPathway && (
         <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs">
-          <div className="font-medium text-foreground">{screenPathway.label} restricted pathway</div>
+          <div className="font-medium text-foreground">
+            {screenPathway.label} restricted pathway
+          </div>
           <p className="mt-1 text-muted-foreground">{screenPathway.organismHelp}</p>
-          <p className="mt-1 text-muted-foreground">Allowed organism entries: {screenAllowedLabels}.</p>
+          <p className="mt-1 text-muted-foreground">
+            Allowed organism entries: {screenAllowedLabels}.
+          </p>
           <p className="mt-1 text-muted-foreground">{screenPathway.astHelp}</p>
         </div>
       )}
@@ -165,8 +168,10 @@ export function IsolateSection() {
       {/* Entry row */}
       <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-background p-3 md:grid-cols-6">
         <label className="md:col-span-2 text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Organism</span>
-           <select
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+            Organism
+          </span>
+          <select
             value={organismCode}
             onChange={(e) => {
               const code = e.target.value;
@@ -185,27 +190,31 @@ export function IsolateSection() {
           </select>
         </label>
         <label className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Growth</span>
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+            Growth
+          </span>
           <select
             value={growthCode}
             onChange={(e) => setGrowthCode(e.target.value)}
             className="mt-1 w-full rounded border border-border bg-card px-2 py-1.5 text-sm"
           >
             <option value="">—</option>
-            {GROWTH_QUANTIFIERS
-              .filter((g) => {
-                if (g.code === "NO_GROWTH" && !NON_GROWTH_ORGANISM_CODES.includes(organismCode)) {
-                  return false;
-                }
-                return true;
-              })
-              .map((g) => (
-                <option key={g.code} value={g.code}>{g.display}</option>
-              ))}
+            {GROWTH_QUANTIFIERS.filter((g) => {
+              if (g.code === "NO_GROWTH" && !NON_GROWTH_ORGANISM_CODES.includes(organismCode)) {
+                return false;
+              }
+              return true;
+            }).map((g) => (
+              <option key={g.code} value={g.code}>
+                {g.display}
+              </option>
+            ))}
           </select>
         </label>
         <label className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">CFU/mL</span>
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+            CFU/mL
+          </span>
           <input
             value={colonyCount}
             onChange={(e) => setColonyCount(e.target.value)}
@@ -215,7 +224,9 @@ export function IsolateSection() {
           />
         </label>
         <fieldset className="text-xs">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Composition</span>
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+            Composition
+          </span>
           <div className="mt-1 flex items-center gap-3">
             <label className="flex items-center gap-1.5">
               <input
@@ -263,7 +274,9 @@ export function IsolateSection() {
 
       {/* Existing isolates */}
       {accession.isolates.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No isolates yet. Add one above (use "No growth" organism for explicit no-growth rows).</p>
+        <p className="text-xs text-muted-foreground">
+          No isolates yet. Add one above (use "No growth" organism for explicit no-growth rows).
+        </p>
       ) : (
         <ul className="space-y-2">
           {accession.isolates.map((i) => {
@@ -278,19 +291,29 @@ export function IsolateSection() {
               <li
                 key={i.id}
                 className={`rounded-md border bg-card p-3 text-sm ${
-                  sigMissing || srcMissing || screenRestricted ? "border-destructive" : "border-border"
+                  sigMissing || srcMissing || screenRestricted
+                    ? "border-destructive"
+                    : "border-border"
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">#{i.isolateNo}</span>
+                      <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                        #{i.isolateNo}
+                      </span>
                       <span className="font-medium text-foreground">{i.organismDisplay}</span>
-                      {i.purityFlag && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">pure</span>}
-                      {i.mixedGrowth && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">mixed</span>}
-                      {showBcLinkage && (
-                        <SignificanceChip iso={i} />
+                      {i.purityFlag && (
+                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">
+                          pure
+                        </span>
                       )}
+                      {i.mixedGrowth && (
+                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">
+                          mixed
+                        </span>
+                      )}
+                      {showBcLinkage && <SignificanceChip iso={i} />}
                     </div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       growth: {describeGrowth(i)}
@@ -309,7 +332,9 @@ export function IsolateSection() {
                       }`}
                     >
                       {SIGNIFICANCE_OPTIONS.map((s) => (
-                        <option key={s.code} value={s.code}>{s.label}</option>
+                        <option key={s.code} value={s.code}>
+                          {s.label}
+                        </option>
                       ))}
                     </select>
                     <button
@@ -324,14 +349,15 @@ export function IsolateSection() {
 
                 {screenRestricted && screenPathway && (
                   <p className="mt-2 text-[11px] text-destructive">
-                    {screenPathway.label} allows only {screenAllowedLabels}. Remove or replace this isolate before release.
+                    {screenPathway.label} allows only {screenAllowedLabels}. Remove or replace this
+                    isolate before release.
                   </p>
                 )}
 
                 {sigMissing && (
                   <p className="mt-2 text-[11px] text-destructive">
-                    Classify clinical significance (true pathogen / probable contaminant / mixed growth / uncertain)
-                    before release.
+                    Classify clinical significance (true pathogen / probable contaminant / mixed
+                    growth / uncertain) before release.
                   </p>
                 )}
 
@@ -349,15 +375,16 @@ export function IsolateSection() {
                           onClick={goToBottleWorkup}
                           className="rounded border border-destructive/40 bg-destructive/10 px-2 py-1 text-[11px] text-destructive hover:bg-destructive/15"
                         >
-                          Link this organism to at least one positive blood culture bottle before AST entry.
+                          Link this organism to at least one positive blood culture bottle before
+                          AST entry.
                         </button>
                       )}
                     </div>
                     {positiveBottles.length === 0 ? (
                       <div className="space-y-2 text-[11px] text-muted-foreground">
                         <p>
-                          No positive bottles recorded yet. Mark at least one bottle as "Flagged +" or "Removed"
-                          in per-bottle tracking to link this isolate to its source.
+                          No positive bottles recorded yet. Mark at least one bottle as "Flagged +"
+                          or "Removed" in per-bottle tracking to link this isolate to its source.
                         </p>
                         <button
                           type="button"
@@ -368,7 +395,11 @@ export function IsolateSection() {
                         </button>
                       </div>
                     ) : (
-                      <SourceLinkPicker accession={accession.id} isolate={i} positives={positiveBottles} />
+                      <SourceLinkPicker
+                        accession={accession.id}
+                        isolate={i}
+                        positives={positiveBottles}
+                      />
                     )}
                   </div>
                 )}
@@ -434,7 +465,11 @@ function SourceLinkPicker({
               type="button"
               onClick={() =>
                 meduguActions.updateIsolate(accession, isolate.id, {
-                  bloodSourceLinks: toggleSourceLink(isolate.bloodSourceLinks, p.setNo, p.bottleType),
+                  bloodSourceLinks: toggleSourceLink(
+                    isolate.bloodSourceLinks,
+                    p.setNo,
+                    p.bottleType,
+                  ),
                 })
               }
               className={`rounded border px-2 py-1 text-[11px] ${

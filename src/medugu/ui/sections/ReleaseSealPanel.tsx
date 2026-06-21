@@ -2,6 +2,7 @@ import type { Accession } from "../../domain/types";
 import { ReleaseState } from "../../domain/enums";
 import type { ValidationReport } from "../../logic/validationEngine";
 import type { AutoDispatchResult } from "../../store/export.functions";
+import { navigateToValidationIssue, targetForValidationIssue } from "../validationNavigation";
 
 interface ReleaseSealPanelProps {
   accession: Accession;
@@ -36,7 +37,8 @@ export function ReleaseSealPanel({
             </div>
             {accession.releasedAt && (
               <div className="mt-0.5 text-[10px] text-muted-foreground">
-                released by {accession.releasingActor} @ {new Date(accession.releasedAt).toLocaleString()}
+                released by {accession.releasingActor} @{" "}
+                {new Date(accession.releasedAt).toLocaleString()}
               </div>
             )}
           </div>
@@ -57,12 +59,28 @@ export function ReleaseSealPanel({
                     : "Release blocked"}
           </button>
         </div>
-        {sealError && <p className="mt-2 text-[11px] text-destructive">Server rejected release: {sealError}</p>}
+        {sealError && (
+          <p className="mt-2 text-[11px] text-destructive">Server rejected release: {sealError}</p>
+        )}
         {!validationReport.releaseAllowed && !released && (
           <ul className="mt-2 space-y-1 text-[11px] text-destructive">
-            {validationReport.blockers.map((b) => (
-              <li key={b.id}>· {b.message}</li>
-            ))}
+            {validationReport.blockers.map((b) => {
+              const target = targetForValidationIssue(b);
+              return (
+                <li key={b.id}>
+                  <button
+                    type="button"
+                    onClick={() => navigateToValidationIssue(b)}
+                    className="block w-full rounded px-1 py-0.5 text-left hover:bg-destructive/10"
+                  >
+                    <span>· {b.message}</span>
+                    <span className="ml-1 text-[10px] uppercase tracking-wide opacity-70">
+                      Go to {target.label}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -74,8 +92,8 @@ export function ReleaseSealPanel({
           </h4>
           {autoDispatch.length === 0 ? (
             <p className="mt-1 text-[11px] text-muted-foreground">
-              No enabled receivers configured for this tenant — nothing to dispatch. Configure receivers in
-              /admin/receivers.
+              No enabled receivers configured for this tenant — nothing to dispatch. Configure
+              receivers in /admin/receivers.
             </p>
           ) : (
             <ul className="mt-2 space-y-1.5">
@@ -90,7 +108,9 @@ export function ReleaseSealPanel({
                   </span>
                   <span className="font-medium text-foreground">{d.receiverName}</span>
                   <span className="text-muted-foreground">[{d.format}]</span>
-                  {d.httpStatus !== undefined && <span className="text-muted-foreground">HTTP {d.httpStatus}</span>}
+                  {d.httpStatus !== undefined && (
+                    <span className="text-muted-foreground">HTTP {d.httpStatus}</span>
+                  )}
                   {!d.ok && d.reason && <span className="text-destructive">— {d.reason}</span>}
                 </li>
               ))}
@@ -120,8 +140,8 @@ export function ReleaseSealPanel({
             )}
           </pre>
           <p className="mt-1 text-[10px] text-muted-foreground">
-            Snapshot is immutable; the SHA-256 seal is server-issued and stored in the append-only release_packages
-            table.
+            Snapshot is immutable; the SHA-256 seal is server-issued and stored in the append-only
+            release_packages table.
           </p>
         </section>
       )}
