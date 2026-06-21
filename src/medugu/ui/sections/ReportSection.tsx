@@ -4,6 +4,10 @@
 
 import { useActiveAccession } from "../../store/useAccessionStore";
 import { buildReportPreview, type CommentSource } from "../../logic/reportPreview";
+import {
+  buildConsultantMicrobiologistComments,
+  consultantSignOffLabel,
+} from "../../logic/consultantComments";
 
 const COMMENT_LABEL: Record<CommentSource, string> = {
   clinical: "Clinical",
@@ -21,6 +25,7 @@ export function ReportSection() {
     );
   }
   const doc = buildReportPreview(accession);
+  const consultantComments = buildConsultantMicrobiologistComments(doc);
   const isBloodReport = accession.specimen.familyCode === "BLOOD";
   const positiveBloodBottles =
     doc.bloodBottles?.filter(
@@ -36,21 +41,30 @@ export function ReportSection() {
             <span className="font-mono text-xs text-muted-foreground">{doc.accessionNumber}</span>
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {doc.releaseState} · v{doc.reportVersion} · generated {new Date(doc.generatedAt).toLocaleString()}
+            {doc.releaseState} · v{doc.reportVersion} · generated{" "}
+            {new Date(doc.generatedAt).toLocaleString()}
           </div>
         </header>
 
         <section className="mt-3 grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
           <div>
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Patient</div>
-            <div className="text-foreground">{doc.patient.name} · {doc.patient.sex}</div>
-            <div className="text-xs text-muted-foreground">MRN {doc.patient.mrn}{doc.patient.ward ? ` · ${doc.patient.ward}` : ""}</div>
+            <div className="text-foreground">
+              {doc.patient.name} · {doc.patient.sex}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              MRN {doc.patient.mrn}
+              {doc.patient.ward ? ` · ${doc.patient.ward}` : ""}
+            </div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Specimen</div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              Specimen
+            </div>
             <div className="text-foreground">{doc.specimen.display}</div>
             <div className="text-xs text-muted-foreground">
-              pathway {doc.specimen.pathway}{doc.specimen.syndrome ? ` · ${doc.specimen.syndrome}` : ""}
+              pathway {doc.specimen.pathway}
+              {doc.specimen.syndrome ? ` · ${doc.specimen.syndrome}` : ""}
             </div>
           </div>
         </section>
@@ -75,11 +89,21 @@ export function ReportSection() {
                   <tr key={s.setNo} className="border-t border-border align-top">
                     <td className="py-1 pr-2 font-mono text-foreground">#{s.setNo}</td>
                     <td className="py-1 pr-2 text-foreground">
-                      {s.drawSite ? s.drawSite.replace(/_/g, " ").toLowerCase() : <span className="text-muted-foreground">—</span>}
+                      {s.drawSite ? (
+                        s.drawSite.replace(/_/g, " ").toLowerCase()
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
-                    <td className="py-1 pr-2 text-foreground">{s.lumenLabel ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="py-1 pr-2 text-foreground">
-                      {s.bottleTypes.length > 0 ? s.bottleTypes.join(", ").toLowerCase() : <span className="text-muted-foreground">—</span>}
+                      {s.lumenLabel ?? <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="py-1 pr-2 text-foreground">
+                      {s.bottleTypes.length > 0 ? (
+                        s.bottleTypes.join(", ").toLowerCase()
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="py-1 pr-2 font-mono text-muted-foreground">
                       {s.drawTime ? new Date(s.drawTime).toLocaleString() : "—"}
@@ -107,11 +131,16 @@ export function ReportSection() {
               </thead>
               <tbody>
                 {positiveBloodBottles.map((b) => (
-                  <tr key={`${b.setNo}-${b.bottleType}`} className="border-t border-border align-top">
+                  <tr
+                    key={`${b.setNo}-${b.bottleType}`}
+                    className="border-t border-border align-top"
+                  >
                     <td className="py-1 pr-2 font-mono text-foreground">
                       Set {b.setNo} · {b.bottleType.toLowerCase()}
                       {b.ttpHours !== undefined && (
-                        <span className="block text-[10px] text-muted-foreground">TTP {b.ttpHours} h</span>
+                        <span className="block text-[10px] text-muted-foreground">
+                          TTP {b.ttpHours} h
+                        </span>
                       )}
                     </td>
                     <td className="py-1 pr-2 text-foreground">
@@ -134,7 +163,9 @@ export function ReportSection() {
                           {b.maldiTof.organismDisplay || "performed"}
                           {(b.maldiTof.confidence || b.maldiTof.score) && (
                             <span className="block text-[10px] text-muted-foreground">
-                              {[b.maldiTof.confidence, b.maldiTof.score].filter(Boolean).join(" · ")}
+                              {[b.maldiTof.confidence, b.maldiTof.score]
+                                .filter(Boolean)
+                                .join(" · ")}
                             </span>
                           )}
                         </>
@@ -168,13 +199,17 @@ export function ReportSection() {
 
         {!isBloodReport && (
           <section className="mt-3">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Microscopy</div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              Microscopy
+            </div>
             <p className="text-sm text-foreground">{doc.microscopySummary}</p>
           </section>
         )}
 
         <section className="mt-3">
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Culture & susceptibility</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            Culture & susceptibility
+          </div>
           {doc.isolates.length === 0 ? (
             <p className="text-sm text-muted-foreground">No isolates reported.</p>
           ) : (
@@ -182,7 +217,9 @@ export function ReportSection() {
               {doc.isolates.map((iso) => (
                 <li key={iso.isolateNo} className="rounded border border-border p-2">
                   <div className="text-sm">
-                    <span className="font-mono text-xs text-muted-foreground">#{iso.isolateNo}</span>{" "}
+                    <span className="font-mono text-xs text-muted-foreground">
+                      #{iso.isolateNo}
+                    </span>{" "}
                     <span className="font-semibold text-foreground">{iso.organismDisplay}</span>
                     {iso.significance && (
                       <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -190,13 +227,18 @@ export function ReportSection() {
                       </span>
                     )}
                     {iso.growth && (
-                      <span className="ml-2 text-xs text-muted-foreground">growth: {iso.growth}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        growth: {iso.growth}
+                      </span>
                     )}
                   </div>
                   {iso.phenotypeFlags.length > 0 && (
                     <div className="mt-1 flex flex-wrap gap-1">
                       {iso.phenotypeFlags.map((f) => (
-                        <span key={f} className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">
+                        <span
+                          key={f}
+                          className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive"
+                        >
                           {f}
                         </span>
                       ))}
@@ -216,11 +258,18 @@ export function ReportSection() {
                       </thead>
                       <tbody>
                         {iso.ast.map((r) => (
-                          <tr key={r.antibioticCode} className={`border-t border-border ${r.visibleToClinician ? "" : "opacity-60"}`}>
+                          <tr
+                            key={r.antibioticCode}
+                            className={`border-t border-border ${r.visibleToClinician ? "" : "opacity-60"}`}
+                          >
                             <td className="py-1 text-foreground">{r.antibioticDisplay}</td>
                             <td
                               className="py-1 font-mono"
-                              title={r.breakpoint ? `${r.breakpoint.standard} breakpoint: ${r.breakpoint.summary}` : undefined}
+                              title={
+                                r.breakpoint
+                                  ? `${r.breakpoint.standard} breakpoint: ${r.breakpoint.summary}`
+                                  : undefined
+                              }
                             >
                               {r.visibleToClinician ? (r.interpretation ?? "—") : "·"}
                             </td>
@@ -229,16 +278,21 @@ export function ReportSection() {
                             </td>
                             <td className="py-1 font-mono text-[11px] text-muted-foreground">
                               {r.breakpoint ? (
-                                <span title={`${r.breakpoint.standard} · derived from active config`}>
+                                <span
+                                  title={`${r.breakpoint.standard} · derived from active config`}
+                                >
                                   {r.breakpoint.summary}
-                                  <span className="ml-1 text-[9px] uppercase opacity-70">{r.breakpoint.standard}</span>
+                                  <span className="ml-1 text-[9px] uppercase opacity-70">
+                                    {r.breakpoint.standard}
+                                  </span>
                                 </span>
                               ) : (
                                 <span className="opacity-60">—</span>
                               )}
                             </td>
                             <td className="py-1 text-[10px] text-muted-foreground">
-                              {r.releaseClass ?? "—"}{r.aware ? ` · ${r.aware}` : ""}
+                              {r.releaseClass ?? "—"}
+                              {r.aware ? ` · ${r.aware}` : ""}
                             </td>
                             <td className="py-1 text-[10px]">
                               {r.visibleToClinician ? (
@@ -265,7 +319,9 @@ export function ReportSection() {
 
         {doc.internalNotes.length > 0 && (
           <section className="mt-3">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Internal IPC notes</div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              Internal IPC notes
+            </div>
             <ul className="mt-1 space-y-1">
               {doc.internalNotes.map((note, idx) => (
                 <li key={idx} className="text-sm text-muted-foreground">
@@ -278,7 +334,9 @@ export function ReportSection() {
 
         {doc.ipc.length > 0 && (
           <section className="mt-3">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">IPC clinician-facing notes</div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              IPC clinician-facing notes
+            </div>
             <ul className="mt-1 space-y-1">
               {doc.ipc.map((i, idx) => (
                 <li key={idx} className="text-sm">
@@ -297,7 +355,9 @@ export function ReportSection() {
 
         {doc.comments.length > 0 && (
           <section className="mt-3">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Interpretive comments</div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              Interpretive comments
+            </div>
             <ul className="mt-1 space-y-1">
               {doc.comments.map((c, idx) => (
                 <li key={idx} className="text-sm text-foreground">
@@ -305,7 +365,9 @@ export function ReportSection() {
                     {COMMENT_LABEL[c.source]}
                   </span>
                   {c.governed && (
-                    <span className="mr-1 rounded bg-primary/10 px-1 py-0.5 text-[10px] text-primary">governed</span>
+                    <span className="mr-1 rounded bg-primary/10 px-1 py-0.5 text-[10px] text-primary">
+                      governed
+                    </span>
                   )}
                   {c.text}
                 </li>
@@ -314,15 +376,36 @@ export function ReportSection() {
           </section>
         )}
 
+        <section className="mt-3 rounded-md border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-900/60 dark:bg-blue-950/20">
+          <div className="text-[10px] uppercase tracking-wide text-blue-700 dark:text-blue-300">
+            Consultant microbiologist comment
+          </div>
+          <ul className="mt-1 list-disc space-y-1 pl-4 text-sm text-foreground">
+            {consultantComments.map((comment, idx) => (
+              <li key={idx}>{comment}</li>
+            ))}
+          </ul>
+          <div className="mt-2 border-t border-blue-200 pt-2 text-xs text-muted-foreground dark:border-blue-900/60">
+            {consultantSignOffLabel(accession)}
+            {accession.release.consultantApproval?.reason && (
+              <span className="ml-2">
+                Reason/note: {accession.release.consultantApproval.reason}
+              </span>
+            )}
+          </div>
+        </section>
+
         <footer className="mt-3 border-t border-border pt-2 text-[10px] text-muted-foreground">
-          rules {doc.versions.rule} · breakpoints {doc.versions.breakpoint} · export {doc.versions.export} · build {doc.versions.build}
+          rules {doc.versions.rule} · breakpoints {doc.versions.breakpoint} · export{" "}
+          {doc.versions.export} · build {doc.versions.build}
         </footer>
       </div>
 
       {accession.releasePackage && (
         <p className="text-[11px] text-muted-foreground">
           A frozen v{accession.releasePackage.version} release package exists for this accession.
-          The preview above always reflects live state; the snapshot is preserved on the Release section.
+          The preview above always reflects live state; the snapshot is preserved on the Release
+          section.
         </p>
       )}
     </div>

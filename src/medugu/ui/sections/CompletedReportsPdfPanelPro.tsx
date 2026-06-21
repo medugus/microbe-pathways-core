@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { ReleaseState } from "../../domain/enums";
 import type { Accession } from "../../domain/types";
 import {
@@ -6,6 +7,10 @@ import {
   type CommentSource,
   type ReportPreviewDoc,
 } from "../../logic/reportPreview";
+import {
+  buildConsultantMicrobiologistComments,
+  consultantSignOffLabel,
+} from "../../logic/consultantComments";
 import { useMeduguState } from "../../store/useAccessionStore";
 
 const COMMENT_LABEL: Record<CommentSource, string> = {
@@ -194,7 +199,7 @@ export function CompletedReportsPdfPanel({
         </div>
       )}
 
-      <PrintableReportBook reports={reports} totals={totals} generatedAt={generatedAt} />
+      <PrintableReportPortal reports={reports} totals={totals} generatedAt={generatedAt} />
       <PrintStyles />
     </section>
   );
@@ -218,60 +223,87 @@ function PrintableReportBook({
   totals: ReportTotals;
   generatedAt: string;
 }) {
+  const includeCover = reports.length > 1;
+
   return (
     <div className="medugu-report-print-book" aria-hidden="true">
-      <section className="pdf-cover-page">
-        <div className="pdf-brand-row">
-          <div>
-            <p className="pdf-kicker">Medugu Clinical Microbiology LIMS</p>
-            <h1>Completed Culture Reports</h1>
+      {includeCover && (
+        <section className="pdf-cover-page">
+          <div className="pdf-brand-row">
+            <div>
+              <p className="pdf-kicker">Medugu Clinical Microbiology LIMS</p>
+              <h1>Completed Culture Reports</h1>
+            </div>
+            <div className="pdf-cover-badge">Controlled Copy</div>
           </div>
-          <div className="pdf-cover-badge">Controlled Copy</div>
-        </div>
-        <p className="pdf-cover-meta">Generated {formatDateTime(generatedAt)}</p>
-        <p className="pdf-cover-note">
-          This document contains completed microbiology reports from the active LIMS workspace.
-          Report bodies are rendered from frozen release packages when available; otherwise they are
-          labelled as released live projections.
-        </p>
-        <div className="pdf-cover-metrics">
-          <CoverMetric label="Reports" value={totals.completed} />
-          <CoverMetric label="Frozen packages" value={totals.frozen} />
-          <CoverMetric label="Amended" value={totals.amended} />
-          <CoverMetric label="Isolates" value={totals.isolates} />
-          <CoverMetric label="AST rows" value={totals.astRows} />
-          <CoverMetric label="IPC notes" value={totals.ipcNotes} />
-        </div>
-        <table className="pdf-summary-table">
-          <thead>
-            <tr>
-              <th>Accession</th>
-              <th>Patient</th>
-              <th>Specimen</th>
-              <th>Status</th>
-              <th>Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reports.map((report) => (
-              <tr key={report.accession.id}>
-                <td>{report.accession.accessionNumber}</td>
-                <td>{report.doc.patient.name}</td>
-                <td>{report.doc.specimen.display}</td>
-                <td>
-                  {report.doc.releaseState} v{report.doc.reportVersion}
-                </td>
-                <td>{report.sourceLabel}</td>
+          <p className="pdf-cover-meta">Generated {formatDateTime(generatedAt)}</p>
+          <p className="pdf-cover-note">
+            This document contains completed microbiology reports from the active LIMS workspace.
+            Report bodies are rendered from frozen release packages when available; otherwise they
+            are labelled as released live projections.
+          </p>
+          <div className="pdf-cover-metrics">
+            <CoverMetric label="Reports" value={totals.completed} />
+            <CoverMetric label="Frozen packages" value={totals.frozen} />
+            <CoverMetric label="Amended" value={totals.amended} />
+            <CoverMetric label="Isolates" value={totals.isolates} />
+            <CoverMetric label="AST rows" value={totals.astRows} />
+            <CoverMetric label="IPC notes" value={totals.ipcNotes} />
+          </div>
+          <table className="pdf-summary-table">
+            <thead>
+              <tr>
+                <th>Accession</th>
+                <th>Patient</th>
+                <th>Specimen</th>
+                <th>Status</th>
+                <th>Source</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              {reports.map((report) => (
+                <tr key={report.accession.id}>
+                  <td>{report.accession.accessionNumber}</td>
+                  <td>{report.doc.patient.name}</td>
+                  <td>{report.doc.specimen.display}</td>
+                  <td>
+                    {report.doc.releaseState} v{report.doc.reportVersion}
+                  </td>
+                  <td>{report.sourceLabel}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       {reports.map((report, index) => (
         <ClinicalReportPage key={report.accession.id} report={report} ordinal={index + 1} />
       ))}
     </div>
+  );
+}
+
+function PrintableReportPortal({
+  reports,
+  totals,
+  generatedAt,
+}: {
+  reports: PrintableReport[];
+  totals: ReportTotals;
+  generatedAt: string;
+}) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
+    <PrintableReportBook reports={reports} totals={totals} generatedAt={generatedAt} />,
+    document.body,
   );
 }
 
@@ -287,6 +319,7 @@ function CoverMetric({ label, value }: { label: string; value: number }) {
 function ClinicalReportPage({ report, ordinal }: { report: PrintableReport; ordinal: number }) {
   const { accession, doc, sourceLabel, releasedAt } = report;
   const isBloodReport = !!(doc.bloodSets?.length || doc.bloodBottles?.length);
+  const consultantComments = buildConsultantMicrobiologistComments(doc);
   return (
     <article className="pdf-report-page">
       <header className="pdf-report-header">
@@ -446,6 +479,21 @@ function ClinicalReportPage({ report, ordinal }: { report: PrintableReport; ordi
         </section>
       )}
 
+      <section className="pdf-section pdf-consultant-section">
+        <h3>Consultant Microbiologist Comment</h3>
+        <ul className="pdf-list">
+          {consultantComments.map((comment, index) => (
+            <li key={`${doc.accessionNumber}-consultant-${index}`}>{comment}</li>
+          ))}
+        </ul>
+        <div className="pdf-signoff-box">
+          <strong>{consultantSignOffLabel(accession)}</strong>
+          {accession.release.consultantApproval?.reason && (
+            <span>Reason/note: {accession.release.consultantApproval.reason}</span>
+          )}
+        </div>
+      </section>
+
       <footer className="pdf-report-footer">
         <span>Rules {doc.versions.rule}</span>
         <span>Breakpoints {doc.versions.breakpoint}</span>
@@ -479,24 +527,33 @@ function PrintStyles() {
       }
 
       @media print {
-        @page { size: A4; margin: 12mm; }
+        @page { size: A4; margin: 10mm; }
         html, body { background: #ffffff !important; }
-        body * { visibility: hidden !important; }
-        .medugu-report-print-book, .medugu-report-print-book * { visibility: visible !important; }
+        body > :not(.medugu-report-print-book):not(script):not(style) {
+          display: none !important;
+        }
         .medugu-report-print-book {
           display: block !important;
-          position: absolute;
-          inset: 0 auto auto 0;
-          width: 100%;
+          position: static !important;
+          width: auto;
+          min-height: 0;
           color: #111827;
           background: #ffffff;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 10pt;
-          line-height: 1.35;
+          font-size: 9pt;
+          line-height: 1.28;
         }
-        .pdf-cover-page, .pdf-report-page {
-          page-break-after: always;
+        .pdf-cover-page {
           break-after: page;
+          page-break-after: always;
+        }
+        .pdf-report-page {
+          break-after: auto;
+          page-break-after: auto;
+        }
+        .pdf-report-page:not(:last-child) {
+          break-after: page;
+          page-break-after: always;
         }
         .pdf-brand-row, .pdf-report-header, .pdf-isolate-heading, .pdf-report-footer {
           display: flex;
@@ -504,9 +561,8 @@ function PrintStyles() {
           gap: 16px;
         }
         .pdf-cover-page {
-          min-height: 260mm;
           border-top: 8px solid #1d4ed8;
-          padding-top: 14mm;
+          padding-top: 8mm;
         }
         .pdf-kicker {
           margin: 0 0 4px;
@@ -536,21 +592,22 @@ function PrintStyles() {
         }
         .pdf-cover-note {
           max-width: 160mm;
-          margin: 9mm 0;
-          font-size: 11pt;
+          margin: 6mm 0;
+          font-size: 10pt;
         }
         .pdf-cover-metrics {
           display: grid;
           grid-template-columns: repeat(6, 1fr);
           gap: 6px;
-          margin-bottom: 10mm;
+          margin-bottom: 7mm;
         }
         .pdf-cover-metric, .pdf-info-block {
           border: 1px solid #d8dee9;
           border-radius: 8px;
           background: #f8fafc;
-          padding: 7px 8px;
+          padding: 5px 6px;
           page-break-inside: avoid;
+          break-inside: avoid;
         }
         .pdf-cover-metric span, .pdf-info-block p, .pdf-accession-badge span {
           display: block;
@@ -563,18 +620,17 @@ function PrintStyles() {
         .pdf-cover-metric strong, .pdf-info-block strong, .pdf-accession-badge strong {
           display: block;
           color: #0f172a;
-          font-size: 12pt;
+          font-size: 10.5pt;
         }
         .pdf-summary-table, .pdf-compact-table, .pdf-ast-table {
           width: 100%;
           border-collapse: collapse;
-          page-break-inside: avoid;
         }
         .pdf-summary-table th, .pdf-summary-table td,
         .pdf-compact-table th, .pdf-compact-table td,
         .pdf-ast-table th, .pdf-ast-table td {
           border-bottom: 1px solid #d8dee9;
-          padding: 5px 6px;
+          padding: 3px 5px;
           text-align: left;
           vertical-align: top;
         }
@@ -587,13 +643,13 @@ function PrintStyles() {
         }
         .pdf-report-header {
           border-bottom: 3px solid #1d4ed8;
-          padding-bottom: 10px;
-          margin-bottom: 12px;
+          padding-bottom: 7px;
+          margin-bottom: 8px;
         }
         .pdf-report-header h2 {
           margin: 0;
           color: #0f172a;
-          font-size: 18pt;
+          font-size: 15pt;
         }
         .pdf-subtitle {
           margin: 4px 0 0;
@@ -609,8 +665,8 @@ function PrintStyles() {
         .pdf-demographics-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 8px;
-          margin-bottom: 12px;
+          gap: 6px;
+          margin-bottom: 8px;
         }
         .pdf-info-block span {
           display: block;
@@ -619,13 +675,14 @@ function PrintStyles() {
           margin-top: 2px;
         }
         .pdf-section {
-          margin-top: 10px;
+          margin-top: 7px;
           page-break-inside: avoid;
+          break-inside: avoid;
         }
         .pdf-section h3 {
-          margin: 0 0 5px;
+          margin: 0 0 4px;
           color: #1e3a8a;
-          font-size: 10.5pt;
+          font-size: 9.5pt;
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
@@ -637,9 +694,10 @@ function PrintStyles() {
         .pdf-isolate-card {
           border: 1px solid #d8dee9;
           border-radius: 8px;
-          padding: 8px;
-          margin: 7px 0;
+          padding: 5px 6px;
+          margin: 5px 0;
           page-break-inside: avoid;
+          break-inside: avoid;
         }
         .pdf-isolate-number {
           color: #64748b;
@@ -657,16 +715,36 @@ function PrintStyles() {
         }
         .pdf-list {
           margin: 0;
-          padding-left: 18px;
+          padding-left: 15px;
         }
-        .pdf-list li { margin-bottom: 4px; }
+        .pdf-list li { margin-bottom: 2px; }
+        .pdf-consultant-section {
+          border: 1px solid #bfdbfe;
+          border-left: 5px solid #1d4ed8;
+          border-radius: 8px;
+          background: #f8fbff;
+          padding: 7px 8px;
+        }
+        .pdf-signoff-box {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          margin-top: 7px;
+          border-top: 1px solid #bfdbfe;
+          padding-top: 5px;
+          color: #0f172a;
+        }
+        .pdf-signoff-box span {
+          color: #475569;
+          font-size: 8pt;
+        }
         .pdf-report-footer {
           flex-wrap: wrap;
           border-top: 1px solid #d8dee9;
           color: #64748b;
           font-size: 7.8pt;
-          margin-top: 12px;
-          padding-top: 7px;
+          margin-top: 8px;
+          padding-top: 5px;
         }
       }
     `}</style>
