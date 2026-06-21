@@ -1,8 +1,10 @@
 // ReleaseSection — finalisation surface.
-// Release sealing now runs on the server: the client calls sealRelease(),
-// the server re-validates against the persisted accession, computes the
-// SHA-256 seal, and writes both the immutable release_packages row and the
-// updated accession in one trip. The browser cannot bypass releaseAllowed.
+// Release sealing prefers the server: the client calls sealRelease(), the
+// server re-validates against the persisted accession, computes the SHA-256
+// seal, and writes both the immutable release_packages row and the updated
+// accession in one trip. During prelaunch, if the Supabase release tables are
+// not yet connected, the same releaseAllowed gate falls back to a local frozen
+// package so the report/PDF workflow remains demonstrable.
 
 import { useEffect, useState } from "react";
 import { useActiveAccession, meduguActions } from "../../store/useAccessionStore";
@@ -11,6 +13,7 @@ import { transition, nextSuggested } from "../../logic/workflowEngine";
 import { WorkflowStage, ReleaseState } from "../../domain/enums";
 import { newId } from "../../domain/ids";
 import { sealRelease, amendRelease } from "../../store/release.functions";
+import { attemptRelease } from "../../logic/releaseEngine";
 import { configStore } from "../../store/configStore";
 import { receiverPrefs } from "../../store/receiverPrefs";
 import type { AutoDispatchResult } from "../../store/export.functions";
@@ -21,6 +24,7 @@ import { ReleaseSealPanel } from "./ReleaseSealPanel";
 import { AmendmentPanel } from "./AmendmentPanel";
 import { ReleaseHistoryEmbed } from "./ReleaseHistoryEmbed";
 import { deriveIPCReleaseContext } from "../../logic/ipcReportGovernance";
+import { CompletedReportsPdfPanel } from "./CompletedReportsPdfPanelPro";
 
 export function ReleaseSection() {
   const accession = useActiveAccession();
@@ -28,6 +32,7 @@ export function ReleaseSection() {
   const [consultantReason, setConsultantReason] = useState("");
   const [sealing, setSealing] = useState(false);
   const [sealError, setSealError] = useState<string | null>(null);
+  const [sealNotice, setSealNotice] = useState<string | null>(null);
   const [amendmentReason, setAmendmentReason] = useState("");
   const [amending, setAmending] = useState(false);
   const [amendError, setAmendError] = useState<string | null>(null);
@@ -109,9 +114,29 @@ export function ReleaseSection() {
     setConsultantReason("");
   }
 
+  function finaliseLocalRelease(reason: string): boolean {
+    if (!accession) return false;
+    const local = attemptRelease(accession, "local");
+    if (!local.ok || !local.package || !local.nextReleaseState) {
+      setSealError(
+        `Cloud release unavailable. Local release also blocked: ${local.reason ?? "unknown reason"}`,
+      );
+      return false;
+    }
+
+    meduguActions.finaliseRelease(accession.id, local.package, local.nextReleaseState, "local");
+    setAutoDispatch([]);
+    setHistoryKey((k) => k + 1);
+    setSealNotice(
+      `Cloud release is not connected yet (${reason}). A local prelaunch frozen report was created; use the PDF panel below to print or save it.`,
+    );
+    return true;
+  }
+
   async function release() {
     if (!accession) return;
     setSealError(null);
+    setSealNotice(null);
     setSealing(true);
     try {
       // Find the postgres row id for this accession (cloudSync uses
@@ -121,8 +146,14 @@ export function ReleaseSection() {
         .select("id, tenant_id")
         .eq("accession_code", accession.accessionNumber)
         .maybeSingle();
-      if (lookupErr) throw new Error(lookupErr.message);
-      if (!row) throw new Error("Accession not found in cloud — try again in a moment.");
+      if (lookupErr) {
+        finaliseLocalRelease(lookupErr.message);
+        return;
+      }
+      if (!row) {
+        finaliseLocalRelease("accession not found in cloud");
+        return;
+      }
 
       const result = await sealRelease({
         data: {
@@ -133,16 +164,27 @@ export function ReleaseSection() {
       });
       if (!result.ok || !result.accessionJson) {
         const codes = result.blockerCodes?.length ? ` (${result.blockerCodes.join(", ")})` : "";
-        setSealError((result.reason ?? "Release blocked") + codes);
+        const reason = (result.reason ?? "Release blocked") + codes;
+        if (
+          /schema cache|relation .* does not exist|could not find the table|release_packages|accessions/i.test(
+            reason,
+          )
+        ) {
+          finaliseLocalRelease(reason);
+          return;
+        }
+        setSealError(reason);
         return;
       }
       // Replace the local copy with the server-issued sealed accession.
       const sealed = JSON.parse(result.accessionJson) as Accession;
       meduguActions.upsertAccession(sealed);
       setAutoDispatch(result.autoDispatch ?? []);
+      setSealNotice(null);
       setHistoryKey((k) => k + 1);
     } catch (err) {
-      setSealError(err instanceof Error ? err.message : String(err));
+      const message = err instanceof Error ? err.message : String(err);
+      finaliseLocalRelease(message);
     } finally {
       setSealing(false);
     }
@@ -225,8 +267,6 @@ export function ReleaseSection() {
       {/* Validation source badge */}
       <ValidationSourceBadge validation={validation} />
 
-
-
       {ipcReleaseContext && (
         <section className="rounded-md border border-border bg-card p-3">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -266,9 +306,20 @@ export function ReleaseSection() {
         validationReport={v}
         sealing={sealing}
         sealError={sealError}
+        sealNotice={sealNotice}
         autoDispatch={autoDispatch}
         onRelease={release}
       />
+
+      {released && (
+        <CompletedReportsPdfPanel
+          accessions={[accession]}
+          title="Released report PDF"
+          description="Creates a polished A4 microbiology report for this released accession. For prelaunch, this works from the local frozen release package even before Supabase release tables are connected."
+          emptyMessage="Release this report first, then the PDF button will activate."
+          buttonLabel="Print / save this PDF"
+        />
+      )}
 
       <AmendmentPanel
         accession={accession}
@@ -316,7 +367,8 @@ function ValidationSourceBadge({ validation }: { validation: AuthoritativeValida
     default:
       label = "client engine";
       toneClass = "border-border bg-muted text-muted-foreground";
-      title = fallbackReason ?? "PHASE5_SERVER_VALIDATION is disabled; local engine is the contract.";
+      title =
+        fallbackReason ?? "PHASE5_SERVER_VALIDATION is disabled; local engine is the contract.";
       break;
   }
 

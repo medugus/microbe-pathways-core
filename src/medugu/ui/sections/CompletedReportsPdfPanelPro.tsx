@@ -48,7 +48,12 @@ function sourceDoc(accession: Accession): { doc: ReportPreviewDoc; sourceLabel: 
 }
 
 function releasedAt(accession: Accession): string {
-  return accession.release.releasedAt ?? accession.releasedAt ?? accession.updatedAt ?? accession.createdAt;
+  return (
+    accession.release.releasedAt ??
+    accession.releasedAt ??
+    accession.updatedAt ??
+    accession.createdAt
+  );
 }
 
 function formatDateTime(value?: string): string {
@@ -88,18 +93,33 @@ function totalsFor(reports: PrintableReport[]): ReportTotals {
   );
 }
 
-export function CompletedReportsPdfPanel() {
+interface CompletedReportsPdfPanelProps {
+  accessions?: Accession[];
+  title?: string;
+  description?: string;
+  emptyMessage?: string;
+  buttonLabel?: string;
+}
+
+export function CompletedReportsPdfPanel({
+  accessions,
+  title = "Completed reports PDF pack",
+  description = "Produces a styled A4 microbiology report bundle for every completed report currently loaded in the LIMS. Frozen release packages are preferred when present, with live released projections clearly labelled.",
+  emptyMessage = "No completed reports are currently loaded. Release one or more reports first, then return here to print the PDF pack.",
+  buttonLabel = "Print / save PDF",
+}: CompletedReportsPdfPanelProps = {}) {
   const state = useMeduguState();
   const generatedAt = useMemo(() => new Date().toISOString(), []);
+  const sourceAccessions = accessions ?? Object.values(state.accessions);
   const reports = useMemo<PrintableReport[]>(() => {
-    return Object.values(state.accessions)
+    return sourceAccessions
       .filter(isCompletedReport)
       .map((accession) => {
         const { doc, sourceLabel } = sourceDoc(accession);
         return { accession, doc, sourceLabel, releasedAt: releasedAt(accession) };
       })
       .sort((a, b) => b.releasedAt.localeCompare(a.releasedAt));
-  }, [state.accessions]);
+  }, [sourceAccessions]);
   const totals = useMemo(() => totalsFor(reports), [reports]);
 
   return (
@@ -109,12 +129,8 @@ export function CompletedReportsPdfPanel() {
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">
             Formal output
           </p>
-          <h4 className="mt-1 text-sm font-semibold text-foreground">
-            Completed reports PDF pack
-          </h4>
-          <p className="mt-1 max-w-3xl text-xs text-muted-foreground">
-            Produces a styled A4 microbiology report bundle for every completed report currently loaded in the LIMS. Frozen release packages are preferred when present, with live released projections clearly labelled.
-          </p>
+          <h4 className="mt-1 text-sm font-semibold text-foreground">{title}</h4>
+          <p className="mt-1 max-w-3xl text-xs text-muted-foreground">{description}</p>
         </div>
         <button
           type="button"
@@ -122,7 +138,7 @@ export function CompletedReportsPdfPanel() {
           disabled={reports.length === 0}
           className="rounded bg-blue-700 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Print / save PDF
+          {buttonLabel}
         </button>
       </div>
 
@@ -137,7 +153,7 @@ export function CompletedReportsPdfPanel() {
 
       {reports.length === 0 ? (
         <p className="mt-3 rounded border border-dashed border-blue-200 bg-background/80 p-3 text-xs text-muted-foreground dark:border-blue-900/60">
-          No completed reports are currently loaded. Release one or more reports first, then return here to print the PDF pack.
+          {emptyMessage}
         </p>
       ) : (
         <div className="mt-3 rounded-lg border border-blue-100 bg-background/90 p-3 dark:border-blue-900/60">
@@ -156,7 +172,10 @@ export function CompletedReportsPdfPanel() {
           </div>
           <ul className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2">
             {reports.map(({ accession, doc, sourceLabel, releasedAt }) => (
-              <li key={accession.id} className="rounded border border-border bg-card px-2 py-1.5 text-xs">
+              <li
+                key={accession.id}
+                className="rounded border border-border bg-card px-2 py-1.5 text-xs"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-foreground">{accession.accessionNumber}</span>
                   <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -211,7 +230,9 @@ function PrintableReportBook({
         </div>
         <p className="pdf-cover-meta">Generated {formatDateTime(generatedAt)}</p>
         <p className="pdf-cover-note">
-          This document contains completed microbiology reports from the active LIMS workspace. Report bodies are rendered from frozen release packages when available; otherwise they are labelled as released live projections.
+          This document contains completed microbiology reports from the active LIMS workspace.
+          Report bodies are rendered from frozen release packages when available; otherwise they are
+          labelled as released live projections.
         </p>
         <div className="pdf-cover-metrics">
           <CoverMetric label="Reports" value={totals.completed} />
@@ -237,7 +258,9 @@ function PrintableReportBook({
                 <td>{report.accession.accessionNumber}</td>
                 <td>{report.doc.patient.name}</td>
                 <td>{report.doc.specimen.display}</td>
-                <td>{report.doc.releaseState} v{report.doc.reportVersion}</td>
+                <td>
+                  {report.doc.releaseState} v{report.doc.reportVersion}
+                </td>
                 <td>{report.sourceLabel}</td>
               </tr>
             ))}
@@ -281,10 +304,22 @@ function ClinicalReportPage({ report, ordinal }: { report: PrintableReport; ordi
       </header>
 
       <section className="pdf-demographics-grid">
-        <InfoBlock label="Patient" value={doc.patient.name} detail={`MRN ${doc.patient.mrn} - ${doc.patient.sex}`} />
+        <InfoBlock
+          label="Patient"
+          value={doc.patient.name}
+          detail={`MRN ${doc.patient.mrn} - ${doc.patient.sex}`}
+        />
         <InfoBlock label="Ward / unit" value={doc.patient.ward ?? "Not recorded"} />
-        <InfoBlock label="Specimen pathway" value={doc.specimen.pathway} detail={doc.specimen.syndrome} />
-        <InfoBlock label="Released" value={formatDateTime(releasedAt)} detail={`Rendered ${formatDateTime(doc.generatedAt)}`} />
+        <InfoBlock
+          label="Specimen pathway"
+          value={doc.specimen.pathway}
+          detail={doc.specimen.syndrome}
+        />
+        <InfoBlock
+          label="Released"
+          value={formatDateTime(releasedAt)}
+          detail={`Rendered ${formatDateTime(doc.generatedAt)}`}
+        />
       </section>
 
       {doc.bloodSets && doc.bloodSets.length > 0 && (
@@ -306,7 +341,9 @@ function ClinicalReportPage({ report, ordinal }: { report: PrintableReport; ordi
                   <td>#{set.setNo}</td>
                   <td>{formatCode(set.drawSite)}</td>
                   <td>{set.lumenLabel ?? "-"}</td>
-                  <td>{set.bottleTypes.length > 0 ? set.bottleTypes.map(formatCode).join(", ") : "-"}</td>
+                  <td>
+                    {set.bottleTypes.length > 0 ? set.bottleTypes.map(formatCode).join(", ") : "-"}
+                  </td>
                   <td>{formatDateTime(set.drawTime)}</td>
                 </tr>
               ))}
@@ -357,12 +394,21 @@ function ClinicalReportPage({ report, ordinal }: { report: PrintableReport; ordi
                       <tr key={`${isolate.isolateNo}-${row.antibioticCode}`}>
                         <td>{row.antibioticDisplay}</td>
                         <td className="pdf-result-cell">
-                          {row.visibleToClinician ? row.interpretation ?? "-" : "withheld"}
+                          {row.visibleToClinician ? (row.interpretation ?? "-") : "withheld"}
                         </td>
-                        <td>{row.rawValue ?? "-"} {row.rawUnit ?? ""}</td>
+                        <td>
+                          {row.rawValue ?? "-"} {row.rawUnit ?? ""}
+                        </td>
                         <td>{row.breakpoint?.summary ?? "-"}</td>
-                        <td>{row.governance}{row.releaseClass ? ` / ${row.releaseClass}` : ""}</td>
-                        <td>{row.visibleToClinician ? "released" : row.suppressionReason ?? "suppressed"}</td>
+                        <td>
+                          {row.governance}
+                          {row.releaseClass ? ` / ${row.releaseClass}` : ""}
+                        </td>
+                        <td>
+                          {row.visibleToClinician
+                            ? "released"
+                            : (row.suppressionReason ?? "suppressed")}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -405,7 +451,11 @@ function ClinicalReportPage({ report, ordinal }: { report: PrintableReport; ordi
         <span>Breakpoints {doc.versions.breakpoint}</span>
         <span>Export {doc.versions.export}</span>
         <span>Build {doc.versions.build}</span>
-        <span>{accession.release.sealHash ? `Seal ${accession.release.sealHash.slice(0, 16)}...` : "Seal not recorded"}</span>
+        <span>
+          {accession.release.sealHash
+            ? `Seal ${accession.release.sealHash.slice(0, 16)}...`
+            : "Seal not recorded"}
+        </span>
       </footer>
     </article>
   );

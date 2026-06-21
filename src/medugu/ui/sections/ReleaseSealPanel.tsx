@@ -9,6 +9,7 @@ interface ReleaseSealPanelProps {
   validationReport: ValidationReport;
   sealing: boolean;
   sealError: string | null;
+  sealNotice?: string | null;
   autoDispatch: AutoDispatchResult[] | null;
   onRelease: () => void;
 }
@@ -18,6 +19,7 @@ export function ReleaseSealPanel({
   validationReport,
   sealing,
   sealError,
+  sealNotice,
   autoDispatch,
   onRelease,
 }: ReleaseSealPanelProps) {
@@ -61,6 +63,11 @@ export function ReleaseSealPanel({
         </div>
         {sealError && (
           <p className="mt-2 text-[11px] text-destructive">Server rejected release: {sealError}</p>
+        )}
+        {sealNotice && (
+          <p className="mt-2 rounded border border-blue-200 bg-blue-50 px-2 py-1.5 text-[11px] text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200">
+            {sealNotice}
+          </p>
         )}
         {!validationReport.releaseAllowed && !released && (
           <ul className="mt-2 space-y-1 text-[11px] text-destructive">
