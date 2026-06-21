@@ -7,17 +7,11 @@
 //  - All gating (tenant scope, RLS) is enforced server-side; this context is
 //    only for UI and route-guard use.
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { installServerFnAuth } from "./installServerFnAuth";
+import { isPrelaunchNoAuthEnabled, PRELAUNCH_TENANT_ID, PRELAUNCH_USER_ID } from "./prelaunch";
 
 export type AppRole =
   | "lab_tech"
@@ -49,11 +43,38 @@ export interface AuthState {
 
 const AuthCtx = createContext<AuthState | null>(null);
 
+const prelaunchUser = {
+  id: PRELAUNCH_USER_ID,
+  email: "prelaunch@medugu.local",
+} as User;
+
+const prelaunchSession = {
+  access_token: "prelaunch-local-session",
+  refresh_token: "prelaunch-local-session",
+  expires_in: 60 * 60 * 24 * 365,
+  token_type: "bearer",
+  user: prelaunchUser,
+} as Session;
+
+const prelaunchProfile: ProfileRow = {
+  id: PRELAUNCH_USER_ID,
+  tenant_id: PRELAUNCH_TENANT_ID,
+  display_name: "Prelaunch Admin",
+  email: "prelaunch@medugu.local",
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<ProfileRow | null>(null);
-  const [roles, setRoles] = useState<AppRole[]>([]);
-  const [loading, setLoading] = useState(true);
+  const prelaunchNoAuth = isPrelaunchNoAuthEnabled();
+  const [session, setSession] = useState<Session | null>(prelaunchNoAuth ? prelaunchSession : null);
+  const [profile, setProfile] = useState<ProfileRow | null>(
+    prelaunchNoAuth ? prelaunchProfile : null,
+  );
+  const [roles, setRoles] = useState<AppRole[]>(
+    prelaunchNoAuth
+      ? ["admin", "consultant", "microbiologist", "lab_tech", "ipc", "ams_pharmacist"]
+      : [],
+  );
+  const [loading, setLoading] = useState(!prelaunchNoAuth);
 
   // Load profile + roles for the current user
   const loadProfileAndRoles = async (userId: string) => {
@@ -70,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (prelaunchNoAuth) return;
     installServerFnAuth();
     // 1) Subscribe FIRST (Supabase guidance) — never miss an event.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
@@ -95,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, [prelaunchNoAuth]);
 
   const value = useMemo<AuthState>(
     () => ({
@@ -108,13 +130,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasRole: (r) => roles.includes(r),
       hasAnyRole: (rs) => rs.some((r) => roles.includes(r)),
       signOut: async () => {
+        if (prelaunchNoAuth) return;
         await supabase.auth.signOut();
       },
       refresh: async () => {
+        if (prelaunchNoAuth) return;
         if (session?.user) await loadProfileAndRoles(session.user.id);
       },
     }),
-    [loading, session, profile, roles],
+    [loading, session, profile, roles, prelaunchNoAuth],
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

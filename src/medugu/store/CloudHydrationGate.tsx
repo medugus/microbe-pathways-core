@@ -5,14 +5,24 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/auth/AuthContext";
-import { meduguActions } from "@/medugu/store/useAccessionStore";
+import { isPrelaunchNoAuthEnabled } from "@/auth/prelaunch";
+import { meduguActions, useMeduguState } from "@/medugu/store/useAccessionStore";
 
 export function CloudHydrationGate({ children }: { children: ReactNode }) {
   const { tenantId, user, profile } = useAuth();
+  const state = useMeduguState();
   const [hydratedTenantId, setHydratedTenantId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const prelaunchNoAuth = isPrelaunchNoAuthEnabled();
 
   useEffect(() => {
+    if (!prelaunchNoAuth) return;
+    if (state.accessionOrder.length === 0) meduguActions.resetToSeed();
+    setHydratedTenantId(tenantId ?? "prelaunch-local-tenant");
+  }, [prelaunchNoAuth, state.accessionOrder.length, tenantId]);
+
+  useEffect(() => {
+    if (prelaunchNoAuth) return;
     if (!tenantId) {
       meduguActions.detachTenant();
       setHydratedTenantId(null);
@@ -34,22 +44,20 @@ export function CloudHydrationGate({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [tenantId, hydratedTenantId, user?.id, profile?.display_name]);
+  }, [tenantId, hydratedTenantId, user?.id, profile?.display_name, prelaunchNoAuth]);
 
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="max-w-md text-center">
-          <p className="text-sm font-medium text-destructive">
-            Could not load lab data
-          </p>
+          <p className="text-sm font-medium text-destructive">Could not load lab data</p>
           <p className="mt-2 text-xs text-muted-foreground">{error}</p>
         </div>
       </div>
     );
   }
 
-  if (!tenantId || hydratedTenantId !== tenantId) {
+  if (!prelaunchNoAuth && (!tenantId || hydratedTenantId !== tenantId)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-sm text-muted-foreground">Loading lab data…</div>

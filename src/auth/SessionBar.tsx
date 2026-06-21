@@ -11,15 +11,19 @@ import { Button } from "@/components/ui/button";
 import { AllRolesPopover } from "./AllRolesPopover";
 import { useDemoRoleView } from "./demoRoleView";
 import { ROLE_CATALOG } from "./rolesCatalog";
+import { isPrelaunchNoAuthEnabled } from "./prelaunch";
 
 export function SessionBar() {
   const { profile, roles, user, signOut, hasRole } = useAuth();
   const [tenantName, setTenantName] = useState<string | null>(null);
+  const prelaunchNoAuth = isPrelaunchNoAuthEnabled();
   const { activeView } = useDemoRoleView();
-  const activeViewEntry = activeView
-    ? ROLE_CATALOG.find((r) => r.code === activeView)
-    : null;
+  const activeViewEntry = activeView ? ROLE_CATALOG.find((r) => r.code === activeView) : null;
   useEffect(() => {
+    if (prelaunchNoAuth) {
+      setTenantName("Prelaunch local lab");
+      return;
+    }
     if (!profile?.tenant_id) {
       setTenantName(null);
       return;
@@ -30,7 +34,7 @@ export function SessionBar() {
       .eq("id", profile.tenant_id)
       .maybeSingle()
       .then(({ data }) => setTenantName((data?.name as string | undefined) ?? null));
-  }, [profile?.tenant_id]);
+  }, [profile?.tenant_id, prelaunchNoAuth]);
 
   return (
     <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-2 text-xs">
@@ -67,6 +71,14 @@ export function SessionBar() {
               title="Demo role view active — UI preview only, does not change real authority."
             >
               demo view: {activeViewEntry.code}
+            </span>
+          </>
+        )}
+        {prelaunchNoAuth && (
+          <>
+            <span>·</span>
+            <span className="rounded border border-sky-500/40 bg-sky-500/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-sky-700 dark:text-sky-300">
+              prelaunch no-login mode
             </span>
           </>
         )}
@@ -118,6 +130,8 @@ export function SessionBar() {
           variant="ghost"
           onClick={() => void signOut()}
           className="h-7 px-2 text-xs"
+          disabled={prelaunchNoAuth}
+          title={prelaunchNoAuth ? "Login is disabled for prelaunch development." : "Sign out"}
         >
           Sign out
         </Button>
