@@ -11,12 +11,12 @@ conversation.
 
 - All clinical state (accessions, isolates, AST rows, IPC episodes, AMS
   approvals, validation status, release packages, configuration drafts)
-  is held in a single browser tab plus localStorage and Lovable Cloud
+  is held in a single browser tab plus localStorage and Supabase-backed
   tables scoped to the signed-in tenant.
 - There is **no multi-user conflict resolution**. Concurrent edits across
   tabs or users will last-write-win.
 - There is **no offline-first sync engine**. The app assumes the browser
-  can talk to Lovable Cloud while in use.
+  can talk to the configured Supabase project while in use.
 - Schema migrations of locally persisted state are best-effort: a
   forward-incompatible release will silently discard the local cache and
   re-hydrate from the cloud.

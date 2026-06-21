@@ -1,21 +1,19 @@
 # Local Run & Export Verification — Handoff
 
-This document describes how to take the current Lovable build and run it as
-a normal React/Vite project, plus how to verify the four behaviours that
+This document describes how to run the GitHub codebase as a normal
+TanStack Start/Vite project, plus how to verify the four behaviours that
 matter for acceptance: **persistence**, **client-side-only export**, the
 **six benchmark scenarios**, and **export reproducibility**.
 
-## 1. Export the code from Lovable
+## 1. Clone the GitHub repository
 
-You have two options, both produce the same plain React/Vite codebase:
+GitHub is the source of truth. Clone `medugus/microbe-pathways-core`,
+install dependencies, and configure environment variables from
+`.env.example` or `docs/DEPLOY_OUTSIDE_LOVABLE.md`.
 
-- **GitHub sync** — connect a GitHub account in the Lovable project settings
-  and use *Push to GitHub*. Clone the resulting repository.
-- **Direct download** — use *Download project as ZIP* and unpack it.
-
-There is no Lovable-only runtime dependency. Everything under
+There is no hosted-builder runtime dependency. Everything under
 `src/medugu/` is plain TypeScript; the UI is standard React; routing uses
-TanStack Router via Vite.
+TanStack Start/Router via Vite.
 
 ## 2. Run as a normal React/Vite project
 

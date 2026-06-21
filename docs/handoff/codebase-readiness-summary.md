@@ -1,6 +1,6 @@
 # Codebase Readiness Summary
 
-End-of-Lovable-phase status. Companion to:
+GitHub-first codebase readiness status. Companion to:
 
 - `docs/acceptance/scenario-matrix.md`
 - `docs/acceptance/benchmark-baseline-template.md`
@@ -8,7 +8,7 @@ End-of-Lovable-phase status. Companion to:
 - `docs/handoff/local-run-and-verification.md`
 - `docs/architecture/phase-5-handoff.md`
 
-## Complete in the Lovable phase
+## Complete in the prototype phase
 
 - Modular scaffold under `src/medugu/` (domain / store / logic / config /
   ui / utils / seed) with no business logic in React components.

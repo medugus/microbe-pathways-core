@@ -142,7 +142,7 @@ behind those gates.
 - **Purpose:** production-grade Postgres baseline.
 - **From browser → backend:** N/A (already server). Hardening only.
 - **Dependencies:** none.
-- **Risks:** migration drift between Lovable Cloud and a future self-hosted
+- **Risks:** migration drift between the current Supabase/Cloudflare runtime and a future self-hosted
   Postgres.
 - **Delivery order:** M1, first.
 - **Acceptance:** PITR proven by restore drill; migration CI green on

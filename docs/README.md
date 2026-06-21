@@ -1,6 +1,6 @@
 # Medugu — Documentation Index
 
-End-of-Lovable-phase acceptance and handoff pack.
+Acceptance, deployment, and handoff pack for the GitHub-first Medugu LIMS.
 
 ## Acceptance
 
