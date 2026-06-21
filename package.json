@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "deploy": "wrangler deploy",
+    "preflight:outside-lovable": "node scripts/verify-outside-lovable.mjs",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",

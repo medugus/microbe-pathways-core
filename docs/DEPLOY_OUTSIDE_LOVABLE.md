@@ -46,10 +46,13 @@ Manual local deploy:
 
 ```bash
 npm ci
+npm run preflight:outside-lovable
 npm test
 npm run build
 npm run deploy
 ```
+
+The preflight check fails if Lovable packages, hosted URLs, `.lovable` metadata, or the required Cloudflare deployment wiring reappear.
 
 ## Supabase Migrations
 
