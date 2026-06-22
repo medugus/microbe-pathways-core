@@ -16,6 +16,19 @@
 
 export const ZONE_READER_CONTRACT_VERSION = "1.0.0" as const;
 export const ZONE_READER_SOURCE_SYSTEM = "MEDUGU_LIMS" as const;
+export const ZONE_READER_RESULT_SCHEMA_VERSION = ZONE_READER_CONTRACT_VERSION;
+export const DISKDIFF_READER_SOURCE_SYSTEM = "DISKDIFF_READER" as const;
+export const ZONE_READER_METHOD = "disk_diffusion" as const;
+export const ZONE_READER_NOT_FOR_CLINICAL_RELEASE = true as const;
+export const ZONE_READER_RELEASE_AUTHORITY = "LIS" as const;
+export const ZONE_READER_STANDARD_VALUES = ["EUCAST", "CLSI", "LOCAL"] as const;
+export const READER_CONFIDENCE_BAND_VALUES = ["high", "medium", "low", "manual"] as const;
+export const IMPORT_REVIEW_STATUS_VALUES = [
+  "pending",
+  "accepted",
+  "rejected",
+  "overridden",
+] as const;
 
 export type ZoneReaderMethod = "disk_diffusion";
 
@@ -43,7 +56,7 @@ export interface ExpectedDisc {
   /**
    * Disc potency string. The Zone Reader importer requires a non-empty
    * string. When a true potency mapping is not yet available in the
- * disc potency dictionary we emit the stable placeholder
+   * disc potency dictionary we emit the stable placeholder
    * {@link DISC_POTENCY_PLACEHOLDER} ("unspecified") rather than an empty
    * string or a fabricated dose.
    */
@@ -124,6 +137,8 @@ export interface ZoneResult {
 }
 
 export interface ZoneReaderResultImport {
+  /** Optional result schema stamp from ZoneReader. If present, it must match contract v1. */
+  schemaVersion?: typeof ZONE_READER_RESULT_SCHEMA_VERSION;
   contractVersion: typeof ZONE_READER_CONTRACT_VERSION;
   sourceSystem: string;
   readAt: string;

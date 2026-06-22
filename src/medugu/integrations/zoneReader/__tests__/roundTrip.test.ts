@@ -9,7 +9,10 @@ import {
   zoneReaderResultImportSchema,
   zoneReaderWorklistExportSchema,
 } from "../schemas";
-import { ZONE_READER_CONTRACT_VERSION } from "../types";
+import {
+  ZONE_READER_CONTRACT_VERSION,
+  ZONE_READER_RESULT_SCHEMA_VERSION,
+} from "../types";
 import type { Accession } from "../../../domain/types";
 import { ASTMethod } from "../../../domain/enums";
 
@@ -96,6 +99,19 @@ export function runZoneReaderRoundTripTests() {
   assert.equal(typeof ampDisc?.antibioticName, "string");
   assert.equal(ampDisc?.discPotency, "10 ug");
   assert.equal(w.expectedDiscs.find((d) => d.antibioticCode === "CIP")?.discPotency, "5 ug");
+  assert.equal(
+    zoneReaderWorklistExportSchema.safeParse({ ...w, extraRootField: true }).success,
+    false,
+    "worklist export schema must reject unknown root fields",
+  );
+  assert.equal(
+    zoneReaderWorklistExportSchema.safeParse({
+      ...w,
+      expectedDiscs: [{ ...w.expectedDiscs[0], extraDiscField: true }],
+    }).success,
+    false,
+    "worklist export schema must reject unknown expected-disc fields",
+  );
 
   const ok = mapImport({
     accession,
@@ -275,6 +291,26 @@ export function runZoneReaderRoundTripTests() {
   assert.equal(verBad.ok, false);
   assert.ok(verBad.findings.some((f) => f.code === "SCHEMA_PARSE_FAILED"));
   assert.equal(verBad.matched.length, 0);
+
+  const resultSchemaVersionOk = zoneReaderResultImportSchema.parse({
+    ...baseImport,
+    schemaVersion: ZONE_READER_RESULT_SCHEMA_VERSION,
+    readAt: "2026-05-12T10:42:00Z",
+    results: [{ antibioticCode: "AMP", zoneDiameterMm: 18 }],
+  });
+  assert.equal(resultSchemaVersionOk.schemaVersion, ZONE_READER_RESULT_SCHEMA_VERSION);
+
+  const resultSchemaVersionBad = mapImport({
+    accession,
+    payload: {
+      ...baseImport,
+      schemaVersion: "9.9.9",
+      readAt: "2026-05-12T10:42:00Z",
+      results: [{ antibioticCode: "AMP", zoneDiameterMm: 18 }],
+    },
+  });
+  assert.equal(resultSchemaVersionBad.ok, false);
+  assert.ok(resultSchemaVersionBad.findings.some((f) => f.code === "SCHEMA_PARSE_FAILED"));
 
   // 8f. Cross-worklist mismatch (worklist supplied but identities differ).
   const wrongWorklist = mapImport({

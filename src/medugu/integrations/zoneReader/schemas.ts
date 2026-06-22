@@ -2,8 +2,13 @@
 
 import { z } from "zod";
 import {
+  IMPORT_REVIEW_STATUS_VALUES,
+  READER_CONFIDENCE_BAND_VALUES,
   ZONE_READER_CONTRACT_VERSION,
+  ZONE_READER_METHOD,
+  ZONE_READER_RESULT_SCHEMA_VERSION,
   ZONE_READER_SOURCE_SYSTEM,
+  ZONE_READER_STANDARD_VALUES,
   type ReaderConfidenceBand,
   type ZoneResult,
   type ZoneReaderResultImport,
@@ -48,7 +53,7 @@ export const zoneReaderWorklistExportSchema = z
 
     astPanelId: z.string().min(1),
     astPanelName: z.string().min(1),
-    standard: z.enum(["EUCAST", "CLSI", "LOCAL"]),
+    standard: z.enum(ZONE_READER_STANDARD_VALUES),
 
     expectedDiscs: z.array(expectedDiscSchema).min(1),
   })
@@ -62,8 +67,8 @@ export const zoneReaderWorklistBodySchema = zoneReaderWorklistExportSchema;
 // Result import schema — accepts aliases, normalises to canonical
 // ------------------------------------------------------------------
 
-const confidenceBandSchema = z.enum(["high", "medium", "low", "manual"]);
-const reviewStatusSchema = z.enum(["pending", "accepted", "rejected", "overridden"]);
+const confidenceBandSchema = z.enum(READER_CONFIDENCE_BAND_VALUES);
+const reviewStatusSchema = z.enum(IMPORT_REVIEW_STATUS_VALUES);
 const measurementSourceSchema = z.enum([
   "auto_reader",
   "manual_entry",
@@ -213,6 +218,7 @@ function normaliseRow(raw: z.infer<typeof rawZoneResultSchema>): ZoneResult {
 }
 
 const rawImportSchema = z.object({
+  schemaVersion: z.literal(ZONE_READER_RESULT_SCHEMA_VERSION).optional(),
   contractVersion: z.literal(ZONE_READER_CONTRACT_VERSION),
   sourceSystem: z.string().min(1),
   readAt: z.string().min(1).optional(),
@@ -221,10 +227,10 @@ const rawImportSchema = z.object({
   accessionNumber: z.string().optional(),
   isolateId: z.string().min(1),
   astPanelId: z.string().min(1),
-  method: z.literal("disk_diffusion"),
+  method: z.literal(ZONE_READER_METHOD),
   // Envelope-level breakpoint standard — part of the canonical match key
   // (isolateId, antibioticCode, method, standard).
-  standard: z.enum(["EUCAST", "CLSI", "LOCAL"]).optional(),
+  standard: z.enum(ZONE_READER_STANDARD_VALUES).optional(),
   // Hard assertions the Zone Reader MUST stamp on every envelope.
   // Required to be literally `true` / `"LIS"`; checked in validateImport so
   // the failure surfaces as a friendly blocker (not a raw zod path error).
@@ -251,6 +257,7 @@ export const zoneReaderResultImportSchema = rawImportSchema
     const readerDeviceId = v.readerDeviceId ?? v.device;
     return {
       contractVersion: v.contractVersion,
+      schemaVersion: v.schemaVersion,
       sourceSystem: v.sourceSystem,
       readAt,
       measuredAt: readAt,
