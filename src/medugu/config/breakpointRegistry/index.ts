@@ -21,8 +21,8 @@ import { EUCAST_2026_ACINETOBACTER_BREAKPOINTS } from "./eucast2026/acinetobacte
 import { EUCAST_2026_HAEMOPHILUS_MORAXELLA_BREAKPOINTS } from "./eucast2026/haemophilusMoraxella";
 import { EUCAST_2026_METADATA } from "./eucast2026/notes";
 
-export const PRIMARY_STANDARD: ASTStandard = "CLSI";
-export const SECONDARY_STANDARD: ASTStandard = "EUCAST";
+export const PRIMARY_STANDARD: ASTStandard = "EUCAST";
+export const SECONDARY_STANDARD: ASTStandard = "CLSI";
 
 const CLSI_ED36_STAPH_META = {
   standard: "CLSI" as const,
@@ -33,16 +33,73 @@ const CLSI_ED36_STAPH_META = {
 } as const;
 
 const CLSI_MIC_BREAKPOINTS: MICBreakpoint[] = [
-  { organismGroup: "enterobacterales", antibioticCode: "MEM", standard: "CLSI", method: "mic", susceptibleMaxMgL: 1, resistantMinMgL: 4 },
-  { organismGroup: "enterobacterales", antibioticCode: "CRO", standard: "CLSI", method: "mic", susceptibleMaxMgL: 1, resistantMinMgL: 4 },
-  { organismGroup: "enterobacterales", antibioticCode: "CIP", standard: "CLSI", method: "mic", susceptibleMaxMgL: 0.25, resistantMinMgL: 1 },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "ERY", method: "mic", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "CLI", method: "mic", breakpointStatus: "needs_validation", notes: "Inducible clindamycin resistance requires D-test context." },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "GEN", method: "mic", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "CIP", method: "mic", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "LVX", method: "mic", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "SXT", method: "mic", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "TET", method: "mic", breakpointStatus: "needs_validation" },
+  {
+    organismGroup: "enterobacterales",
+    antibioticCode: "MEM",
+    standard: "CLSI",
+    method: "mic",
+    susceptibleMaxMgL: 1,
+    resistantMinMgL: 4,
+  },
+  {
+    organismGroup: "enterobacterales",
+    antibioticCode: "CRO",
+    standard: "CLSI",
+    method: "mic",
+    susceptibleMaxMgL: 1,
+    resistantMinMgL: 4,
+  },
+  {
+    organismGroup: "enterobacterales",
+    antibioticCode: "CIP",
+    standard: "CLSI",
+    method: "mic",
+    susceptibleMaxMgL: 0.25,
+    resistantMinMgL: 1,
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "ERY",
+    method: "mic",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "CLI",
+    method: "mic",
+    breakpointStatus: "needs_validation",
+    notes: "Inducible clindamycin resistance requires D-test context.",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "GEN",
+    method: "mic",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "CIP",
+    method: "mic",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "LVX",
+    method: "mic",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "SXT",
+    method: "mic",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "TET",
+    method: "mic",
+    breakpointStatus: "needs_validation",
+  },
   {
     ...CLSI_ED36_STAPH_META,
     antibioticCode: "VAN",
@@ -52,28 +109,94 @@ const CLSI_MIC_BREAKPOINTS: MICBreakpoint[] = [
     resistantMinMgL: 16,
     notes: "Vancomycin for Staphylococcus is MIC-based.",
   },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "TEC", method: "mic", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "LZD", method: "mic", breakpointStatus: "needs_validation", notes: "Do not infer if validated breakpoint values are absent." },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "TEC",
+    method: "mic",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "LZD",
+    method: "mic",
+    breakpointStatus: "needs_validation",
+    notes: "Do not infer if validated breakpoint values are absent.",
+  },
 ];
 
 const CLSI_DISK_BREAKPOINTS: DiskBreakpoint[] = [
-  { organismGroup: "enterobacterales", antibioticCode: "AMC", standard: "CLSI", method: "disk_diffusion", susceptibleMinMm: 18, resistantMaxMm: 13 },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "ERY", method: "disk_diffusion", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "CLI", method: "disk_diffusion", breakpointStatus: "needs_validation", notes: "Inducible clindamycin resistance requires D-test context." },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "GEN", method: "disk_diffusion", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "CIP", method: "disk_diffusion", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "LVX", method: "disk_diffusion", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "SXT", method: "disk_diffusion", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "TET", method: "disk_diffusion", breakpointStatus: "needs_validation" },
+  {
+    organismGroup: "enterobacterales",
+    antibioticCode: "AMC",
+    standard: "CLSI",
+    method: "disk_diffusion",
+    susceptibleMinMm: 18,
+    resistantMaxMm: 13,
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "ERY",
+    method: "disk_diffusion",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "CLI",
+    method: "disk_diffusion",
+    breakpointStatus: "needs_validation",
+    notes: "Inducible clindamycin resistance requires D-test context.",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "GEN",
+    method: "disk_diffusion",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "CIP",
+    method: "disk_diffusion",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "LVX",
+    method: "disk_diffusion",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "SXT",
+    method: "disk_diffusion",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "TET",
+    method: "disk_diffusion",
+    breakpointStatus: "needs_validation",
+  },
   {
     ...CLSI_ED36_STAPH_META,
     antibioticCode: "VAN",
     method: "disk_diffusion",
     breakpointStatus: "not_applicable",
-    notes: "Vancomycin for Staphylococcus should be interpreted by MIC, not routine disk diffusion.",
+    notes:
+      "Vancomycin for Staphylococcus should be interpreted by MIC, not routine disk diffusion.",
   },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "TEC", method: "disk_diffusion", breakpointStatus: "needs_validation" },
-  { ...CLSI_ED36_STAPH_META, antibioticCode: "LZD", method: "disk_diffusion", breakpointStatus: "needs_validation", notes: "Do not infer if validated breakpoint values are absent." },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "TEC",
+    method: "disk_diffusion",
+    breakpointStatus: "needs_validation",
+  },
+  {
+    ...CLSI_ED36_STAPH_META,
+    antibioticCode: "LZD",
+    method: "disk_diffusion",
+    breakpointStatus: "needs_validation",
+    notes: "Do not infer if validated breakpoint values are absent.",
+  },
 ];
 
 export const EUCAST_2026_BREAKPOINT_REGISTRY: EucastBreakpointRecord[] = [
@@ -86,18 +209,28 @@ export const EUCAST_2026_BREAKPOINT_REGISTRY: EucastBreakpointRecord[] = [
   ...EUCAST_2026_HAEMOPHILUS_MORAXELLA_BREAKPOINTS,
 ];
 
-const EUCAST_MIC_BREAKPOINTS: MICBreakpoint[] = EUCAST_2026_BREAKPOINT_REGISTRY
-  .filter((r) => r.method === "mic")
-  .map((r) => normalizeMICRecord(r));
+const EUCAST_MIC_BREAKPOINTS: MICBreakpoint[] = EUCAST_2026_BREAKPOINT_REGISTRY.filter(
+  (r) => r.method === "mic",
+).map((r) => normalizeMICRecord(r));
 
-const EUCAST_DISK_BREAKPOINTS: DiskBreakpoint[] = EUCAST_2026_BREAKPOINT_REGISTRY
-  .filter((r) => r.method === "disk")
-  .map((r) => normalizeDiskRecord(r));
+const EUCAST_DISK_BREAKPOINTS: DiskBreakpoint[] = EUCAST_2026_BREAKPOINT_REGISTRY.filter(
+  (r) => r.method === "disk",
+).map((r) => normalizeDiskRecord(r));
 
-export const MIC_BREAKPOINTS: MICBreakpoint[] = [...CLSI_MIC_BREAKPOINTS, ...EUCAST_MIC_BREAKPOINTS];
-export const DISK_BREAKPOINTS: DiskBreakpoint[] = [...CLSI_DISK_BREAKPOINTS, ...EUCAST_DISK_BREAKPOINTS];
+export const MIC_BREAKPOINTS: MICBreakpoint[] = [
+  ...CLSI_MIC_BREAKPOINTS,
+  ...EUCAST_MIC_BREAKPOINTS,
+];
+export const DISK_BREAKPOINTS: DiskBreakpoint[] = [
+  ...CLSI_DISK_BREAKPOINTS,
+  ...EUCAST_DISK_BREAKPOINTS,
+];
 
-export function findMICBreakpoint(group: string | undefined, antibioticCode: string, standard: ASTStandard) {
+export function findMICBreakpoint(
+  group: string | undefined,
+  antibioticCode: string,
+  standard: ASTStandard,
+) {
   if (!group) return undefined;
   return MIC_BREAKPOINTS.find(
     (b) =>
@@ -106,15 +239,17 @@ export function findMICBreakpoint(group: string | undefined, antibioticCode: str
       b.standard === standard &&
       b.method === "mic" &&
       (b.breakpointStatus ?? "active") === "active" &&
-      (
-        b.susceptibleMaxMgL !== undefined ||
+      (b.susceptibleMaxMgL !== undefined ||
         b.resistantGreaterThanMgL !== undefined ||
-        b.resistantMinMgL !== undefined
-      ),
+        b.resistantMinMgL !== undefined),
   );
 }
 
-export function findDiskBreakpoint(group: string | undefined, antibioticCode: string, standard: ASTStandard) {
+export function findDiskBreakpoint(
+  group: string | undefined,
+  antibioticCode: string,
+  standard: ASTStandard,
+) {
   if (!group) return undefined;
   return DISK_BREAKPOINTS.find(
     (b) =>
@@ -123,11 +258,9 @@ export function findDiskBreakpoint(group: string | undefined, antibioticCode: st
       b.standard === standard &&
       b.method === "disk_diffusion" &&
       (b.breakpointStatus ?? "active") === "active" &&
-      (
-        b.susceptibleMinMm !== undefined ||
+      (b.susceptibleMinMm !== undefined ||
         b.resistantLessThanMm !== undefined ||
-        b.resistantMaxMm !== undefined
-      ),
+        b.resistantMaxMm !== undefined),
   );
 }
 
@@ -157,12 +290,21 @@ export function getInterpretationLabel(
 
 /** Coarse syndrome codes consumed by resolveBreakpoint. Mirrors specimenResolver. */
 export type ResolverSyndrome =
-  | "bsi" | "uti" | "cauti" | "uti_uncomplicated"
-  | "cap" | "hap" | "vap"
+  | "bsi"
+  | "uti"
+  | "cauti"
+  | "uti_uncomplicated"
+  | "cap"
+  | "hap"
+  | "vap"
   | "meningitis"
   | "spontaneous_bacterial_peritonitis"
-  | "septic_arthritis" | "pleural_empyema" | "pericarditis"
-  | "pd_peritonitis" | "abscess" | "colonisation_screen"
+  | "septic_arthritis"
+  | "pleural_empyema"
+  | "pericarditis"
+  | "pd_peritonitis"
+  | "abscess"
+  | "colonisation_screen"
   | null
   | undefined;
 
@@ -178,10 +320,7 @@ export interface BreakpointLookup {
   indication?: BreakpointIndication;
 }
 
-export type BreakpointResolutionStatus =
-  | "matched"
-  | "no_breakpoint"
-  | "species_restricted_block";
+export type BreakpointResolutionStatus = "matched" | "no_breakpoint" | "species_restricted_block";
 
 export interface BreakpointResolution {
   status: BreakpointResolutionStatus;
@@ -206,9 +345,7 @@ export function makeBreakpointKey(
 }
 
 /** Map a clinical syndrome to the ordered list of EUCAST indications to try. */
-export function syndromeToIndicationChain(
-  syndrome: ResolverSyndrome,
-): BreakpointIndication[] {
+export function syndromeToIndicationChain(syndrome: ResolverSyndrome): BreakpointIndication[] {
   switch (syndrome) {
     case "uti_uncomplicated":
       return ["uti_uncomplicated", "uti", "general", "iv", "non_meningitis"];
@@ -218,10 +355,15 @@ export function syndromeToIndicationChain(
     case "meningitis":
       return ["meningitis", "general", "non_meningitis"];
     case "bsi":
-    case "cap": case "hap": case "vap":
+    case "cap":
+    case "hap":
+    case "vap":
     case "spontaneous_bacterial_peritonitis":
-    case "septic_arthritis": case "pleural_empyema":
-    case "pericarditis": case "pd_peritonitis": case "abscess":
+    case "septic_arthritis":
+    case "pleural_empyema":
+    case "pericarditis":
+    case "pd_peritonitis":
+    case "abscess":
       return ["non_meningitis", "systemic", "iv", "general"];
     default:
       // No syndrome resolved — prefer general / non-meningitis canonical rows.
@@ -231,8 +373,16 @@ export function syndromeToIndicationChain(
 
 function normaliseMethod(method: string): "mic" | "disk_diffusion" | undefined {
   const m = method.toLowerCase();
-  if (m === "mic" || m === "etest" || m === "broth_microdilution" || m === "agar_dilution" || m === "gradient") return "mic";
-  if (m === "disk_diffusion" || m === "disk" || m === "disc" || m === "kirby_bauer") return "disk_diffusion";
+  if (
+    m === "mic" ||
+    m === "etest" ||
+    m === "broth_microdilution" ||
+    m === "agar_dilution" ||
+    m === "gradient"
+  )
+    return "mic";
+  if (m === "disk_diffusion" || m === "disk" || m === "disc" || m === "kirby_bauer")
+    return "disk_diffusion";
   return undefined;
 }
 
@@ -266,7 +416,11 @@ export function resolveBreakpoint(input: BreakpointLookup): BreakpointResolution
   );
 
   if (candidates.length === 0) {
-    return { status: "no_breakpoint", flags: {}, reason: "No active EUCAST row for this (group, drug, method, standard)." };
+    return {
+      status: "no_breakpoint",
+      flags: {},
+      reason: "No active EUCAST row for this (group, drug, method, standard).",
+    };
   }
 
   const chain: BreakpointIndication[] = input.indication
@@ -316,11 +470,20 @@ export function resolveBreakpoint(input: BreakpointLookup): BreakpointResolution
     usedIndication = blockedIndication;
   }
   if (!matched) {
-    return { status: "no_breakpoint", flags: {}, reason: "No EUCAST row matches this organism within the group." };
+    return {
+      status: "no_breakpoint",
+      flags: {},
+      reason: "No EUCAST row matches this organism within the group.",
+    };
   }
 
   const flags = { ...(matched.flags ?? {}) };
-  const key = makeBreakpointKey(matched.organismGroup, matched.antibioticCode, normMethod, matched.indication);
+  const key = makeBreakpointKey(
+    matched.organismGroup,
+    matched.antibioticCode,
+    normMethod,
+    matched.indication,
+  );
 
   if (
     flags.restrictedSpecies &&
@@ -368,7 +531,9 @@ export function findDuplicateBreakpointKeys(
     const k = `${r.standard}|${makeBreakpointKey(r.organismGroup, r.antibioticCode, r.method, r.indication)}|${speciesKey}`;
     seen.set(k, (seen.get(k) ?? 0) + 1);
   }
-  return Array.from(seen.entries()).filter(([, n]) => n > 1).map(([k]) => k);
+  return Array.from(seen.entries())
+    .filter(([, n]) => n > 1)
+    .map(([k]) => k);
 }
 
 export { EUCAST_2026_METADATA };

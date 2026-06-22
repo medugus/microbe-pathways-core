@@ -1,6 +1,6 @@
 import type { Accession, Isolate } from "../domain/types";
 import { AST_PANELS, type ASTPanelDef } from "../config/antibiotics";
-import { PRIMARY_STANDARD, SECONDARY_STANDARD } from "../config/breakpoints";
+import { PRIMARY_STANDARD } from "../config/breakpoints";
 import { getOrganism, type OrganismDef } from "../config/organisms";
 import { getColonisationScreenPathway } from "./specimenResolver";
 
@@ -88,7 +88,9 @@ export function getEligibleASTPanelsForIsolate(
   accession?: Accession,
   isolate?: Isolate,
 ): ASTPanelDef[] {
-  const eligible = AST_PANELS.filter((panel) => isASTPanelEligibleForIsolate(panel, isolate, accession));
+  const eligible = AST_PANELS.filter((panel) =>
+    isASTPanelEligibleForIsolate(panel, isolate, accession),
+  );
 
   return eligible
     .map((panel, index) => ({ panel, index }))
@@ -137,7 +139,7 @@ export function getDefaultASTStandardForPanel(panel?: ASTPanelDef) {
     panel?.id === "enterococcus" ||
     panel?.id === "haemophilus_moraxella"
   ) {
-    return SECONDARY_STANDARD;
+    return PRIMARY_STANDARD;
   }
 
   return PRIMARY_STANDARD;

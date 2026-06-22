@@ -23,6 +23,7 @@ import { ReleaseGate } from "./ReleaseGate";
 import { ReleaseSealPanel } from "./ReleaseSealPanel";
 import { AmendmentPanel } from "./AmendmentPanel";
 import { ReleaseHistoryEmbed } from "./ReleaseHistoryEmbed";
+import { ReportAuthorizationPanel } from "./ReportAuthorizationPanel";
 import { deriveIPCReleaseContext } from "../../logic/ipcReportGovernance";
 import { CompletedReportsPdfPanel } from "./CompletedReportsPdfPanelPro";
 
@@ -63,6 +64,8 @@ export function ReleaseSection() {
     };
   }, [accessionCode]);
 
+  const validation = useAuthoritativeValidation(accession, accessionRowId);
+
   if (!accession) {
     return (
       <div className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -71,7 +74,6 @@ export function ReleaseSection() {
     );
   }
 
-  const validation = useAuthoritativeValidation(accession, accessionRowId);
   const v = validation.report;
   const suggestedNext = nextSuggested(accession.workflowStatus);
   const released =
@@ -290,6 +292,9 @@ export function ReleaseSection() {
           </div>
         </section>
       )}
+
+      <ReportAuthorizationPanel accession={accession} />
+
       <ReleaseGate
         accession={accession}
         validationReport={v}

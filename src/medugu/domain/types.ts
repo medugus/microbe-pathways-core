@@ -31,9 +31,9 @@ export interface RuleVersion {
 
 export interface AuditEvent {
   id: string;
-  at: string;            // ISO timestamp
-  actor: string;         // user code (single-user phase: "local")
-  action: string;        // e.g. "ast.entered"
+  at: string; // ISO timestamp
+  actor: string; // user code (single-user phase: "local")
+  action: string; // e.g. "ast.entered"
   section?: string;
   /** Field-level diff for state-changing actions. */
   field?: string;
@@ -414,9 +414,9 @@ export interface ASTResult {
 export interface InterpretiveComment {
   id: string;
   scope: "accession" | "isolate" | "ast";
-  targetId?: string;       // isolateId or astResultId when applicable
-  code: string;            // FK -> config/interpretiveComments
-  text: string;            // resolved/rendered text
+  targetId?: string; // isolateId or astResultId when applicable
+  code: string; // FK -> config/interpretiveComments
+  text: string; // resolved/rendered text
   authoredAt: string;
   authoredBy: string;
 }
@@ -427,9 +427,9 @@ export interface PhoneOutEvent {
   id: string;
   at: string;
   calledBy: string;
-  recipient: string;        // clinician name/role
+  recipient: string; // clinician name/role
   recipientContact?: string;
-  reasonCode: string;       // critical_value, alert_organism, etc.
+  reasonCode: string; // critical_value, alert_organism, etc.
   message: string;
   acknowledged: boolean;
   acknowledgedAt?: string;
@@ -484,12 +484,37 @@ export interface ConsultantApproval {
   reason?: string;
 }
 
+export type ReleaseSignOffRole = "medical_lab_scientist" | "pathologist";
+
+export interface ReleaseSignOff {
+  role: ReleaseSignOffRole;
+  signedBy: string;
+  signedAt: string;
+  note?: string;
+}
+
+export interface PathologistReportComment {
+  text: string;
+  generatedText?: string;
+  scenarioCodes: string[];
+  generatedAt?: string;
+  updatedAt: string;
+  updatedBy: string;
+  edited: boolean;
+}
+
 export interface ReleaseRecord {
   state: ReleaseState;
   releasedAt?: string;
   releasedBy?: string;
   amendmentReason?: string;
   reportVersion: number;
+  /** Bench/result verification by the medical laboratory scientist before final authorization. */
+  medicalLabScientistSignOff?: ReleaseSignOff;
+  /** Editable pathologist comment shown at the end of the report. */
+  pathologistComment?: PathologistReportComment;
+  /** Final pathologist authorization after comment review. */
+  pathologistAuthorization?: ReleaseSignOff;
   /** Required when resolver.gating.consultantReleaseRequired is true. */
   consultantApproval?: ConsultantApproval;
   /** SHA-256 of the canonical release body — server-issued seal. */
@@ -503,7 +528,7 @@ export interface ReleaseRecord {
 export interface ReleasePackage {
   builtAt: string;
   version: number;
-  body: unknown;                    // structured report doc
+  body: unknown; // structured report doc
   ruleVersion: string;
   breakpointVersion: string;
   exportVersion: string;
@@ -512,18 +537,13 @@ export interface ReleasePackage {
 
 // ---------- AMS restricted-drug approval (Stage 6, browser-phase) ----------
 
-export type AMSApprovalStatus =
-  | "not_requested"
-  | "pending"
-  | "approved"
-  | "denied"
-  | "expired";
+export type AMSApprovalStatus = "not_requested" | "pending" | "approved" | "denied" | "expired";
 
 export interface AMSApprovalEvent {
   at: string;
-  actor: string;            // display name resolved from auth profile
-  actorUserId?: string;     // auth.uid() captured at event time
-  actorRole?: string;       // role used to authorise the action
+  actor: string; // display name resolved from auth profile
+  actorUserId?: string; // auth.uid() captured at event time
+  actorRole?: string; // role used to authorise the action
   note?: string;
 }
 
@@ -556,7 +576,7 @@ export interface AMSApprovalRequest {
   /** Structured reason captured when status === "denied". */
   denialReasonCode?: AMSDenialReasonCode;
   requested?: AMSApprovalEvent;
-  decided?: AMSApprovalEvent;       // approve or deny
+  decided?: AMSApprovalEvent; // approve or deny
   expired?: AMSApprovalEvent;
   /** True when SLA has elapsed without a decision. Auto-set by escalation sweep. */
   escalated?: boolean;
@@ -569,13 +589,13 @@ export interface AMSApprovalRequest {
 export interface Accession {
   /** Accession number, e.g. MB25-XXXXXX. */
   id: string;
-  accessionNumber: string;          // mirrors id; explicit per contract
+  accessionNumber: string; // mirrors id; explicit per contract
   createdAt: string;
   updatedAt: string;
   releasedAt?: string;
   releasingActor?: string;
 
-  workflowStatus: WorkflowStage;    // contract field name
+  workflowStatus: WorkflowStage; // contract field name
   /** @deprecated use workflowStatus. Kept for migration. */
   stage: WorkflowStage;
 

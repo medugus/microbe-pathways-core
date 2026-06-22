@@ -8,6 +8,7 @@ import {
   buildConsultantMicrobiologistComments,
   consultantSignOffLabel,
 } from "../../logic/consultantComments";
+import { signOffLabel } from "../../logic/pathologistComments";
 
 const COMMENT_LABEL: Record<CommentSource, string> = {
   clinical: "Clinical",
@@ -378,7 +379,7 @@ export function ReportSection() {
 
         <section className="mt-3 rounded-md border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-900/60 dark:bg-blue-950/20">
           <div className="text-[10px] uppercase tracking-wide text-blue-700 dark:text-blue-300">
-            Consultant microbiologist comment
+            Standard consultant microbiologist comments
           </div>
           <ul className="mt-1 list-disc space-y-1 pl-4 text-sm text-foreground">
             {consultantComments.map((comment, idx) => (
@@ -392,6 +393,39 @@ export function ReportSection() {
                 Reason/note: {accession.release.consultantApproval.reason}
               </span>
             )}
+          </div>
+        </section>
+
+        <section className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/70 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+              Pathologist final comment
+            </div>
+            <div className="flex flex-wrap gap-1 text-[10px]">
+              {doc.pathologistComment.scenarioCodes.map((code) => (
+                <span
+                  key={code}
+                  className="rounded bg-white/70 px-1.5 py-0.5 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100"
+                >
+                  {code}
+                </span>
+              ))}
+              <span className="rounded bg-white/70 px-1.5 py-0.5 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100">
+                {doc.pathologistComment.edited ? "edited" : "auto"}
+              </span>
+            </div>
+          </div>
+          <p className="mt-2 whitespace-pre-line text-sm text-foreground">
+            {doc.pathologistComment.text}
+          </p>
+          <div className="mt-3 grid grid-cols-1 gap-2 border-t border-emerald-200 pt-2 text-xs text-muted-foreground dark:border-emerald-900/60 md:grid-cols-2">
+            <div>
+              {signOffLabel(
+                accession.release.medicalLabScientistSignOff,
+                "Medical laboratory scientist",
+              )}
+            </div>
+            <div>{signOffLabel(accession.release.pathologistAuthorization, "Pathologist")}</div>
           </div>
         </section>
 

@@ -39,12 +39,13 @@ const SPECIMEN_IPC_ADVICE_BY_FAMILY: Record<string, string> = {
     "Bloodstream isolate: review source, line association, placement precautions, and repeat culture pathway according to local policy.",
   URINE:
     "Urine isolate: interpret with symptoms and catheter status. Escalate IPC primarily when alert organism, MDRO, CRE/CPE, VRE, MRSA, or outbreak context is present.",
-  LRT:
-    "Respiratory specimen: assess droplet/airborne/contact precautions according to organism, transmissibility, and local respiratory isolation policy.",
+  LRT: "Respiratory specimen: assess droplet/airborne/contact precautions according to organism, transmissibility, and local respiratory isolation policy.",
   STERILE_FLUID:
     "Sterile-site isolate: urgent clinical awareness; escalate IPC if alert organism or transmissible/resistant phenotype is present.",
   COLONISATION:
     "Screening specimen: treat as colonisation/surveillance context unless clinical infection is documented; follow local screening and decolonisation pathway where applicable.",
+  GENITAL:
+    "Genital specimen: IPC escalation is usually organism/phenotype-specific; alert organisms and resistant gonococcal or MDRO findings should follow local notification policy.",
 };
 
 const SPECIMEN_IPC_CONTEXT_BY_FAMILY: Record<string, string> = {
@@ -53,10 +54,13 @@ const SPECIMEN_IPC_CONTEXT_BY_FAMILY: Record<string, string> = {
   LRT: "respiratory specimen",
   STERILE_FLUID: "sterile-site specimen",
   COLONISATION: "screening specimen",
+  GENITAL: "genital specimen",
 };
 
 export function getSpecimenIPCAdvice(accession: Accession, _decision?: IPCDecision): string {
-  return SPECIMEN_IPC_ADVICE_BY_FAMILY[accession.specimen.familyCode] ?? DEFAULT_SPECIMEN_IPC_ADVICE;
+  return (
+    SPECIMEN_IPC_ADVICE_BY_FAMILY[accession.specimen.familyCode] ?? DEFAULT_SPECIMEN_IPC_ADVICE
+  );
 }
 
 export function getSpecimenIPCContext(accession: Accession): string {
@@ -126,7 +130,9 @@ export function deriveIPCSignals(
           (a) =>
             a.patient.mrn === accession.patient.mrn &&
             a.specimen.familyCode === "COLONISATION" &&
-            a.isolates.every((i) => i.organismCode === "NOGRO" || i.significance === "normal_flora"),
+            a.isolates.every(
+              (i) => i.organismCode === "NOGRO" || i.significance === "normal_flora",
+            ),
         );
         clearanceProgress = { negativeCount: negatives.length, required: rule.clearanceCount };
       }

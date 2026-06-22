@@ -7,7 +7,11 @@
 // - Specimen resolver invalidity remains a blocker.
 
 import type { Accession, ValidationIssue } from "../domain/types";
-import { resolveSpecimen, getColonisationScreenPathway, type ColonisationScreenPathway } from "./specimenResolver";
+import {
+  resolveSpecimen,
+  getColonisationScreenPathway,
+  type ColonisationScreenPathway,
+} from "./specimenResolver";
 import { newId } from "../domain/ids";
 import { pendingRestrictedRowCount } from "./amsEngine";
 import { evaluateIPC } from "./ipcEngine";
@@ -84,9 +88,7 @@ function antibioticLabel(code: string): string {
 function getAllowedScreenAstCodes(pathway: ColonisationScreenPathway): Set<string> {
   const panelIds = new Set(pathway.allowedAstPanelIds);
   return new Set(
-    AST_PANELS
-      .filter((panel) => panelIds.has(panel.id))
-      .flatMap((panel) => panel.codes),
+    AST_PANELS.filter((panel) => panelIds.has(panel.id)).flatMap((panel) => panel.codes),
   );
 }
 
@@ -169,7 +171,9 @@ function deriveColonisationScreenIssues(accession: Accession): ValidationIssue[]
     }
 
     if (pathway.positiveOrganismCodes.includes(isolate.organismCode) && requiredAstCodes.size > 0) {
-      const hasConfirmationAst = isolateRows.some((row) => requiredAstCodes.has(row.antibioticCode));
+      const hasConfirmationAst = isolateRows.some((row) =>
+        requiredAstCodes.has(row.antibioticCode),
+      );
       if (!hasConfirmationAst) {
         issues.push(
           block(
@@ -194,7 +198,9 @@ export function runValidation(accession: Accession): ValidationReport {
 
   const r = resolveSpecimen(accession.specimen.familyCode, accession.specimen.subtypeCode);
   if (!r.ok) {
-    issues.push(block("SP_UNRESOLVED", "specimen", `Specimen could not be resolved (${r.reason}).`));
+    issues.push(
+      block("SP_UNRESOLVED", "specimen", `Specimen could not be resolved (${r.reason}).`),
+    );
   }
   const profile = r.ok ? r.profile : null;
 
@@ -210,7 +216,11 @@ export function runValidation(accession: Accession): ValidationReport {
 
   if (profile && profile.gating.pathway === "diagnostic" && accession.isolates.length === 0) {
     issues.push(
-      warn("ISO_NONE", "isolate", "No isolate recorded — record an explicit no-growth finding if appropriate."),
+      warn(
+        "ISO_NONE",
+        "isolate",
+        "No isolate recorded — record an explicit no-growth finding if appropriate.",
+      ),
     );
   }
 
@@ -248,11 +258,19 @@ export function runValidation(accession: Accession): ValidationReport {
     }
     if (!a.finalInterpretation) {
       issues.push(
-        block("AST_INCOMPLETE", "ast", `AST row ${a.antibioticCode} has no final S/I/R interpretation.`),
+        block(
+          "AST_INCOMPLETE",
+          "ast",
+          `AST row ${a.antibioticCode} has no final S/I/R interpretation.`,
+        ),
       );
     } else if (a.governance === "draft") {
       issues.push(
-        warn("AST_NOT_APPROVED", "ast", `AST row ${a.antibioticCode} still in draft governance — approve before release.`),
+        warn(
+          "AST_NOT_APPROVED",
+          "ast",
+          `AST row ${a.antibioticCode} still in draft governance — approve before release.`,
+        ),
       );
     }
   }
@@ -260,7 +278,9 @@ export function runValidation(accession: Accession): ValidationReport {
   // ---- Blood culture per-set completeness (BLOCKERS, one per missing field per set).
   if (accession.specimen.familyCode === "BLOOD") {
     const details = (accession.specimen.details ?? {}) as Record<string, unknown>;
-    const sets = Array.isArray(details.sets) ? (details.sets as Array<Record<string, unknown>>) : [];
+    const sets = Array.isArray(details.sets)
+      ? (details.sets as Array<Record<string, unknown>>)
+      : [];
     if (sets.length === 0) {
       issues.push(
         block(
@@ -279,17 +299,29 @@ export function runValidation(accession: Accession): ValidationReport {
         const drawTime = typeof s.drawTime === "string" ? s.drawTime.trim() : "";
         if (!drawSite) {
           issues.push(
-            block(`BC_SET_${setNo}_DRAWSITE_MISSING`, "specimen", `Blood culture set ${setNo}: draw site is required.`),
+            block(
+              `BC_SET_${setNo}_DRAWSITE_MISSING`,
+              "specimen",
+              `Blood culture set ${setNo}: draw site is required.`,
+            ),
           );
         }
         if (bottleTypes.length === 0) {
           issues.push(
-            block(`BC_SET_${setNo}_BOTTLES_MISSING`, "specimen", `Blood culture set ${setNo}: at least one bottle type is required.`),
+            block(
+              `BC_SET_${setNo}_BOTTLES_MISSING`,
+              "specimen",
+              `Blood culture set ${setNo}: at least one bottle type is required.`,
+            ),
           );
         }
         if (!drawTime) {
           issues.push(
-            block(`BC_SET_${setNo}_DRAWTIME_MISSING`, "specimen", `Blood culture set ${setNo}: draw time is required.`),
+            block(
+              `BC_SET_${setNo}_DRAWTIME_MISSING`,
+              "specimen",
+              `Blood culture set ${setNo}: draw time is required.`,
+            ),
           );
         }
       });
@@ -313,9 +345,10 @@ export function runValidation(accession: Accession): ValidationReport {
     // Per-rule blood culture isolate allocation (1–3, source linkage,
     // significance, senior-review on triple pathogen, contaminant carry).
     for (const r of validateBloodIsolates(accession)) {
-      const issue = r.severity === "block"
-        ? block(r.code, "isolate", r.message)
-        : warn(r.code, "isolate", r.message);
+      const issue =
+        r.severity === "block"
+          ? block(r.code, "isolate", r.message)
+          : warn(r.code, "isolate", r.message);
       issues.push(issue);
     }
 
@@ -375,7 +408,11 @@ export function runValidation(accession: Accession): ValidationReport {
       );
     } else if (!hasAck) {
       issues.push(
-        info("PHONE_OUT_HINT", "release", "Critical-pathway specimen — phone-out workflow available."),
+        info(
+          "PHONE_OUT_HINT",
+          "release",
+          "Critical-pathway specimen — phone-out workflow available.",
+        ),
       );
     }
   }
@@ -422,6 +459,36 @@ export function runValidation(accession: Accession): ValidationReport {
     }
   }
 
+  if (!accession.release.medicalLabScientistSignOff) {
+    issues.push(
+      block(
+        "MLS_SIGNOFF_REQUIRED",
+        "release",
+        "Medical laboratory scientist result verification is required before release.",
+      ),
+    );
+  }
+
+  if (!accession.release.pathologistComment?.text?.trim()) {
+    issues.push(
+      block(
+        "PATHOLOGIST_COMMENT_REQUIRED",
+        "release",
+        "Pathologist final report comment must be saved before release.",
+      ),
+    );
+  }
+
+  if (!accession.release.pathologistAuthorization) {
+    issues.push(
+      block(
+        "PATHOLOGIST_AUTHORIZATION_REQUIRED",
+        "release",
+        "Pathologist final authorization is required after comment review.",
+      ),
+    );
+  }
+
   // ---- Stage 6: AMS restricted-drug approvals (warning surface).
   // Restricted rows are hidden from the clinician report by stewardship until
   // approved, so this is informational/warn — not a release blocker.
@@ -435,7 +502,6 @@ export function runValidation(accession: Accession): ValidationReport {
       ),
     );
   }
-
 
   // ---- IPC governance warnings/blockers (non-clinician-facing by default).
   issues.push(...deriveIPCValidationIssues(accession));

@@ -1,7 +1,14 @@
 // Coded specimen family + subtype dictionary.
 // Framework-agnostic. Free-text labels are display-only; codes drive logic.
 
-export type FamilyCode = "BLOOD" | "URINE" | "LRT" | "STERILE_FLUID" | "COLONISATION" | "STOOL";
+export type FamilyCode =
+  | "BLOOD"
+  | "URINE"
+  | "LRT"
+  | "STERILE_FLUID"
+  | "COLONISATION"
+  | "STOOL"
+  | "GENITAL";
 
 export interface SubtypeDef {
   code: string;
@@ -40,7 +47,11 @@ export const SPECIMEN_FAMILIES: FamilyDef[] = [
       { code: "URINE_ILEAL_CONDUIT", display: "Ileal conduit", tags: ["device", "mixed_flora"] },
       { code: "URINE_IN_OUT", display: "In-out catheter", tags: ["quantitative"] },
       { code: "URINE_FUNGAL", display: "Fungal urine", tags: ["fungal"] },
-      { code: "URINE_AFB", display: "Mycobacterial urine", tags: ["mycobacterial", "extended_tat"] },
+      {
+        code: "URINE_AFB",
+        display: "Mycobacterial urine",
+        tags: ["mycobacterial", "extended_tat"],
+      },
       { code: "URINE_OTHER", display: "Other urine (configured)", tags: [] },
     ],
   },
@@ -74,10 +85,18 @@ export const SPECIMEN_FAMILIES: FamilyDef[] = [
     code: "COLONISATION",
     display: "Colonisation screen",
     subtypes: [
-      { code: "COL_MRSA_ADMISSION", display: "MRSA admission screen (nares, groin, axilla)", tags: ["screen", "mrsa", "admission"] },
+      {
+        code: "COL_MRSA_ADMISSION",
+        display: "MRSA admission screen (nares, groin, axilla)",
+        tags: ["screen", "mrsa", "admission"],
+      },
       { code: "COL_MRSA_NOSE", display: "MRSA nares screen", tags: ["screen", "mrsa", "nares"] },
       { code: "COL_MRSA_GROIN", display: "MRSA groin screen", tags: ["screen", "mrsa", "groin"] },
-      { code: "COL_MRSA_AXILLA", display: "MRSA axilla screen", tags: ["screen", "mrsa", "axilla"] },
+      {
+        code: "COL_MRSA_AXILLA",
+        display: "MRSA axilla screen",
+        tags: ["screen", "mrsa", "axilla"],
+      },
       { code: "COL_VRE_RECTAL", display: "VRE rectal screen", tags: ["screen", "vre"] },
       { code: "COL_CPE_RECTAL", display: "CPE rectal screen", tags: ["screen", "cpe"] },
       { code: "COL_CRAB_SCREEN", display: "CRAB screen", tags: ["screen", "crab"] },
@@ -92,8 +111,29 @@ export const SPECIMEN_FAMILIES: FamilyDef[] = [
       { code: "STOOL_ROUTINE", display: "Routine stool culture", tags: ["enteric_panel"] },
       { code: "STOOL_CDIFF", display: "C. difficile testing", tags: ["enteric_panel", "cdiff"] },
       { code: "STOOL_OVA_PARASITES", display: "Ova, cysts & parasites", tags: ["parasitology"] },
-      { code: "STOOL_OUTBREAK", display: "Outbreak / cluster screen", tags: ["enteric_panel", "outbreak"] },
+      {
+        code: "STOOL_OUTBREAK",
+        display: "Outbreak / cluster screen",
+        tags: ["enteric_panel", "outbreak"],
+      },
       { code: "RECTAL_SWAB_ENTERIC", display: "Rectal swab (enteric)", tags: ["enteric_panel"] },
+    ],
+  },
+  {
+    code: "GENITAL",
+    display: "Genital / reproductive tract",
+    subtypes: [
+      { code: "GEN_HVS", display: "High vaginal swab", tags: ["genital", "vaginal"] },
+      { code: "GEN_VULVOVAGINAL", display: "Vulvovaginal swab", tags: ["genital", "vaginal"] },
+      { code: "GEN_ENDOCERVICAL", display: "Endocervical swab", tags: ["genital", "sti"] },
+      { code: "GEN_URETHRAL", display: "Urethral swab", tags: ["genital", "sti"] },
+      {
+        code: "GEN_GENITAL_ULCER",
+        display: "Genital ulcer / lesion swab",
+        tags: ["genital", "lesion"],
+      },
+      { code: "GEN_SEMEN", display: "Semen culture", tags: ["genital", "semen"] },
+      { code: "GEN_IUCD", display: "IUCD / intrauterine device", tags: ["genital", "device"] },
     ],
   },
 ];

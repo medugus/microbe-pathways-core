@@ -72,7 +72,9 @@ export type WorkbenchPanelKey =
   | "screen_panel"
   | "stool_enteric_panel"
   | "stool_cdiff_panel"
-  | "stool_parasitology_panel";
+  | "stool_parasitology_panel"
+  | "genital_panel"
+  | "sti_panel";
 
 export type IPCFlagHint =
   | "alert_organism_watch"
@@ -101,7 +103,9 @@ export type SyndromeCode =
   | "colonisation_screen"
   | "infectious_diarrhoea"
   | "cdiff_infection"
-  | "intestinal_parasitosis";
+  | "intestinal_parasitosis"
+  | "genital_infection"
+  | "sti_syndrome";
 
 export type AcceptanceMode = "accept" | "qualified" | "rejectable";
 
@@ -187,8 +191,10 @@ const MRSA_SCREEN_PATHWAY: ColonisationScreenPathway = {
   allowedAstPanelIds: ["mrsa_screen"],
   defaultAstPanelId: "mrsa_screen",
   requiredAstAntibioticCodes: ["FOX", "OXA"],
-  organismHelp: "MRSA screens accept Staphylococcus aureus detected or an explicit no-growth/negative result only.",
-  astHelp: "If S. aureus is detected, confirm with cefoxitin or oxacillin. Resistant = MRSA; susceptible = S. aureus detected but MRSA not confirmed.",
+  organismHelp:
+    "MRSA screens accept Staphylococcus aureus detected or an explicit no-growth/negative result only.",
+  astHelp:
+    "If S. aureus is detected, confirm with cefoxitin or oxacillin. Resistant = MRSA; susceptible = S. aureus detected but MRSA not confirmed.",
 };
 
 const COLONISATION_SCREEN_PATHWAYS: Record<string, ColonisationScreenPathway> = {
@@ -206,8 +212,10 @@ const COLONISATION_SCREEN_PATHWAYS: Record<string, ColonisationScreenPathway> = 
     allowedAstPanelIds: ["vre_screen"],
     defaultAstPanelId: "vre_screen",
     requiredAstAntibioticCodes: ["VAN"],
-    organismHelp: "VRE screens accept Enterococcus faecalis/faecium or an explicit no-growth/negative result only.",
-    astHelp: "If Enterococcus is detected, enter vancomycin to classify VRE versus vancomycin-susceptible Enterococcus.",
+    organismHelp:
+      "VRE screens accept Enterococcus faecalis/faecium or an explicit no-growth/negative result only.",
+    astHelp:
+      "If Enterococcus is detected, enter vancomycin to classify VRE versus vancomycin-susceptible Enterococcus.",
   },
   COL_CPE_RECTAL: {
     kind: "cpe",
@@ -219,8 +227,10 @@ const COLONISATION_SCREEN_PATHWAYS: Record<string, ColonisationScreenPathway> = 
     allowedAstPanelIds: ["cpe_screen"],
     defaultAstPanelId: "cpe_screen",
     requiredAstAntibioticCodes: ["ETP", "MEM", "IPM"],
-    organismHelp: "CPE/CPO screens are restricted to Enterobacterales targets or an explicit no-growth/negative result.",
-    astHelp: "If Enterobacterales are detected, enter ertapenem, meropenem or imipenem to classify carbapenem resistance/carbapenemase suspicion.",
+    organismHelp:
+      "CPE/CPO screens are restricted to Enterobacterales targets or an explicit no-growth/negative result.",
+    astHelp:
+      "If Enterobacterales are detected, enter ertapenem, meropenem or imipenem to classify carbapenem resistance/carbapenemase suspicion.",
   },
   COL_CRAB_SCREEN: {
     kind: "crab",
@@ -232,8 +242,10 @@ const COLONISATION_SCREEN_PATHWAYS: Record<string, ColonisationScreenPathway> = 
     allowedAstPanelIds: ["crab_screen"],
     defaultAstPanelId: "crab_screen",
     requiredAstAntibioticCodes: ["MEM", "IPM"],
-    organismHelp: "CRAB screens are restricted to Acinetobacter baumannii complex or an explicit no-growth/negative result.",
-    astHelp: "If Acinetobacter baumannii complex is detected, enter meropenem or imipenem to classify carbapenem resistance.",
+    organismHelp:
+      "CRAB screens are restricted to Acinetobacter baumannii complex or an explicit no-growth/negative result.",
+    astHelp:
+      "If Acinetobacter baumannii complex is detected, enter meropenem or imipenem to classify carbapenem resistance.",
   },
   COL_CRPA_SCREEN: {
     kind: "crpa",
@@ -245,8 +257,10 @@ const COLONISATION_SCREEN_PATHWAYS: Record<string, ColonisationScreenPathway> = 
     allowedAstPanelIds: ["crpa_screen"],
     defaultAstPanelId: "crpa_screen",
     requiredAstAntibioticCodes: ["MEM", "IPM"],
-    organismHelp: "CRPA screens are restricted to Pseudomonas aeruginosa or an explicit no-growth/negative result.",
-    astHelp: "If Pseudomonas aeruginosa is detected, enter meropenem or imipenem to classify carbapenem resistance.",
+    organismHelp:
+      "CRPA screens are restricted to Pseudomonas aeruginosa or an explicit no-growth/negative result.",
+    astHelp:
+      "If Pseudomonas aeruginosa is detected, enter meropenem or imipenem to classify carbapenem resistance.",
   },
   COL_CANDIDA_AURIS: {
     kind: "candida_auris",
@@ -257,7 +271,8 @@ const COLONISATION_SCREEN_PATHWAYS: Record<string, ColonisationScreenPathway> = 
     defaultOrganismCode: "CAUR",
     allowedAstPanelIds: [],
     requiredAstAntibioticCodes: [],
-    organismHelp: "C. auris screens accept Candida auris detected or an explicit no-growth/negative result only.",
+    organismHelp:
+      "C. auris screens accept Candida auris detected or an explicit no-growth/negative result only.",
     astHelp: "No antibacterial AST panel is configured for this screen pathway.",
   },
 };
@@ -281,10 +296,7 @@ export function isAllowedColonisationScreenOrganism(
 
 // ---------- Resolver ----------
 
-export function resolveSpecimen(
-  familyCode: string,
-  subtypeCode: string,
-): ResolverResult {
+export function resolveSpecimen(familyCode: string, subtypeCode: string): ResolverResult {
   const subtype = getSubtype(familyCode, subtypeCode);
   if (!subtype) {
     return { ok: false, reason: "unknown_subtype" };
@@ -303,6 +315,8 @@ export function resolveSpecimen(
       return { ok: true, profile: resolveColonisation(subtypeCode, subtype.display) };
     case "STOOL":
       return { ok: true, profile: resolveStool(subtypeCode, subtype.display) };
+    case "GENITAL":
+      return { ok: true, profile: resolveGenital(subtypeCode, subtype.display) };
     default:
       return { ok: false, reason: "unknown_family" };
   }
@@ -351,7 +365,9 @@ function resolveBlood(subtypeCode: string, display: string): ResolvedSpecimenPro
       clearanceTracked: false,
     },
     quantitative: null,
-    ipcFlagHints: ["alert_organism_watch"].concat(isLine ? ["device_associated_watch"] : []) as IPCFlagHint[],
+    ipcFlagHints: ["alert_organism_watch"].concat(
+      isLine ? ["device_associated_watch"] : [],
+    ) as IPCFlagHint[],
     syndrome: "bsi",
   };
 }
@@ -423,9 +439,7 @@ function resolveUrine(subtypeCode: string, display: string): ResolvedSpecimenPro
 function resolveLRT(subtypeCode: string, display: string): ResolvedSpecimenProfile {
   const isSputum = subtypeCode === "LRT_SPUTUM" || subtypeCode === "LRT_INDUCED_SPUTUM";
   const isQuant =
-    subtypeCode === "LRT_BAL" ||
-    subtypeCode === "LRT_BRONCH_WASH" ||
-    subtypeCode === "LRT_QUANT";
+    subtypeCode === "LRT_BAL" || subtypeCode === "LRT_BRONCH_WASH" || subtypeCode === "LRT_QUANT";
   const isETA = subtypeCode === "LRT_ETA";
 
   const requiredFields: FieldKey[] = ["collectionMethodNote"];
@@ -476,9 +490,7 @@ function resolveLRT(subtypeCode: string, display: string): ResolvedSpecimenProfi
       pathway: "diagnostic",
       clearanceTracked: false,
     },
-    quantitative: isQuant
-      ? { code: "LRT_QUANT", thresholds: { significantCfuPerMl: 1e4 } }
-      : null,
+    quantitative: isQuant ? { code: "LRT_QUANT", thresholds: { significantCfuPerMl: 1e4 } } : null,
     ipcFlagHints: isETA ? ["device_associated_watch"] : [],
     syndrome,
   };
@@ -617,6 +629,82 @@ function resolveColonisation(subtypeCode: string, display: string): ResolvedSpec
   };
 }
 
+// ---------- Genital / reproductive tract ----------
+
+function resolveGenital(subtypeCode: string, display: string): ResolvedSpecimenProfile {
+  const isVaginal = subtypeCode === "GEN_HVS" || subtypeCode === "GEN_VULVOVAGINAL";
+  const isStiTargeted =
+    subtypeCode === "GEN_ENDOCERVICAL" ||
+    subtypeCode === "GEN_URETHRAL" ||
+    subtypeCode === "GEN_GENITAL_ULCER";
+  const isSemen = subtypeCode === "GEN_SEMEN";
+  const isDevice = subtypeCode === "GEN_IUCD";
+
+  const requiredFields: FieldKey[] = ["collectionMethodNote"];
+  if (isStiTargeted || isDevice) requiredFields.push("anatomicSite");
+
+  const microscopy: MicroscopyConfig = isVaginal
+    ? {
+        required: ["wetMount"],
+        optional: ["gram", "leukocytes", "epithelialCells"],
+        structured: true,
+        gatesCulture: false,
+      }
+    : isStiTargeted
+      ? {
+          required: ["gram"],
+          optional: ["wetMount", "leukocytes"],
+          structured: true,
+          gatesCulture: false,
+        }
+      : {
+          required: ["gram"],
+          optional: ["wetMount"],
+          structured: false,
+          gatesCulture: false,
+        };
+
+  const panels: WorkbenchPanelKey[] = ["genital_panel"];
+  if (isStiTargeted) panels.push("sti_panel");
+
+  return {
+    familyCode: "GENITAL",
+    subtypeCode,
+    displayName: display,
+    acceptance: {
+      mode: "qualified",
+      rejectionReasonCodes: [
+        "GENITAL_DRY_SWAB",
+        "GENITAL_DELAYED_TRANSPORT",
+        "GENITAL_WRONG_SITE",
+        "GENITAL_LEAKED",
+      ],
+      contaminationContextRequired: false,
+      notes: isStiTargeted
+        ? "STI-targeted genital swabs should be processed as targeted pathogen workups; correlate with NAAT where available."
+        : "Routine genital culture should report recognised pathogens or targeted findings and avoid over-reporting commensal flora.",
+    },
+    microscopy,
+    requiredFields,
+    optionalFields: ["contaminationNotes"],
+    reportSections: [
+      "microscopy",
+      "culture",
+      ...(isSemen || isStiTargeted ? (["ast"] as ReportSectionKey[]) : []),
+    ],
+    workbenchPanels: panels,
+    gating: {
+      consultantReleaseRequired: false,
+      criticalCommunicationRequired: false,
+      pathway: "diagnostic",
+      clearanceTracked: false,
+    },
+    quantitative: null,
+    ipcFlagHints: [],
+    syndrome: isStiTargeted ? "sti_syndrome" : "genital_infection",
+  };
+}
+
 // ---------- Stool / enteric ----------
 
 function resolveStool(subtypeCode: string, display: string): ResolvedSpecimenProfile {
@@ -632,14 +720,23 @@ function resolveStool(subtypeCode: string, display: string): ResolvedSpecimenPro
   const acceptance: AcceptanceRule = isCdiff
     ? {
         mode: "rejectable",
-        rejectionReasonCodes: ["STOOL_FORMED_CDIFF", "STOOL_RECTAL_SWAB_CDIFF", "STOOL_INSUFFICIENT"],
+        rejectionReasonCodes: [
+          "STOOL_FORMED_CDIFF",
+          "STOOL_RECTAL_SWAB_CDIFF",
+          "STOOL_INSUFFICIENT",
+        ],
         contaminationContextRequired: false,
-        notes: "C. difficile testing requires unformed stool; rectal swabs and formed stools are rejected.",
+        notes:
+          "C. difficile testing requires unformed stool; rectal swabs and formed stools are rejected.",
       }
     : isOvaParasites
       ? {
           mode: "qualified",
-          rejectionReasonCodes: ["STOOL_PRESERVATIVE_MISSING", "STOOL_INSUFFICIENT", "STOOL_DELAYED"],
+          rejectionReasonCodes: [
+            "STOOL_PRESERVATIVE_MISSING",
+            "STOOL_INSUFFICIENT",
+            "STOOL_DELAYED",
+          ],
           contaminationContextRequired: false,
           notes: "O&P examination ideally needs three serial specimens in fixative.",
         }
@@ -648,7 +745,8 @@ function resolveStool(subtypeCode: string, display: string): ResolvedSpecimenPro
             mode: "qualified",
             rejectionReasonCodes: ["SWAB_DRY", "SWAB_NO_FAECAL_MATERIAL"],
             contaminationContextRequired: false,
-            notes: "Rectal swab is suboptimal for routine enteric culture; use only when stool unobtainable.",
+            notes:
+              "Rectal swab is suboptimal for routine enteric culture; use only when stool unobtainable.",
           }
         : {
             mode: "qualified",

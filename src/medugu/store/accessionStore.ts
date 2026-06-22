@@ -24,12 +24,7 @@ import { newId } from "../domain/ids";
 import { loadState, saveState, SCHEMA_VERSION } from "./persistence";
 import { hydrateFromCloud, pushAccession } from "./cloudSync";
 import { recordAuditAsync, setAuditContext, getAuditTenantId } from "./cloudAudit";
-import {
-  pushAMSRequest,
-  pushAMSDecision,
-  pushAMSExpiry,
-  pushAMSEscalation,
-} from "./cloudAMS";
+import { pushAMSRequest, pushAMSDecision, pushAMSExpiry, pushAMSEscalation } from "./cloudAMS";
 import { evaluateCascadeForAccession } from "../logic/cascadeEngine";
 
 type Listener = () => void;
@@ -62,11 +57,68 @@ function freshSeedState(): MeduguState {
   };
 }
 
+const STALE_BREAKPOINT_VERSION_LABELS = new Set(["EUCAST-2024"]);
+
+function upgradeLoadedState(persisted: MeduguState): MeduguState {
+  let changed = false;
+  const accessions: Record<string, Accession> = {};
+
+  for (const [id, accession] of Object.entries(persisted.accessions)) {
+    const nextBreakpointVersion =
+      !accession.breakpointVersion ||
+      STALE_BREAKPOINT_VERSION_LABELS.has(accession.breakpointVersion)
+        ? BREAKPOINT_VERSION
+        : accession.breakpointVersion;
+    const nextRuleVersion = accession.ruleVersion || RULE_VERSION.version;
+    const nextExportVersion = accession.exportVersion || EXPORT_VERSION;
+    const nextBuildVersion = accession.buildVersion || BUILD_VERSION;
+
+    if (
+      nextBreakpointVersion !== accession.breakpointVersion ||
+      nextRuleVersion !== accession.ruleVersion ||
+      nextExportVersion !== accession.exportVersion ||
+      nextBuildVersion !== accession.buildVersion
+    ) {
+      changed = true;
+      accessions[id] = {
+        ...accession,
+        ruleVersion: nextRuleVersion,
+        breakpointVersion: nextBreakpointVersion,
+        exportVersion: nextExportVersion,
+        buildVersion: nextBuildVersion,
+      };
+    } else {
+      accessions[id] = accession;
+    }
+  }
+
+  const nextState: MeduguState = {
+    ...persisted,
+    ruleVersion: persisted.ruleVersion ?? RULE_VERSION,
+    breakpointVersion:
+      !persisted.breakpointVersion ||
+      STALE_BREAKPOINT_VERSION_LABELS.has(persisted.breakpointVersion)
+        ? BREAKPOINT_VERSION
+        : persisted.breakpointVersion,
+    exportVersion: persisted.exportVersion || EXPORT_VERSION,
+    buildVersion: persisted.buildVersion || BUILD_VERSION,
+    accessions,
+  };
+
+  return changed ||
+    nextState.ruleVersion !== persisted.ruleVersion ||
+    nextState.breakpointVersion !== persisted.breakpointVersion ||
+    nextState.exportVersion !== persisted.exportVersion ||
+    nextState.buildVersion !== persisted.buildVersion
+    ? nextState
+    : persisted;
+}
+
 function buildInitialState(): MeduguState {
   // Browser cache only — Postgres is the source of truth and fills in via
   // hydrateFromTenant() once the user is authenticated.
   const persisted = loadState();
-  if (persisted) return persisted;
+  if (persisted) return upgradeLoadedState(persisted);
   return emptyState();
 }
 
@@ -134,10 +186,7 @@ function appendAudit(
   });
   return {
     ...a,
-    audit: [
-      ...a.audit,
-      { id: newId("aud"), at: new Date().toISOString(), ...ev },
-    ],
+    audit: [...a.audit, { id: newId("aud"), at: new Date().toISOString(), ...ev }],
   };
 }
 
@@ -444,7 +493,11 @@ export const accessionStore = {
           action: "phoneOut.recorded",
           section: "release",
           field: "phoneOuts",
-          newValue: { recipient: evt.recipient, reasonCode: evt.reasonCode, acknowledged: evt.acknowledged },
+          newValue: {
+            recipient: evt.recipient,
+            reasonCode: evt.reasonCode,
+            acknowledged: evt.acknowledged,
+          },
         },
         { entity: "release_package", entityId: accessionId },
       ),
@@ -515,6 +568,127 @@ export const accessionStore = {
     );
   },
 
+  recordScientistSignOff(
+    accessionId: string,
+    signOff: { signedBy: string; note?: string },
+    actor = "local",
+  ) {
+    mutate(accessionId, (a) =>
+      appendAudit(
+        {
+          ...a,
+          release: {
+            ...a.release,
+            medicalLabScientistSignOff: {
+              role: "medical_lab_scientist",
+              signedBy: signOff.signedBy,
+              signedAt: new Date().toISOString(),
+              note: signOff.note,
+            },
+          },
+        },
+        {
+          actor,
+          action: "release.scientistVerified",
+          section: "release",
+          field: "release.medicalLabScientistSignOff",
+          newValue: { signedBy: signOff.signedBy, note: signOff.note },
+        },
+        { entity: "release_package", entityId: accessionId },
+      ),
+    );
+  },
+
+  savePathologistComment(
+    accessionId: string,
+    comment: { text: string; generatedText?: string; scenarioCodes: string[] },
+    actor = "local",
+  ) {
+    mutate(accessionId, (a) => {
+      const generatedText = comment.generatedText ?? "";
+      return appendAudit(
+        {
+          ...a,
+          release: {
+            ...a.release,
+            pathologistComment: {
+              text: comment.text,
+              generatedText,
+              scenarioCodes: comment.scenarioCodes,
+              generatedAt: a.release.pathologistComment?.generatedAt ?? new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              updatedBy: actor,
+              edited: generatedText.trim() !== comment.text.trim(),
+            },
+          },
+        },
+        {
+          actor,
+          action: "release.pathologistCommentSaved",
+          section: "release",
+          field: "release.pathologistComment",
+          newValue: {
+            scenarioCodes: comment.scenarioCodes,
+            edited: generatedText.trim() !== comment.text.trim(),
+          },
+        },
+        { entity: "release_package", entityId: accessionId },
+      );
+    });
+  },
+
+  recordPathologistAuthorization(
+    accessionId: string,
+    authorization: {
+      signedBy: string;
+      note?: string;
+      commentText: string;
+      generatedText?: string;
+      scenarioCodes: string[];
+    },
+    actor = "local",
+  ) {
+    mutate(accessionId, (a) => {
+      const generatedText = authorization.generatedText ?? "";
+      const now = new Date().toISOString();
+      return appendAudit(
+        {
+          ...a,
+          release: {
+            ...a.release,
+            pathologistComment: {
+              text: authorization.commentText,
+              generatedText,
+              scenarioCodes: authorization.scenarioCodes,
+              generatedAt: a.release.pathologistComment?.generatedAt ?? now,
+              updatedAt: now,
+              updatedBy: actor,
+              edited: generatedText.trim() !== authorization.commentText.trim(),
+            },
+            pathologistAuthorization: {
+              role: "pathologist",
+              signedBy: authorization.signedBy,
+              signedAt: now,
+              note: authorization.note,
+            },
+          },
+        },
+        {
+          actor,
+          action: "release.pathologistAuthorized",
+          section: "release",
+          field: "release.pathologistAuthorization",
+          newValue: {
+            signedBy: authorization.signedBy,
+            scenarioCodes: authorization.scenarioCodes,
+            note: authorization.note,
+          },
+        },
+        { entity: "release_package", entityId: accessionId },
+      );
+    });
+  },
+
   applyExpertRules(
     accessionId: string,
     rowPatches: Record<string, Partial<import("../domain/types").ASTResult>>,
@@ -539,7 +713,11 @@ export const accessionStore = {
   recordConsultantOverride(
     accessionId: string,
     astId: string,
-    override: { actor: string; reason: string; toInterpretation?: import("../domain/enums").ASTInterpretation },
+    override: {
+      actor: string;
+      reason: string;
+      toInterpretation?: import("../domain/enums").ASTInterpretation;
+    },
     actor = "local",
   ) {
     mutate(accessionId, (a) => {
@@ -574,11 +752,7 @@ export const accessionStore = {
 
   // ---------- Stage 6: AMS restricted-drug approval (browser-phase) ----------
 
-  requestAMSApproval(
-    accessionId: string,
-    req: AMSApprovalRequest,
-    actor = "local",
-  ) {
+  requestAMSApproval(accessionId: string, req: AMSApprovalRequest, actor = "local") {
     // Hard guard — clinical justification is mandatory in production workflow.
     if (!(req.clinicalJustification ?? req.requested?.note ?? "").trim()) {
       // eslint-disable-next-line no-console
@@ -678,11 +852,7 @@ export const accessionStore = {
     });
   },
 
-  expireAMSApproval(
-    accessionId: string,
-    requestId: string,
-    actor = "system",
-  ) {
+  expireAMSApproval(accessionId: string, requestId: string, actor = "system") {
     mutate(accessionId, (a) => {
       const list = a.amsApprovals ?? [];
       const before = list.find((r) => r.id === requestId);
@@ -713,12 +883,7 @@ export const accessionStore = {
     });
   },
 
-  escalateAMSApproval(
-    accessionId: string,
-    requestId: string,
-    actor = "system",
-    note?: string,
-  ) {
+  escalateAMSApproval(accessionId: string, requestId: string, actor = "system", note?: string) {
     mutate(accessionId, (a) => {
       const list = a.amsApprovals ?? [];
       const before = list.find((r) => r.id === requestId);

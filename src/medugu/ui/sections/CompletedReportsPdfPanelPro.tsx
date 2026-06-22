@@ -11,6 +11,7 @@ import {
   buildConsultantMicrobiologistComments,
   consultantSignOffLabel,
 } from "../../logic/consultantComments";
+import { signOffLabel } from "../../logic/pathologistComments";
 import { useMeduguState } from "../../store/useAccessionStore";
 
 const COMMENT_LABEL: Record<CommentSource, string> = {
@@ -44,8 +45,15 @@ function isCompletedReport(accession: Accession): boolean {
 
 function sourceDoc(accession: Accession): { doc: ReportPreviewDoc; sourceLabel: string } {
   if (accession.releasePackage?.body) {
+    const frozen = accession.releasePackage.body as Partial<ReportPreviewDoc>;
+    if (!frozen.pathologistComment || !frozen.signOffs) {
+      return {
+        doc: buildReportPreview(accession),
+        sourceLabel: "Legacy frozen package with live authorization projection",
+      };
+    }
     return {
-      doc: accession.releasePackage.body as ReportPreviewDoc,
+      doc: frozen as ReportPreviewDoc,
       sourceLabel: "Frozen release package",
     };
   }
@@ -480,7 +488,7 @@ function ClinicalReportPage({ report, ordinal }: { report: PrintableReport; ordi
       )}
 
       <section className="pdf-section pdf-consultant-section">
-        <h3>Consultant Microbiologist Comment</h3>
+        <h3>Standard Consultant Microbiologist Comments</h3>
         <ul className="pdf-list">
           {consultantComments.map((comment, index) => (
             <li key={`${doc.accessionNumber}-consultant-${index}`}>{comment}</li>
@@ -491,6 +499,24 @@ function ClinicalReportPage({ report, ordinal }: { report: PrintableReport; ordi
           {accession.release.consultantApproval?.reason && (
             <span>Reason/note: {accession.release.consultantApproval.reason}</span>
           )}
+        </div>
+      </section>
+
+      <section className="pdf-section pdf-pathologist-section">
+        <h3>Pathologist Final Comment</h3>
+        <p className="pdf-pathologist-comment">{doc.pathologistComment.text}</p>
+        <p className="pdf-muted">
+          Scenario: {doc.pathologistComment.scenarioCodes.join(", ")}
+          {doc.pathologistComment.edited ? " - edited" : " - auto-generated"}
+        </p>
+        <div className="pdf-signoff-box">
+          <strong>
+            {signOffLabel(
+              accession.release.medicalLabScientistSignOff,
+              "Medical laboratory scientist",
+            )}
+          </strong>
+          <strong>{signOffLabel(accession.release.pathologistAuthorization, "Pathologist")}</strong>
         </div>
       </section>
 
@@ -724,6 +750,19 @@ function PrintStyles() {
           border-radius: 8px;
           background: #f8fbff;
           padding: 7px 8px;
+        }
+        .pdf-pathologist-section {
+          border: 1px solid #bbf7d0;
+          border-left: 5px solid #047857;
+          border-radius: 8px;
+          background: #f0fdf4;
+          padding: 7px 8px;
+        }
+        .pdf-pathologist-section h3 {
+          color: #065f46;
+        }
+        .pdf-pathologist-comment {
+          white-space: pre-line;
         }
         .pdf-signoff-box {
           display: flex;

@@ -8,9 +8,14 @@ import { getAntibiotic } from "../config/antibiotics";
 import { evaluateStewardship, type StewardshipDecision } from "./stewardshipEngine";
 import { evaluateIPC } from "./ipcEngine";
 import { IPC_RULES } from "../config/ipcRules";
-import { deriveIPCInternalReportNotes, getIPCReportVisibility, shouldShowIPCOnClinicianReport } from "./ipcReportGovernance";
+import {
+  deriveIPCInternalReportNotes,
+  getIPCReportVisibility,
+  shouldShowIPCOnClinicianReport,
+} from "./ipcReportGovernance";
 import { evaluateAccession } from "./astEngine";
 import { getBottleResults, isPositiveBottle } from "./bloodBottles";
+import { pathologistCommentForReport } from "./pathologistComments";
 
 export type CommentSource = "clinical" | "stewardship" | "ipc";
 
@@ -151,7 +156,34 @@ export interface ReportPreviewDoc {
   microscopySummary: string;
   isolates: ReportIsolate[];
   comments: ReportComment[];
-  ipc: { ruleCode: string; message: string; actions: string[]; timing: string; visibility: string }[];
+  pathologistComment: {
+    text: string;
+    generatedText?: string;
+    scenarioCodes: string[];
+    generatedAt?: string;
+    updatedAt: string;
+    updatedBy: string;
+    edited: boolean;
+  };
+  signOffs: {
+    medicalLabScientist?: {
+      signedBy: string;
+      signedAt: string;
+      note?: string;
+    };
+    pathologist?: {
+      signedBy: string;
+      signedAt: string;
+      note?: string;
+    };
+  };
+  ipc: {
+    ruleCode: string;
+    message: string;
+    actions: string[];
+    timing: string;
+    visibility: string;
+  }[];
   internalNotes: string[];
   versions: {
     rule: string;
@@ -175,7 +207,7 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
   // Specimen-level bottle inventory — single source of truth, including
   // Gram stain + critical-call data for every flagged_positive bottle.
   const allBottles = getBottleResults(accession);
-  const projectBottle = (r: typeof allBottles[number]): ReportBottleRow => ({
+  const projectBottle = (r: (typeof allBottles)[number]): ReportBottleRow => ({
     setNo: r.setNo,
     bottleType: r.bottleType,
     growth: r.growth,
@@ -183,14 +215,15 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
     positiveAt: r.positiveAt,
     ttpHours: r.ttpHours,
     drawToPositiveHours: r.drawToPositiveHours,
-    gramStain: r.gramStain && r.gramStain.result
-      ? {
-          result: r.gramStain.result,
-          morphology: r.gramStain.morphology,
-          performedBy: r.gramStain.performedBy,
-          performedAt: r.gramStain.performedAt,
-        }
-      : undefined,
+    gramStain:
+      r.gramStain && r.gramStain.result
+        ? {
+            result: r.gramStain.result,
+            morphology: r.gramStain.morphology,
+            performedBy: r.gramStain.performedBy,
+            performedAt: r.gramStain.performedAt,
+          }
+        : undefined,
     maldiTof: r.maldiTof?.performed
       ? {
           performed: true,
@@ -216,26 +249,26 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
           notes: r.directAst.notes,
         }
       : undefined,
-    criticalCall: r.criticalCall && (r.criticalCall.calledAt || r.criticalCall.calledTo)
-      ? {
-          calledBy: r.criticalCall.calledBy,
-          calledTo: r.criticalCall.calledTo,
-          calledAt: r.criticalCall.calledAt,
-          readBack: !!r.criticalCall.readBack,
-          notes: r.criticalCall.notes,
-        }
-      : undefined,
+    criticalCall:
+      r.criticalCall && (r.criticalCall.calledAt || r.criticalCall.calledTo)
+        ? {
+            calledBy: r.criticalCall.calledBy,
+            calledTo: r.criticalCall.calledTo,
+            calledAt: r.criticalCall.calledAt,
+            readBack: !!r.criticalCall.readBack,
+            notes: r.criticalCall.notes,
+          }
+        : undefined,
   });
 
   const isolates: ReportIsolate[] = accession.isolates.map((i) => {
     const rowOutputs = astByIsolate.find((o) => o.isolateId === i.id);
     const links = i.bloodSourceLinks ?? [];
     const linkedKeys = new Set(links.map((l) => `${l.setNo}|${l.bottleType}`));
-    const linkedBottles = links.length > 0
-      ? allBottles
-          .filter((b) => linkedKeys.has(`${b.setNo}|${b.bottleType}`))
-          .map(projectBottle)
-      : undefined;
+    const linkedBottles =
+      links.length > 0
+        ? allBottles.filter((b) => linkedKeys.has(`${b.setNo}|${b.bottleType}`)).map(projectBottle)
+        : undefined;
     return {
       isolateNo: i.isolateNo,
       organismDisplay: i.organismDisplay,
@@ -252,7 +285,11 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
         .map<ReportASTRow>((a) => {
           const dec: StewardshipDecision | undefined = stewardship.byAst[a.id];
           const enginePatch = rowOutputs?.rowPatches[a.id];
-          const interp = a.finalInterpretation ?? enginePatch?.interpretedSIR ?? a.interpretedSIR ?? a.rawInterpretation;
+          const interp =
+            a.finalInterpretation ??
+            enginePatch?.interpretedSIR ??
+            a.interpretedSIR ??
+            a.rawInterpretation;
 
           // Governed source of truth: AST row carries breakpointKey,
           // indicationUsed, breakpointSource, and breakpointFlags as written
@@ -261,9 +298,10 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
           if (a.breakpointKey) {
             breakpoint = {
               standard: a.standard,
-              summary: a.indicationUsed && a.indicationUsed !== "general"
-                ? `governed (${a.indicationUsed})`
-                : "governed",
+              summary:
+                a.indicationUsed && a.indicationUsed !== "general"
+                  ? `governed (${a.indicationUsed})`
+                  : "governed",
               breakpointKey: a.breakpointKey,
               indicationUsed: a.indicationUsed,
               source: a.breakpointSource,
@@ -346,6 +384,7 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
     .filter((entry) => !!entry);
 
   const internalIpcNotes = deriveIPCInternalReportNotes(accession);
+  const pathologistComment = pathologistCommentForReport(accession);
 
   const microscopySummary =
     accession.microscopy.length === 0
@@ -363,7 +402,8 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
       return {
         setNo: idx + 1,
         drawSite: typeof set.drawSite === "string" ? set.drawSite : "",
-        lumenLabel: typeof set.lumenLabel === "string" && set.lumenLabel ? set.lumenLabel : undefined,
+        lumenLabel:
+          typeof set.lumenLabel === "string" && set.lumenLabel ? set.lumenLabel : undefined,
         bottleTypes: Array.isArray(set.bottleTypes) ? (set.bottleTypes as string[]) : [],
         drawTime: typeof set.drawTime === "string" && set.drawTime ? set.drawTime : undefined,
       };
@@ -390,6 +430,23 @@ export function buildReportPreview(accession: Accession): ReportPreviewDoc {
     microscopySummary,
     isolates,
     comments,
+    pathologistComment,
+    signOffs: {
+      medicalLabScientist: accession.release.medicalLabScientistSignOff
+        ? {
+            signedBy: accession.release.medicalLabScientistSignOff.signedBy,
+            signedAt: accession.release.medicalLabScientistSignOff.signedAt,
+            note: accession.release.medicalLabScientistSignOff.note,
+          }
+        : undefined,
+      pathologist: accession.release.pathologistAuthorization
+        ? {
+            signedBy: accession.release.pathologistAuthorization.signedBy,
+            signedAt: accession.release.pathologistAuthorization.signedAt,
+            note: accession.release.pathologistAuthorization.note,
+          }
+        : undefined,
+    },
     ipc: clinicianIPC,
     internalNotes: internalIpcNotes,
     versions: {

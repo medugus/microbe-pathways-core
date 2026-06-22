@@ -108,6 +108,16 @@ const COLLECTION_METHOD_NOTES_LRT = [
   { code: "BRONCH_WASH", display: "Bronchial wash" },
 ];
 
+const COLLECTION_METHOD_NOTES_GENITAL = [
+  { code: "HVS_SWAB", display: "High vaginal swab" },
+  { code: "VULVOVAGINAL_SWAB", display: "Vulvovaginal swab" },
+  { code: "ENDOCERVICAL_SWAB", display: "Endocervical swab" },
+  { code: "URETHRAL_SWAB", display: "Urethral swab" },
+  { code: "LESION_SWAB", display: "Genital ulcer / lesion swab" },
+  { code: "SEMEN_CONTAINER", display: "Semen in sterile container" },
+  { code: "IUCD_DEVICE", display: "IUCD / device submitted" },
+];
+
 const SCREEN_ROUNDS = [
   { code: "ADMISSION", display: "Admission screen" },
   { code: "WEEKLY", display: "Weekly screen" },
@@ -279,11 +289,7 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
         );
       case "drawTime":
         return (
-          <DateTimeInput
-            label={label}
-            value={String(value)}
-            onChange={(v) => update(field, v)}
-          />
+          <DateTimeInput label={label} value={String(value)} onChange={(v) => update(field, v)} />
         );
       case "contaminationContext":
         return (
@@ -333,8 +339,10 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
                 familyCode === "URINE"
                   ? urineCollectionMethodOptions
                   : familyCode === "LRT"
-                  ? COLLECTION_METHOD_NOTES_LRT
-                  : []
+                    ? COLLECTION_METHOD_NOTES_LRT
+                    : familyCode === "GENITAL"
+                      ? COLLECTION_METHOD_NOTES_GENITAL
+                      : []
               }
               onChange={(v) => {
                 setCollectionResetWarning(false);
@@ -404,13 +412,7 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
           />
         );
       default:
-        return (
-          <TextInput
-            label={label}
-            value={String(value)}
-            onChange={(v) => update(field, v)}
-          />
-        );
+        return <TextInput label={label} value={String(value)} onChange={(v) => update(field, v)} />;
     }
   };
 
@@ -420,10 +422,13 @@ export function SpecimenFieldsForm({ accession, required, optional }: Props) {
   const isBlood = accession.specimen.familyCode === "BLOOD";
   const BLOOD_HANDLED: FieldKey[] = ["setCount", "bottleType", "drawSite", "drawTime"];
 
-  const visibleRequiredBase = isBlood ? required.filter((f) => !BLOOD_HANDLED.includes(f)) : required;
-  const visibleRequired = isMrsaAdmissionScreen && !visibleRequiredBase.includes("screenSites")
-    ? [...visibleRequiredBase, "screenSites" as FieldKey]
-    : visibleRequiredBase;
+  const visibleRequiredBase = isBlood
+    ? required.filter((f) => !BLOOD_HANDLED.includes(f))
+    : required;
+  const visibleRequired =
+    isMrsaAdmissionScreen && !visibleRequiredBase.includes("screenSites")
+      ? [...visibleRequiredBase, "screenSites" as FieldKey]
+      : visibleRequiredBase;
   const visibleOptional = isBlood ? optional.filter((f) => !BLOOD_HANDLED.includes(f)) : optional;
 
   const allFields = useMemo(
