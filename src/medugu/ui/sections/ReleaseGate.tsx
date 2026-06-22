@@ -1,6 +1,10 @@
 import type { Accession } from "../../domain/types";
 import type { ValidationReport } from "../../logic/validationEngine";
-import { navigateToValidationIssue, targetForValidationIssue } from "../validationNavigation";
+import {
+  navigateToValidationIssue,
+  navigateToWorkspaceTarget,
+  targetForValidationIssue,
+} from "../validationNavigation";
 
 interface ReleaseGateProps {
   accession: Accession;
@@ -126,13 +130,22 @@ export function ReleaseGate({
       </section>
 
       {validationReport.amsPendingRestrictedCount > 0 && (
-        <section className="callout callout-warning text-[11px]">
+        <button
+          type="button"
+          onClick={() =>
+            navigateToWorkspaceTarget({ sectionId: "sec-ams", label: "AMS approvals" })
+          }
+          className="callout callout-warning w-full text-left text-[11px] hover:ring-1 hover:ring-amber-500/30"
+        >
           <strong>{validationReport.amsPendingRestrictedCount}</strong> restricted antimicrobial
           row(s) are still hidden from the clinician report pending AMS approval. Open the{" "}
           <span className="font-mono">AMS approvals</span> section to request, approve, or deny.
           Release will proceed but those rows will remain suppressed in the released report and
           exports until approved (a later amendment will be required to surface them).
-        </section>
+          <span className="mt-1 block text-[10px] font-medium uppercase tracking-wide">
+            Go to AMS approvals
+          </span>
+        </button>
       )}
     </>
   );

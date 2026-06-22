@@ -12,7 +12,7 @@ export function SectionRail({ sections = SECTION_ORDER }: SectionRailProps) {
   return (
     <nav
       aria-label="Workspace sections"
-      className="hidden max-h-[calc(100vh-1rem)] w-40 shrink-0 self-start overflow-y-auto border-l border-border bg-card/50 p-3 lg:sticky lg:top-2 lg:block"
+      className="hidden w-40 overflow-y-auto border-l border-border bg-card/95 p-3 shadow-sm backdrop-blur lg:fixed lg:bottom-10 lg:right-0 lg:top-28 lg:z-30 lg:block"
     >
       <div className="mb-2 text-[10px] uppercase tracking-wide text-muted-foreground">Jump to</div>
       <ul className="space-y-1">

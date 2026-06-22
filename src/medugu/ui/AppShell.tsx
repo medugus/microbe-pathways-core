@@ -81,7 +81,9 @@ export function AppShell() {
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2 text-[11px] uppercase">
-                <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] normal-case text-muted-foreground md:inline">⌘K</kbd>
+                <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] normal-case text-muted-foreground md:inline">
+                  ⌘K
+                </kbd>
                 <SoundAckChip />
                 <Link
                   to="/settings/sounds"
@@ -118,7 +120,7 @@ export function AppShell() {
         {accession && <ContextBar accession={accession} />}
 
         <div className="flex flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto lg:pr-40">
             {accession ? (
               <div className="space-y-4 p-6">
                 {visibleSections.map((s) => {
