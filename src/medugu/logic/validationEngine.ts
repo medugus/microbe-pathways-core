@@ -204,14 +204,20 @@ export function runValidation(accession: Accession): ValidationReport {
   }
   const profile = r.ok ? r.profile : null;
 
-  if (profile && profile.microscopy.required.length > 0 && accession.microscopy.length === 0) {
-    issues.push(
-      warn(
-        "MIC_REQUIRED_MISSING",
-        "microscopy",
-        `Required microscopy not recorded (${profile.microscopy.required.join(", ")}).`,
-      ),
+  if (profile && profile.microscopy.required.length > 0) {
+    const recordedMicroscopyCodes = new Set(accession.microscopy.map((item) => item.stainCode));
+    const missingMicroscopy = profile.microscopy.required.filter(
+      (code) => !recordedMicroscopyCodes.has(code),
     );
+    if (missingMicroscopy.length > 0) {
+      issues.push(
+        warn(
+          "MIC_REQUIRED_MISSING",
+          "microscopy",
+          `Required microscopy not recorded (${missingMicroscopy.join(", ")}).`,
+        ),
+      );
+    }
   }
 
   if (profile && profile.gating.pathway === "diagnostic" && accession.isolates.length === 0) {

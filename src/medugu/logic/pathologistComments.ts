@@ -8,6 +8,12 @@ import type {
 import { getAntibiotic } from "../config/antibiotics";
 import { getOrganism } from "../config/organisms";
 import { approvalStatusForRow, isRestrictedRow } from "./amsEngine";
+import {
+  BV_SCREEN_DETAIL_KEY,
+  evaluateBacterialVaginosisScreen,
+  isBacterialVaginosisScreenSpecimen,
+  normaliseBvScreenInput,
+} from "./bacterialVaginosis";
 
 export interface PathologistCommentSuggestion {
   text: string;
@@ -93,6 +99,28 @@ export function buildPathologistCommentSuggestion(
     comments.push(
       "Genital tract culture reviewed as a site-specific result: report recognised pathogens or targeted screen results, avoid over-reporting commensal flora, and correlate with STI NAAT/wet-prep findings where clinically indicated.",
     );
+
+    if (
+      isBacterialVaginosisScreenSpecimen(
+        accession.specimen.familyCode,
+        accession.specimen.subtypeCode,
+      )
+    ) {
+      const bv = evaluateBacterialVaginosisScreen(
+        normaliseBvScreenInput(accession.specimen.details?.[BV_SCREEN_DETAIL_KEY]),
+      );
+      if (bv.nugentInterpretation === "positive") {
+        addUnique(scenarioCodes, "BV_NUGENT_POSITIVE");
+        comments.push(
+          "Bacterial vaginosis screen is positive by Nugent scoring. Report as a microscopy diagnosis rather than Gardnerella culture alone; correlate with symptoms and local treatment guidance.",
+        );
+      } else if (bv.nugentInterpretation === "intermediate") {
+        addUnique(scenarioCodes, "BV_NUGENT_INTERMEDIATE");
+        comments.push(
+          "Bacterial vaginosis screen shows intermediate vaginal flora by Nugent scoring. Correlate with Amsel/clinical findings where available.",
+        );
+      }
+    }
   }
 
   if (accession.specimen.familyCode === "COLONISATION") {

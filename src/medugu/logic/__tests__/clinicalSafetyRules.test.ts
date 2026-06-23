@@ -12,6 +12,7 @@ import {
   resolveSpecimen,
 } from "../specimenResolver";
 import { runValidation } from "../validationEngine";
+import { BV_SCREEN_DETAIL_KEY, BV_SCREEN_MICROSCOPY_CODE } from "../bacterialVaginosis";
 
 function accession(accessionNumber: string) {
   const found = DEMO_ACCESSIONS.find((item) => item.accessionNumber === accessionNumber);
@@ -138,12 +139,63 @@ describe("clinical safety rules", () => {
     const urethral = resolveSpecimen("GENITAL", "GEN_URETHRAL");
 
     expect(hvs.ok && hvs.profile.workbenchPanels).toContain("genital_panel");
+    expect(hvs.ok && hvs.profile.workbenchPanels).toContain("bv_screen_panel");
+    expect(hvs.ok && hvs.profile.microscopy.required).toContain("gram");
     expect(hvs.ok && hvs.profile.microscopy.required).toContain("wetMount");
+    expect(hvs.ok && hvs.profile.microscopy.required).toContain(BV_SCREEN_MICROSCOPY_CODE);
     expect(hvs.ok && hvs.profile.reportSections).toEqual(["microscopy", "culture"]);
 
     expect(urethral.ok && urethral.profile.workbenchPanels).toEqual(["genital_panel", "sti_panel"]);
+    expect(urethral.ok && urethral.profile.microscopy.required).not.toContain(
+      BV_SCREEN_MICROSCOPY_CODE,
+    );
     expect(urethral.ok && urethral.profile.syndrome).toBe("sti_syndrome");
     expect(urethral.ok && urethral.profile.reportSections).toContain("ast");
+  });
+
+  it("requires the BV screen row specifically for high vaginal swabs", () => {
+    const hvs = {
+      ...accession("MB25-EF34GH"),
+      specimen: {
+        familyCode: "GENITAL",
+        subtypeCode: "GEN_HVS",
+        details: {
+          [BV_SCREEN_DETAIL_KEY]: {
+            lactobacillusScore: 4,
+            gardnerellaBacteroidesScore: 4,
+            mobiluncusScore: 1,
+          },
+        },
+      },
+      microscopy: [
+        { id: "mic_hvs_gram", stainCode: "gram", result: "Gram stain performed" },
+        { id: "mic_hvs_wet", stainCode: "wetMount", result: "Wet mount performed" },
+      ],
+    };
+
+    const missingBv = runValidation(hvs)
+      .warnings.map((issue) => issue.message)
+      .join(" ");
+
+    expect(missingBv).toContain(BV_SCREEN_MICROSCOPY_CODE);
+
+    const complete = {
+      ...hvs,
+      microscopy: [
+        ...hvs.microscopy,
+        {
+          id: "mic_hvs_bv",
+          stainCode: BV_SCREEN_MICROSCOPY_CODE,
+          result: "Nugent 9/10 - bacterial vaginosis pattern detected.",
+        },
+      ],
+    };
+
+    const completedWarnings = runValidation(complete)
+      .warnings.map((issue) => issue.message)
+      .join(" ");
+
+    expect(completedWarnings).not.toContain(BV_SCREEN_MICROSCOPY_CODE);
   });
 
   it("generates pathologist comments from AST resistance patterns", () => {

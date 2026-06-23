@@ -49,7 +49,8 @@ export type MicroscopyKey =
   | "wetMount"
   | "qualityScore_Bartlett"
   | "epithelialCells"
-  | "leukocytes";
+  | "leukocytes"
+  | "bacterialVaginosisScreen";
 
 export type ReportSectionKey =
   | "microscopy"
@@ -74,6 +75,7 @@ export type WorkbenchPanelKey =
   | "stool_cdiff_panel"
   | "stool_parasitology_panel"
   | "genital_panel"
+  | "bv_screen_panel"
   | "sti_panel";
 
 export type IPCFlagHint =
@@ -645,8 +647,8 @@ function resolveGenital(subtypeCode: string, display: string): ResolvedSpecimenP
 
   const microscopy: MicroscopyConfig = isVaginal
     ? {
-        required: ["wetMount"],
-        optional: ["gram", "leukocytes", "epithelialCells"],
+        required: ["gram", "wetMount", "bacterialVaginosisScreen"],
+        optional: ["leukocytes", "epithelialCells"],
         structured: true,
         gatesCulture: false,
       }
@@ -665,6 +667,7 @@ function resolveGenital(subtypeCode: string, display: string): ResolvedSpecimenP
         };
 
   const panels: WorkbenchPanelKey[] = ["genital_panel"];
+  if (isVaginal) panels.push("bv_screen_panel");
   if (isStiTargeted) panels.push("sti_panel");
 
   return {
@@ -682,7 +685,9 @@ function resolveGenital(subtypeCode: string, display: string): ResolvedSpecimenP
       contaminationContextRequired: false,
       notes: isStiTargeted
         ? "STI-targeted genital swabs should be processed as targeted pathogen workups; correlate with NAAT where available."
-        : "Routine genital culture should report recognised pathogens or targeted findings and avoid over-reporting commensal flora.",
+        : isVaginal
+          ? "Vaginal swabs should include BV assessment by Gram-film Nugent scoring, with wet mount/Amsel findings recorded where available. Avoid diagnosing BV by Gardnerella culture alone."
+          : "Routine genital culture should report recognised pathogens or targeted findings and avoid over-reporting commensal flora.",
     },
     microscopy,
     requiredFields,
