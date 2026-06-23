@@ -28,6 +28,7 @@ const ROUTES: Array<{ to: string; label: string; hint: string }> = [
   { to: "/workspace", label: "Workspace", hint: "Cases" },
   { to: "/ams", label: "AMS approvals", hint: "Stewardship" },
   { to: "/ipc", label: "IPC signals", hint: "Infection control" },
+  { to: "/outbreak", label: "Outbreak dashboard", hint: "IPC surveillance" },
   { to: "/analytics", label: "Analytics", hint: "Trends" },
   { to: "/audit", label: "Audit log", hint: "Trail" },
   { to: "/admin/users", label: "Users", hint: "Admin" },
@@ -102,15 +103,13 @@ export function CommandPalette() {
                 // Build a value string that cmdk's fuzzy matcher can search across.
                 const value = `${a.accessionNumber} ${a.patient.mrn} ${name} ${a.specimen.subtypeCode ?? ""} ${a.specimen.freeTextLabel ?? ""}`;
                 return (
-                  <CommandItem
-                    key={a.id}
-                    value={value}
-                    onSelect={() => pickAccession(a.id)}
-                  >
+                  <CommandItem key={a.id} value={value} onSelect={() => pickAccession(a.id)}>
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <div className="flex flex-1 items-baseline justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate text-sm text-foreground">{name || "Unnamed patient"}</div>
+                        <div className="truncate text-sm text-foreground">
+                          {name || "Unnamed patient"}
+                        </div>
                         <div className="truncate text-[11px] text-muted-foreground">{subtitle}</div>
                       </div>
                       <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">

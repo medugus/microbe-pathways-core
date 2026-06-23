@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as OutbreakRouteImport } from './routes/outbreak'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IpcRouteImport } from './routes/ipc'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -40,6 +41,11 @@ const SignupRoute = SignupRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OutbreakRoute = OutbreakRouteImport.update({
+  id: '/outbreak',
+  path: '/outbreak',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
+  '/outbreak': typeof OutbreakRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/workspace': typeof WorkspaceRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
+  '/outbreak': typeof OutbreakRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/workspace': typeof WorkspaceRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/ipc': typeof IpcRoute
   '/login': typeof LoginRoute
+  '/outbreak': typeof OutbreakRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/workspace': typeof WorkspaceRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/ipc'
     | '/login'
+    | '/outbreak'
     | '/reset-password'
     | '/signup'
     | '/workspace'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/ipc'
     | '/login'
+    | '/outbreak'
     | '/reset-password'
     | '/signup'
     | '/workspace'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/ipc'
     | '/login'
+    | '/outbreak'
     | '/reset-password'
     | '/signup'
     | '/workspace'
@@ -241,6 +253,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   IpcRoute: typeof IpcRoute
   LoginRoute: typeof LoginRoute
+  OutbreakRoute: typeof OutbreakRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   WorkspaceRoute: typeof WorkspaceRoute
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/outbreak': {
+      id: '/outbreak'
+      path: '/outbreak'
+      fullPath: '/outbreak'
+      preLoaderRoute: typeof OutbreakRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -385,6 +405,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   IpcRoute: IpcRoute,
   LoginRoute: LoginRoute,
+  OutbreakRoute: OutbreakRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   WorkspaceRoute: WorkspaceRoute,

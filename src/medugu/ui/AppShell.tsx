@@ -20,7 +20,6 @@ import {
   StewardshipSection,
   AMSSection,
   IPCSection,
-  OutbreakSection,
   ValidationSection,
   ReleaseSection,
   ReportSection,
@@ -42,7 +41,6 @@ const SECTION_COMPONENTS = {
   stewardship: StewardshipSection,
   ams: AMSSection,
   ipc: IPCSection,
-  outbreak: OutbreakSection,
   validation: ValidationSection,
   release: ReleaseSection,
   report: ReportSection,
@@ -92,6 +90,13 @@ export function AppShell() {
                 >
                   🔊
                 </Link>
+                <Link
+                  to="/outbreak"
+                  className="rounded border border-border px-2 py-1 text-[11px] normal-case text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title="Open standalone outbreak dashboard"
+                >
+                  Outbreak
+                </Link>
                 <span className="rounded bg-muted px-2 py-1 text-muted-foreground">
                   {accession.workflowStatus}
                 </span>
@@ -135,8 +140,7 @@ export function AppShell() {
                         s.key === "patient" ||
                         s.key === "specimen" ||
                         s.key === "isolate" ||
-                        s.key === "ast" ||
-                        s.key === "outbreak"
+                        s.key === "ast"
                       }
                     >
                       <Cmp />

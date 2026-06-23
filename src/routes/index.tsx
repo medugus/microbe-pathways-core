@@ -41,7 +41,6 @@ const BLUE_ACCENT = "#3B82F6";
 const ELECTRIC = "#60A5FA";
 const DIM = "#6E89B5";
 
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -107,7 +106,6 @@ function AmbientBackdrop() {
   );
 }
 
-
 const STAGE_LABEL: Record<string, string> = {
   [WorkflowStage.Registered]: "Registered",
   [WorkflowStage.SpecimenReceived]: "Specimen received",
@@ -124,10 +122,7 @@ const STAGE_LABEL: Record<string, string> = {
 function HubBody() {
   const state = useMeduguState();
   const [, force] = useState(0);
-  useEffect(
-    () => zoneReaderInboundConfig.subscribe(() => force((n) => n + 1)),
-    [],
-  );
+  useEffect(() => zoneReaderInboundConfig.subscribe(() => force((n) => n + 1)), []);
 
   const appUrl = zoneReaderInboundConfig.getAppUrl();
   const endpointUrl = zoneReaderInboundConfig.getEndpointUrl();
@@ -154,8 +149,7 @@ function HubBody() {
   const cardBase: React.CSSProperties = {
     background: `linear-gradient(180deg, ${CARD_NAVY} 0%, rgba(11,26,51,0.85) 100%)`,
     border: `1px solid rgba(96,165,250,0.18)`,
-    boxShadow:
-      "0 1px 0 rgba(255,255,255,0.04) inset, 0 30px 60px -30px rgba(0,0,0,0.6)",
+    boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 30px 60px -30px rgba(0,0,0,0.6)",
   };
 
   return (
@@ -172,15 +166,12 @@ function HubBody() {
         >
           <Sparkles className="h-3 w-3" /> Medugu Hub
         </div>
-        <h1
-          className="text-4xl font-semibold tracking-tight md:text-5xl"
-          style={{ color: ICE }}
-        >
+        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl" style={{ color: ICE }}>
           Choose your entry point.
         </h1>
         <p className="max-w-2xl text-base leading-relaxed" style={{ color: DIM }}>
-          The same engines, rules, and release governance run under both
-          surfaces — pick the one that fits the bench in front of you.
+          The same engines, rules, and release governance run under both surfaces — pick the one
+          that fits the bench in front of you.
         </p>
       </header>
 
@@ -222,9 +213,9 @@ function HubBody() {
               Case workspace
             </h2>
             <p className="text-sm leading-relaxed" style={{ color: DIM }}>
-              Continuous accession-to-release workflow. Patient and specimen
-              capture, microscopy, isolate ID, AST with expert rules,
-              stewardship review, IPC signals, validation and governed release.
+              Continuous accession-to-release workflow. Patient and specimen capture, microscopy,
+              isolate ID, AST with expert rules, stewardship review, IPC signals, validation and
+              governed release.
             </p>
           </div>
           <ul className="relative space-y-2 text-sm" style={{ color: "rgba(230,238,251,0.78)" }}>
@@ -268,6 +259,18 @@ function HubBody() {
                 }}
               >
                 <Link to="/antibiogram">Live antibiogram</Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full px-4"
+                style={{
+                  background: "transparent",
+                  color: ICE,
+                  border: `1px solid rgba(96,165,250,0.45)`,
+                }}
+              >
+                <Link to="/outbreak">Outbreak dashboard</Link>
               </Button>
               <Button
                 asChild
@@ -323,9 +326,8 @@ function HubBody() {
                 Zone Reader
               </h2>
               <p className="text-sm leading-relaxed" style={{ color: DIM }}>
-                External measurement app. Imports a Medugu LIMS worklist,
-                captures zone diameters, and returns coded ZoneResult rows for
-                interpretation and release here.
+                External measurement app. Imports a Medugu LIMS worklist, captures zone diameters,
+                and returns coded ZoneResult rows for interpretation and release here.
               </p>
             </div>
             <ul className="relative space-y-2 text-sm" style={{ color: "rgba(230,238,251,0.78)" }}>
@@ -353,8 +355,7 @@ function HubBody() {
                   border: "1px solid rgba(220,38,38,0.35)",
                 }}
               >
-                Preview host detected — do not use this origin for live Zone
-                Reader send.
+                Preview host detected — do not use this origin for live Zone Reader send.
               </p>
             )}
 
@@ -420,9 +421,7 @@ function HubBody() {
                 >
                   <span style={{ color: ELECTRIC }}>{i + 1}.</span> {label}
                 </li>
-                {i < arr.length - 1 && (
-                  <li style={{ color: DIM }}>→</li>
-                )}
+                {i < arr.length - 1 && <li style={{ color: DIM }}>→</li>}
               </React.Fragment>
             ))}
           </ol>
@@ -504,4 +503,3 @@ function FeatureLine({
     </li>
   );
 }
-
