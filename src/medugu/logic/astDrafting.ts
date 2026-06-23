@@ -8,6 +8,7 @@
 import type {
   ASTGovernanceState,
   ASTCascadeState,
+  ExpertRuleFiring,
   ASTResult,
   ASTStandard,
   Accession,
@@ -24,6 +25,10 @@ import {
   type BreakpointResolution,
   type ResolverSyndrome,
 } from "../config/breakpoints";
+import {
+  evaluateIntrinsicResistance,
+  formatIntrinsicResistanceMessage,
+} from "../config/intrinsicResistance";
 import { resolveSpecimen } from "./specimenResolver";
 
 export interface DraftASTInput {
@@ -108,14 +113,20 @@ export function draftInterpretation(
   return draftInterpretationFull(undefined, isolate, input).interpretation;
 }
 
-function interpretDisk(rawValue: number, bp: { susceptibleMinMm?: number; resistantLessThanMm?: number; resistantMaxMm?: number }): ASTInterpretation | undefined {
+function interpretDisk(
+  rawValue: number,
+  bp: { susceptibleMinMm?: number; resistantLessThanMm?: number; resistantMaxMm?: number },
+): ASTInterpretation | undefined {
   if (bp.susceptibleMinMm !== undefined && rawValue >= bp.susceptibleMinMm) return "S";
   if (bp.resistantLessThanMm !== undefined && rawValue < bp.resistantLessThanMm) return "R";
   if (bp.resistantMaxMm !== undefined && rawValue <= bp.resistantMaxMm) return "R";
   return "I";
 }
 
-function interpretMIC(rawValue: number, bp: { susceptibleMaxMgL?: number; resistantGreaterThanMgL?: number; resistantMinMgL?: number }): ASTInterpretation | undefined {
+function interpretMIC(
+  rawValue: number,
+  bp: { susceptibleMaxMgL?: number; resistantGreaterThanMgL?: number; resistantMinMgL?: number },
+): ASTInterpretation | undefined {
   if (bp.susceptibleMaxMgL !== undefined && rawValue <= bp.susceptibleMaxMgL) return "S";
   if (bp.resistantGreaterThanMgL !== undefined && rawValue > bp.resistantGreaterThanMgL) return "R";
   if (bp.resistantMinMgL !== undefined && rawValue >= bp.resistantMinMgL) return "R";
@@ -133,13 +144,51 @@ function normalizeSupportedInterpretation(
   return undefined;
 }
 
+function intrinsicFiring(ruleCode: string, ruleVersion: string, message: string): ExpertRuleFiring {
+  return {
+    ruleCode,
+    ruleVersion,
+    message,
+    firedAt: new Date().toISOString(),
+  };
+}
+
+function mergeIntrinsicFlag(existing: ASTResult["phenotypeFlags"]): ASTResult["phenotypeFlags"] {
+  const next = existing ? [...existing] : [];
+  if (!next.includes("intrinsic_R")) next.push("intrinsic_R");
+  return next;
+}
+
+function mergeExpertFiring(
+  existing: ASTResult["expertRulesFired"],
+  firing: ExpertRuleFiring,
+): ExpertRuleFiring[] {
+  const next = existing ? [...existing] : [];
+  if (!next.some((item) => item.ruleCode === firing.ruleCode)) next.push(firing);
+  return next;
+}
+
 export function buildASTResult(accession: Accession, input: DraftASTInput): ASTResult {
   const isolate = accession.isolates.find((i) => i.id === input.isolateId);
-  const standard: ASTStandard = input.standard ?? defaultStandardForGroup(getOrganism(isolate?.organismCode ?? "")?.group);
+  const standard: ASTStandard =
+    input.standard ?? defaultStandardForGroup(getOrganism(isolate?.organismCode ?? "")?.group);
   const rawUnit: "mg/L" | "mm" = input.method === "disk_diffusion" ? "mm" : "mg/L";
-  const { interpretation, resolution, standardUsed } = draftInterpretationFull(accession, isolate, { ...input, standard });
+  const { interpretation, resolution, standardUsed } = draftInterpretationFull(accession, isolate, {
+    ...input,
+    standard,
+  });
   const governance: ASTGovernanceState = "draft";
   const cascade: ASTCascadeState = "primary";
+  const organism = getOrganism(isolate?.organismCode ?? "");
+  const intrinsic = evaluateIntrinsicResistance(organism, input.antibioticCode);
+  const intrinsicMessage =
+    organism && intrinsic
+      ? formatIntrinsicResistanceMessage(organism, input.antibioticCode, intrinsic)
+      : undefined;
+  const intrinsicRule =
+    intrinsic && intrinsicMessage
+      ? intrinsicFiring(intrinsic.ruleCode, intrinsic.ruleVersion, intrinsicMessage)
+      : undefined;
 
   return {
     id: newId("ast"),
@@ -152,9 +201,17 @@ export function buildASTResult(accession: Accession, input: DraftASTInput): ASTR
     micMgL: rawUnit === "mg/L" ? input.rawValue : undefined,
     zoneMm: rawUnit === "mm" ? input.rawValue : undefined,
     rawInterpretation: interpretation,
-    finalInterpretation: interpretation,
+    interpretedSIR: intrinsic ? intrinsic.interpretation : undefined,
+    finalInterpretation: intrinsic ? intrinsic.interpretation : interpretation,
     governance,
-    cascade,
+    cascade: intrinsic ? "suppressed" : cascade,
+    cascadeDecision: intrinsic ? "suppressed_by_phenotype" : undefined,
+    cascadeReason: intrinsic?.reason,
+    cascadeRuleCode: intrinsic?.ruleCode,
+    cascadeRulesetVersion: intrinsic?.ruleVersion,
+    phenotypeFlags: intrinsic ? ["intrinsic_R"] : undefined,
+    expertRulesFired: intrinsicRule ? [intrinsicRule] : undefined,
+    stewardshipNote: intrinsicMessage,
     comment: input.comment,
     breakpointKey: resolution?.breakpointKey,
     indicationUsed: resolution?.indicationUsed,
@@ -186,20 +243,17 @@ export function rebuildASTFromRawEdit(
   const isolate = accession.isolates.find((i) => i.id === row.isolateId);
   const isoGroup = getOrganism(isolate?.organismCode ?? "")?.group;
   const defaultStandard = defaultStandardForGroup(isoGroup);
-  const standard = patch.standard ?? (row.standard === PRIMARY_STANDARD ? defaultStandard : row.standard);
+  const standard =
+    patch.standard ?? (row.standard === PRIMARY_STANDARD ? defaultStandard : row.standard);
   const rawValue = patch.rawValue;
   const rawUnit = patch.rawUnit ?? resolvedRawUnit(method);
-  const { interpretation: draft, resolution } = draftInterpretationFull(
-    accession,
-    isolate,
-    {
-      isolateId: row.isolateId,
-      antibioticCode: row.antibioticCode,
-      method,
-      standard,
-      rawValue,
-    },
-  );
+  const { interpretation: draft, resolution } = draftInterpretationFull(accession, isolate, {
+    isolateId: row.isolateId,
+    antibioticCode: row.antibioticCode,
+    method,
+    standard,
+    rawValue,
+  });
 
   const patchOut: Partial<ASTResult> = {
     method,
@@ -224,6 +278,24 @@ export function rebuildASTFromRawEdit(
 
   if (!hasManualOverride) {
     patchOut.finalInterpretation = draft;
+  }
+
+  const organism = getOrganism(isolate?.organismCode ?? "");
+  const intrinsic = evaluateIntrinsicResistance(organism, row.antibioticCode);
+  if (organism && intrinsic) {
+    const message = formatIntrinsicResistanceMessage(organism, row.antibioticCode, intrinsic);
+    const firing = intrinsicFiring(intrinsic.ruleCode, intrinsic.ruleVersion, message);
+
+    patchOut.interpretedSIR = intrinsic.interpretation;
+    if (!row.consultantOverride) patchOut.finalInterpretation = intrinsic.interpretation;
+    patchOut.cascade = "suppressed";
+    patchOut.cascadeDecision = "suppressed_by_phenotype";
+    patchOut.cascadeReason = intrinsic.reason;
+    patchOut.cascadeRuleCode = intrinsic.ruleCode;
+    patchOut.cascadeRulesetVersion = intrinsic.ruleVersion;
+    patchOut.phenotypeFlags = mergeIntrinsicFlag(row.phenotypeFlags);
+    patchOut.expertRulesFired = mergeExpertFiring(row.expertRulesFired, firing);
+    patchOut.stewardshipNote = message;
   }
 
   return patchOut;

@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { IPCSignal } from "../../domain/types";
 import { DEMO_ACCESSIONS } from "../../seed/demoAccessions";
-import { IPCFlag } from "../../domain/enums";
+import { ASTMethod, IPCFlag } from "../../domain/enums";
+import { ANTIBIOTICS } from "../../config/antibiotics";
+import { ORGANISMS, getOrganism } from "../../config/organisms";
+import { evaluateIntrinsicResistance } from "../../config/intrinsicResistance";
 import { evaluateIsolate } from "../astEngine";
+import { buildASTResult, rebuildASTFromRawEdit } from "../astDrafting";
 import { deriveIPCReleaseContext } from "../ipcReportGovernance";
 import { buildPathologistCommentSuggestion } from "../pathologistComments";
 import { buildReportPreview } from "../reportPreview";
@@ -248,5 +252,107 @@ describe("clinical safety rules", () => {
     expect(signedCodes).not.toContain("MLS_SIGNOFF_REQUIRED");
     expect(signedCodes).not.toContain("PATHOLOGIST_COMMENT_REQUIRED");
     expect(signedCodes).not.toContain("PATHOLOGIST_AUTHORIZATION_REQUIRED");
+  });
+
+  it("guards every configured bug-antibiotic pair through the intrinsic-resistance registry", () => {
+    expect(() => {
+      for (const organism of ORGANISMS) {
+        for (const antibiotic of ANTIBIOTICS) {
+          evaluateIntrinsicResistance(organism, antibiotic.code);
+        }
+      }
+    }).not.toThrow();
+
+    expect(evaluateIntrinsicResistance(getOrganism("ECOL"), "VAN")?.ruleCode).toBe(
+      "GRAM_NEGATIVE_INTRINSIC_GRAM_POSITIVE_AGENT_R",
+    );
+    expect(evaluateIntrinsicResistance(getOrganism("PMIR"), "TGC")?.ruleCode).toBe(
+      "PMIR_INTRINSIC_PROTEAE_R",
+    );
+    expect(evaluateIntrinsicResistance(getOrganism("EFAE"), "CRO")?.ruleCode).toBe(
+      "ENTEROCOCCUS_INTRINSIC_CEPH_MONO_POLY_R",
+    );
+    expect(evaluateIntrinsicResistance(getOrganism("CALB"), "MEM")?.interpretation).toBe("ND");
+    expect(evaluateIntrinsicResistance(getOrganism("ECOL"), "MEM")).toBeNull();
+  });
+
+  it("suppresses intrinsically impossible susceptible calls in the expert engine", () => {
+    const base = accession("MB25-CRE001");
+    const isolate = {
+      ...base.isolates[0],
+      id: "iso_intrinsic_ecol",
+      organismCode: "ECOL",
+      organismDisplay: "Escherichia coli",
+    };
+    const astRow = {
+      id: "ast_intrinsic_van",
+      isolateId: isolate.id,
+      antibioticCode: "VAN",
+      method: ASTMethod.DiskDiffusion,
+      standard: "EUCAST" as const,
+      rawValue: 28,
+      rawUnit: "mm" as const,
+      rawInterpretation: "S" as const,
+      finalInterpretation: "S" as const,
+      governance: "draft" as const,
+      cascade: "primary" as const,
+    };
+    const caseRecord = {
+      ...base,
+      isolates: [isolate],
+      ast: [astRow],
+    };
+
+    const result = evaluateIsolate(caseRecord, isolate);
+
+    expect(result.phenotypeFlags).toContain("intrinsic_R");
+    expect(result.rowPatches[astRow.id]).toMatchObject({
+      interpretedSIR: "R",
+      finalInterpretation: "R",
+      cascade: "suppressed",
+      cascadeDecision: "suppressed_by_phenotype",
+      phenotypeFlags: ["intrinsic_R"],
+    });
+    expect(result.rowPatches[astRow.id].expertRulesFired?.[0]?.ruleCode).toBe(
+      "GRAM_NEGATIVE_INTRINSIC_GRAM_POSITIVE_AGENT_R",
+    );
+  });
+
+  it("applies intrinsic resistance while drafting and editing AST rows", () => {
+    const base = accession("MB25-CRE001");
+    const isolate = {
+      ...base.isolates[0],
+      id: "iso_intrinsic_proteus",
+      organismCode: "PMIR",
+      organismDisplay: "Proteus mirabilis",
+    };
+    const caseRecord = {
+      ...base,
+      isolates: [isolate],
+      ast: [],
+    };
+
+    const row = buildASTResult(caseRecord, {
+      isolateId: isolate.id,
+      antibioticCode: "TGC",
+      method: ASTMethod.DiskDiffusion,
+      standard: "EUCAST",
+      rawValue: 30,
+    });
+
+    expect(row.finalInterpretation).toBe("R");
+    expect(row.cascadeDecision).toBe("suppressed_by_phenotype");
+    expect(row.phenotypeFlags).toContain("intrinsic_R");
+    expect(row.expertRulesFired?.[0]?.ruleCode).toBe("PMIR_INTRINSIC_PROTEAE_R");
+
+    const edited = rebuildASTFromRawEdit(
+      { ...caseRecord, ast: [{ ...row, finalInterpretation: "S" }] },
+      { ...row, finalInterpretation: "S" },
+      { rawValue: 32 },
+    );
+
+    expect(edited.finalInterpretation).toBe("R");
+    expect(edited.cascadeDecision).toBe("suppressed_by_phenotype");
+    expect(edited.expertRulesFired?.[0]?.ruleCode).toBe("PMIR_INTRINSIC_PROTEAE_R");
   });
 });

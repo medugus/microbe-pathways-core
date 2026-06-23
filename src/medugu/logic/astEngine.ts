@@ -14,6 +14,10 @@ import type {
 import type { ASTInterpretation } from "../domain/enums";
 import { getOrganism } from "../config/organisms";
 import { getAntibiotic } from "../config/antibiotics";
+import {
+  evaluateIntrinsicResistance,
+  formatIntrinsicResistanceMessage,
+} from "../config/intrinsicResistance";
 import { evaluateCascadeForIsolate } from "./cascadeEngine";
 
 export interface IsolateRuleOutput {
@@ -26,8 +30,8 @@ export interface IsolateRuleOutput {
 
 const nowIso = () => new Date().toISOString();
 
-function fire(code: string, message: string): ExpertRuleFiring {
-  return { ruleCode: code, message, firedAt: nowIso(), ruleVersion: "p3.0.0" };
+function fire(code: string, message: string, ruleVersion = "p3.0.0"): ExpertRuleFiring {
+  return { ruleCode: code, message, firedAt: nowIso(), ruleVersion };
 }
 
 function rowsFor(ast: ASTResult[], isolateId: string): ASTResult[] {
@@ -37,10 +41,16 @@ function find(rows: ASTResult[], code: string): ASTResult | undefined {
   return rows.find((r) => r.antibioticCode === code);
 }
 function isR(r?: ASTResult): boolean {
-  return !!r && (r.finalInterpretation === "R" || r.interpretedSIR === "R" || r.rawInterpretation === "R");
+  return (
+    !!r &&
+    (r.finalInterpretation === "R" || r.interpretedSIR === "R" || r.rawInterpretation === "R")
+  );
 }
 function isS(r?: ASTResult): boolean {
-  return !!r && (r.finalInterpretation === "S" || r.interpretedSIR === "S" || r.rawInterpretation === "S");
+  return (
+    !!r &&
+    (r.finalInterpretation === "S" || r.interpretedSIR === "S" || r.rawInterpretation === "S")
+  );
 }
 
 export function evaluateIsolate(accession: Accession, isolate: Isolate): IsolateRuleOutput {
@@ -48,6 +58,7 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
   const rows = rowsFor(accession.ast, isolate.id);
   const flags = new Set<PhenotypeFlag>();
   const fired: ExpertRuleFiring[] = [];
+  const firedByRow: Record<string, ExpertRuleFiring[]> = {};
   const patches: Record<string, Partial<ASTResult>> = {};
 
   function patch(rowId: string, p: Partial<ASTResult>) {
@@ -55,19 +66,57 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
   }
   function addFlag(rowId: string, f: PhenotypeFlag) {
     flags.add(f);
-    const existing = patches[rowId]?.phenotypeFlags ?? [];
+    const row = rows.find((r) => r.id === rowId);
+    const existing = [...(row?.phenotypeFlags ?? []), ...(patches[rowId]?.phenotypeFlags ?? [])];
     if (!existing.includes(f)) patch(rowId, { phenotypeFlags: [...existing, f] });
   }
   function suppress(row: ASTResult, by: PhenotypeFlag, newSIR: ASTInterpretation = "R") {
     patch(row.id, {
       interpretedSIR: newSIR,
       finalInterpretation: row.consultantOverride ? row.finalInterpretation : newSIR,
+      cascade: "suppressed",
       cascadeDecision: "suppressed_by_phenotype",
       stewardshipNote: `Reported as ${newSIR} per ${by} rule`,
     });
   }
+  function attachFiring(rowId: string, firing: ExpertRuleFiring) {
+    const existing = firedByRow[rowId] ?? [];
+    if (existing.some((item) => item.ruleCode === firing.ruleCode)) return;
+    firedByRow[rowId] = [...existing, firing];
+  }
+  function recordFiring(
+    code: string,
+    message: string,
+    rowIds: string[] = [],
+    ruleVersion?: string,
+  ): ExpertRuleFiring {
+    const firing = fire(code, message, ruleVersion);
+    fired.push(firing);
+    for (const rowId of rowIds) attachFiring(rowId, firing);
+    return firing;
+  }
 
   if (!org) return { isolateId: isolate.id, phenotypeFlags: [], fired, rowPatches: patches };
+
+  // ---- Expected resistant phenotype / intrinsic resistance safety layer
+  // Runs before syndrome-specific expert rules so biologically impossible
+  // susceptible calls never leak into cascade/report previews.
+  for (const row of rows) {
+    const intrinsic = evaluateIntrinsicResistance(org, row.antibioticCode);
+    if (!intrinsic) continue;
+
+    flags.add("intrinsic_R");
+    addFlag(row.id, "intrinsic_R");
+    suppress(row, "intrinsic_R", intrinsic.interpretation);
+    const message = formatIntrinsicResistanceMessage(org, row.antibioticCode, intrinsic);
+    patch(row.id, {
+      stewardshipNote: message,
+      cascadeReason: intrinsic.reason,
+      cascadeRuleCode: intrinsic.ruleCode,
+      cascadeRulesetVersion: intrinsic.ruleVersion,
+    });
+    recordFiring(intrinsic.ruleCode, message, [row.id], intrinsic.ruleVersion);
+  }
 
   // ---- Staphylococcus aureus: MRSA / MSSA + ICR
   if (org.code === "SAUR") {
@@ -76,7 +125,11 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
       if (isR(fox)) {
         flags.add("MRSA");
         addFlag(fox.id, "MRSA");
-        fired.push(fire("STA_MRSA", "Cefoxitin/Oxacillin R → MRSA: report all β-lactams as R (except anti-MRSA agents)."));
+        const firing = recordFiring(
+          "STA_MRSA",
+          "Cefoxitin/Oxacillin R -> MRSA: report all beta-lactams as R (except anti-MRSA agents).",
+          [fox.id],
+        );
         // Suppress beta-lactams except anti-MRSA agents
         for (const r of rows) {
           const cls = getAntibiotic(r.antibioticCode)?.class;
@@ -85,12 +138,13 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
             !["CRO", "FEP"].includes(r.antibioticCode) // ceftaroline-style anti-MRSA agents would be exempt
           ) {
             suppress(r, "MRSA", "R");
+            attachFiring(r.id, firing);
           }
         }
       } else if (isS(fox)) {
         flags.add("MSSA");
         addFlag(fox.id, "MSSA");
-        fired.push(fire("STA_MSSA", "Cefoxitin S → MSSA: prefer β-lactam therapy."));
+        recordFiring("STA_MSSA", "Cefoxitin S -> MSSA: prefer beta-lactam therapy.", [fox.id]);
       }
     }
     // Inducible clindamycin resistance (D-test): ERY R + CLI S → ICR
@@ -99,7 +153,11 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
     if (ery && cli && isR(ery) && isS(cli)) {
       flags.add("inducible_clindamycin_R");
       addFlag(cli.id, "inducible_clindamycin_R");
-      fired.push(fire("STA_ICR", "Erythromycin R + Clindamycin S → suspect inducible clindamycin resistance (D-test). Report Clindamycin as R."));
+      recordFiring(
+        "STA_ICR",
+        "Erythromycin R + Clindamycin S -> suspect inducible clindamycin resistance (D-test). Report Clindamycin as R.",
+        [ery.id, cli.id],
+      );
       suppress(cli, "inducible_clindamycin_R", "R");
     }
   }
@@ -111,18 +169,13 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
       if (isR(van)) {
         flags.add("VRE");
         addFlag(van.id, "VRE");
-        fired.push(fire("ENT_VRE", "Vancomycin R Enterococcus → VRE; consider Linezolid/Daptomycin per stewardship."));
+        recordFiring(
+          "ENT_VRE",
+          "Vancomycin R Enterococcus -> VRE; consider Linezolid/Daptomycin per stewardship.",
+          [van.id],
+        );
       } else if (isS(van)) {
         flags.add("VSE");
-      }
-    }
-    // Intrinsic: Enterococci intrinsically R to cephalosporins
-    for (const r of rows) {
-      if (getAntibiotic(r.antibioticCode)?.class === "cephalosporin") {
-        flags.add("intrinsic_R");
-        addFlag(r.id, "intrinsic_R");
-        suppress(r, "intrinsic_R", "R");
-        fired.push(fire("ENT_INTRINSIC_CEPH", `Enterococci are intrinsically resistant to cephalosporins — ${r.antibioticCode} reported R.`));
       }
     }
   }
@@ -140,10 +193,17 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
       flags.add("ESBL");
       const target = cro ?? caz!;
       addFlag(target.id, "ESBL");
-      fired.push(fire("ENB_ESBL", "3rd-generation cephalosporin R, carbapenem S → ESBL phenotype suspected. Report all penicillins/cephalosporins as R."));
+      const firing = recordFiring(
+        "ENB_ESBL",
+        "3rd-generation cephalosporin R, carbapenem S -> ESBL phenotype suspected. Report all penicillins/cephalosporins as R.",
+        [target.id],
+      );
       for (const r of rows) {
         const cls = getAntibiotic(r.antibioticCode)?.class;
-        if (cls === "penicillin" || cls === "cephalosporin") suppress(r, "ESBL", "R");
+        if (cls === "penicillin" || cls === "cephalosporin") {
+          suppress(r, "ESBL", "R");
+          attachFiring(r.id, firing);
+        }
       }
     }
 
@@ -151,7 +211,11 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
     if (isR(cro) && isS(fep) && !flags.has("ESBL")) {
       flags.add("AmpC_suspected");
       addFlag(cro!.id, "AmpC_suspected");
-      fired.push(fire("ENB_AMPC", "Ceftriaxone R, Cefepime S → AmpC β-lactamase suspected. Avoid 3rd-generation cephalosporins clinically."));
+      recordFiring(
+        "ENB_AMPC",
+        "Ceftriaxone R, Cefepime S -> AmpC beta-lactamase suspected. Avoid 3rd-generation cephalosporins clinically.",
+        [cro!.id, fep!.id],
+      );
     }
 
     // CRE / carbapenemase suspicion
@@ -161,7 +225,11 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
       const t = (mem ?? etp)!;
       addFlag(t.id, "CRE");
       addFlag(t.id, "carbapenemase_suspected");
-      fired.push(fire("ENB_CRE", "Carbapenem R Enterobacterales → CRE; carbapenemase production suspected. IPC notification + stewardship review required."));
+      recordFiring(
+        "ENB_CRE",
+        "Carbapenem R Enterobacterales -> CRE; carbapenemase production suspected. IPC notification + stewardship review required.",
+        [t.id],
+      );
     }
   }
 
@@ -171,18 +239,11 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
     if (isR(mem)) {
       flags.add("CRE"); // generalised carbapenem-R alert; specific code surfaces in IPC engine
       addFlag(mem!.id, "carbapenemase_suspected");
-      fired.push(fire("NF_CARB_R", `${org.display} carbapenem-resistant — IPC alert + stewardship review.`));
-    }
-  }
-
-  // ---- Unusual antibiogram heuristic: any S that is biologically improbable
-  // (placeholder rule: E. coli reported as Vancomycin S would be unusual.)
-  if (org.group === "enterobacterales") {
-    const van = find(rows, "VAN");
-    if (van && isS(van)) {
-      flags.add("unusual_antibiogram");
-      addFlag(van.id, "unusual_antibiogram");
-      fired.push(fire("UNUSUAL_GLYCO_GN", "Glycopeptide reported S against gram-negative — biologically implausible; verify ID/AST."));
+      recordFiring(
+        "NF_CARB_R",
+        `${org.display} carbapenem-resistant - IPC alert + stewardship review.`,
+        [mem!.id],
+      );
     }
   }
 
@@ -204,11 +265,14 @@ export function evaluateIsolate(accession: Accession, isolate: Isolate): Isolate
       patch(r.id, { interpretedSIR: r.rawInterpretation });
     }
     // Attach fired rules to row patches that map to it
-    const rowFired = fired.filter((f) =>
-      Object.entries(patches).some(([rid, p]) => rid === r.id && (p.phenotypeFlags ?? []).length > 0 && f.ruleCode.length > 0),
-    );
+    const rowFired = firedByRow[r.id] ?? [];
     if (rowFired.length > 0) {
-      patch(r.id, { expertRulesFired: [...(r.expertRulesFired ?? []), ...rowFired] });
+      const existing = r.expertRulesFired ?? [];
+      const next = [...existing];
+      for (const firing of rowFired) {
+        if (!next.some((item) => item.ruleCode === firing.ruleCode)) next.push(firing);
+      }
+      patch(r.id, { expertRulesFired: next });
     }
   }
 
