@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { handleZoneReaderInbound } from "../api.public.zone-reader.result";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { handleZoneReaderInbound, handleZoneReaderReadiness } from "../api.public.zone-reader.result";
 import type { ZoneReaderResultImport } from "../../medugu/integrations/zoneReader/types";
 
 const payload = {
@@ -35,6 +35,36 @@ function request(body: unknown, headers: Record<string, string> = {}) {
 }
 
 describe("Zone Reader inbound API", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  const integrationEnv = {
+    ZONE_READER_INBOUND_TOKEN: "test-inbound-secret",
+    ZONE_READER_TENANT_ID: "test-tenant",
+    SUPABASE_URL: "https://example.supabase.co",
+    SUPABASE_SERVICE_ROLE_KEY: "test-service-secret",
+  };
+
+  it.each(Object.keys(integrationEnv))("reports unready when %s is missing", async (missing) => {
+    for (const [name, value] of Object.entries(integrationEnv)) vi.stubEnv(name, value);
+    vi.stubEnv(missing, "   ");
+    const response = handleZoneReaderReadiness();
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      ok: false, configurationReady: false, reason: "integration_not_configured",
+    });
+  });
+
+  it("reports configuration readiness without claiming database verification or revealing secrets", async () => {
+    for (const [name, value] of Object.entries(integrationEnv)) vi.stubEnv(name, value);
+    const response = handleZoneReaderReadiness();
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(JSON.parse(body)).toMatchObject({
+      ok: true, configurationReady: true, databaseVerified: false,
+    });
+    for (const value of Object.values(integrationEnv)) expect(body).not.toContain(value);
+  });
+
   it("rejects missing bearer tokens before attempting persistence", async () => {
     let persisted = false;
 

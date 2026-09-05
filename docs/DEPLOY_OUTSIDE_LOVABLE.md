@@ -32,6 +32,8 @@ Add these Worker variables/secrets in Cloudflare:
 - `SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `ZONE_READER_INBOUND_TOKEN`
+- `ZONE_READER_TENANT_ID`, the existing lab tenant UUID used by the public result endpoint
+- `ZONE_READER_ALLOWED_ORIGIN`, the Zone Reader origin, for example `https://medugu-zone-reader.nubwa-medugu.workers.dev`
 - `AI_ASSIST_ENABLED`
 - `AI_API_KEY` or `OPENAI_API_KEY`, only if AI assist is enabled
 - `AI_GATEWAY_URL`, optional OpenAI-compatible endpoint override
@@ -39,6 +41,10 @@ Add these Worker variables/secrets in Cloudflare:
 - `PHASE5_SERVER_VALIDATION`, optional validation feature gate
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` or AI keys as `VITE_*` variables.
+
+The workflow passes `VITE_MEDUGU_REQUIRE_AUTH` and `VITE_MEDUGU_IPC_EMAIL` into both verification and deployment builds. Login mode is a build-time setting: updating a Worker runtime variable alone does not change it. An unset or non-`true` login setting currently enables the local prelaunch mode; use `true` and verify real user/tenant access before using patient records.
+
+The public Zone Reader endpoint requires both the inbound token and tenant UUID, as well as the server Supabase URL and service role key. A successful homepage response does not verify this integration. Check `GET /api/public/zone-reader/result`, then complete an authenticated sample worklist/result round trip.
 
 ## Deploy
 

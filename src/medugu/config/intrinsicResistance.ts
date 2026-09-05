@@ -216,7 +216,7 @@ const RULES: IntrinsicResistanceRule[] = [
     ruleCode: "GRAM_POSITIVE_INTRINSIC_GRAM_NEGATIVE_AGENT_R",
     appliesToOrganism: (organism) => organism.gram === "gram_positive",
     antibioticCodes: gramNegativeOnlyAgentCodes,
-    antibioticClasses: codes(["monobactam", "polymyxin", "siderophore_cephalosporin"]),
+    antibioticClasses: ["monobactam", "polymyxin", "siderophore_cephalosporin"],
     reason: (organism, antibioticDisplay) =>
       `${organism.display} is Gram-positive; ${antibioticDisplay} is a Gram-negative-only agent and should not be reported susceptible.`,
   },

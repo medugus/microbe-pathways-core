@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { afterEach, describe, it, vi } from "vitest";
 import { strict as assert } from "node:assert";
 import { __test } from "../../../../routes/api.public.zone-reader.result";
 
@@ -151,7 +151,12 @@ async function run() {
 }
 
 describe("public Zone Reader inbound route", () => {
+  afterEach(() => vi.unstubAllEnvs());
   it("accepts, deduplicates and rejects inbound result payloads correctly", async () => {
+    vi.stubEnv("ZONE_READER_INBOUND_TOKEN", "server-secret");
+    vi.stubEnv("ZONE_READER_TENANT_ID", "tenant-1");
+    vi.stubEnv("SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-key");
     await run();
   });
 });
