@@ -288,19 +288,28 @@ export async function handleZoneReaderInbound(
   }
 }
 
+export function handleZoneReaderReadiness(): Response {
+  const configured = [TOKEN_ENV, TENANT_ENV, SUPABASE_URL_ENV, SERVICE_KEY_ENV]
+    .every((name) => Boolean(readEnv(name)));
+  return json(configured ? 200 : 503, {
+    ok: configured,
+    route: ROUTE_PATH,
+    accepts: "ZoneResult contract v1",
+    persistence: "durable",
+    clinicalAuthority: "LIS",
+    configurationReady: configured,
+    // This inexpensive public check does not query or expose patient records.
+    databaseVerified: false,
+    ...(!configured ? { reason: "integration_not_configured" } : {}),
+  });
+}
+
 export const Route = createFileRoute("/api/public/zone-reader/result")({
   server: {
     handlers: {
       OPTIONS: async () =>
         new Response(null, { status: 204, headers: corsHeaders() }),
-      GET: async () =>
-        json(200, {
-          ok: true,
-          route: ROUTE_PATH,
-          accepts: "ZoneResult contract v1",
-          persistence: "durable",
-          clinicalAuthority: "LIS",
-        }),
+      GET: async () => handleZoneReaderReadiness(),
       POST: async ({ request }) => handleZoneReaderInbound(request),
     },
   },
@@ -311,8 +320,7 @@ export const __test = {
   handlers: {
     OPTIONS: async () =>
       new Response(null, { status: 204, headers: corsHeaders() }),
-    GET: async () =>
-      json(200, { ok: true, route: ROUTE_PATH, persistence: "durable" }),
+    GET: async () => handleZoneReaderReadiness(),
     POST: handleZoneReaderInbound,
   },
 };

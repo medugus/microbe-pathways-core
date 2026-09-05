@@ -3,6 +3,7 @@ import type {
   ASTResult,
   Isolate,
   PathologistReportComment,
+  PhenotypeFlag,
   ReleaseSignOff,
 } from "../domain/types";
 import { getAntibiotic } from "../config/antibiotics";
@@ -29,11 +30,11 @@ function finalSir(row: ASTResult): string | undefined {
   return row.finalInterpretation ?? row.interpretedSIR ?? row.rawInterpretation;
 }
 
-function isResistant(row?: ASTResult): boolean {
+function isResistant(row: ASTResult): boolean {
   return finalSir(row) === "R";
 }
 
-function isSusceptible(row?: ASTResult): boolean {
+function isSusceptible(row: ASTResult): boolean {
   return finalSir(row) === "S";
 }
 
@@ -41,7 +42,7 @@ function rowsFor(accession: Accession, isolateId: string): ASTResult[] {
   return accession.ast.filter((row) => row.isolateId === isolateId);
 }
 
-function hasPhenotype(rows: ASTResult[], phenotype: string): boolean {
+function hasPhenotype(rows: ASTResult[], phenotype: PhenotypeFlag): boolean {
   return rows.some((row) => row.phenotypeFlags?.includes(phenotype)) || false;
 }
 

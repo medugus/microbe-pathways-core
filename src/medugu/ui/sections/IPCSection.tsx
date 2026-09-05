@@ -122,6 +122,7 @@ export function IPCSection() {
   }, 0);
 
   function notifyAndArchive(decision: IPCDecision) {
+    if (!accession) return;
     const now = new Date().toISOString();
     const key = signalKeyForDecision(decision);
     const existing = data.signalMap.get(key);
@@ -183,6 +184,7 @@ export function IPCSection() {
   }
 
   function restoreSignal(signal: IPCSignal) {
+    if (!accession) return;
     const restored: IPCSignal = {
       ...signal,
       archivedAt: undefined,

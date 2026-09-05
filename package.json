@@ -11,6 +11,7 @@
     "deploy": "wrangler deploy",
     "preflight:outside-lovable": "node scripts/verify-outside-lovable.mjs",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write ."
